@@ -459,21 +459,7 @@ class FormPassagemHelper(
     private fun verificarDesconto(
         statePassageiro: FormPassageiroUiState,
         statePassagem: FormPassagemUiState
-    ): Double {
-        return if (statePassageiro.ehAcomodacaoRede &&
-            !statePassagem.isEditing &&
-            !statePassageiro.isGratuidade
-        ) {
-            val descontoVerificado = if (statePassageiro.isMeiaPassagem) {
-                DESCONTO_ANTAC.toDouble().div(2.0)
-            } else {
-                DESCONTO_ANTAC.toDouble()
-            }
-            (descontoVerificado + statePassagem.desconto.ifBlank { "0" }.toDouble())
-        } else {
-            statePassagem.desconto.ifBlank { "0" }.toDouble()
-        }
-    }
+    ): Double = calcularDesconto(statePassageiro, statePassagem)
 
     fun preencherDadosPassagem(
         passagem: Passagem,
