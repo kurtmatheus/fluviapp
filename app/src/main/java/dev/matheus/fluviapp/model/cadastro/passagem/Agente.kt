@@ -13,6 +13,7 @@ data class Agente(
     override val descricaoNome: String,
     val agencia: String,
     var lotacao: String,
+    val podeSelecionarFormaPagamento: Boolean = false,
 ) : IObjetoSimplificado {
     enum class Agencia {
         MATRIZ,
@@ -29,6 +30,7 @@ fun Agente.toDocumento(): AgenteDocumento {
     return AgenteDocumento(
         nome = descricaoNome,
         agencia = agencia,
-        lotacao = lotacao
+        lotacao = lotacao,
+        podeSelecionarFormaPagamento = podeSelecionarFormaPagamento
     )
 }

@@ -33,7 +33,7 @@ import dev.matheus.fluviapp.model.viagem.Viagem
         ContadorBilhete::class,
         PassagemDigital::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class FluviAppDatabase : RoomDatabase() {

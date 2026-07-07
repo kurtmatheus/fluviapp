@@ -2,6 +2,8 @@ package dev.matheus.fluviapp.di.module
 
 import android.content.Context
 import androidx.room.Room
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import dev.matheus.fluviapp.database.FluviAppDatabase
 import dev.matheus.fluviapp.database.dao.ContadorDao
 import dev.matheus.fluviapp.database.dao.cadastro.ConstanteDao
@@ -21,6 +23,20 @@ import javax.inject.Singleton
 
 private const val DATABASE_NAME = "fluviApp.db"
 
+/**
+ * v1 → v2: capability [Agente.podeSelecionarFormaPagamento] (ver ADR-0002/0003).
+ * Demonstra o trade-off SQL×NoSQL: no Firestore (AgenteDocumento) o campo entrou
+ * de graça (schemaless); no Room tipado ele custa este ALTER TABLE. Migração
+ * não-destrutiva de propósito — preserva PassagemDigital (única entidade local-only).
+ */
+val MIGRATION_1_2 = object : Migration(1, 2) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "ALTER TABLE Agente ADD COLUMN podeSelecionarFormaPagamento INTEGER NOT NULL DEFAULT 0"
+        )
+    }
+}
+
 @Module
 @InstallIn(SingletonComponent::class)
 class DatabaseModule {
@@ -32,7 +48,7 @@ class DatabaseModule {
             context,
             FluviAppDatabase::class.java,
             DATABASE_NAME
-        ).build()
+        ).addMigrations(MIGRATION_1_2).build()
     }
 
     @Provides
