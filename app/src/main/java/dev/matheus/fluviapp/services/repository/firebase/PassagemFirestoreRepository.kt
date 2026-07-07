@@ -3,6 +3,7 @@ package dev.matheus.fluviapp.services.repository.firebase
 import android.util.Log
 import dev.matheus.fluviapp.database.dao.ContadorDao
 import dev.matheus.fluviapp.database.dao.passagem.PassagemDao
+import dev.matheus.fluviapp.exceptions.EmissaoException
 import dev.matheus.fluviapp.extensions.isTextoNaoNulo
 import dev.matheus.fluviapp.extensions.toPassagemDocumento
 import dev.matheus.fluviapp.model.ContadorBilhete
@@ -12,6 +13,7 @@ import dev.matheus.fluviapp.services.repository.firebase.documents.ContadorDocum
 import dev.matheus.fluviapp.services.repository.firebase.documents.PassagemDocumento
 import dev.matheus.fluviapp.services.repository.firebase.documents.toContadorBilhete
 import dev.matheus.fluviapp.services.repository.firebase.documents.toPassagem
+import dev.matheus.fluviapp.telemetry.RegistroEmissao
 import com.google.android.gms.tasks.Task
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.FirebaseFirestore
@@ -27,6 +29,7 @@ class PassagemFirestoreRepository @Inject constructor(
     private val dao: PassagemDao,
     private val contadorDao: ContadorDao,
     private val firestore: FirebaseFirestore,
+    private val registroEmissao: RegistroEmissao,
 ) {
 
     fun sincronizarNumeroBilheteEmTempoReal() {
@@ -54,17 +57,32 @@ class PassagemFirestoreRepository @Inject constructor(
 
     suspend fun salvar(id: String, passagem: Passagem): String {
         val documento = retornaDocumentReference(id)
-        passagem.apply {
-            val passagemComIdNumeroBilhete = copy(id = documento.id)
-            try {
-                dao.salvar(passagemComIdNumeroBilhete)
-                val passagemDocumento = passagemComIdNumeroBilhete.toPassagemDocumento()
-                documento.set(passagemDocumento)
-                adicionarContador(id, passagemComIdNumeroBilhete.numero)
-            } catch (e: Exception) {
-                Log.e(TAG, "salvar: Exception: ${e.message}")
-                throw RuntimeException("Falha no Processo: ${e.message}")
-            }
+        val passagemComIdNumeroBilhete = passagem.copy(id = documento.id)
+        val numero = passagemComIdNumeroBilhete.numero
+
+        // volátil/cacheada -> sólida local (Room). Sucesso durável imediato.
+        val passagemDocumento = try {
+            dao.salvar(passagemComIdNumeroBilhete)
+            passagemComIdNumeroBilhete.toPassagemDocumento()
+        } catch (e: Exception) {
+            Log.e(TAG, "salvar: Exception: ${e.message}")
+            registroEmissao.falhou(EmissaoException.FalhaAoPersistir(e), numero)
+            throw RuntimeException("Falha no Processo: ${e.message}")
+        }
+        registroEmissao.salvaLocal(numero)
+
+        // Transmissão observada de forma não-bloqueante: offline apenas enfileira (nenhum
+        // listener dispara); ack -> sincronizou; rejeição do servidor -> pendenteDeSync (warning).
+        documento.set(passagemDocumento)
+            .addOnSuccessListener { registroEmissao.sincronizou(numero) }
+            .addOnFailureListener { e -> registroEmissao.pendenteDeSync(numero, e) }
+
+        try {
+            adicionarContador(id, numero)
+        } catch (e: Exception) {
+            Log.e(TAG, "salvar/contador: Exception: ${e.message}")
+            registroEmissao.falhou(EmissaoException.NumeroIndisponivel(e.message ?: "contador"), numero)
+            throw RuntimeException("Falha no Processo: ${e.message}")
         }
         return documento.id
     }
@@ -149,7 +167,7 @@ class PassagemFirestoreRepository @Inject constructor(
     }
 
     companion object {
-        private const val TAG = "viagemFirestoreRepository"
+        private const val TAG = "passagemFirestoreRepository"
         private const val COLLECTION_PASSAGENS = "passagens"
         private const val DOCUMENT_CONTADOR = "contador"
         private const val FIELD_NUMERO = "numeroBilhete"
