@@ -61,8 +61,25 @@ de forma **aditiva** (padrão "stack dormente" do AS: nada do legado quebra até
 3. **Snapshot/rascunho na emissão de Passagem**: introduzir o ciclo volátil→cacheada(rascunho
    JSON)→sólida(Firestore no "emitir"), trazendo crash-safety/offline-first ao fluxo de
    passagem — o laboratório natural (é o fluxo mais rico e o único com estrutura aninhada).
-4. **Aposentar o REST morto**: remover (ou isolar como dormente documentado) a família
-   Retrofit, que hoje só adiciona ruído de "terceira representação" inexistente.
+4. **Aposentar o REST morto** — FEITO: removida toda a família Retrofit (`services/network/**`,
+   `ApiHandler`, `RestApiModule`) e as dependências retrofit/okhttp/jackson. O app assume
+   explicitamente **2 camadas vivas** (Firestore + Room). Decisão do usuário: começou com a
+   possibilidade de um cliente HTTP, mas o Firestore/Firestore-query dá todo o suporte do
+   processo de negócio — inclusive **agregação via query de Firestore**, sem SQL.
+
+**Camada normalizadora (conceito nomeado pelo usuário)**
+
+O dado vive **livre** (JSON dinâmico) tanto no app quanto no Firestore; a **normalização é sob
+demanda**, feita por uma camada normalizadora *conforme a aplicação e a realidade de uso* — não
+uma forma canônica imposta no schema. Corolários:
+
+- A "normalização" que o SQL fazia em repouso (colunas, joins, agregação) passa a acontecer
+  **em trânsito/na fronteira**: query de Firestore + mappers de normalização no app (os atuais
+  `Dados*Mapper` são exatamente isso, e generalizam para essa camada).
+- A normalização pode acontecer **fora do app**: um pool de dados do Firestore exportado e
+  normalizado para relatórios (ex.: PowerBI) — o app não precisa carregar a rigidez analítica.
+- Isso fecha a resposta ao "e as queries SQL que se perdem?": elas não somem, mudam de lugar —
+  viram query de Firestore + normalizador de aplicação (ou análise externa).
 
 **O trade-off (a pergunta central: "qual o trade-off?")**
 

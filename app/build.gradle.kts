@@ -18,7 +18,7 @@ android {
         versionCode = 9
         versionName = "0.0.1-alpha03"
 
-        testInstrumentationRunner = "dev.matheus.fluviapp.C1ustomTestRunner"
+        testInstrumentationRunner = "dev.matheus.fluviapp.CustomTestRunner"
         vectorDrawables {
             useSupportLibrary = true
         }
@@ -102,12 +102,6 @@ dependencies {
     implementation("com.google.zxing:core:3.5.3")
 
     implementation("com.google.accompanist:accompanist-permissions:0.34.0")
-
-    val retrofitVersion = "2.9.0"
-
-    implementation("com.squareup.retrofit2:retrofit:$retrofitVersion")
-    implementation("com.squareup.retrofit2:converter-jackson:$retrofitVersion")
-    implementation("com.squareup.okhttp3:logging-interceptor:4.10.0")
 
     implementation(platform("com.google.firebase:firebase-bom:33.1.2"))
     implementation("com.google.firebase:firebase-analytics")
