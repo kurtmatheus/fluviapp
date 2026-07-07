@@ -3,6 +3,7 @@ package dev.matheus.fluviapp.telemetry
 import android.os.Bundle
 import android.util.Log
 import com.google.firebase.analytics.FirebaseAnalytics
+import com.google.firebase.crashlytics.FirebaseCrashlytics
 
 /**
  * Impl real da [EmissaoTelemetry] (ADR-0004). Único ponto que toca o Firebase.
@@ -10,13 +11,16 @@ import com.google.firebase.analytics.FirebaseAnalytics
  * Espelho local↔remoto: além de mandar pro Firebase, escreve no logcat (tag [TAG]) — sucesso e
  * trilha ficam visíveis localmente E remoto numa só chamada.
  *
- * Estado atual: eventos vão pro Analytics (já é dependência). Crashlytics (non-fatal + log
- * remoto) fica marcado como TODO — depende do projeto Firebase recriado (camada 4 do rename;
- * hoje o google-services.json ainda é o projeto da empresa). Por ora [naoFatal]/[rastro]
- * espelham no logcat; a troca é trivial quando o projeto novo entrar.
+ * 4 pilares SRE ligados no projeto limpo `fluvi-app-dev`:
+ * - [evento]  -> Analytics (DebugView em tempo real).
+ * - [rastro]  -> Crashlytics.log (breadcrumb remoto que acompanha o próximo fatal).
+ * - [naoFatal] -> custom keys + recordException (não-fatal navegável no Crashlytics).
+ * Crashlytics é SDK-only (sem plugin Gradle): recordException/log/setCustomKey não exigem o
+ * plugin, que só serve para upload de mapping/de-obfuscação.
  */
 class FirebaseEmissaoTelemetry(
     private val analytics: FirebaseAnalytics,
+    private val crashlytics: FirebaseCrashlytics,
 ) : EmissaoTelemetry {
 
     override fun evento(nome: String, params: Map<String, String>) {
@@ -26,13 +30,13 @@ class FirebaseEmissaoTelemetry(
 
     override fun rastro(mensagem: String) {
         Log.d(TAG, mensagem)
-        // TODO(firebase-novo): Firebase.crashlytics.log(mensagem)
+        crashlytics.log(mensagem)
     }
 
     override fun naoFatal(erro: Throwable, chaves: Map<String, String>) {
         Log.e(TAG, "naoFatal=${erro.message} $chaves", erro)
-        // TODO(firebase-novo): chaves.forEach { (k, v) -> crashlytics.setCustomKey(k, v) }
-        //                      Firebase.crashlytics.recordException(erro)
+        chaves.forEach { (k, v) -> crashlytics.setCustomKey(k, v) }
+        crashlytics.recordException(erro)
     }
 
     companion object {

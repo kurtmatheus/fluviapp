@@ -5,6 +5,8 @@ import com.google.firebase.Firebase
 import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
+import com.google.firebase.crashlytics.FirebaseCrashlytics
+import com.google.firebase.crashlytics.crashlytics
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.firestore
 import dagger.Module
@@ -40,7 +42,16 @@ object FirebaseModule {
 
     @Provides
     @Singleton
-    fun provideEmissaoTelemetry(analytics: FirebaseAnalytics): EmissaoTelemetry {
-        return FirebaseEmissaoTelemetry(analytics)
+    fun provideFirebaseCrashlytics(): FirebaseCrashlytics {
+        return Firebase.crashlytics
+    }
+
+    @Provides
+    @Singleton
+    fun provideEmissaoTelemetry(
+        analytics: FirebaseAnalytics,
+        crashlytics: FirebaseCrashlytics,
+    ): EmissaoTelemetry {
+        return FirebaseEmissaoTelemetry(analytics, crashlytics)
     }
 }
