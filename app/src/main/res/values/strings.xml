@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">NavegApp</string>
+    <string name="app_name">FluviApp</string>
     <string name="app_versao">Versão</string>
 
     <!-- Buttons -->
@@ -152,8 +152,8 @@
     <string name="label_lotacao">Lotação</string>
 
     <!-- Descriptions -->
-    <string name="description_logo_do_app">Logo da Naveg</string>
-    <string name="description_logo_1">Logo Naveg 1</string>
+    <string name="description_logo_do_app">Logo do FluviApp</string>
+    <string name="description_logo_1">Logo FluviApp 1</string>
     <string name="description_lupa">Lupa</string>
     <string name="description_valor">Moeda</string>
     <string name="description_impressora">Imprimir Passagem</string>

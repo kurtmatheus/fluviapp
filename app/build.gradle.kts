@@ -8,17 +8,17 @@ plugins {
 }
 
 android {
-    namespace = "br.com.gruponaveg"
+    namespace = "dev.matheus.fluviapp"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "br.com.gruponaveg"
+        applicationId = "dev.matheus.fluviapp"
         minSdk = 26
         targetSdk = 34
         versionCode = 9
         versionName = "0.0.1-alpha03"
 
-        testInstrumentationRunner = "br.com.gruponaveg.CustomTestRunner"
+        testInstrumentationRunner = "dev.matheus.fluviapp.CustomTestRunner"
         vectorDrawables {
             useSupportLibrary = true
         }

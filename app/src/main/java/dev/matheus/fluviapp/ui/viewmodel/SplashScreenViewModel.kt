@@ -1,0 +1,49 @@
+package dev.matheus.fluviapp.ui.viewmodel
+
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import dev.matheus.fluviapp.preferences.PreferencesKey.LOGADO
+import dev.matheus.fluviapp.ui.states.SplashScreenState
+import dev.matheus.fluviapp.ui.states.SplashScreenUiState
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+import kotlin.random.Random
+
+@HiltViewModel
+class SplashScreenViewModel @Inject constructor(
+    private val dataStore: DataStore<Preferences>,
+) : ViewModel() {
+
+    private val _uiState = MutableStateFlow(SplashScreenUiState())
+    val uiState: StateFlow<SplashScreenUiState>
+        get() = _uiState.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            setInitialDestination()
+        }
+    }
+
+    private suspend fun setInitialDestination() {
+        delay(Random.nextLong(300, 1000))
+        dataStore.data.collect {
+            val splashScreenState = if (it[LOGADO] == true) {
+                SplashScreenState.Logado
+            } else {
+                SplashScreenState.Deslogado
+            }
+
+            _uiState.value = _uiState.value.copy(
+                splashScreenState = splashScreenState
+            )
+        }
+    }
+
+}

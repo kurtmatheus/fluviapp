@@ -1,0 +1,6 @@
+package dev.matheus.fluviapp.services.network.data.requests.authentication
+
+data class LoginRequest(
+    val login: String,
+    val senha: String
+)

@@ -13,5 +13,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "NavegApp"
+rootProject.name = "FluviApp"
 include(":app")
