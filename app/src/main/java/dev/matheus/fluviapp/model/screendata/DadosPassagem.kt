@@ -1,9 +1,6 @@
 package dev.matheus.fluviapp.model.screendata
 
 import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.REDE
-import dev.matheus.fluviapp.model.cadastro.passagem.Agente.Agencia.NAVEG
-import dev.matheus.fluviapp.model.cadastro.passagem.Agente.Nome.ADRIELY
-import dev.matheus.fluviapp.model.cadastro.passagem.Agente.Nome.ODAIR
 
 data class DadosPassagem(
     val idPassagem: String = "",
@@ -22,6 +19,7 @@ data class DadosPassagem(
     val destino: String = "",
     val agencia: String = "",
     val agente: String = "",
+    val podeSelecionarFormaPagamento: Boolean = false,
     val tarifa: String = "",
     val valorTotal: String = "",
     val valorPix: String = "",
@@ -68,7 +66,10 @@ data class DadosPassagem(
 
     val temResponsavel = nomeResponsavelRetirada.isNotBlank() && numeroDocumentoResponsavelRetirada.isNotBlank()
 
-    val isFormaPagamentoEnabled = agencia == NAVEG.name && (agente == ODAIR.name || agente == ADRIELY.name)
+    // Capability explícita: substitui o antigo casamento por identidade
+    // (agência + agentes específicos hardcoded). Quem materializa a
+    // DadosPassagem decide a capacidade; o real path (mapper) mantém false.
+    val isFormaPagamentoEnabled = podeSelecionarFormaPagamento
 
     val temGratuidade = tipoGratuidade.isNotBlank()
 

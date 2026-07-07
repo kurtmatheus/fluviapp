@@ -123,9 +123,9 @@ private fun ResultSearchAgenteScreenPreview() {
     FluviAppTheme {
         ResultSearchAgenteScreen(
             uiState = AgenteUiState(
-                agencia = "COAPABAM",
+                agencia = "AGENCIA LITORAL",
                 listaAgencia = listaAgenteSample.map { it.agencia },
-                resultadosListaAgente = listaAgenteSample.filter { it.agencia == "COAPABAM" }
+                resultadosListaAgente = listaAgenteSample.filter { it.agencia == "AGENCIA LITORAL" }
             )
         )
     }

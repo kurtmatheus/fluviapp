@@ -8,8 +8,7 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import dev.matheus.fluviapp.R
-import dev.matheus.fluviapp.model.cadastro.passagem.Agente.Agencia.NAVEG
-import dev.matheus.fluviapp.model.cadastro.passagem.Agente.Nome.ODAIR
+import dev.matheus.fluviapp.model.cadastro.passagem.Agente.Agencia.MATRIZ
 import dev.matheus.fluviapp.ui.components.forms.areas.CommonAreaForm
 import dev.matheus.fluviapp.ui.components.forms.dropdowns.DropDownFormField
 import dev.matheus.fluviapp.ui.components.forms.dropdowns.FilterDropDownForm
@@ -62,9 +61,9 @@ private fun ContentViagemAreaFormPreview() {
         ContentAgenteForm(
             modifier = it,
             state = AgenteUiState(
-                agencia = NAVEG.name,
-                agente = ODAIR.name,
-                lotacao = "BELEM - PA"
+                agencia = MATRIZ.name,
+                agente = "Agente Modelo",
+                lotacao = "PORTO NORTE"
             ),
         )
     }

@@ -19,7 +19,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
-private const val DATABASE_NAME = "navegApp.db"
+private const val DATABASE_NAME = "fluviApp.db"
 
 @Module
 @InstallIn(SingletonComponent::class)

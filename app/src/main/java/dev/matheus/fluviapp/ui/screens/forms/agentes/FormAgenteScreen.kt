@@ -16,8 +16,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import dev.matheus.fluviapp.R
-import dev.matheus.fluviapp.model.cadastro.passagem.Agente.Agencia.NAVEG
-import dev.matheus.fluviapp.model.cadastro.passagem.Agente.Nome.ODAIR
+import dev.matheus.fluviapp.model.cadastro.passagem.Agente.Agencia.MATRIZ
 import dev.matheus.fluviapp.ui.components.forms.areas.CommonAreaForm
 import dev.matheus.fluviapp.ui.components.forms.areas.passagem.ContentAgenteForm
 import dev.matheus.fluviapp.ui.components.forms.buttons.CommonIconButton
@@ -80,9 +79,9 @@ fun FormAgenteScreen(
 private fun NovaViagemScreenPreview() {
     FormAgenteScreen(
         uiState = AgenteUiState(
-            agencia = NAVEG.name,
-            agente = ODAIR.name,
-            lotacao = "BELEM - PA",
+            agencia = MATRIZ.name,
+            agente = "Agente Modelo",
+            lotacao = "PORTO NORTE",
             titleJanela = R.string.subtitle_cadastrar_novo_agente
         ),
         onClickSalvar = {},

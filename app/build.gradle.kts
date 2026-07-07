@@ -18,7 +18,7 @@ android {
         versionCode = 9
         versionName = "0.0.1-alpha03"
 
-        testInstrumentationRunner = "dev.matheus.fluviapp.CustomTestRunner"
+        testInstrumentationRunner = "dev.matheus.fluviapp.C1ustomTestRunner"
         vectorDrawables {
             useSupportLibrary = true
         }

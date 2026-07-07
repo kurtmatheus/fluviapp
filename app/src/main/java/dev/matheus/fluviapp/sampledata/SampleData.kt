@@ -16,10 +16,10 @@ import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.DEBITO
 import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.DINHEIRO
 import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.PIX
 import dev.matheus.fluviapp.model.cadastro.passagem.Agente
-import dev.matheus.fluviapp.model.cadastro.passagem.Agente.Agencia.NAVEG
-import dev.matheus.fluviapp.model.cadastro.passagem.Agente.Lotacao.BELEM
-import dev.matheus.fluviapp.model.cadastro.passagem.Agente.Lotacao.BREVES
-import dev.matheus.fluviapp.model.cadastro.passagem.Agente.Lotacao.SANTANA
+import dev.matheus.fluviapp.model.cadastro.passagem.Agente.Agencia.MATRIZ
+import dev.matheus.fluviapp.model.cadastro.passagem.Agente.Lotacao.ILHA_CENTRAL
+import dev.matheus.fluviapp.model.cadastro.passagem.Agente.Lotacao.PORTO_NORTE
+import dev.matheus.fluviapp.model.cadastro.passagem.Agente.Lotacao.PORTO_SUL
 import dev.matheus.fluviapp.model.operacoes.Usuario
 import dev.matheus.fluviapp.model.screendata.DadosBalancoPassagem
 import dev.matheus.fluviapp.model.screendata.DadosBotoesMenus
@@ -33,37 +33,37 @@ import java.math.BigDecimal
 
 val listaDadosDadosViagemHomeSampleCards = listOf(
     DadosViagemCard(
-        navio = "F/B Regional",
-        codigo = "BEL-SAN-001",
-        origem = "Belém",
-        destino = "Santana",
+        navio = "F/B Modelo",
+        codigo = "PN-IC-001",
+        origem = "Porto Norte",
+        destino = "Ilha Central",
         capacidadeVeiculos = "50",
         capacidadeSuites = "12",
         capacidadeCamarotes = "6"
     ),
     DadosViagemCard(
-        navio = "F/B Regional",
-        codigo = "BEL-SAN-001",
-        origem = "Belém",
-        destino = "Santana",
+        navio = "F/B Modelo",
+        codigo = "PN-IC-001",
+        origem = "Porto Norte",
+        destino = "Ilha Central",
         capacidadeVeiculos = "50",
         capacidadeSuites = "12",
         capacidadeCamarotes = "6"
     ),
     DadosViagemCard(
-        navio = "F/B Regional",
-        codigo = "BEL-SAN-001",
-        origem = "Belém",
-        destino = "Santana",
+        navio = "F/B Modelo",
+        codigo = "PN-IC-001",
+        origem = "Porto Norte",
+        destino = "Ilha Central",
         capacidadeVeiculos = "50",
         capacidadeSuites = "12",
         capacidadeCamarotes = "6"
     ),
     DadosViagemCard(
-        navio = "F/B Regional",
-        codigo = "BEL-SAN-001",
-        origem = "Belém",
-        destino = "Santana",
+        navio = "F/B Modelo",
+        codigo = "PN-IC-001",
+        origem = "Porto Norte",
+        destino = "Ilha Central",
         capacidadeVeiculos = "60",
         capacidadeSuites = "9",
         capacidadeSuites2Pessoas = "8",
@@ -131,18 +131,18 @@ val listaTipoDocumentosSample =
 val listaNavioSample = listOf(
     Navio(
         "1",
-        "F/B Regional",
+        "F/B Modelo",
         60,
         4,
         5,
         4,
-        "NAVEGACAO MOCORONGO"
+        "NAVEGACAO MODELO"
     )
 )
 val listaMunicipioSample = listOf(
-    Constante("1", "Belém", MUNICIPIO.name),
-    Constante("2", "Santana", MUNICIPIO.name),
-    Constante("3", "Breves", MUNICIPIO.name)
+    Constante("1", "Porto Norte", MUNICIPIO.name),
+    Constante("2", "Ilha Central", MUNICIPIO.name),
+    Constante("3", "Porto Sul", MUNICIPIO.name)
 )
 val listaAcomodacaoSample =
     listOf(
@@ -152,65 +152,41 @@ val listaAcomodacaoSample =
         Constante("4", "Camarote", ACOMODACAO.name)
     )
 val listaAgenteSample = listOf(
-    Agente("1", "Odair", NAVEG.name, BELEM.name),
-    Agente("2", "Rodoviária", NAVEG.name, BELEM.name),
-    Agente("3", "Dell", "DELLTUR", SANTANA.name),
-    Agente("4", "Jamaira", "MAYRATUR", SANTANA.name),
-    Agente("5", "Nayara", "NAY TURISMO", SANTANA.name),
-    Agente("6", "Eliene", "TRES IRMAOS", SANTANA.name),
-    Agente("7", "Márcio", "PARA TURISMO", SANTANA.name),
-    Agente("8", "Rose", "ROSE TURISMO", SANTANA.name),
-    Agente("9", "Valdez", "CONEXAO", SANTANA.name),
-    Agente("10", "Sônia", "SONIA TURISMO", SANTANA.name),
-    Agente("11", "Ely Machado", "D'PAULA", SANTANA.name),
-    Agente("12", "Fabio", "SANT'ANNA", SANTANA.name),
-    Agente("13", "Naldo", "NATUR", SANTANA.name),
-    Agente("14", "Márcio", "COAPABAM", BELEM.name),
-    Agente("15", "Alex", "COAPABAM", BELEM.name),
-    Agente("16", "Marcos", "COAPABAM", BELEM.name),
-    Agente("17", "Joaquim", "COAPABAM", BELEM.name),
-    Agente("18", "Paulo Eduardo", "COAPABAM", BELEM.name),
-    Agente("19", "Edias", "COAPABAM", BELEM.name),
-    Agente("20", "Bia", "BIATUR", BELEM.name),
-    Agente("21", "Cleber", "BIATUR", BELEM.name),
-    Agente("22", "Jeova Jire - Antonio", "SEM AGENCIA", BELEM.name),
-    Agente("23", "Josias", "SEM AGENCIA", BELEM.name),
-    Agente("24", "Suelen", "EVERTON", SANTANA.name),
-    Agente("25", "Miguel", "EVERTON", SANTANA.name),
-    Agente("26", "Baixinho Sempre com Deus", "EVERTON", SANTANA.name),
-    Agente("27", "Jhones", "JF TURISMO", BREVES.name),
-    Agente("28", "Marcos", "FORTE TURISMO", SANTANA.name),
-    Agente("29", "Cley", "ESTRELA DO NORTE", SANTANA.name),
-    Agente("30", "Maicon/Mateus", "NOSSA SRA DE NAZARE", SANTANA.name),
-    Agente("31", "Everton", "EVERTON", SANTANA.name),
-    Agente("32", "Kelly", "EVERTON", SANTANA.name),
-    Agente("33", "Cigano", NAVEG.name, BELEM.name),
-    Agente("999", "Sem Agente", "SEM AGENCIA", BELEM.name)
+    Agente("1", "Ana Ribeiro", MATRIZ.name, PORTO_NORTE.name),
+    Agente("2", "Bruno Costa", MATRIZ.name, PORTO_NORTE.name),
+    Agente("3", "Carla Dias", "AGENCIA HORIZONTE", ILHA_CENTRAL.name),
+    Agente("4", "Daniel Alves", "AGENCIA MARE", ILHA_CENTRAL.name),
+    Agente("5", "Elena Faria", "AGENCIA AURORA", ILHA_CENTRAL.name),
+    Agente("6", "Fabio Gomes", "AGENCIA HORIZONTE", ILHA_CENTRAL.name),
+    Agente("7", "Gabriela Lima", "AGENCIA MARE", ILHA_CENTRAL.name),
+    Agente("8", "Hugo Melo", "AGENCIA AURORA", ILHA_CENTRAL.name),
+    Agente("9", "Igor Nunes", "AGENCIA HORIZONTE", ILHA_CENTRAL.name),
+    Agente("10", "Julia Pires", "AGENCIA MARE", ILHA_CENTRAL.name),
+    Agente("11", "Karla Rocha", "AGENCIA AURORA", ILHA_CENTRAL.name),
+    Agente("12", "Lucas Souza", "AGENCIA HORIZONTE", ILHA_CENTRAL.name),
+    Agente("13", "Marina Teles", "AGENCIA MARE", ILHA_CENTRAL.name),
+    Agente("14", "Nadia Vaz", "AGENCIA LITORAL", PORTO_NORTE.name),
+    Agente("15", "Otavio Reis", "AGENCIA LITORAL", PORTO_NORTE.name),
+    Agente("16", "Paula Matos", "AGENCIA LITORAL", PORTO_NORTE.name),
+    Agente("17", "Rafael Braga", "AGENCIA LITORAL", PORTO_NORTE.name),
+    Agente("18", "Sofia Cunha", "AGENCIA LITORAL", PORTO_NORTE.name),
+    Agente("19", "Tiago Moraes", "AGENCIA LITORAL", PORTO_NORTE.name),
+    Agente("20", "Ursula Pinto", "AGENCIA NORTE", PORTO_NORTE.name),
+    Agente("21", "Vitor Campos", "AGENCIA NORTE", PORTO_NORTE.name),
+    Agente("22", "Wesley Aragao", "SEM AGENCIA", PORTO_NORTE.name),
+    Agente("23", "Xavier Luz", "SEM AGENCIA", PORTO_NORTE.name),
+    Agente("24", "Yasmin Freitas", "AGENCIA AURORA", ILHA_CENTRAL.name),
+    Agente("25", "Ze Carlos", "AGENCIA AURORA", ILHA_CENTRAL.name),
+    Agente("26", "Alice Barros", "AGENCIA AURORA", ILHA_CENTRAL.name),
+    Agente("27", "Bernardo Sa", "AGENCIA SUL", PORTO_SUL.name),
+    Agente("28", "Cecilia Mota", "AGENCIA MARE", ILHA_CENTRAL.name),
+    Agente("29", "Diego Farias", "AGENCIA HORIZONTE", ILHA_CENTRAL.name),
+    Agente("30", "Elisa Prado", "AGENCIA AURORA", ILHA_CENTRAL.name),
+    Agente("31", "Felipe Aragao", "AGENCIA AURORA", ILHA_CENTRAL.name),
+    Agente("32", "Gisele Nery", "AGENCIA AURORA", ILHA_CENTRAL.name),
+    Agente("33", "Heitor Vasques", MATRIZ.name, PORTO_NORTE.name),
+    Agente("999", "Sem Agente", "SEM AGENCIA", PORTO_NORTE.name)
 )
-
-//val listaAgenciaSample =
-//    listOf(
-//        Agencia(1, "Naveg", 1),
-//        Agencia(2, "Delltur", 2),
-//        Agencia(3, "Mayratur", 2),
-//        Agencia(4, "Três Irmãos", 2),
-//        Agencia(5, "Pará Turismo", 2),
-//        Agencia(6, "Rose Turismo", 2),
-//        Agencia(7, "Conexão", 2),
-//        Agencia(8, "Sonia Turismo", 2),
-//        Agencia(9, "D'Paula", 2),
-//        Agencia(10, "Sant'Anna", 2),
-//        Agencia(11, "Natur", 2),
-//        Agencia(12, "Coapabam", 1),
-//        Agencia(13, "Biatur", 1),
-//        Agencia(14, "Nay Turismo", 2),
-//        Agencia(15, "Forte Viagens", 2),
-//        Agencia(16, "Nossa Sra de Nazaré", 2),
-//        Agencia(17, "Estrela do Norte", 2),
-//        Agencia(18, "Everton", 2),
-//        Agencia(19, "JF Turismo", 3),
-//        Agencia(999, "Sem Agência", 1)
-//    )
 
 val listaFormaPagamentoSample = listOf(
     Constante("1", PIX.name, PAGAMENTO.name),
@@ -250,38 +226,40 @@ val listaTipoVeiculoSample = listOf(
 
 val dadosPassagemSample = DadosPassagem(
     numero = "2444",
-    empresaNome = "NAVEGAÇÃO MOCORONGO",
-    navio = "F/B Regional",
+    empresaNome = "NAVEGACAO MODELO",
+    navio = "F/B Modelo",
     dataViagem = "31/12/2023",
     horaViagem = "12:00",
-    origem = "BELEM - PA",
-    destino = "SANTANA - AP",
-    agencia = "Naveg",
-    agente = "Odair",
+    origem = "PORTO NORTE",
+    destino = "ILHA CENTRAL",
+    agencia = "Matriz",
+    agente = "Agente Modelo",
+    podeSelecionarFormaPagamento = true,
     valorAPagar = BigDecimal("1000").formataParaMoedaBrasileira(),
     observacao = "TESTE DE OBSERVACAO",
     tipoPassagem = "INTEIRA",
     situacao = "PENDENTE",
     funcionario = "ADMINISTRADOR",
-    nomePassageiro1 = "MATHEUS SAMPAIO",
-    documentoPassageiro1 = "012.938.904-94",
+    nomePassageiro1 = "JOAO DA SILVA",
+    documentoPassageiro1 = "000.000.000-00",
     dataNascimento1 = "30/01/1996",
-    nomePassageiro2 = "ODAIR MATOS",
-    documentoPassageiro2 = "012.938.904-94",
+    nomePassageiro2 = "MARIA OLIVEIRA",
+    documentoPassageiro2 = "000.000.000-00",
     dataNascimento2 = "10/01/1975",
     acomodacao = "SUITE"
 )
 
 val dadosPassagemVeiculoSample = DadosPassagem(
     numero = "2444",
-    empresaNome = "NAVEGAÇÃO MOCORONGO",
-    navio = "F/B Regional",
+    empresaNome = "NAVEGACAO MODELO",
+    navio = "F/B Modelo",
     dataViagem = "31/12/2023",
     horaViagem = "12:00",
-    origem = "Belém",
-    destino = "Santana",
-    agencia = "Naveg",
-    agente = "Odair",
+    origem = "Porto Norte",
+    destino = "Ilha Central",
+    agencia = "Matriz",
+    agente = "Agente Modelo",
+    podeSelecionarFormaPagamento = true,
     valorTotal = BigDecimal("180").formataParaMoedaBrasileira(),
     valorPix = BigDecimal("100").formataParaMoedaBrasileira(),
     valorCredito = BigDecimal("50").formataParaMoedaBrasileira(),
@@ -291,36 +269,36 @@ val dadosPassagemVeiculoSample = DadosPassagem(
     tipoPassagem = "INTEIRA",
     situacao = "PENDENTE",
     funcionario = "ADMINISTRADOR",
-    nomeResponsavelRetirada = "MATHEUS SAMPAIO",
-    numeroDocumentoResponsavelRetirada = "012.938.904-94",
+    nomeResponsavelRetirada = "JOAO DA SILVA",
+    numeroDocumentoResponsavelRetirada = "000.000.000-00",
     idVeiculo = "2",
     tipoVeiculo = "MOTO",
-    modeloVeiculo = "FAZER FZ 15 150CC",
-    placaVeiculo = "QLP-4O90",
+    modeloVeiculo = "MOTO 150CC MODELO",
+    placaVeiculo = "ABC1D23",
     corVeiculo = "VERMELHO"
 )
 
 val userAdminSample = Usuario(
     id = "1",
-    email = "admin@naveg.com.br",
+    email = "admin@fluviapp.com.br",
     senha = "admin",
-    nome = "Kurt",
+    nome = "Administrador",
     cargo = "ADM"
 )
 
 val userGerenteSample = Usuario(
     id = "2",
-    email = "odairmatos@naveg.com.br",
-    senha = "odair",
-    nome = "Odair",
+    email = "gerente@fluviapp.com.br",
+    senha = "gerente",
+    nome = "Gerente",
     cargo = "DIRETOR"
 )
 
 val userColabSample = Usuario(
     id = "3",
-    email = "adrianasampaio@naveg.com.br",
-    senha = "adriana",
-    nome = "Adriana",
+    email = "operador@fluviapp.com.br",
+    senha = "operador",
+    nome = "Operador",
     cargo = "Diretor"
 )
 
@@ -332,36 +310,36 @@ val listaUserSample = listOf(
 
 val listaDadosBalancoPassagems = listOf(
     DadosBalancoPassagem(
-        navio = "F/B Regional"
+        navio = "F/B Modelo"
     ),
     DadosBalancoPassagem(
-        navio = "Ana Marques"
+        navio = "F/B Modelo II"
     )
 )
 
 val listaDadosImpressoraSample = listOf(
     DadosImpressora(
-        nome = "MTP-II_5C86",
-        endereco = "86:67:7A:01:5C:86"
+        nome = "IMPRESSORA MODELO",
+        endereco = "00:11:22:33:44:55"
     ),
     DadosImpressora(
-        nome = "MTP-II_5C86",
-        endereco = "86:67:7A:01:5C:86"
+        nome = "IMPRESSORA MODELO",
+        endereco = "00:11:22:33:44:55"
     ),
     DadosImpressora(
-        nome = "MTP-II_5C86",
-        endereco = "86:67:7A:01:5C:86"
+        nome = "IMPRESSORA MODELO",
+        endereco = "00:11:22:33:44:55"
     )
 )
 
 val listaEmpresaSample = listOf(
     Empresa(
         id = "1",
-        nome = "NAVEGAÇÃO MOCORONGO",
-        razaoSocial = "I. S. ROCHA LTDA",
-        cnpj = "47.252.191/0001-42",
-        endereco = "Av. São Paulo, nº 27 - Paraíso - Santana - AP",
-        telefone1 = "(93) 99112-8702",
-        telefone2 = "(93) 99180-6723"
+        nome = "NAVEGACAO MODELO",
+        razaoSocial = "MODELO NAVEGACAO FLUVIAL LTDA",
+        cnpj = "00.000.000/0001-00",
+        endereco = "Av. Central, nº 100 - Centro - Porto Sul",
+        telefone1 = "(00) 90000-0001",
+        telefone2 = "(00) 90000-0002"
     )
 )

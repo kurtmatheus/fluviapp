@@ -14,19 +14,14 @@ data class Agente(
     val agencia: String,
     var lotacao: String,
 ) : IObjetoSimplificado {
-    enum class Nome {
-        ODAIR,
-        ADRIELY
-    }
-
     enum class Agencia {
-        NAVEG,
+        MATRIZ,
     }
 
     enum class Lotacao {
-        BELEM,
-        SANTANA,
-        BREVES
+        PORTO_NORTE,
+        ILHA_CENTRAL,
+        PORTO_SUL
     }
 }
 

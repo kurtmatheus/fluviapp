@@ -12,7 +12,7 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
-private const val TAG = "naveg app"
+private const val TAG = "fluvi app"
 
 @HiltAndroidTest
 class FluviAppNavigationTest {

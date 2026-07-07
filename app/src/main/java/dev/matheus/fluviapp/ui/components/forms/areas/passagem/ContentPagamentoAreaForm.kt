@@ -46,8 +46,7 @@ import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.GRATUI
 import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.MEIA
 import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.PIX
 import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.REDE
-import dev.matheus.fluviapp.model.cadastro.passagem.Agente.Agencia.NAVEG
-import dev.matheus.fluviapp.model.cadastro.passagem.Agente.Nome.ODAIR
+import dev.matheus.fluviapp.model.cadastro.passagem.Agente.Agencia.MATRIZ
 import dev.matheus.fluviapp.model.passagem.Passagem
 import dev.matheus.fluviapp.sampledata.listaFormaPagamentoSample
 import dev.matheus.fluviapp.ui.components.cards.CommonCard
@@ -434,8 +433,8 @@ private fun ContentViagemAreaFormAgenciaFluviPreview() {
         ContentPagamentoAreaForm(
             modifier = it,
             state = FormPassagemUiState(
-                agencia = NAVEG.name,
-                agente = ODAIR.name,
+                agencia = MATRIZ.name,
+                agente = "Agente Modelo",
                 listaFormaPagamento = listaFormaPagamentoSample,
                 isPixChecked = true,
                 isDinheiroChecked = true
@@ -455,8 +454,8 @@ private fun ContentViagemAreaFormAgenciaFluviGratuidadePreview() {
         ContentPagamentoAreaForm(
             modifier = it,
             state = FormPassagemUiState(
-                agencia = NAVEG.name,
-                agente = ODAIR.name,
+                agencia = MATRIZ.name,
+                agente = "Agente Modelo",
                 valorPago = "0",
                 isValorPagoEnabled = false,
             ),
