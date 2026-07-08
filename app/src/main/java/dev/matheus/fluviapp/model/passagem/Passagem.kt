@@ -17,6 +17,8 @@ data class Passagem(
     val destino: String,
     val dataViagem: String,
     val horaViagem: String,
+    val agencia: String = "",
+    val agente: String = "",
     val valorPago: Double? = null,
     val valorPix: Double? = null,
     val valorDinheiro: Double? = null,

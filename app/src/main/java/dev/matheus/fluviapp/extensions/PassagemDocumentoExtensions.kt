@@ -18,6 +18,8 @@ fun Passagem.toPassagemDocumento(): PassagemDocumento {
         ),
         dataViagem = dataViagem,
         horaViagem = horaViagem,
+        agencia = agencia,
+        agente = agente,
         valorPago = valorPago,
         valorPix = valorPix,
         valorDinheiro = valorDinheiro,

@@ -54,6 +54,17 @@ val MIGRATION_2_3 = object : Migration(2, 3) {
     }
 }
 
+/**
+ * v3 → v4: `Passagem` passa a registrar quem vendeu (agência/agente), antes descartados no
+ * save (ADR-0002/0003). Habilita a derivação da capability no PassagemDadosPassagemMapper.
+ */
+val MIGRATION_3_4 = object : Migration(3, 4) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE Passagem ADD COLUMN agencia TEXT NOT NULL DEFAULT ''")
+        db.execSQL("ALTER TABLE Passagem ADD COLUMN agente TEXT NOT NULL DEFAULT ''")
+    }
+}
+
 @Module
 @InstallIn(SingletonComponent::class)
 class DatabaseModule {
@@ -65,7 +76,7 @@ class DatabaseModule {
             context,
             FluviAppDatabase::class.java,
             DATABASE_NAME
-        ).addMigrations(MIGRATION_1_2, MIGRATION_2_3).build()
+        ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4).build()
     }
 
     @Provides

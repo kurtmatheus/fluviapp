@@ -38,6 +38,8 @@ fun PassagemDocumento.toPassagem(id: String): Passagem {
         destino = viagem?.destino.orEmpty(),
         dataViagem = dataViagem,
         horaViagem = horaViagem,
+        agencia = agencia,
+        agente = agente,
         valorPago = valorPago,
         valorPix = valorPix,
         valorDinheiro = valorDinheiro,

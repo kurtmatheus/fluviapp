@@ -422,6 +422,8 @@ class FormPassagemHelper(
             destino = statePassagem.destinoViagem,
             dataViagem = statePassagem.dataViagem,
             horaViagem = statePassagem.horaViagem,
+            agencia = statePassagem.agencia,
+            agente = statePassagem.agente,
             valorPago = statePassagem.valorPago.toDoubleOrNull(),
             valorPix = statePassagem.valorPix.toDoubleOrNull(),
             valorDinheiro = statePassagem.valorDinheiro.toDoubleOrNull(),

@@ -13,6 +13,7 @@ import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.VEICUL
 import dev.matheus.fluviapp.model.passagem.Passagem
 import dev.matheus.fluviapp.model.passagem.Passagem.Companion.TARIFA_ANTAC
 import dev.matheus.fluviapp.model.screendata.DadosPassagem
+import dev.matheus.fluviapp.services.repository.cadastro.passagem.AgenteRepository
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.EmpresaRepository
 import dev.matheus.fluviapp.services.repository.firebase.ViagemFirestoreRepository
 import dev.matheus.fluviapp.util.Mapper
@@ -26,10 +27,21 @@ import javax.inject.Singleton
 class PassagemDadosPassagemMapper @Inject constructor(
     private val viagemRepository: ViagemFirestoreRepository,
     private val empresaRepository: EmpresaRepository,
+    private val agenteRepository: AgenteRepository,
 ) : Mapper<Passagem, DadosPassagem> {
     override fun map(entry: Passagem): DadosPassagem {
         val viagem = runBlocking { viagemRepository.obterPorCodigo(entry.codigoViagem) }
         val empresa = runBlocking { empresaRepository.obterPorNome(entry.empresa) }
+
+        // Flip da capability (ADR-0002/0003): deriva do agente que vendeu a passagem.
+        // Best-effort — o agente é texto livre no form; casa por agência + nome no cadastro.
+        val podeSelecionarFormaPagamento = if (entry.agencia.isNotBlank()) {
+            runBlocking { agenteRepository.obterAgentesPorAgencia(entry.agencia) }
+                .firstOrNull { it.descricaoNome == entry.agente }
+                ?.podeSelecionarFormaPagamento ?: false
+        } else {
+            false
+        }
 
         val valorPagoAvulso = entry.valorPago.converterParaBigDecimal()
         val valorPix = entry.valorPix.converterParaBigDecimal()
@@ -65,6 +77,9 @@ class PassagemDadosPassagemMapper @Inject constructor(
             horaViagem = entry.horaViagem,
             origem = entry.origem,
             destino = entry.destino,
+            agencia = entry.agencia,
+            agente = entry.agente,
+            podeSelecionarFormaPagamento = podeSelecionarFormaPagamento,
             tarifa = BigDecimal(TARIFA_ANTAC).formataParaMoedaBrasileira(),
             valorTotal = valorTotal.formataParaMoedaBrasileira(),
             valorPix = valorPix.getValorFormatadoOrEmpty(),
