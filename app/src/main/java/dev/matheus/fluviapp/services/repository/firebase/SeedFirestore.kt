@@ -15,15 +15,12 @@ import dev.matheus.fluviapp.sampledata.listaTipoDocumentosSample
 import dev.matheus.fluviapp.sampledata.listaTipoGratuidadeSample
 import dev.matheus.fluviapp.sampledata.listaTipoPassagemSample
 import dev.matheus.fluviapp.sampledata.listaTipoVeiculoSample
-import dev.matheus.fluviapp.sampledata.listaUserSample
 import dev.matheus.fluviapp.services.repository.cadastro.ConstanteRepository
 import dev.matheus.fluviapp.services.repository.cadastro.passagem.AgenteRepository
 import dev.matheus.fluviapp.services.repository.firebase.documents.ConstanteDocumento
 import dev.matheus.fluviapp.services.repository.firebase.documents.ContadorDocumento
 import dev.matheus.fluviapp.services.repository.firebase.documents.EmpresaDocumento
 import dev.matheus.fluviapp.services.repository.firebase.documents.NavioDocumento
-import dev.matheus.fluviapp.services.repository.firebase.documents.UsuarioDocumento
-import dev.matheus.fluviapp.services.repository.operacoes.UsuarioRepository
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -41,18 +38,17 @@ class SeedFirestore @Inject constructor(
 ) {
     fun semearSeVazio() {
         if (!BuildConfig.DEBUG) return
-        firestore.collection(UsuarioRepository.COLLECTION_USERS).limit(1).get()
+        // Guarda por `constants` (catálogo que só o seed cria) — NÃO por `users`, que o cadastro
+        // passa a popular (senão um cadastro antecipado faria o seed pular os catálogos).
+        firestore.collection(ConstanteRepository.COLLECTION_CONSTANTS).limit(1).get()
             .addOnSuccessListener { snapshot -> if (snapshot.isEmpty) semear() }
             .addOnFailureListener { e -> Log.e(TAG, "guarda do seed falhou: ${e.message}", e) }
     }
 
     private fun semear() {
+        // Usuários NÃO são semeados: o cadastro in-app (com verificação + perfil auto-criado)
+        // provisiona operadores. Aqui só os catálogos.
         Log.i(TAG, "Semeando Firestore (projeto vazio, debug)")
-
-        listaUserSample.forEach { u ->
-            firestore.collection(UsuarioRepository.COLLECTION_USERS).document(u.id)
-                .set(UsuarioDocumento(email = u.email, nome = u.nome, cargo = u.cargo))
-        }
 
         listaAgenteSample.forEach { a ->
             firestore.collection(AgenteRepository.COLLECTION_AGENTS).document(a.id).set(a.toDocumento())
