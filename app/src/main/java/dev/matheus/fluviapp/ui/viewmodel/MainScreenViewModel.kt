@@ -11,6 +11,7 @@ import dev.matheus.fluviapp.model.operacoes.Usuario.Cargo.ADM
 import dev.matheus.fluviapp.model.operacoes.Usuario.Cargo.DIRETOR
 import dev.matheus.fluviapp.preferences.PreferencesKey
 import dev.matheus.fluviapp.services.repository.cadastro.passagem.AgenteRepository
+import com.google.firebase.auth.FirebaseAuth
 import dev.matheus.fluviapp.services.repository.firebase.PassagemFirestoreRepository
 import dev.matheus.fluviapp.services.repository.firebase.ViagemFirestoreRepository
 import dev.matheus.fluviapp.ui.states.MainScreenState
@@ -34,7 +35,8 @@ class MainScreenViewModel @Inject constructor(
     private val viagemRepository: ViagemFirestoreRepository,
     private val viagemMapper: ViagemDadosViagemMapper,
     private val passagemRepository: PassagemFirestoreRepository,
-    private val agenteRepository: AgenteRepository
+    private val agenteRepository: AgenteRepository,
+    private val firebaseAuth: FirebaseAuth,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(MainScreenUiState())
@@ -166,6 +168,8 @@ class MainScreenViewModel @Inject constructor(
     }
 
     suspend fun deslogar() {
+        // encerra a sessão do Firebase (autoridade) + limpa o cache de perfil no DataStore.
+        firebaseAuth.signOut()
         dataStore.edit {
             it[PreferencesKey.LOGADO] = false
             it[PreferencesKey.USUARIO_ATUAL] = ""

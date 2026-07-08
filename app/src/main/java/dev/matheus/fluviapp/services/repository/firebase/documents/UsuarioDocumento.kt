@@ -12,7 +12,6 @@ fun UsuarioDocumento.toUsuario(id: String): Usuario {
     return Usuario(
         id = id,
         email = email,
-        senha = "",
         nome = nome,
         cargo = cargo
     )

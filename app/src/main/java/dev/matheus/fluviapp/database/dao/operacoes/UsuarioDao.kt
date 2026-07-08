@@ -22,9 +22,6 @@ interface UsuarioDao {
     @Query("UPDATE Usuario SET ultimoUsuarioLogado = 0")
     suspend fun limparUltimoUsuarioLogado()
 
-    @Query("SELECT * FROM Usuario WHERE email = :email AND senha = :senha")
-    fun obterPorUsuarioESenha(email: String, senha: String): Flow<Usuario?>
-
     @Query("SELECT * FROM Usuario")
     fun obterTodos(): Flow<List<Usuario>>
 }

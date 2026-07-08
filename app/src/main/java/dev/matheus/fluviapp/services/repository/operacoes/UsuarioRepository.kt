@@ -41,13 +41,11 @@ class UsuarioRepository @Inject constructor(
             }
     }
 
-    suspend fun obterPorEmailSenha(email: String, senha: String) = dao.obterPorUsuarioESenha(email, senha).first()
-
-    suspend fun salvarUsuarioAutenticado(email: String, senha: String): Usuario? {
+    suspend fun salvarUsuarioAutenticado(email: String): Usuario? {
         limparUltimoUsuarioLogado()
         val usuarioAutenticado = dao.obterPorEmail(email = email).first()
         if (usuarioAutenticado != null) {
-            dao.salvar(usuarioAutenticado.copy(senha = senha, ultimoUsuarioLogado = true))
+            dao.salvar(usuarioAutenticado.copy(ultimoUsuarioLogado = true))
         }
         return usuarioAutenticado
     }

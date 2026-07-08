@@ -65,6 +65,28 @@ val MIGRATION_3_4 = object : Migration(3, 4) {
     }
 }
 
+/**
+ * v4 → v5: remove a coluna `senha` da `Usuario` (ADR-0005: sem senha no device). SQLite não
+ * garante DROP COLUMN no minSdk 26, então recria a tabela (padrão Room). `Usuario` é cache do
+ * Firestore `users`, então recriar é seguro (re-sincroniza no login).
+ */
+val MIGRATION_4_5 = object : Migration(4, 5) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `Usuario_novo` (`id` TEXT NOT NULL, `email` TEXT NOT NULL, " +
+                "`nome` TEXT NOT NULL, `cargo` TEXT NOT NULL, `ultimoUsuarioLogado` INTEGER NOT NULL, " +
+                "PRIMARY KEY(`id`))"
+        )
+        db.execSQL(
+            "INSERT INTO `Usuario_novo` (`id`, `email`, `nome`, `cargo`, `ultimoUsuarioLogado`) " +
+                "SELECT `id`, `email`, `nome`, `cargo`, `ultimoUsuarioLogado` FROM `Usuario`"
+        )
+        db.execSQL("DROP TABLE `Usuario`")
+        db.execSQL("ALTER TABLE `Usuario_novo` RENAME TO `Usuario`")
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_Usuario_id` ON `Usuario` (`id`)")
+    }
+}
+
 @Module
 @InstallIn(SingletonComponent::class)
 class DatabaseModule {
@@ -76,7 +98,7 @@ class DatabaseModule {
             context,
             FluviAppDatabase::class.java,
             DATABASE_NAME
-        ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4).build()
+        ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5).build()
     }
 
     @Provides

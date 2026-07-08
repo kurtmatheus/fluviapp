@@ -1,10 +1,8 @@
 package dev.matheus.fluviapp.ui.viewmodel
 
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import dev.matheus.fluviapp.preferences.PreferencesKey.LOGADO
+import com.google.firebase.auth.FirebaseAuth
 import dev.matheus.fluviapp.ui.states.SplashScreenState
 import dev.matheus.fluviapp.ui.states.SplashScreenUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -18,7 +16,7 @@ import kotlin.random.Random
 
 @HiltViewModel
 class SplashScreenViewModel @Inject constructor(
-    private val dataStore: DataStore<Preferences>,
+    private val firebaseAuth: FirebaseAuth,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SplashScreenUiState())
@@ -33,17 +31,12 @@ class SplashScreenViewModel @Inject constructor(
 
     private suspend fun setInitialDestination() {
         delay(Random.nextLong(300, 1000))
-        dataStore.data.collect {
-            val splashScreenState = if (it[LOGADO] == true) {
-                SplashScreenState.Logado
-            } else {
-                SplashScreenState.Deslogado
-            }
-
-            _uiState.value = _uiState.value.copy(
-                splashScreenState = splashScreenState
-            )
+        // Autoridade da sessão = sessão persistida do Firebase (offline-capaz, ADR-0005).
+        val splashScreenState = if (firebaseAuth.currentUser != null) {
+            SplashScreenState.Logado
+        } else {
+            SplashScreenState.Deslogado
         }
+        _uiState.value = _uiState.value.copy(splashScreenState = splashScreenState)
     }
-
 }

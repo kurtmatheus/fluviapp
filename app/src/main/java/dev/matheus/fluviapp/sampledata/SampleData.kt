@@ -281,7 +281,6 @@ val dadosPassagemVeiculoSample = DadosPassagem(
 val userAdminSample = Usuario(
     id = "1",
     email = "admin@fluviapp.com.br",
-    senha = "admin",
     nome = "Administrador",
     cargo = "ADM"
 )
@@ -289,7 +288,6 @@ val userAdminSample = Usuario(
 val userGerenteSample = Usuario(
     id = "2",
     email = "gerente@fluviapp.com.br",
-    senha = "gerente",
     nome = "Gerente",
     cargo = "DIRETOR"
 )
@@ -297,7 +295,6 @@ val userGerenteSample = Usuario(
 val userColabSample = Usuario(
     id = "3",
     email = "operador@fluviapp.com.br",
-    senha = "operador",
     nome = "Operador",
     cargo = "Diretor"
 )

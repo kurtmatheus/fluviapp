@@ -12,7 +12,6 @@ data class Usuario(
     @PrimaryKey
     val id: String,
     val email: String,
-    val senha: String,
     val nome: String,
     val cargo: String,
     val ultimoUsuarioLogado: Boolean = false

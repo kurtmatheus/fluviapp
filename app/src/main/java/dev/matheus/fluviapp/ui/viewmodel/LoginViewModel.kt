@@ -23,7 +23,6 @@ import dev.matheus.fluviapp.services.repository.firebase.ViagemFirestoreReposito
 import dev.matheus.fluviapp.services.repository.operacoes.UsuarioRepository
 import dev.matheus.fluviapp.ui.states.LoginUiState
 import dev.matheus.fluviapp.ui.viewmodel.helpers.login.LoginFormHelper
-import dev.matheus.fluviapp.util.CriptografiaUtil.Companion.encrypt
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.auth.FirebaseAuthInvalidUserException
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -81,15 +80,9 @@ class LoginViewModel @Inject constructor(
     fun validarLogin() {
         if (loginFormHelper.isFormularioValido()) {
             _uiState.update { it.copy(logando = true) }
-            viewModelScope.launch {
-                val usuarioSalvo =
-                    usuarioRepository.obterPorEmailSenha(_uiState.value.email, _uiState.value.senha)
-                if (usuarioSalvo != null) {
-                    logarUsuario(usuarioSalvo)
-                } else {
-                    autenticarUsuario()
-                }
-            }
+            // Login vai sempre ao Firebase (autoridade da credencial); sem verificação local de
+            // senha (ADR-0005). 1º login exige rede — o failure listener trata offline/erro.
+            viewModelScope.launch { autenticarUsuario() }
         }
     }
 
@@ -103,7 +96,7 @@ class LoginViewModel @Inject constructor(
         ).addOnCompleteListener {
             if (it.isSuccessful) {
                 viewModelScope.launch {
-                    val usuario = usuarioRepository.salvarUsuarioAutenticado(email, senha.encrypt())
+                    val usuario = usuarioRepository.salvarUsuarioAutenticado(email)
                     logarUsuario(usuario)
                 }
             } else {
