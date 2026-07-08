@@ -92,24 +92,8 @@ class LoginFormHelper(
     }
 
     fun isFormularioValido(): Boolean {
-        if (uiState.value.email.isBlank()) {
-            uiState.update {
-                it.copy(
-                    isUsuarioError = true
-                )
-            }
-        }
-
-        if (uiState.value.senha.isBlank()) {
-            uiState.update {
-                it.copy(
-                    isSenhaError = true
-                )
-            }
-        }
-
-        return !uiState.value.isUsuarioError &&
-                !uiState.value.isSenhaError
+        uiState.update { validarCamposLogin(it) }
+        return uiState.value.camposValidos()
     }
 
 

@@ -23,8 +23,7 @@ import dev.matheus.fluviapp.services.repository.firebase.ViagemFirestoreReposito
 import dev.matheus.fluviapp.services.repository.operacoes.UsuarioRepository
 import dev.matheus.fluviapp.ui.states.LoginUiState
 import dev.matheus.fluviapp.ui.viewmodel.helpers.login.LoginFormHelper
-import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
-import com.google.firebase.auth.FirebaseAuthInvalidUserException
+import dev.matheus.fluviapp.ui.viewmodel.helpers.login.mapearMensagemErroAuth
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -137,26 +136,10 @@ class LoginViewModel @Inject constructor(
         }
     }
 
-    private fun exceptionHandle(ex: Exception) {
-        when (ex) {
-            is FirebaseAuthInvalidCredentialsException -> {
-                ex.printStackTrace()
-                loginFormHelper.exibeErro()
-                loginFormHelper.setMensagemErro(R.string.error_usuario_incorreto)
-            }
-
-            is FirebaseAuthInvalidUserException -> {
-                ex.printStackTrace()
-                loginFormHelper.exibeErro()
-                loginFormHelper.setMensagemErro(R.string.error_usuario_inexistente)
-            }
-
-            else -> {
-                ex.printStackTrace()
-                loginFormHelper.exibeErro()
-                loginFormHelper.setMensagemErro(R.string.error_falha_auth)
-            }
-        }
+    private fun exceptionHandle(ex: Throwable) {
+        ex.printStackTrace()
+        loginFormHelper.exibeErro()
+        loginFormHelper.setMensagemErro(mapearMensagemErroAuth(ex))
     }
 
     private suspend fun logarUsuario(usuarioLogado: Usuario?) {
