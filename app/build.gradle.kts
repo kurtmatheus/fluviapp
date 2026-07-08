@@ -1,15 +1,15 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
+    id("org.jetbrains.kotlin.plugin.compose")
     id("com.google.dagger.hilt.android")
     id("com.google.devtools.ksp")
-    id("kotlin-kapt")
     id("com.google.gms.google-services")
 }
 
 android {
     namespace = "dev.matheus.fluviapp"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "dev.matheus.fluviapp"
@@ -41,9 +41,6 @@ android {
         compose = true
         buildConfig = true
     }
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.6"
-    }
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
@@ -52,20 +49,21 @@ android {
 }
 
 dependencies {
-    val lifecycleVersion = "2.8.4"
+    val lifecycleVersion = "2.8.7"
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:$lifecycleVersion")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:$lifecycleVersion")
 
-    val navVersion = "2.7.7"
+    val navVersion = "2.8.5"
     implementation("androidx.navigation:navigation-compose:$navVersion")
     androidTestImplementation("androidx.navigation:navigation-testing:$navVersion")
 
-    val composeBomVersion = "2024.08.00"
+    val composeBomVersion = "2024.12.01"
 
-    implementation("androidx.core:core-ktx:1.13.1")
-    implementation("androidx.activity:activity-compose:1.9.1")
+    implementation("androidx.core:core-ktx:1.15.0")
+    implementation("androidx.activity:activity-compose:1.9.3")
     implementation(platform("androidx.compose:compose-bom:$composeBomVersion"))
     implementation("androidx.compose.material3:material3")
+    implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
@@ -77,35 +75,30 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.0")
-    implementation("io.coil-kt:coil-compose:2.4.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
+    implementation("io.coil-kt:coil-compose:2.7.0")
 
-    val hiltVersion = "2.49"
+    val hiltVersion = "2.53.1"
     implementation("com.google.dagger:hilt-android:$hiltVersion")
-    kapt("com.google.dagger:hilt-compiler:$hiltVersion")
+    ksp("com.google.dagger:hilt-compiler:$hiltVersion")
     implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
     androidTestImplementation("com.google.dagger:hilt-android-testing:$hiltVersion")
-    kaptAndroidTest("com.google.dagger:hilt-compiler:$hiltVersion")
+    kspAndroidTest("com.google.dagger:hilt-compiler:$hiltVersion")
 
     val roomVersion = "2.6.1"
-
     implementation("androidx.room:room-runtime:$roomVersion")
-    ksp ("androidx.room:room-compiler:$roomVersion")
+    ksp("androidx.room:room-compiler:$roomVersion")
     implementation("androidx.room:room-ktx:$roomVersion")
 
     implementation("androidx.datastore:datastore-preferences:1.1.1")
-
-    implementation("androidx.compose.material3:material3:1.3.0-rc01")
-
-    implementation("androidx.compose.material:material-icons-extended:1.6.8")
 
     implementation("com.google.zxing:core:3.5.3")
 
     implementation("com.google.code.gson:gson:2.11.0")
 
-    implementation("com.google.accompanist:accompanist-permissions:0.34.0")
+    implementation("com.google.accompanist:accompanist-permissions:0.36.0")
 
-    implementation(platform("com.google.firebase:firebase-bom:33.1.2"))
+    implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
     implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-auth-ktx")
     implementation("com.google.firebase:firebase-firestore")
