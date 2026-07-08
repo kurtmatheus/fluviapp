@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.google.gson.Gson
 import dev.matheus.fluviapp.database.FluviAppDatabase
 import dev.matheus.fluviapp.database.dao.ContadorDao
 import dev.matheus.fluviapp.database.dao.cadastro.ConstanteDao
@@ -14,6 +15,9 @@ import dev.matheus.fluviapp.database.dao.cadastro.viagem.ViagemDao
 import dev.matheus.fluviapp.database.dao.operacoes.UsuarioDao
 import dev.matheus.fluviapp.database.dao.passagem.PassagemDao
 import dev.matheus.fluviapp.database.dao.passagem.PassagemDigitalDao
+import dev.matheus.fluviapp.database.dao.passagem.RascunhoPassagemDao
+import dev.matheus.fluviapp.services.repository.rascunho.RascunhoPassagemStoreRoom
+import dev.matheus.fluviapp.services.repository.rascunho.RascunhoStore
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -37,6 +41,19 @@ val MIGRATION_1_2 = object : Migration(1, 2) {
     }
 }
 
+/**
+ * v2 → v3: tabela do rascunho de passagem (memória cacheada em JSON — ADR-0004). Slot único
+ * (id, json). Aditiva e não-destrutiva.
+ */
+val MIGRATION_2_3 = object : Migration(2, 3) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `rascunho_passagem` " +
+                "(`id` INTEGER NOT NULL, `json` TEXT NOT NULL, PRIMARY KEY(`id`))"
+        )
+    }
+}
+
 @Module
 @InstallIn(SingletonComponent::class)
 class DatabaseModule {
@@ -48,7 +65,7 @@ class DatabaseModule {
             context,
             FluviAppDatabase::class.java,
             DATABASE_NAME
-        ).addMigrations(MIGRATION_1_2).build()
+        ).addMigrations(MIGRATION_1_2, MIGRATION_2_3).build()
     }
 
     @Provides
@@ -94,5 +111,22 @@ class DatabaseModule {
     @Provides
     fun providePassagemDigitalDao(db: FluviAppDatabase): PassagemDigitalDao {
         return db.passagemDigitalDao()
+    }
+
+    @Provides
+    fun provideRascunhoPassagemDao(db: FluviAppDatabase): RascunhoPassagemDao {
+        return db.rascunhoPassagemDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideGson(): Gson {
+        return Gson()
+    }
+
+    @Provides
+    @Singleton
+    fun provideRascunhoStore(impl: RascunhoPassagemStoreRoom): RascunhoStore {
+        return impl
     }
 }

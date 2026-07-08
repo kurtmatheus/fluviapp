@@ -11,6 +11,7 @@ import dev.matheus.fluviapp.database.dao.cadastro.viagem.ViagemDao
 import dev.matheus.fluviapp.database.dao.operacoes.UsuarioDao
 import dev.matheus.fluviapp.database.dao.passagem.PassagemDao
 import dev.matheus.fluviapp.database.dao.passagem.PassagemDigitalDao
+import dev.matheus.fluviapp.database.dao.passagem.RascunhoPassagemDao
 import dev.matheus.fluviapp.model.ContadorBilhete
 import dev.matheus.fluviapp.model.cadastro.constantes.Constante
 import dev.matheus.fluviapp.model.cadastro.passagem.Agente
@@ -31,9 +32,10 @@ import dev.matheus.fluviapp.model.viagem.Viagem
         Viagem::class,
         Passagem::class,
         ContadorBilhete::class,
-        PassagemDigital::class
+        PassagemDigital::class,
+        RascunhoPassagemEntity::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 abstract class FluviAppDatabase : RoomDatabase() {
@@ -46,4 +48,5 @@ abstract class FluviAppDatabase : RoomDatabase() {
     abstract fun passagemDao(): PassagemDao
     abstract fun contadorDao(): ContadorDao
     abstract fun passagemDigitalDao(): PassagemDigitalDao
+    abstract fun rascunhoPassagemDao(): RascunhoPassagemDao
 }
