@@ -56,3 +56,8 @@ marca o agente como habilitado), promover para a Opção 2: coluna `podeSelecion
 em `Agente`, migração Room, e wiring `PassagemDadosPassagemMapper` → `Agente` para propagar o
 flag até a screendata. Esse passo se conecta ao arco maior de arquitetura de dados
 (DTO-cêntrico / Room espelhando Firestore / modelo de memória) — ver ADR-0003.
+
+**Realizado (Path B):** a `Passagem` passou a registrar `agencia`/`agente` (migração Room
+v3→v4, persistidos também no Firestore) e o `PassagemDadosPassagemMapper` deriva a capability
+via `AgenteRepository`. Nasce dormante: nenhum `Agente` é marcado capaz hoje (não há UI para
+isso) — o robusto seria o agente virar seleção com `agenteId`, em vez de texto livre.
