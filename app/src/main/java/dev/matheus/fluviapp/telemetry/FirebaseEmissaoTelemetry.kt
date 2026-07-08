@@ -15,8 +15,8 @@ import com.google.firebase.crashlytics.FirebaseCrashlytics
  * - [evento]  -> Analytics (DebugView em tempo real).
  * - [rastro]  -> Crashlytics.log (breadcrumb remoto que acompanha o próximo fatal).
  * - [naoFatal] -> custom keys + recordException (não-fatal navegável no Crashlytics).
- * Crashlytics é SDK-only (sem plugin Gradle): recordException/log/setCustomKey não exigem o
- * plugin, que só serve para upload de mapping/de-obfuscação.
+ * Requer o plugin Gradle `com.google.firebase.crashlytics` (injeta o build ID que o SDK lê no
+ * init; sem ele, FirebaseCrashlytics.init lança IllegalStateException em runtime).
  */
 class FirebaseEmissaoTelemetry(
     private val analytics: FirebaseAnalytics,
