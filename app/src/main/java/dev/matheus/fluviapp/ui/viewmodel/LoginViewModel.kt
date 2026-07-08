@@ -18,6 +18,7 @@ import dev.matheus.fluviapp.services.repository.cadastro.passagem.AgenteReposito
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.EmpresaRepository
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.NavioRepository
 import dev.matheus.fluviapp.services.repository.firebase.PassagemFirestoreRepository
+import dev.matheus.fluviapp.services.repository.firebase.SeedFirestore
 import dev.matheus.fluviapp.services.repository.firebase.ViagemFirestoreRepository
 import dev.matheus.fluviapp.services.repository.operacoes.UsuarioRepository
 import dev.matheus.fluviapp.ui.states.LoginUiState
@@ -42,7 +43,8 @@ class LoginViewModel @Inject constructor(
     private val navioRepository: NavioRepository,
     private val agenteRepository: AgenteRepository,
     private val viagemRepository: ViagemFirestoreRepository,
-    private val passagemRepository: PassagemFirestoreRepository
+    private val passagemRepository: PassagemFirestoreRepository,
+    private val seedFirestore: SeedFirestore,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(LoginUiState())
@@ -56,6 +58,7 @@ class LoginViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             initializeHelper()
+            seedFirestore.semearSeVazio()
             carregarUsuarios()
         }
     }
@@ -142,6 +145,7 @@ class LoginViewModel @Inject constructor(
             }
             _uiState.value = _uiState.value.copy(logado = true)
         } ?: run {
+            Log.e(TAG, "logarUsuario: autenticado no Firebase, mas perfil ausente (users vazio no Firestore/Room?)")
             _uiState.value = _uiState.value.copy(logando = false)
             loginFormHelper.exibeErro()
             loginFormHelper.setMensagemErro(R.string.error_falha_auth)
