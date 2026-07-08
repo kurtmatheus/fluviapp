@@ -20,6 +20,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -48,7 +49,8 @@ fun LoginScreen(
     state: LoginUiState,
     modifier: Modifier = Modifier,
     onClickVisibilitySenha: () -> Unit = {},
-    onClickLogar: () -> Unit = {}
+    onClickLogar: () -> Unit = {},
+    onClickReenviar: () -> Unit = {}
 ) {
     Column(
         modifier = modifier.fillMaxSize(),
@@ -157,6 +159,12 @@ fun LoginScreen(
                     color = MaterialTheme.colorScheme.primary,
                     isProcessing = state.logando
                 )
+
+                if (state.exibirReenviarVerificacao) {
+                    TextButton(onClick = onClickReenviar) {
+                        Text(text = stringResource(R.string.btn_reenviar_verificacao))
+                    }
+                }
             }
         } else {
             Column(

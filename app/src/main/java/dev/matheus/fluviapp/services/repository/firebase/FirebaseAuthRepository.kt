@@ -13,4 +13,16 @@ class FirebaseAuthRepository @Inject constructor(
     fun autenticarUsuarioFirebase(email: String, senha: String): Task<AuthResult> {
         return firebaseAuth.signInWithEmailAndPassword(email, senha)
     }
+
+    fun enviarVerificacaoEmail(): Task<Void>? {
+        return firebaseAuth.currentUser?.sendEmailVerification()
+    }
+
+    fun emailVerificado(): Boolean {
+        return firebaseAuth.currentUser?.isEmailVerified == true
+    }
+
+    fun sair() {
+        firebaseAuth.signOut()
+    }
 }

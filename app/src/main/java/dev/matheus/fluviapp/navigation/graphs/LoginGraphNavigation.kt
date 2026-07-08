@@ -36,6 +36,9 @@ fun NavGraphBuilder.loginGraph(
             onClickLogar = {
                 viewModel.onNavegaParaMainScreen = onNavegarParaMainScreen
                 viewModel.validarLogin()
+            },
+            onClickReenviar = {
+                viewModel.reenviarVerificacao()
             }
         )
     }

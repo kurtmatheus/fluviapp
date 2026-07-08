@@ -14,6 +14,7 @@ data class LoginUiState(
 
     val exibirErro: Boolean = false,
     val mensagemErro: Int = 0,
+    val exibirReenviarVerificacao: Boolean = false,
 
     val logando: Boolean = false
 )

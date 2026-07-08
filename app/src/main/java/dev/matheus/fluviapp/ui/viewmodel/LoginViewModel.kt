@@ -95,13 +95,43 @@ class LoginViewModel @Inject constructor(
             senha = senha
         ).addOnCompleteListener {
             if (it.isSuccessful) {
-                viewModelScope.launch {
-                    val usuario = usuarioRepository.salvarUsuarioAutenticado(email)
-                    logarUsuario(usuario)
+                if (usuarioRepository.emailVerificado()) {
+                    viewModelScope.launch {
+                        val usuario = usuarioRepository.salvarUsuarioAutenticado(email)
+                        logarUsuario(usuario)
+                    }
+                } else {
+                    // gate ADR-0005/fluxo-login: nao entra sem e-mail verificado; oferece reenviar.
+                    usuarioRepository.sair()
+                    loginFormHelper.exibeErro()
+                    loginFormHelper.setMensagemErro(R.string.error_email_nao_verificado)
+                    _uiState.value =
+                        _uiState.value.copy(logando = false, exibirReenviarVerificacao = true)
                 }
             } else {
                 Log.e(TAG, "autenticarUsuario: ${it.exception!!.message}", it.exception)
                 exceptionHandle(it.exception!!)
+                _uiState.value = _uiState.value.copy(logando = false)
+            }
+        }
+    }
+
+    fun reenviarVerificacao() {
+        val email = _uiState.value.email
+        val senha = _uiState.value.senha
+        _uiState.update { it.copy(logando = true) }
+        usuarioRepository.autenticarUsuario(email, senha).addOnCompleteListener { resultado ->
+            if (resultado.isSuccessful) {
+                usuarioRepository.enviarVerificacao()?.addOnCompleteListener {
+                    usuarioRepository.sair()
+                    loginFormHelper.exibeErro()
+                    loginFormHelper.setMensagemErro(R.string.msg_verificacao_reenviada)
+                    _uiState.value =
+                        _uiState.value.copy(logando = false, exibirReenviarVerificacao = false)
+                }
+            } else {
+                Log.e(TAG, "reenviarVerificacao: ${resultado.exception?.message}", resultado.exception)
+                exceptionHandle(resultado.exception ?: Exception("falha ao reenviar"))
                 _uiState.value = _uiState.value.copy(logando = false)
             }
         }

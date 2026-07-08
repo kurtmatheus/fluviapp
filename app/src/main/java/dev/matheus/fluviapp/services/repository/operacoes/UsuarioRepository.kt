@@ -23,6 +23,12 @@ class UsuarioRepository @Inject constructor(
 
     fun autenticarUsuario(email: String, senha: String) = firebaseAuthRepository.autenticarUsuarioFirebase(email, senha)
 
+    fun emailVerificado() = firebaseAuthRepository.emailVerificado()
+
+    fun enviarVerificacao() = firebaseAuthRepository.enviarVerificacaoEmail()
+
+    fun sair() = firebaseAuthRepository.sair()
+
     suspend fun carregarUsuarios() {
         firestore.collection(COLLECTION_USERS)
             .addSnapshotListener { value, error ->
