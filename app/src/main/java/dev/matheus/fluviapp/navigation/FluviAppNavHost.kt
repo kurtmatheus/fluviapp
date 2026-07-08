@@ -51,6 +51,12 @@ fun FluviAppNavHost(
         loginGraph(
             onNavegarParaMainScreen = {
                 navController.navegaParaMainScreenGraph()
+            },
+            onNavegaParaCadastro = {
+                navController.navigate(FluviAppGraphDestinations.Cadastro.route)
+            },
+            onVoltarParaLogin = {
+                navController.popBackStack()
             }
         )
 

@@ -23,6 +23,15 @@ class UsuarioRepository @Inject constructor(
 
     fun autenticarUsuario(email: String, senha: String) = firebaseAuthRepository.autenticarUsuarioFirebase(email, senha)
 
+    fun cadastrar(email: String, senha: String) = firebaseAuthRepository.cadastrarUsuarioFirebase(email, senha)
+
+    /** Cria o perfil na VERDADE (Firestore users), chaveado pelo uid do Auth. Room sincroniza. */
+    fun criarPerfil(email: String, nome: String, cargo: String) {
+        val uid = firebaseAuthRepository.uidUsuarioAtual() ?: return
+        firestore.collection(COLLECTION_USERS).document(uid)
+            .set(UsuarioDocumento(email = email, nome = nome, cargo = cargo))
+    }
+
     fun emailVerificado() = firebaseAuthRepository.emailVerificado()
 
     fun enviarVerificacao() = firebaseAuthRepository.enviarVerificacaoEmail()

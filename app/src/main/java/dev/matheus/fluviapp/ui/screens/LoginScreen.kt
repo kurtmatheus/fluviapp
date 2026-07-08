@@ -50,7 +50,8 @@ fun LoginScreen(
     modifier: Modifier = Modifier,
     onClickVisibilitySenha: () -> Unit = {},
     onClickLogar: () -> Unit = {},
-    onClickReenviar: () -> Unit = {}
+    onClickReenviar: () -> Unit = {},
+    onClickCadastrar: () -> Unit = {}
 ) {
     Column(
         modifier = modifier.fillMaxSize(),
@@ -164,6 +165,10 @@ fun LoginScreen(
                     TextButton(onClick = onClickReenviar) {
                         Text(text = stringResource(R.string.btn_reenviar_verificacao))
                     }
+                }
+
+                TextButton(onClick = onClickCadastrar) {
+                    Text(text = stringResource(R.string.btn_criar_conta))
                 }
             }
         } else {
