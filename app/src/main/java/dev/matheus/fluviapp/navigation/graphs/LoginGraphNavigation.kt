@@ -9,6 +9,7 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import dev.matheus.fluviapp.R
 import dev.matheus.fluviapp.extensions.toastMessage
+import dev.matheus.fluviapp.navigation.destinations.ARG_EMAIL_PREFILL
 import dev.matheus.fluviapp.navigation.destinations.FluviAppGraphDestinations
 import dev.matheus.fluviapp.ui.screens.CadastroScreen
 import dev.matheus.fluviapp.ui.screens.LoginScreen
@@ -19,14 +20,24 @@ fun NavGraphBuilder.loginGraph(
     onNavegarParaMainScreen: () -> Unit,
     onNavegaParaCadastro: () -> Unit,
     onVoltarParaLogin: () -> Unit,
+    onVoltarComEmail: (String) -> Unit,
 ) {
     composable(
         route = FluviAppGraphDestinations.LoginGraph.route
-    ) {
+    ) { backStackEntry ->
         val viewModel = hiltViewModel<LoginViewModel>()
         val state by viewModel.uiState.collectAsState()
 
         val context = LocalContext.current
+
+        // e-mail vindo do cadastro (colisao): pre-preenche uma vez e consome.
+        LaunchedEffect(Unit) {
+            val prefill = backStackEntry.savedStateHandle.get<String>(ARG_EMAIL_PREFILL)
+            if (!prefill.isNullOrBlank()) {
+                viewModel.preencherEmail(prefill)
+                backStackEntry.savedStateHandle.remove<String>(ARG_EMAIL_PREFILL)
+            }
+        }
 
         LaunchedEffect(key1 = state.logado) {
             if (state.logado) {
@@ -61,6 +72,13 @@ fun NavGraphBuilder.loginGraph(
             if (state.cadastrado) {
                 context.toastMessage(context.getString(R.string.msg_cadastro_sucesso))
                 onVoltarParaLogin()
+            }
+        }
+
+        LaunchedEffect(key1 = state.irParaLoginComEmail) {
+            state.irParaLoginComEmail?.let { email ->
+                context.toastMessage(context.getString(R.string.error_email_ja_cadastrado))
+                onVoltarComEmail(email)
             }
         }
 

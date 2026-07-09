@@ -3,6 +3,7 @@ package dev.matheus.fluviapp.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.matheus.fluviapp.services.repository.firebase.autenticacao.AutenticacaoRepository
+import dev.matheus.fluviapp.services.repository.firebase.autenticacao.MotivoFalhaAuth
 import dev.matheus.fluviapp.services.repository.firebase.autenticacao.ResultadoAutenticacao
 import dev.matheus.fluviapp.ui.states.CadastroUiState
 import dev.matheus.fluviapp.ui.viewmodel.helpers.cadastro.CadastroFormHelper
@@ -44,9 +45,14 @@ class CadastroViewModel @Inject constructor(
                 }
 
                 is ResultadoAutenticacao.Falha -> {
-                    cadastroFormHelper.exibeErro()
-                    cadastroFormHelper.setMensagemErro(mapearMensagemErroAuth(resultado.motivo))
-                    _uiState.update { it.copy(cadastrando = false) }
+                    if (resultado.motivo == MotivoFalhaAuth.EMAIL_JA_CADASTRADO) {
+                        // fluxo ativo: e-mail existe -> redireciona ao login com ele preenchido.
+                        _uiState.update { it.copy(cadastrando = false, irParaLoginComEmail = email) }
+                    } else {
+                        cadastroFormHelper.exibeErro()
+                        cadastroFormHelper.setMensagemErro(mapearMensagemErroAuth(resultado.motivo))
+                        _uiState.update { it.copy(cadastrando = false) }
+                    }
                 }
             }
         }

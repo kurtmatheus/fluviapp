@@ -79,6 +79,10 @@ class LoginViewModel @Inject constructor(
         )
     }
 
+    fun preencherEmail(email: String) {
+        _uiState.update { it.copy(email = email) }
+    }
+
     fun validarLogin() {
         if (loginFormHelper.isFormularioValido()) {
             _uiState.update { it.copy(logando = true) }

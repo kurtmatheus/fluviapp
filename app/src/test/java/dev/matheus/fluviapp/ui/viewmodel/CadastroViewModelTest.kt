@@ -72,6 +72,20 @@ class CadastroViewModelTest {
     }
 
     @Test
+    fun `e-mail ja cadastrado sinaliza ir para login com o email e nao mostra erro`() {
+        val fake = FakeAutenticacaoRepository().apply {
+            resultado = ResultadoAutenticacao.Falha(MotivoFalhaAuth.EMAIL_JA_CADASTRADO)
+        }
+        val vm = vmPreenchido(fake)
+
+        vm.cadastrar()
+
+        assertEquals("ana@teste.com", vm.uiState.value.irParaLoginComEmail)
+        assertFalse(vm.uiState.value.exibirErro)
+        assertFalse(vm.uiState.value.cadastrado)
+    }
+
+    @Test
     fun `formulario invalido nao chama a porta`() {
         val fake = FakeAutenticacaoRepository()
         val vm = CadastroViewModel(fake) // campos em branco

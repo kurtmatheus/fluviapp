@@ -1,5 +1,7 @@
 package dev.matheus.fluviapp.navigation.destinations
 
+const val ARG_EMAIL_PREFILL = "email_prefill"
+
 sealed class FluviAppGraphDestinations(val route: String) {
     data object SplashScreen : FluviAppGraphDestinations("splashScreen")
     data object LoginGraph : FluviAppGraphDestinations("loginGraph")

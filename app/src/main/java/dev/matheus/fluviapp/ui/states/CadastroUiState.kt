@@ -24,4 +24,6 @@ data class CadastroUiState(
 
     val cadastrando: Boolean = false,
     val cadastrado: Boolean = false,
+    /** Preenchido quando o e-mail já existe: sinaliza redirecionar ao login com esse e-mail. */
+    val irParaLoginComEmail: String? = null,
 )

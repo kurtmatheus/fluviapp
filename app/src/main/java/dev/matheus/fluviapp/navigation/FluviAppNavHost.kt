@@ -18,6 +18,7 @@ import dev.matheus.fluviapp.extensions.navegaParaResultPesquisarAgente
 import dev.matheus.fluviapp.extensions.navegaParaResultadosPesquisarPassagem
 import dev.matheus.fluviapp.extensions.navegaParaResultadosPesquisarViagem
 import dev.matheus.fluviapp.extensions.navegarParaFormularioPassagemComViagem
+import dev.matheus.fluviapp.navigation.destinations.ARG_EMAIL_PREFILL
 import dev.matheus.fluviapp.navigation.destinations.FluviAppGraphDestinations
 import dev.matheus.fluviapp.navigation.graphs.loginGraph
 import dev.matheus.fluviapp.navigation.graphs.mainScreenGraph
@@ -56,6 +57,11 @@ fun FluviAppNavHost(
                 navController.navigate(FluviAppGraphDestinations.Cadastro.route)
             },
             onVoltarParaLogin = {
+                navController.popBackStack()
+            },
+            onVoltarComEmail = { email ->
+                navController.getBackStackEntry(FluviAppGraphDestinations.LoginGraph.route)
+                    .savedStateHandle[ARG_EMAIL_PREFILL] = email
                 navController.popBackStack()
             }
         )
