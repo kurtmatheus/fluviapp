@@ -19,6 +19,11 @@ class MapeamentoErroAuthTest {
     }
 
     @Test
+    fun `email ja cadastrado mapeia para mensagem propria`() {
+        assertEquals(R.string.error_email_ja_cadastrado, mapearMensagemErroAuth(MotivoFalhaAuth.EMAIL_JA_CADASTRADO))
+    }
+
+    @Test
     fun `desconhecido mapeia para falha_auth`() {
         assertEquals(R.string.error_falha_auth, mapearMensagemErroAuth(MotivoFalhaAuth.DESCONHECIDO))
     }

@@ -10,5 +10,6 @@ import dev.matheus.fluviapp.services.repository.firebase.autenticacao.MotivoFalh
 internal fun mapearMensagemErroAuth(motivo: MotivoFalhaAuth): Int = when (motivo) {
     MotivoFalhaAuth.CREDENCIAL_INVALIDA -> R.string.error_usuario_incorreto
     MotivoFalhaAuth.USUARIO_INEXISTENTE -> R.string.error_usuario_inexistente
+    MotivoFalhaAuth.EMAIL_JA_CADASTRADO -> R.string.error_email_ja_cadastrado
     MotivoFalhaAuth.DESCONHECIDO -> R.string.error_falha_auth
 }

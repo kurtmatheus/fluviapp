@@ -3,6 +3,7 @@ package dev.matheus.fluviapp.services.repository.firebase.autenticacao
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.auth.FirebaseAuthInvalidUserException
+import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import com.google.firebase.firestore.FirebaseFirestore
 import dev.matheus.fluviapp.services.repository.firebase.documents.UsuarioDocumento
 import dev.matheus.fluviapp.services.repository.operacoes.UsuarioRepository
@@ -58,5 +59,6 @@ class FirebaseAutenticacaoRepository @Inject constructor(
 internal fun motivoDe(erro: Throwable): MotivoFalhaAuth = when (erro) {
     is FirebaseAuthInvalidCredentialsException -> MotivoFalhaAuth.CREDENCIAL_INVALIDA
     is FirebaseAuthInvalidUserException -> MotivoFalhaAuth.USUARIO_INEXISTENTE
+    is FirebaseAuthUserCollisionException -> MotivoFalhaAuth.EMAIL_JA_CADASTRADO
     else -> MotivoFalhaAuth.DESCONHECIDO
 }

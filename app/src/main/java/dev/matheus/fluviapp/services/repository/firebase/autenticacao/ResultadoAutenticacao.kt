@@ -13,5 +13,6 @@ sealed interface ResultadoAutenticacao {
 enum class MotivoFalhaAuth {
     CREDENCIAL_INVALIDA,
     USUARIO_INEXISTENTE,
+    EMAIL_JA_CADASTRADO,
     DESCONHECIDO,
 }
