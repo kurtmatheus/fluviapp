@@ -20,6 +20,8 @@ import dev.matheus.fluviapp.services.repository.cadastro.viagem.NavioRepository
 import dev.matheus.fluviapp.services.repository.firebase.PassagemFirestoreRepository
 import dev.matheus.fluviapp.services.repository.firebase.SeedFirestore
 import dev.matheus.fluviapp.services.repository.firebase.ViagemFirestoreRepository
+import dev.matheus.fluviapp.services.repository.firebase.autenticacao.AutenticacaoRepository
+import dev.matheus.fluviapp.services.repository.firebase.autenticacao.ResultadoAutenticacao
 import dev.matheus.fluviapp.services.repository.operacoes.UsuarioRepository
 import dev.matheus.fluviapp.ui.states.LoginUiState
 import dev.matheus.fluviapp.ui.viewmodel.helpers.login.LoginFormHelper
@@ -36,6 +38,7 @@ import javax.inject.Inject
 class LoginViewModel @Inject constructor(
     private val dataStore: DataStore<Preferences>,
     private val usuarioRepository: UsuarioRepository,
+    private val autenticacaoRepository: AutenticacaoRepository,
     private val constanteRepository: ConstanteRepository,
     private val empresaRepository: EmpresaRepository,
     private val navioRepository: NavioRepository,
@@ -89,27 +92,24 @@ class LoginViewModel @Inject constructor(
         val email = _uiState.value.email
         val senha = _uiState.value.senha
 
-        usuarioRepository.autenticarUsuario(
-            email = email,
-            senha = senha
-        ).addOnCompleteListener {
-            if (it.isSuccessful) {
-                if (usuarioRepository.emailVerificado()) {
-                    viewModelScope.launch {
-                        val usuario = usuarioRepository.salvarUsuarioAutenticado(email)
-                        logarUsuario(usuario)
-                    }
+        when (val resultado = autenticacaoRepository.autenticar(email, senha)) {
+            is ResultadoAutenticacao.Sucesso -> {
+                if (resultado.emailVerificado) {
+                    val usuario = usuarioRepository.salvarUsuarioAutenticado(email)
+                    logarUsuario(usuario)
                 } else {
-                    // gate ADR-0005/fluxo-login: nao entra sem e-mail verificado; oferece reenviar.
-                    usuarioRepository.sair()
+                    // gate: nao entra sem e-mail verificado; oferece reenviar.
+                    autenticacaoRepository.sair()
                     loginFormHelper.exibeErro()
                     loginFormHelper.setMensagemErro(R.string.error_email_nao_verificado)
                     _uiState.value =
                         _uiState.value.copy(logando = false, exibirReenviarVerificacao = true)
                 }
-            } else {
-                Log.e(TAG, "autenticarUsuario: ${it.exception!!.message}", it.exception)
-                exceptionHandle(it.exception!!)
+            }
+
+            is ResultadoAutenticacao.Falha -> {
+                loginFormHelper.exibeErro()
+                loginFormHelper.setMensagemErro(mapearMensagemErroAuth(resultado.motivo))
                 _uiState.value = _uiState.value.copy(logando = false)
             }
         }
@@ -119,27 +119,22 @@ class LoginViewModel @Inject constructor(
         val email = _uiState.value.email
         val senha = _uiState.value.senha
         _uiState.update { it.copy(logando = true) }
-        usuarioRepository.autenticarUsuario(email, senha).addOnCompleteListener { resultado ->
-            if (resultado.isSuccessful) {
-                usuarioRepository.enviarVerificacao()?.addOnCompleteListener {
-                    usuarioRepository.sair()
+        viewModelScope.launch {
+            when (val resultado = autenticacaoRepository.reenviarVerificacao(email, senha)) {
+                is ResultadoAutenticacao.Sucesso -> {
                     loginFormHelper.exibeErro()
                     loginFormHelper.setMensagemErro(R.string.msg_verificacao_reenviada)
                     _uiState.value =
                         _uiState.value.copy(logando = false, exibirReenviarVerificacao = false)
                 }
-            } else {
-                Log.e(TAG, "reenviarVerificacao: ${resultado.exception?.message}", resultado.exception)
-                exceptionHandle(resultado.exception ?: Exception("falha ao reenviar"))
-                _uiState.value = _uiState.value.copy(logando = false)
+
+                is ResultadoAutenticacao.Falha -> {
+                    loginFormHelper.exibeErro()
+                    loginFormHelper.setMensagemErro(mapearMensagemErroAuth(resultado.motivo))
+                    _uiState.value = _uiState.value.copy(logando = false)
+                }
             }
         }
-    }
-
-    private fun exceptionHandle(ex: Throwable) {
-        ex.printStackTrace()
-        loginFormHelper.exibeErro()
-        loginFormHelper.setMensagemErro(mapearMensagemErroAuth(ex))
     }
 
     private suspend fun logarUsuario(usuarioLogado: Usuario?) {

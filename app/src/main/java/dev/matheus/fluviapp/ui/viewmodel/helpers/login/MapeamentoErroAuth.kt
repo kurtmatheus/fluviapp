@@ -1,16 +1,14 @@
 package dev.matheus.fluviapp.ui.viewmodel.helpers.login
 
-import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
-import com.google.firebase.auth.FirebaseAuthInvalidUserException
 import dev.matheus.fluviapp.R
+import dev.matheus.fluviapp.services.repository.firebase.autenticacao.MotivoFalhaAuth
 
 /**
- * Mapeia a exceção de autenticação do Firebase para a mensagem de erro (res id). Decisão pura
- * (JVM-testável); o ramo `else` é o único garantidamente construível fora da rede — os tipos
- * específicos do Firebase são da borda de rede (motivação para o refactor de porta, item 2).
+ * Mapeia o motivo de falha de auth (domínio) para a mensagem (res id). Puro e JVM-testável em
+ * TODOS os ramos — a tradução da exceção do Firebase para o enum acontece na borda (motivoDe).
  */
-internal fun mapearMensagemErroAuth(erro: Throwable): Int = when (erro) {
-    is FirebaseAuthInvalidCredentialsException -> R.string.error_usuario_incorreto
-    is FirebaseAuthInvalidUserException -> R.string.error_usuario_inexistente
-    else -> R.string.error_falha_auth
+internal fun mapearMensagemErroAuth(motivo: MotivoFalhaAuth): Int = when (motivo) {
+    MotivoFalhaAuth.CREDENCIAL_INVALIDA -> R.string.error_usuario_incorreto
+    MotivoFalhaAuth.USUARIO_INEXISTENTE -> R.string.error_usuario_inexistente
+    MotivoFalhaAuth.DESCONHECIDO -> R.string.error_falha_auth
 }

@@ -1,20 +1,25 @@
 package dev.matheus.fluviapp.ui.viewmodel.helpers.login
 
 import dev.matheus.fluviapp.R
+import dev.matheus.fluviapp.services.repository.firebase.autenticacao.MotivoFalhaAuth
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
-/**
- * Só o ramo `else` é JVM-puro. Os ramos específicos (FirebaseAuthInvalidCredentials/InvalidUser)
- * NÃO são testáveis aqui: construir essas exceções chama `android.text.TextUtils.isEmpty`
- * ("not mocked" fora do device/Robolectric) — são tipos da borda de rede/Android. Cobertura
- * plena dessa regra depende de mapear na fronteira para um enum de domínio (item 2 / porta
- * ResultadoAutenticacao), aí o mapeamento enum→mensagem vira 100% puro.
- */
+/** Agora 100% puro (enum de domínio, sem tipos do Firebase) — todos os ramos cobertos. */
 class MapeamentoErroAuthTest {
 
     @Test
-    fun `excecao generica mapeia para falha_auth`() {
-        assertEquals(R.string.error_falha_auth, mapearMensagemErroAuth(RuntimeException("x")))
+    fun `credencial invalida mapeia para usuario_incorreto`() {
+        assertEquals(R.string.error_usuario_incorreto, mapearMensagemErroAuth(MotivoFalhaAuth.CREDENCIAL_INVALIDA))
+    }
+
+    @Test
+    fun `usuario inexistente mapeia para inexistente`() {
+        assertEquals(R.string.error_usuario_inexistente, mapearMensagemErroAuth(MotivoFalhaAuth.USUARIO_INEXISTENTE))
+    }
+
+    @Test
+    fun `desconhecido mapeia para falha_auth`() {
+        assertEquals(R.string.error_falha_auth, mapearMensagemErroAuth(MotivoFalhaAuth.DESCONHECIDO))
     }
 }

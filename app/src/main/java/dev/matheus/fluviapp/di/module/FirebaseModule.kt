@@ -14,6 +14,8 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import dev.matheus.fluviapp.services.repository.firebase.autenticacao.AutenticacaoRepository
+import dev.matheus.fluviapp.services.repository.firebase.autenticacao.FirebaseAutenticacaoRepository
 import dev.matheus.fluviapp.telemetry.EmissaoTelemetry
 import dev.matheus.fluviapp.telemetry.FirebaseEmissaoTelemetry
 import javax.inject.Singleton
@@ -44,6 +46,12 @@ object FirebaseModule {
     @Singleton
     fun provideFirebaseCrashlytics(): FirebaseCrashlytics {
         return Firebase.crashlytics
+    }
+
+    @Provides
+    @Singleton
+    fun provideAutenticacaoRepository(impl: FirebaseAutenticacaoRepository): AutenticacaoRepository {
+        return impl
     }
 
     @Provides

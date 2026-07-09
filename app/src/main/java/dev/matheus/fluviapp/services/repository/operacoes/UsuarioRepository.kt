@@ -3,7 +3,6 @@ package dev.matheus.fluviapp.services.repository.operacoes
 import android.util.Log
 import dev.matheus.fluviapp.database.dao.operacoes.UsuarioDao
 import dev.matheus.fluviapp.model.operacoes.Usuario
-import dev.matheus.fluviapp.services.repository.firebase.FirebaseAuthRepository
 import dev.matheus.fluviapp.services.repository.firebase.documents.UsuarioDocumento
 import dev.matheus.fluviapp.services.repository.firebase.documents.toUsuario
 import com.google.firebase.firestore.FirebaseFirestore
@@ -13,30 +12,14 @@ import kotlinx.coroutines.runBlocking
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/** Perfil/leitura do usuário (Room + espelho Firestore). Autenticação vive na porta
+ *  [dev.matheus.fluviapp.services.repository.firebase.autenticacao.AutenticacaoRepository]. */
 @Singleton
 class UsuarioRepository @Inject constructor(
     private val dao: UsuarioDao,
-    private val firebaseAuthRepository: FirebaseAuthRepository,
     private val firestore: FirebaseFirestore,
 ) {
     suspend fun salvar(usuario: Usuario) = dao.salvar(usuario)
-
-    fun autenticarUsuario(email: String, senha: String) = firebaseAuthRepository.autenticarUsuarioFirebase(email, senha)
-
-    fun cadastrar(email: String, senha: String) = firebaseAuthRepository.cadastrarUsuarioFirebase(email, senha)
-
-    /** Cria o perfil na VERDADE (Firestore users), chaveado pelo uid do Auth. Room sincroniza. */
-    fun criarPerfil(email: String, nome: String, cargo: String) {
-        val uid = firebaseAuthRepository.uidUsuarioAtual() ?: return
-        firestore.collection(COLLECTION_USERS).document(uid)
-            .set(UsuarioDocumento(email = email, nome = nome, cargo = cargo))
-    }
-
-    fun emailVerificado() = firebaseAuthRepository.emailVerificado()
-
-    fun enviarVerificacao() = firebaseAuthRepository.enviarVerificacaoEmail()
-
-    fun sair() = firebaseAuthRepository.sair()
 
     suspend fun carregarUsuarios() {
         firestore.collection(COLLECTION_USERS)
