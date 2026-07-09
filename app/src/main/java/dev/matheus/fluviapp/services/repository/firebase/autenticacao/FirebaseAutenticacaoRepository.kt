@@ -44,6 +44,13 @@ class FirebaseAutenticacaoRepository @Inject constructor(
         ResultadoAutenticacao.Falha(motivoDe(e))
     }
 
+    override suspend fun recuperarSenha(email: String): ResultadoAutenticacao = try {
+        firebaseAuth.sendPasswordResetEmail(email).await()
+        ResultadoAutenticacao.Sucesso(emailVerificado = false)
+    } catch (e: Exception) {
+        ResultadoAutenticacao.Falha(motivoDe(e))
+    }
+
     override suspend fun criarPerfil(email: String, nome: String, cargo: String) {
         val uid = firebaseAuth.currentUser?.uid ?: return
         firestore.collection(UsuarioRepository.COLLECTION_USERS).document(uid)

@@ -16,6 +16,8 @@ class FakeAutenticacaoRepository : AutenticacaoRepository {
 
     override suspend fun reenviarVerificacao(email: String, senha: String) = resultado
 
+    override suspend fun recuperarSenha(email: String) = resultado
+
     override suspend fun criarPerfil(email: String, nome: String, cargo: String) {
         perfilCriado = Triple(email, nome, cargo)
     }

@@ -58,6 +58,9 @@ fun NavGraphBuilder.loginGraph(
                 viewModel.reenviarVerificacao()
             },
             onClickCadastrar = onNavegaParaCadastro,
+            onClickRecuperarSenha = {
+                viewModel.recuperarSenha()
+            },
         )
     }
 

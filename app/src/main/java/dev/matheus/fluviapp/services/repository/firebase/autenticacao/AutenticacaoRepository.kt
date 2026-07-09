@@ -13,6 +13,9 @@ interface AutenticacaoRepository {
 
     suspend fun reenviarVerificacao(email: String, senha: String): ResultadoAutenticacao
 
+    /** Envia o e-mail de redefinição (link built-in do Firebase). `Sucesso` = enviado. */
+    suspend fun recuperarSenha(email: String): ResultadoAutenticacao
+
     suspend fun criarPerfil(email: String, nome: String, cargo: String)
 
     fun sair()

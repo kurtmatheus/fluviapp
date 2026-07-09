@@ -188,6 +188,8 @@
     <string name="error_email_ja_cadastrado">E-mail já cadastrado. Faça login.</string>
     <string name="msg_verificacao_reenviada">E-mail de verificação reenviado.</string>
     <string name="btn_reenviar_verificacao">Reenviar verificação</string>
+    <string name="btn_esqueci_senha">Esqueci a senha</string>
+    <string name="msg_recuperacao_enviada">E-mail de recuperação enviado.</string>
     <string name="title_cadastro">Criar Conta</string>
     <string name="label_nome_completo">Nome</string>
     <string name="label_confirmar_senha">Confirmar Senha</string>

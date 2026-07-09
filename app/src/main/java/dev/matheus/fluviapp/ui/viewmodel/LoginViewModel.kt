@@ -83,6 +83,32 @@ class LoginViewModel @Inject constructor(
         _uiState.update { it.copy(email = email) }
     }
 
+    fun recuperarSenha() {
+        val email = _uiState.value.email
+        if (email.isBlank()) {
+            _uiState.update { it.copy(isUsuarioError = true) }
+            loginFormHelper.exibeErro()
+            loginFormHelper.setMensagemErro(R.string.error_camp_obrig)
+            return
+        }
+        _uiState.update { it.copy(logando = true) }
+        viewModelScope.launch {
+            when (val resultado = autenticacaoRepository.recuperarSenha(email)) {
+                is ResultadoAutenticacao.Sucesso -> {
+                    loginFormHelper.exibeErro()
+                    loginFormHelper.setMensagemErro(R.string.msg_recuperacao_enviada)
+                    _uiState.value = _uiState.value.copy(logando = false)
+                }
+
+                is ResultadoAutenticacao.Falha -> {
+                    loginFormHelper.exibeErro()
+                    loginFormHelper.setMensagemErro(mapearMensagemErroAuth(resultado.motivo))
+                    _uiState.value = _uiState.value.copy(logando = false)
+                }
+            }
+        }
+    }
+
     fun validarLogin() {
         if (loginFormHelper.isFormularioValido()) {
             _uiState.update { it.copy(logando = true) }

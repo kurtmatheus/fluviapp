@@ -51,7 +51,8 @@ fun LoginScreen(
     onClickVisibilitySenha: () -> Unit = {},
     onClickLogar: () -> Unit = {},
     onClickReenviar: () -> Unit = {},
-    onClickCadastrar: () -> Unit = {}
+    onClickCadastrar: () -> Unit = {},
+    onClickRecuperarSenha: () -> Unit = {}
 ) {
     Column(
         modifier = modifier.fillMaxSize(),
@@ -165,6 +166,10 @@ fun LoginScreen(
                     TextButton(onClick = onClickReenviar) {
                         Text(text = stringResource(R.string.btn_reenviar_verificacao))
                     }
+                }
+
+                TextButton(onClick = onClickRecuperarSenha) {
+                    Text(text = stringResource(R.string.btn_esqueci_senha))
                 }
 
                 TextButton(onClick = onClickCadastrar) {
