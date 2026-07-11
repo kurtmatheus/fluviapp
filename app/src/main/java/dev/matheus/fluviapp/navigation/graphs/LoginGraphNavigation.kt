@@ -1,9 +1,12 @@
 package dev.matheus.fluviapp.navigation.graphs
 
+import android.util.Log
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
+import androidx.credentials.exceptions.GetCredentialCancellationException
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavType
@@ -13,12 +16,16 @@ import dev.matheus.fluviapp.R
 import dev.matheus.fluviapp.extensions.toastMessage
 import dev.matheus.fluviapp.navigation.destinations.ARG_EMAIL_PREFILL
 import dev.matheus.fluviapp.navigation.destinations.FluviAppGraphDestinations
+import dev.matheus.fluviapp.services.repository.firebase.autenticacao.GoogleCredentialProvider
 import dev.matheus.fluviapp.ui.screens.CadastroScreen
 import dev.matheus.fluviapp.ui.screens.LoginScreen
 import dev.matheus.fluviapp.ui.screens.RecuperarSenhaScreen
 import dev.matheus.fluviapp.ui.viewmodel.CadastroViewModel
 import dev.matheus.fluviapp.ui.viewmodel.LoginViewModel
 import dev.matheus.fluviapp.ui.viewmodel.RecuperarSenhaViewModel
+import kotlinx.coroutines.launch
+
+private const val TAG_LOGIN_GRAPH = "loginGraph"
 
 fun NavGraphBuilder.loginGraph(
     onNavegarParaMainScreen: () -> Unit,
@@ -34,6 +41,7 @@ fun NavGraphBuilder.loginGraph(
         val state by viewModel.uiState.collectAsState()
 
         val context = LocalContext.current
+        val scope = rememberCoroutineScope()
 
         // e-mail vindo do cadastro (colisao): pre-preenche uma vez e consome.
         LaunchedEffect(Unit) {
@@ -64,6 +72,22 @@ fun NavGraphBuilder.loginGraph(
             },
             onClickCadastrar = onNavegaParaCadastro,
             onClickRecuperarSenha = onNavegaParaRecuperarSenha,
+            onClickGoogle = {
+                scope.launch {
+                    try {
+                        val serverClientId = context.getString(R.string.default_web_client_id)
+                        val idToken = GoogleCredentialProvider.obterIdToken(context, serverClientId)
+                        viewModel.onNavegaParaMainScreen = onNavegarParaMainScreen
+                        viewModel.autenticarComGoogle(idToken)
+                    } catch (e: GetCredentialCancellationException) {
+                        Log.i(TAG_LOGIN_GRAPH, "Login Google cancelado pelo usuário")
+                    } catch (e: Exception) {
+                        // NoCredentialException, ProviderConfigurationException etc. entram aqui.
+                        Log.e(TAG_LOGIN_GRAPH, "Credential Manager falhou: ${e.javaClass.simpleName}: ${e.message}", e)
+                        viewModel.falhaLoginGoogle()
+                    }
+                }
+            },
         )
     }
 

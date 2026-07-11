@@ -190,6 +190,8 @@
     <string name="msg_verificacao_reenviada">E-mail de verificação reenviado.</string>
     <string name="btn_reenviar_verificacao">Reenviar verificação</string>
     <string name="btn_esqueci_senha">Esqueci a senha</string>
+    <string name="btn_entrar_google">Entrar com Google</string>
+    <string name="error_google">Falha ao entrar com Google. Tente novamente.</string>
     <string name="msg_recuperacao_enviada">E-mail de recuperação enviado.</string>
     <string name="title_recuperar_senha">Recuperar senha</string>
     <string name="msg_recuperar_senha_instrucao">Informe o e-mail cadastrado. Enviaremos um link para você redefinir sua senha.</string>

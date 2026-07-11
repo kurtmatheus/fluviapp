@@ -16,3 +16,15 @@ enum class MotivoFalhaAuth {
     EMAIL_JA_CADASTRADO,
     DESCONHECIDO,
 }
+
+/**
+ * Perfil autenticado em termos de domínio, lido de `users/{uid}` após o login. Usado para semear
+ * a sessão (Room + DataStore) sem depender do listener de `carregarUsuarios` (evita corrida no
+ * 1º login Google, quando o perfil acabou de ser criado).
+ */
+data class PerfilAutenticado(
+    val id: String,
+    val email: String,
+    val nome: String,
+    val cargo: String,
+)

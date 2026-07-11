@@ -16,6 +16,16 @@ interface AutenticacaoRepository {
     /** Envia o e-mail de redefinição (link built-in do Firebase). `Sucesso` = enviado. */
     suspend fun recuperarSenha(email: String): ResultadoAutenticacao
 
+    /**
+     * Autentica com o ID token do Google (obtido via Credential Manager na borda de UI) e
+     * auto-provisiona o perfil em `users` no 1º login (só se ausente). Contas Google já vêm com
+     * e-mail verificado.
+     */
+    suspend fun autenticarComGoogle(idToken: String): ResultadoAutenticacao
+
+    /** Perfil autoritativo do usuário autenticado (`users/{uid}`); null se ausente. */
+    suspend fun perfilAutenticado(): PerfilAutenticado?
+
     suspend fun criarPerfil(email: String, nome: String, cargo: String)
 
     fun sair()

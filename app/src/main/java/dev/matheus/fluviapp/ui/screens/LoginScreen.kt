@@ -18,6 +18,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -50,7 +51,8 @@ fun LoginScreen(
     onClickLogar: () -> Unit = {},
     onClickReenviar: () -> Unit = {},
     onClickCadastrar: () -> Unit = {},
-    onClickRecuperarSenha: (String) -> Unit = {}
+    onClickRecuperarSenha: (String) -> Unit = {},
+    onClickGoogle: () -> Unit = {}
 ) {
     Column(
         modifier = modifier.fillMaxSize(),
@@ -156,6 +158,14 @@ fun LoginScreen(
                     color = MaterialTheme.colorScheme.primary,
                     isProcessing = state.logando
                 )
+
+                OutlinedButton(
+                    modifier = modifier.fillMaxWidth(),
+                    onClick = onClickGoogle,
+                    enabled = !state.logando
+                ) {
+                    Text(text = stringResource(R.string.btn_entrar_google))
+                }
 
                 if (state.exibirReenviarVerificacao) {
                     TextButton(onClick = onClickReenviar) {

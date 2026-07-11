@@ -119,6 +119,53 @@ class LoginViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Login com Google: recebe o idToken (obtido na borda de UI via Credential Manager),
+     * autentica na porta, semeia o perfil (Room) e abre a sessão. O `LaunchedEffect(logado)` da
+     * tela cuida de sincronizar e navegar — mesmo caminho do login por e-mail/senha.
+     */
+    fun autenticarComGoogle(idToken: String) {
+        _uiState.update { it.copy(logando = true) }
+        viewModelScope.launch {
+            when (val resultado = autenticacaoRepository.autenticarComGoogle(idToken)) {
+                is ResultadoAutenticacao.Sucesso -> {
+                    val perfil = autenticacaoRepository.perfilAutenticado()
+                    if (perfil != null) {
+                        // Semeia o Room antes de marcar a sessão (evita corrida com o listener).
+                        usuarioRepository.salvar(
+                            Usuario(
+                                id = perfil.id,
+                                email = perfil.email,
+                                nome = perfil.nome,
+                                cargo = perfil.cargo,
+                            )
+                        )
+                        logarUsuario(usuarioRepository.salvarUsuarioAutenticado(perfil.email))
+                    } else {
+                        Log.e(TAG, "autenticarComGoogle: signIn OK mas perfil ausente em users/{uid}")
+                        loginFormHelper.exibeErro()
+                        loginFormHelper.setMensagemErro(R.string.error_falha_auth)
+                        _uiState.value = _uiState.value.copy(logando = false)
+                    }
+                }
+
+                is ResultadoAutenticacao.Falha -> {
+                    Log.e(TAG, "autenticarComGoogle: Falha motivo=${resultado.motivo}")
+                    loginFormHelper.exibeErro()
+                    loginFormHelper.setMensagemErro(mapearMensagemErroAuth(resultado.motivo))
+                    _uiState.value = _uiState.value.copy(logando = false)
+                }
+            }
+        }
+    }
+
+    /** Falha na borda do Credential Manager (não-cancelamento) — feedback ao usuário. */
+    fun falhaLoginGoogle() {
+        loginFormHelper.exibeErro()
+        loginFormHelper.setMensagemErro(R.string.error_google)
+        _uiState.update { it.copy(logando = false) }
+    }
+
     fun reenviarVerificacao() {
         val email = _uiState.value.email
         val senha = _uiState.value.senha
