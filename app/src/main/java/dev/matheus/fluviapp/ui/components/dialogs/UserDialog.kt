@@ -10,8 +10,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
+import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -24,11 +28,14 @@ import androidx.compose.ui.unit.dp
 import dev.matheus.fluviapp.R
 import dev.matheus.fluviapp.ui.components.texts.TextBoldWhiteItalic
 import dev.matheus.fluviapp.ui.components.texts.TextRegularWhiteItalic
+import dev.matheus.fluviapp.ui.theme.AquaAccent
 
 @Composable
 fun UserDialog(
     modifier: Modifier,
     username: String,
+    isDarkTheme: Boolean = false,
+    onToggleTheme: () -> Unit = {},
     onClickDeslogar: () -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -60,6 +67,36 @@ fun UserDialog(
                 thickness = 1.dp, color = White
             )
 
+            Row(
+                modifier = modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = if (isDarkTheme) Icons.Default.DarkMode else Icons.Default.LightMode,
+                        contentDescription = null,
+                        tint = White
+                    )
+                    TextBoldWhiteItalic(text = stringResource(id = R.string.label_tema_escuro))
+                }
+                Switch(
+                    checked = isDarkTheme,
+                    onCheckedChange = { onToggleTheme() },
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = AquaAccent,
+                        checkedTrackColor = White
+                    )
+                )
+            }
+
+            HorizontalDivider(
+                thickness = 1.dp, color = White
+            )
+
             TextButton(
                 modifier = modifier.fillMaxWidth(),
                 onClick = onClickDeslogar
@@ -82,6 +119,7 @@ private fun UserDialogPreview() {
     UserDialog(
         modifier = Modifier,
         username = "Kurt",
+        isDarkTheme = true,
         onClickDeslogar = {},
         onDismiss = {}
     )

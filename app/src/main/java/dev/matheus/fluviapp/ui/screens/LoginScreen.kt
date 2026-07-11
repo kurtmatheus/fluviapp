@@ -1,6 +1,5 @@
 package dev.matheus.fluviapp.ui.screens
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -25,8 +24,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -41,6 +38,7 @@ import dev.matheus.fluviapp.R
 import dev.matheus.fluviapp.ui.components.forms.buttons.CommonIconButton
 import dev.matheus.fluviapp.ui.components.forms.fields.FormTextFieldBrownLeadingIcon
 import dev.matheus.fluviapp.ui.components.forms.fields.FormTextFieldBrownLeadingTrailingIcon
+import dev.matheus.fluviapp.ui.components.texts.FluviWordmark
 import dev.matheus.fluviapp.ui.components.texts.TextRegularBrownItalic
 import dev.matheus.fluviapp.ui.states.LoginUiState
 
@@ -64,12 +62,9 @@ fun LoginScreen(
                 .fillMaxWidth()
                 .weight(1f)
         ) {
-            Image(
-                painter = painterResource(id = R.drawable.logo2),
-                modifier = modifier
-                    .size(250.dp),
-                contentScale = ContentScale.Crop,
-                contentDescription = stringResource(R.string.description_logo_do_app),
+            FluviWordmark(
+                modifier = modifier.size(250.dp),
+                fontSize = 44.sp
             )
         }
 

@@ -7,68 +7,58 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
-import androidx.compose.ui.graphics.Color.Companion.Black
-import androidx.compose.ui.graphics.Color.Companion.White
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
-private val darkColorScheme = darkColorScheme(
-    primary = Black,
-    secondary = NavyBlue,
-    tertiary = Yellow,
-    onBackground = Orange,
-    onPrimary = Orange,
-    onSecondary = White
+// Tema escuro: fundo mais profundo, texto claro, accent teal claro.
+val DarkColors = darkColorScheme(
+    primary = AquaAccent,
+    onPrimary = AbyssNavy,
+    secondary = HeaderNavy,
+    onSecondary = MistGray,
+    tertiary = SteelTeal,
+    background = AbyssNavy,
+    onBackground = MistGray,
+    surface = HeaderNavy,
+    onSurface = MistGray,
+    outline = SteelTeal
 )
 
-private val lightColorScheme = lightColorScheme(
-    primary = Orange,
-    secondary = NavyBlue,
-    tertiary = Yellow,
-    onBackground = Brown,
-    onPrimary = White,
-    onSecondary = White
-
-    /* Other default colors to override
-background = Color(0xFFFFFBFE),
-surface = Color(0xFFFFFBFE),
-onPrimary = Color.White,
-onSecondary = Color.White,
-onTertiary = Color.White,
-onBackground = Color(0xFF1C1B1F),
-onSurface = Color(0xFF1C1B1F),
-*/
+// Tema claro: inverte fundo↔texto usando a mesma paleta; header navy fixo (marca).
+val LightColors = lightColorScheme(
+    primary = SteelTeal,
+    onPrimary = MistGray,
+    secondary = HeaderNavy,
+    onSecondary = MistGray,
+    tertiary = AquaAccent,
+    background = MistGray,
+    onBackground = AbyssNavy,
+    surface = SurfaceLight,
+    onSurface = AbyssNavy,
+    outline = SteelTeal
 )
 
 @Composable
 fun FluviAppTheme(
-        darkTheme: Boolean = isSystemInDarkTheme(),
-        // Dynamic color is available on Android 12+
-        dynamicColor: Boolean = true,
-        content: @Composable () -> Unit
+    darkTheme: Boolean = isSystemInDarkTheme(),
+    content: @Composable () -> Unit
 ) {
-    val colorScheme = when {
-//        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-//            val context = LocalContext.current
-//            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-//        }
+    val colorScheme = if (darkTheme) DarkColors else LightColors
 
-//        darkTheme -> darkColorScheme
-        else -> lightColorScheme
-    }
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
-            window.statusBarColor = colorScheme.primary.toArgb()
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = darkTheme
+            // Header navy fixo nos dois temas → status bar acompanha, com ícones claros.
+            window.statusBarColor = HeaderNavy.toArgb()
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = false
         }
     }
 
     MaterialTheme(
-            colorScheme = colorScheme,
-            typography = Typography,
-            content = content
+        colorScheme = colorScheme,
+        typography = Typography,
+        content = content
     )
 }

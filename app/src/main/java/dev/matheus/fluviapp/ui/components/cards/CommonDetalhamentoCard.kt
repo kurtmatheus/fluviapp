@@ -1,14 +1,11 @@
 package dev.matheus.fluviapp.ui.components.cards
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
-import dev.matheus.fluviapp.R
+import androidx.compose.ui.unit.sp
+import dev.matheus.fluviapp.ui.components.texts.FluviWordmark
 import dev.matheus.fluviapp.sampledata.dadosPassagemSample
 import dev.matheus.fluviapp.ui.components.contents.DetalhamentoPassagemContent
 import dev.matheus.fluviapp.ui.states.passagem.DetalhesPassagemState
@@ -21,11 +18,9 @@ fun CommonDetalhamentoCard(
     Box(
         modifier = modifier
     ) {
-        Image(
+        FluviWordmark(
             modifier = modifier.matchParentSize(),
-            painter = painterResource(R.drawable.logo2),
-            contentDescription = stringResource(R.string.description_logo_1),
-            contentScale = ContentScale.Fit,
+            fontSize = 56.sp,
             alpha = 0.3f
         )
 

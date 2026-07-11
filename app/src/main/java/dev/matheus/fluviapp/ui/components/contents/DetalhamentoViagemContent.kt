@@ -1,6 +1,5 @@
 package dev.matheus.fluviapp.ui.components.contents
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -12,13 +11,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import dev.matheus.fluviapp.R
 import dev.matheus.fluviapp.model.screendata.DadosViagemCard
 import dev.matheus.fluviapp.sampledata.listaDadosDadosViagemHomeSampleCards
+import dev.matheus.fluviapp.ui.components.texts.FluviWordmark
 import dev.matheus.fluviapp.ui.components.texts.TextRegularBrownItalic
 
 @Composable
@@ -37,10 +37,9 @@ fun DetalhamentoViagemContent(
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Image(
+            FluviWordmark(
                 modifier = modifier.height(65.dp),
-                painter = painterResource(id = R.drawable.logo1),
-                contentDescription = stringResource(id = R.string.description_logo_1)
+                fontSize = 26.sp
             )
 
             TextRegularBrownItalic(

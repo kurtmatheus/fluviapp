@@ -1,6 +1,5 @@
 package dev.matheus.fluviapp.ui.components.appbars
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -23,10 +22,13 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import dev.matheus.fluviapp.R
+import dev.matheus.fluviapp.ui.components.texts.FluviWordmark
 import dev.matheus.fluviapp.ui.components.texts.TextRegularWhiteItalic
 import dev.matheus.fluviapp.ui.components.texts.TextTitleWhiteItalic
-import dev.matheus.fluviapp.ui.theme.NavyBlue
+import dev.matheus.fluviapp.ui.theme.AquaAccent
+import dev.matheus.fluviapp.ui.theme.HeaderNavy
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -44,13 +46,14 @@ fun FluviTopAppBar(
     if (isMainTopAppBar) {
         TopAppBar(
             title = {
-                Image(
-                    painter = painterResource(id = R.drawable.logo1),
-                    contentDescription = stringResource(R.string.description_logo_1)
+                FluviWordmark(
+                    fontSize = 22.sp,
+                    fluviColor = AquaAccent,
+                    appColor = Color.White
                 )
             },
             colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                containerColor = NavyBlue,
+                containerColor = HeaderNavy,
                 titleContentColor = Color.White,
                 actionIconContentColor = Color.White
             ),
@@ -85,7 +88,7 @@ fun FluviTopAppBar(
                 TextTitleWhiteItalic(text = stringResource(id = title))
             },
             colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                containerColor = NavyBlue,
+                containerColor = HeaderNavy,
                 titleContentColor = Color.White
             ), actions = {
                 if(isShowRightIcon) {

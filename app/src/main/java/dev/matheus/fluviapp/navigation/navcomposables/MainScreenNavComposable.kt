@@ -1,7 +1,9 @@
 package dev.matheus.fluviapp.navigation.navcomposables
 
 import android.os.Build
+import androidx.activity.ComponentActivity
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
@@ -18,6 +20,7 @@ import dev.matheus.fluviapp.ui.screens.MainScreen
 import dev.matheus.fluviapp.ui.states.MainScreenState
 import dev.matheus.fluviapp.ui.states.MainScreenState.HOME
 import dev.matheus.fluviapp.ui.viewmodel.MainScreenViewModel
+import dev.matheus.fluviapp.ui.viewmodel.ThemeViewModel
 import kotlinx.coroutines.launch
 
 @RequiresApi(Build.VERSION_CODES.S)
@@ -40,6 +43,11 @@ fun NavGraphBuilder.mainScreenNavComposable(
 
         val coroutineScope = rememberCoroutineScope()
         val context = LocalContext.current
+
+        // Mesma instância que a MainActivity usa p/ dirigir o tema (escopo Activity).
+        val themeViewModel = hiltViewModel<ThemeViewModel>(context as ComponentActivity)
+        val temaEscuro by themeViewModel.temaEscuro.collectAsState()
+        val escuro = temaEscuro ?: isSystemInDarkTheme()
 
         RequestMultiplePermissions(
             context = context,
@@ -95,7 +103,9 @@ fun NavGraphBuilder.mainScreenNavComposable(
             onClickAdicionarPassagem = onNavegaParaFormularioNovaPassagemComViagem,
             onRefresh = {
                 viewModel.refresh()
-            }
+            },
+            isDarkTheme = escuro,
+            onToggleTheme = { themeViewModel.alternarTema(escuro) }
         )
     }
 }

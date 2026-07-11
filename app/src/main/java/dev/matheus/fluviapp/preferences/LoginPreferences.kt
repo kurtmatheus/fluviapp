@@ -13,4 +13,5 @@ object PreferencesKey {
     val LOGADO = booleanPreferencesKey("logado")
     val USUARIO_ATUAL = stringPreferencesKey("usuario_atual")
     val CARGO_ATUAL = stringPreferencesKey("cargo_atual")
+    val TEMA_ESCURO = booleanPreferencesKey("tema_escuro")
 }

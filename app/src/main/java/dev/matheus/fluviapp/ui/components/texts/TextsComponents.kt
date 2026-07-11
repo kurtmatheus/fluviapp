@@ -14,7 +14,6 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import dev.matheus.fluviapp.R
-import dev.matheus.fluviapp.ui.theme.NavyBlue
 
 @Composable
 fun TextTitleBrownItalic(
@@ -191,7 +190,8 @@ fun TextBoldNavyBlue(
         text = text,
         fontWeight = FontWeight(700),
         fontSize = 14.sp,
-        color = NavyBlue
+        // Roteado pelo tema (accent) — o NavyBlue fixo sumia sobre o fundo navy do tema escuro.
+        color = MaterialTheme.colorScheme.primary
     )
 }
 

@@ -29,7 +29,9 @@ fun MainScreen(
     onDismissUserDialog: () -> Unit = {},
     onClickDeslogar: () -> Unit = {},
     onClickAdicionarPassagem: (String) -> Unit = {},
-    onRefresh: () -> Unit = {}
+    onRefresh: () -> Unit = {},
+    isDarkTheme: Boolean = false,
+    onToggleTheme: () -> Unit = {}
 ) {
     CommonScreen(
         modifier = Modifier,
@@ -55,6 +57,8 @@ fun MainScreen(
                 UserDialog(
                     modifier = modifier,
                     username = state.userName,
+                    isDarkTheme = isDarkTheme,
+                    onToggleTheme = onToggleTheme,
                     onClickDeslogar = onClickDeslogar,
                     onDismiss = onDismissUserDialog
                 )

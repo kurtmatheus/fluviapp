@@ -1,6 +1,5 @@
 package dev.matheus.fluviapp.ui.components.dialogs
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
@@ -19,20 +19,22 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.layer.drawLayer
 import androidx.compose.ui.graphics.rememberGraphicsLayer
-import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import dev.matheus.fluviapp.R
 import dev.matheus.fluviapp.model.screendata.DadosPassagem
 import dev.matheus.fluviapp.sampledata.dadosPassagemSample
 import dev.matheus.fluviapp.sampledata.dadosPassagemVeiculoSample
 import dev.matheus.fluviapp.ui.components.contents.CommonRowDetalhamento
+import dev.matheus.fluviapp.ui.components.texts.FluviWordmark
 import dev.matheus.fluviapp.ui.components.texts.TextRegularBrown
 import dev.matheus.fluviapp.ui.components.texts.TextSubTitleBrownBold
 import dev.matheus.fluviapp.ui.components.texts.TextTitleBrownRegular
 import dev.matheus.fluviapp.ui.screens.forms.CommonScreenNoBottom
+import dev.matheus.fluviapp.ui.theme.LightColors
 import kotlinx.coroutines.launch
 
 @Composable
@@ -48,9 +50,9 @@ fun ImpressaoDigitalDialog(
     Dialog(
         onDismissRequest = onDismiss
     ) {
-        val logo1 = ImageBitmap.imageResource(id = R.drawable.logo1)
-        val logo2 = ImageBitmap.imageResource(id = R.drawable.logo2)
-
+        // Ticket é capturado p/ impressão (fundo branco) — força esquema claro p/ o texto/wordmark
+        // saírem escuros e legíveis independente do tema do app.
+        MaterialTheme(colorScheme = LightColors) {
         Box(
             modifier = modifier
                 .fillMaxWidth()
@@ -65,12 +67,10 @@ fun ImpressaoDigitalDialog(
                     drawLayer(graphicsLayer)
                 }
         ) {
-            Image(
+            FluviWordmark(
                 modifier = modifier.matchParentSize(),
-                bitmap = logo2,
-                alignment = Alignment.Center,
-                alpha = 0.2f,
-                contentDescription = stringResource(R.string.description_logo_do_app)
+                fontSize = 64.sp,
+                alpha = 0.15f
             )
 
             Column(
@@ -82,11 +82,9 @@ fun ImpressaoDigitalDialog(
                         .fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Image(
-                        modifier = modifier.offset(y = (-40).dp),
-                        bitmap = logo1,
-                        alignment = Alignment.Center,
-                        contentDescription = stringResource(R.string.description_logo_do_app)
+                    FluviWordmark(
+                        modifier = modifier.padding(16.dp),
+                        fontSize = 28.sp
                     )
                     TextTitleBrownRegular(
                         modifier = modifier.padding(40.dp),
@@ -171,6 +169,7 @@ fun ImpressaoDigitalDialog(
                     onProcessaImageBitmap(graphicsLayer.toImageBitmap())
                 }
             }
+        }
         }
     }
 }

@@ -150,6 +150,7 @@
     <string name="label_menu_viagens">Viagens</string>
     <string name="label_menu_agentes">Agentes</string>
     <string name="label_lotacao">Lotação</string>
+    <string name="label_tema_escuro">Tema escuro</string>
 
     <!-- Descriptions -->
     <string name="description_logo_do_app">Logo do FluviApp</string>
