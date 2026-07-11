@@ -5,20 +5,16 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import dev.matheus.fluviapp.R
 import dev.matheus.fluviapp.model.mappers.ViagemDadosViagemMapper
-import dev.matheus.fluviapp.model.operacoes.Usuario.Cargo.ADM
-import dev.matheus.fluviapp.model.operacoes.Usuario.Cargo.DIRETOR
+import dev.matheus.fluviapp.model.operacoes.PermissoesUsuario
+import dev.matheus.fluviapp.model.screendata.DadosBotoesMenus
+import dev.matheus.fluviapp.model.screendata.SecaoMenu
 import dev.matheus.fluviapp.preferences.PreferencesKey
 import dev.matheus.fluviapp.services.repository.cadastro.passagem.AgenteRepository
 import com.google.firebase.auth.FirebaseAuth
 import dev.matheus.fluviapp.services.repository.firebase.PassagemFirestoreRepository
 import dev.matheus.fluviapp.services.repository.firebase.ViagemFirestoreRepository
 import dev.matheus.fluviapp.ui.states.MainScreenState
-import dev.matheus.fluviapp.ui.states.MainScreenState.HOME
-import dev.matheus.fluviapp.ui.states.MainScreenState.LOADING
-import dev.matheus.fluviapp.ui.states.MainScreenState.OPERACOES
-import dev.matheus.fluviapp.ui.states.MainScreenState.PASSAGENS
 import dev.matheus.fluviapp.ui.states.MainScreenUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
@@ -44,29 +40,22 @@ class MainScreenViewModel @Inject constructor(
         get() = _uiState.asStateFlow()
 
     init {
+        _uiState.update { it.copy(mainScreenState = MainScreenState.LOADING) }
         obterUsuario()
-        atualizarListaViagem(false)
+        atualizarListaViagem(isRefreshing = false)
         sincronizarFirestore()
     }
 
     private fun obterUsuario() {
-        atualizaMainPage(LOADING)
         viewModelScope.launch {
-            dataStore.data.collect {
-                val username = it[PreferencesKey.USUARIO_ATUAL]
-                val logado = it[PreferencesKey.LOGADO]
-                val cargo = it[PreferencesKey.CARGO_ATUAL]
-
-                if (logado != null && logado && cargo != null) {
-                    atualizaEhDiretorOuAdm(cargo)
-                }
-
-                if (username != null) {
-                    _uiState.update { state ->
-                        state.copy(
-                            userName = username
-                        )
-                    }
+            dataStore.data.collect { prefs ->
+                val username = prefs[PreferencesKey.USUARIO_ATUAL]
+                val cargo = prefs[PreferencesKey.CARGO_ATUAL]
+                _uiState.update { state ->
+                    state.copy(
+                        userName = username ?: state.userName,
+                        secoesVisiveis = PermissoesUsuario.secoesVisiveis(cargo),
+                    )
                 }
             }
         }
@@ -75,96 +64,24 @@ class MainScreenViewModel @Inject constructor(
     private fun atualizarListaViagem(isRefreshing: Boolean) {
         viewModelScope.launch {
             delay(1000)
-            val listaViagensCard = viagemRepository
-                .obterTodas()
-                .map {
-                    viagemMapper.map(it)
-                }
-
+            val listaViagensCard = viagemRepository.obterTodas().map { viagemMapper.map(it) }
             _uiState.update {
                 it.copy(
-                    listaViagens = listaViagensCard
+                    listaViagens = listaViagensCard,
+                    // Só volta p/ HOME no carregamento inicial; refresh preserva a seção atual.
+                    mainScreenState = if (isRefreshing) it.mainScreenState else MainScreenState.HOME,
                 )
             }
-            if (isRefreshing) {
-                atualizarIsRefresing()
-            }
-            atualizaMainPage(HOME)
-
+            if (isRefreshing) atualizarIsRefresing()
         }
     }
 
-    fun setExibirUserDialog() {
-        _uiState.update {
-            it.copy(
-                exibirUserDialog = !it.exibirUserDialog
-            )
-        }
+    fun irParaHome() {
+        _uiState.update { it.copy(mainScreenState = MainScreenState.HOME) }
     }
 
-    fun atualizaMainPage(
-        page: MainScreenState,
-    ) {
-        when (page) {
-            is LOADING -> {
-                _uiState.update {
-                    it.copy(
-                        mainScreenState = page,
-                        title = R.string.subtitle_viagens_disponiveis,
-                        homeActive = true,
-                        passagensActive = false,
-                        operacoesActive = false
-                    )
-                }
-            }
-
-            is HOME -> {
-                _uiState.update {
-                    it.copy(
-                        mainScreenState = page,
-                        title = R.string.subtitle_viagens_disponiveis,
-                        homeActive = true,
-                        passagensActive = false,
-                        operacoesActive = false
-                    )
-                }
-            }
-
-            is PASSAGENS -> {
-                _uiState.update {
-                    it.copy(
-                        mainScreenState = page,
-                        title = R.string.subtitle_menu_passagens,
-                        homeActive = false,
-                        passagensActive = true,
-                        operacoesActive = false
-                    )
-                }
-            }
-
-            is OPERACOES -> {
-                _uiState.update {
-                    it.copy(
-                        mainScreenState = page,
-                        title = R.string.subtitle_menu_operacoes,
-                        homeActive = false,
-                        passagensActive = false,
-                        operacoesActive = true
-                    )
-                }
-            }
-        }
-    }
-
-    private fun atualizaEhDiretorOuAdm(cargo: String) {
-        if (cargo == ADM.name ||
-            cargo == DIRETOR.name) {
-            _uiState.update { state ->
-                state.copy(
-                    isDiretorOuAdm = true
-                )
-            }
-        }
+    fun selecionarSecao(secao: SecaoMenu, acoes: List<DadosBotoesMenus>) {
+        _uiState.update { it.copy(mainScreenState = MainScreenState.SECAO(secao, acoes)) }
     }
 
     suspend fun deslogar() {

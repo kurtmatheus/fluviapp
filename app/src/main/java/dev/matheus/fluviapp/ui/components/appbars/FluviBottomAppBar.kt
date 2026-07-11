@@ -3,148 +3,100 @@ package dev.matheus.fluviapp.ui.components.appbars
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color.Companion.White
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import dev.matheus.fluviapp.R
-import dev.matheus.fluviapp.ui.theme.NavyBlue
+import dev.matheus.fluviapp.ui.theme.FluviAppTheme
 
+/**
+ * Bottom bar remodelada: dois itens — Início e Menu (abre o drawer lateral). Temada via
+ * MaterialTheme (segue claro/escuro), aposentando o NavyBlue/White fixos do modelo antigo.
+ */
 @Composable
 fun FluviBottomAppBar(
     modifier: Modifier,
-    homeActive: Boolean,
-    passagensActive: Boolean,
-    viagensActive: Boolean,
-    isShowMenuViagens: Boolean,
-    onClickHome: () -> Unit,
-    onClickMenuPassagens: () -> Unit,
-    onClickMenuViagens: () -> Unit
+    inicioAtivo: Boolean,
+    onClickInicio: () -> Unit,
+    onClickMenu: () -> Unit,
 ) {
     BottomAppBar(
         modifier = modifier,
-        containerColor = NavyBlue,
-        contentColor = White
+        containerColor = MaterialTheme.colorScheme.secondary,
+        contentColor = MaterialTheme.colorScheme.onSecondary,
     ) {
         Row(
-            modifier = modifier
-                .fillMaxWidth(),
+            modifier = modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            ButtonBottomAppBar(
+            ItemBottomAppBar(
                 modifier = modifier,
-                onClick = onClickHome,
-                icone = R.drawable.ic_home,
-                iconDescription = R.string.description_icon_home,
-                tituloBotao = R.string.btn_menu_home,
-                active = homeActive,
+                onClick = onClickInicio,
+                icone = Icons.Default.Home,
+                titulo = R.string.btn_menu_inicio,
+                ativo = inicioAtivo,
             )
-            ButtonBottomAppBar(
+            ItemBottomAppBar(
                 modifier = modifier,
-                onClick = onClickMenuPassagens,
-                icone = R.drawable.ic_bilhete,
-                iconDescription = R.string.description_icon_passagens,
-                tituloBotao = R.string.btn_menu_passagens,
-                active = passagensActive,
+                onClick = onClickMenu,
+                icone = Icons.Default.Menu,
+                titulo = R.string.btn_menu,
+                ativo = false,
             )
-            if (isShowMenuViagens) {
-                ButtonBottomAppBar(
-                    modifier = modifier,
-                    onClick = onClickMenuViagens,
-                    icone = R.drawable.ic_oper_24,
-                    iconDescription = R.string.description_icon_settings,
-                    tituloBotao = R.string.btn_menu_operacoes,
-                    active = viagensActive,
-                )
-            }
         }
     }
 }
 
 @Composable
-private fun ButtonBottomAppBar(
+private fun ItemBottomAppBar(
     modifier: Modifier,
     onClick: () -> Unit,
-    icone: Int,
-    iconDescription: Int,
-    tituloBotao: Int,
-    active: Boolean
+    icone: ImageVector,
+    titulo: Int,
+    ativo: Boolean,
 ) {
-    val background = if (active) modifier.background(color = White.copy(alpha = 0.1f))
-
-    else modifier.clickable { onClick() }
-
-    Box(
-        modifier = background
+    val fundo = if (ativo) {
+        modifier.background(MaterialTheme.colorScheme.onSecondary.copy(alpha = 0.12f))
+    } else {
+        modifier
+    }
+    Column(
+        modifier = fundo
+            .clickable { onClick() }
+            .padding(horizontal = 32.dp, vertical = 6.dp),
+        verticalArrangement = Arrangement.spacedBy(2.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            Box(
-                modifier = modifier
-                    .padding(10.dp, 10.dp)
-            ) {
-                VerticalDivider(
-                    modifier = modifier
-                        .fillMaxHeight()
-                        .width(1.dp),
-                    color = White
-                )
-            }
-            Column(
-                modifier = modifier.fillMaxHeight(),
-                verticalArrangement = Arrangement.SpaceEvenly,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-
-                Icon(
-                    painter = painterResource(id = icone),
-                    contentDescription = stringResource(id = iconDescription)
-                )
-                Text(text = stringResource(id = tituloBotao))
-            }
-            Box(
-                modifier = modifier
-                    .padding(10.dp, 10.dp)
-            ) {
-                VerticalDivider(
-                    modifier = modifier
-                        .fillMaxHeight()
-                        .width(1.dp),
-                    color = White
-                )
-            }
-        }
+        Icon(imageVector = icone, contentDescription = stringResource(id = titulo))
+        Text(text = stringResource(id = titulo))
     }
 }
 
 @Preview(showBackground = true)
 @Composable
 private fun BottomAppBarPreview() {
-    FluviBottomAppBar(
-        modifier = Modifier,
-        homeActive = true,
-        passagensActive = false,
-        viagensActive = false,
-        isShowMenuViagens = true,
-        onClickHome = {},
-        onClickMenuPassagens = {},
-        onClickMenuViagens = {}
-    )
+    FluviAppTheme {
+        FluviBottomAppBar(
+            modifier = Modifier,
+            inicioAtivo = true,
+            onClickInicio = {},
+            onClickMenu = {},
+        )
+    }
 }

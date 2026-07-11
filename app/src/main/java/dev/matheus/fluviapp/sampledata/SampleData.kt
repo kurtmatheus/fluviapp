@@ -26,7 +26,6 @@ import dev.matheus.fluviapp.model.screendata.DadosBotoesMenus
 import dev.matheus.fluviapp.model.screendata.DadosImpressora
 import dev.matheus.fluviapp.model.screendata.DadosPassagem
 import dev.matheus.fluviapp.model.screendata.DadosViagemCard
-import dev.matheus.fluviapp.model.screendata.MenuBotoesCategoria
 import dev.matheus.fluviapp.model.viagem.Empresa
 import dev.matheus.fluviapp.model.viagem.Navio
 import java.math.BigDecimal
@@ -102,19 +101,6 @@ val listaBotoesMenuAgenteSample = listOf(
     DadosBotoesMenus(
         title = R.string.btn_pesquisar_agente,
         icon = R.drawable.ic_lupa_75
-    )
-)
-
-val listaMenuBotoesCategoriaSample = listOf(
-    MenuBotoesCategoria(
-        tituloCategoria = R.string.label_menu_viagens,
-        iconCategoria = R.drawable.ic_navio_75,
-        dadosBotoesMenus = listaBotoesMenuViagensSample
-    ),
-    MenuBotoesCategoria(
-        tituloCategoria = R.string.label_menu_agentes,
-        iconCategoria = R.drawable.ic_user_75,
-        dadosBotoesMenus = listaBotoesMenuAgenteSample
     )
 )
 

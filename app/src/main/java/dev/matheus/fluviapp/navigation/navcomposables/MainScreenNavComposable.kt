@@ -13,12 +13,10 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import dev.matheus.fluviapp.R
 import dev.matheus.fluviapp.model.screendata.DadosBotoesMenus
-import dev.matheus.fluviapp.model.screendata.MenuBotoesCategoria
+import dev.matheus.fluviapp.model.screendata.SecaoMenu
 import dev.matheus.fluviapp.navigation.destinations.FluviAppNavComposableDestinations
 import dev.matheus.fluviapp.ui.components.RequestMultiplePermissions
 import dev.matheus.fluviapp.ui.screens.MainScreen
-import dev.matheus.fluviapp.ui.states.MainScreenState
-import dev.matheus.fluviapp.ui.states.MainScreenState.HOME
 import dev.matheus.fluviapp.ui.viewmodel.MainScreenViewModel
 import dev.matheus.fluviapp.ui.viewmodel.ThemeViewModel
 import kotlinx.coroutines.launch
@@ -59,109 +57,38 @@ fun NavGraphBuilder.mainScreenNavComposable(
             )
         )
 
+        // Ações (cadastrar/pesquisar) de cada seção do menu — liga os cards às rotas.
+        fun acoesDe(secao: SecaoMenu): List<DadosBotoesMenus> = when (secao) {
+            SecaoMenu.PASSAGEM -> listOf(
+                DadosBotoesMenus(R.string.btn_pesquisar_passagens, R.drawable.ic_lupa_75, onNavegaParaFormularioPesquisaPassagem),
+                DadosBotoesMenus(R.string.btn_balanco_vendas, R.drawable.ic_relatorio_75, onNavegaParaBalanco),
+            )
+
+            SecaoMenu.VIAGEM -> listOf(
+                DadosBotoesMenus(R.string.btn_nova_viagem, R.drawable.ic_add_75, onNavegaParaFormularioNovaViagem),
+                DadosBotoesMenus(R.string.btn_pesquisar_viagens, R.drawable.ic_lupa_75, onNavegaParaFormularioPesquisaViagem),
+            )
+
+            SecaoMenu.AGENTE -> listOf(
+                DadosBotoesMenus(R.string.btn_novo_agente, R.drawable.ic_add_75, onNavegaParaFormularioNovoAgente),
+                DadosBotoesMenus(R.string.btn_pesquisar_agente, R.drawable.ic_lupa_75, onNavegaParaFormularioPesquisaAgente),
+            )
+        }
+
         MainScreen(
             state = state,
-            onClickHome = {
-                viewModel.atualizaMainPage(HOME)
-            },
-            onClickMenuPassagens = {
-                viewModel.atualizaMainPage(
-                    MainScreenState.PASSAGENS(
-                        listaBotoesMenus = getListaBotoesMenuPassagens(
-                            onNavegaParaFormularioPesquisaPassagem = onNavegaParaFormularioPesquisaPassagem,
-                            onNavegaParaRelatorios = onNavegaParaBalanco
-                        )
-                    )
-                )
-            },
-            onClickMenuOperacoes = {
-                viewModel.atualizaMainPage(
-                    MainScreenState.OPERACOES(
-                        listaBotoesMenus = getListaBotoesMenuOperacoes(
-                            onNavegaParaFormularioNovaViagem = onNavegaParaFormularioNovaViagem,
-                            onNavegaParaFormularioPesquisaViagem = onNavegaParaFormularioPesquisaViagem,
-                            onNavegaParaFormularioNovoAgente = onNavegaParaFormularioNovoAgente,
-                            onNavegaParaFormularioPesquisaAgente = onNavegaParaFormularioPesquisaAgente
-                        )
-                    )
-                )
-            },
-            onClickUsername = {
-                viewModel.setExibirUserDialog()
-            },
-            onDismissUserDialog = {
-                viewModel.setExibirUserDialog()
-            },
+            onClickInicio = { viewModel.irParaHome() },
+            onSelecionarSecao = { secao -> viewModel.selecionarSecao(secao, acoesDe(secao)) },
             onClickDeslogar = {
                 coroutineScope.launch {
-                    viewModel.setExibirUserDialog()
                     viewModel.deslogar()
                     onNavegaParaLogin()
-
                 }
             },
             onClickAdicionarPassagem = onNavegaParaFormularioNovaPassagemComViagem,
-            onRefresh = {
-                viewModel.refresh()
-            },
+            onRefresh = { viewModel.refresh() },
             isDarkTheme = escuro,
-            onToggleTheme = { themeViewModel.alternarTema(escuro) }
+            onToggleTheme = { themeViewModel.alternarTema(escuro) },
         )
     }
 }
-
-private fun getListaBotoesMenuOperacoes(
-    onNavegaParaFormularioNovaViagem: () -> Unit,
-    onNavegaParaFormularioPesquisaViagem: () -> Unit,
-    onNavegaParaFormularioNovoAgente: () -> Unit,
-    onNavegaParaFormularioPesquisaAgente: () -> Unit,
-) = listOf(
-    MenuBotoesCategoria(
-        tituloCategoria = R.string.label_menu_viagens,
-        iconCategoria = R.drawable.ic_navio_75,
-        dadosBotoesMenus = listOf(
-            DadosBotoesMenus(
-                title = R.string.btn_nova_viagem,
-                icon = R.drawable.ic_add_75,
-                onClick = onNavegaParaFormularioNovaViagem
-            ),
-            DadosBotoesMenus(
-                title = R.string.btn_pesquisar_viagens,
-                icon = R.drawable.ic_lupa_75,
-                onClick = onNavegaParaFormularioPesquisaViagem
-            )
-        )
-    ),
-//    MenuBotoesCategoria(
-//        tituloCategoria = R.string.label_menu_agentes,
-//        iconCategoria = R.drawable.ic_user_75,
-//        dadosBotoesMenus = listOf(
-//            DadosBotoesMenus(
-//                title = R.string.btn_novo_agente,
-//                icon = R.drawable.ic_add_75,
-//                onClick = onNavegaParaFormularioNovoAgente
-//            ),
-//            DadosBotoesMenus(
-//                title = R.string.btn_pesquisar_agente,
-//                icon = R.drawable.ic_lupa_75,
-//                onClick = onNavegaParaFormularioPesquisaAgente
-//            )
-//        )
-//    )
-)
-
-private fun getListaBotoesMenuPassagens(
-    onNavegaParaFormularioPesquisaPassagem: () -> Unit,
-    onNavegaParaRelatorios: () -> Unit,
-) = listOf(
-    DadosBotoesMenus(
-        title = R.string.btn_pesquisar_passagens,
-        icon = R.drawable.ic_lupa_75,
-        onClick = onNavegaParaFormularioPesquisaPassagem
-    ),
-    DadosBotoesMenus(
-        title = R.string.btn_balanco_vendas,
-        icon = R.drawable.ic_relatorio_75,
-        onClick = onNavegaParaRelatorios
-    )
-)
