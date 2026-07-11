@@ -50,7 +50,7 @@ fun LoginScreen(
     onClickLogar: () -> Unit = {},
     onClickReenviar: () -> Unit = {},
     onClickCadastrar: () -> Unit = {},
-    onClickRecuperarSenha: () -> Unit = {}
+    onClickRecuperarSenha: (String) -> Unit = {}
 ) {
     Column(
         modifier = modifier.fillMaxSize(),
@@ -163,7 +163,7 @@ fun LoginScreen(
                     }
                 }
 
-                TextButton(onClick = onClickRecuperarSenha) {
+                TextButton(onClick = { onClickRecuperarSenha(state.email) }) {
                     Text(text = stringResource(R.string.btn_esqueci_senha))
                 }
 

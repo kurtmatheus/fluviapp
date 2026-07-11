@@ -191,6 +191,9 @@
     <string name="btn_reenviar_verificacao">Reenviar verificação</string>
     <string name="btn_esqueci_senha">Esqueci a senha</string>
     <string name="msg_recuperacao_enviada">E-mail de recuperação enviado.</string>
+    <string name="title_recuperar_senha">Recuperar senha</string>
+    <string name="msg_recuperar_senha_instrucao">Informe o e-mail cadastrado. Enviaremos um link para você redefinir sua senha.</string>
+    <string name="btn_enviar_recuperacao">Enviar link</string>
     <string name="title_cadastro">Criar Conta</string>
     <string name="label_nome_completo">Nome</string>
     <string name="label_confirmar_senha">Confirmar Senha</string>

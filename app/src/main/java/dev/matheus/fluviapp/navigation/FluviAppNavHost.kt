@@ -14,6 +14,7 @@ import dev.matheus.fluviapp.extensions.navegaParaLoginGraph
 import dev.matheus.fluviapp.extensions.navegaParaMainScreenGraph
 import dev.matheus.fluviapp.extensions.navegaParaPesquisarPassagemGraph
 import dev.matheus.fluviapp.extensions.navegaParaPesquisarViagemGraph
+import dev.matheus.fluviapp.extensions.navegaParaRecuperarSenha
 import dev.matheus.fluviapp.extensions.navegaParaResultPesquisarAgente
 import dev.matheus.fluviapp.extensions.navegaParaResultadosPesquisarPassagem
 import dev.matheus.fluviapp.extensions.navegaParaResultadosPesquisarViagem
@@ -55,6 +56,9 @@ fun FluviAppNavHost(
             },
             onNavegaParaCadastro = {
                 navController.navigate(FluviAppGraphDestinations.Cadastro.route)
+            },
+            onNavegaParaRecuperarSenha = { email ->
+                navController.navegaParaRecuperarSenha(email)
             },
             onVoltarParaLogin = {
                 navController.popBackStack()

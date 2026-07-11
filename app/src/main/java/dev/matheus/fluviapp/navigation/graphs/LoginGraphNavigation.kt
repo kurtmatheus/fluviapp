@@ -6,19 +6,24 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavGraphBuilder
+import androidx.navigation.NavType
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
 import dev.matheus.fluviapp.R
 import dev.matheus.fluviapp.extensions.toastMessage
 import dev.matheus.fluviapp.navigation.destinations.ARG_EMAIL_PREFILL
 import dev.matheus.fluviapp.navigation.destinations.FluviAppGraphDestinations
 import dev.matheus.fluviapp.ui.screens.CadastroScreen
 import dev.matheus.fluviapp.ui.screens.LoginScreen
+import dev.matheus.fluviapp.ui.screens.RecuperarSenhaScreen
 import dev.matheus.fluviapp.ui.viewmodel.CadastroViewModel
 import dev.matheus.fluviapp.ui.viewmodel.LoginViewModel
+import dev.matheus.fluviapp.ui.viewmodel.RecuperarSenhaViewModel
 
 fun NavGraphBuilder.loginGraph(
     onNavegarParaMainScreen: () -> Unit,
     onNavegaParaCadastro: () -> Unit,
+    onNavegaParaRecuperarSenha: (String) -> Unit,
     onVoltarParaLogin: () -> Unit,
     onVoltarComEmail: (String) -> Unit,
 ) {
@@ -58,9 +63,26 @@ fun NavGraphBuilder.loginGraph(
                 viewModel.reenviarVerificacao()
             },
             onClickCadastrar = onNavegaParaCadastro,
-            onClickRecuperarSenha = {
-                viewModel.recuperarSenha()
-            },
+            onClickRecuperarSenha = onNavegaParaRecuperarSenha,
+        )
+    }
+
+    composable(
+        route = "${FluviAppGraphDestinations.RecuperarSenha.route}?$ARG_EMAIL_PREFILL={$ARG_EMAIL_PREFILL}",
+        arguments = listOf(
+            navArgument(ARG_EMAIL_PREFILL) {
+                type = NavType.StringType
+                defaultValue = ""
+            }
+        )
+    ) {
+        val viewModel = hiltViewModel<RecuperarSenhaViewModel>()
+        val state by viewModel.uiState.collectAsState()
+
+        RecuperarSenhaScreen(
+            state = state,
+            onClickVoltar = onVoltarParaLogin,
+            onClickEnviar = { viewModel.recuperar() },
         )
     }
 
