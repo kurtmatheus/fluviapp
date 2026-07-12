@@ -1,6 +1,5 @@
 package dev.matheus.fluviapp.ui.screens.forms.viagem
 
-import android.content.Context
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,7 +12,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -27,11 +25,15 @@ import dev.matheus.fluviapp.ui.states.FormViagemUiState
 @Composable
 fun FormViagemScreen(
     uiState: FormViagemUiState,
-    onClickSalvar: (Context) -> Unit,
-    onClickVoltar: () -> Unit
+    onEmpresaChange: (String) -> Unit = {},
+    onNavioChange: (String) -> Unit = {},
+    onTrechoOrigemChange: (String) -> Unit = {},
+    onLimparTrechoOrigem: () -> Unit = {},
+    onTrechoDestinoChange: (String) -> Unit = {},
+    onLimparTrechoDestino: () -> Unit = {},
+    onClickSalvar: () -> Unit = {},
+    onClickVoltar: () -> Unit = {},
 ) {
-    val context = LocalContext.current
-
     CommonScreenNoBottom(
         titleTopAppBar = R.string.title_top_viagem,
         titleTopContent = 0,
@@ -45,47 +47,46 @@ fun FormViagemScreen(
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(10.dp),
-
-            ) {
+        ) {
             CommonAreaForm(
                 modifier = modifier,
-                titleArea = uiState.titleJanela
+                titleArea = uiState.titulo,
             ) {
                 ContentViagemAreaForm(
                     modifier = it,
-                    state = uiState
+                    state = uiState,
+                    onEmpresaChange = onEmpresaChange,
+                    onNavioChange = onNavioChange,
+                    onTrechoOrigemChange = onTrechoOrigemChange,
+                    onLimparTrechoOrigem = onLimparTrechoOrigem,
+                    onTrechoDestinoChange = onTrechoDestinoChange,
+                    onLimparTrechoDestino = onLimparTrechoDestino,
                 )
             }
             Column(
-                modifier = modifier
-                    .fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally
+                modifier = modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 CommonIconButton(
                     modifier = modifier,
-                    onClick = { onClickSalvar(context) },
+                    onClick = onClickSalvar,
                     text = stringResource(id = R.string.btn_salvar),
                     icon = {
                         Icon(
                             imageVector = Icons.Filled.Check,
-                            contentDescription = stringResource(id = R.string.description_confirmacao)
+                            contentDescription = stringResource(id = R.string.description_confirmacao),
                         )
                     },
                     color = MaterialTheme.colorScheme.primary,
-                    isProcessing = uiState.isProcessando
+                    isProcessing = uiState.isProcessando,
                 )
             }
         }
     }
 }
 
-
 @Preview(showBackground = true)
 @Composable
-private fun NovaPassagemFormScreenPreview() {
-        FormViagemScreen(
-            uiState = FormViagemUiState(),
-            onClickSalvar = {},
-            onClickVoltar = {}
-        )
+private fun FormViagemScreenPreview() {
+    FormViagemScreen(uiState = FormViagemUiState())
 }

@@ -38,8 +38,8 @@ fun NavHostController.navegaParaPesquisarPassagemGraph() {
     navegaDireto(FluviAppGraphDestinations.PesquisarPassagemGraph.route)
 }
 
-fun NavHostController.navegaParaFormularioViagem(idViagem: String? = null) {
-    navegaDireto("${FluviAppNavComposableDestinations.FormViagemNavComposable.route}/$idViagem")
+fun NavHostController.navegaParaFormularioViagem(idViagem: String = "") {
+    navegaDireto("${FluviAppNavComposableDestinations.FormViagemNavComposable.route}?idViagem=$idViagem")
 }
 
 fun NavHostController.navegaParaResultadosPesquisarViagem() {

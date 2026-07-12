@@ -103,7 +103,7 @@ fun FluviAppNavHost(
         )
 
         formViagemNavComposable(
-            onCLickVoltar = {
+            onClickVoltar = {
                 navController.navigateUp()
             },
             onNavegaParaMainScreen = {

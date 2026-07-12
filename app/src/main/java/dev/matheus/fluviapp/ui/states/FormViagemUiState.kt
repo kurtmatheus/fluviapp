@@ -5,32 +5,30 @@ import dev.matheus.fluviapp.model.cadastro.constantes.Constante
 import dev.matheus.fluviapp.model.viagem.Empresa
 import dev.matheus.fluviapp.model.viagem.Navio
 
+/**
+ * Estado do formulário de viagem — puro (só dados + flags). Sem lambdas embutidas: os eventos são
+ * métodos no FormViagemViewModel (molde cadastro-modulos §7.2).
+ */
 data class FormViagemUiState(
-    val titleJanela: Int = R.string.subtitle_cadastrar_nova_viagem,
+    val titulo: Int = R.string.subtitle_cadastrar_nova_viagem,
 
     val empresa: String = "",
-    val onEmpresaChange: (String) -> Unit = {},
-    val listaEmpresas: List<Empresa> = emptyList(),
     val isEmpresaError: Boolean = false,
 
     val navio: String = "",
-    val onNavioChange: (String) -> Unit = {},
-    val listaNavios: List<Navio> = emptyList(),
     val isNavioError: Boolean = false,
-    val isNavioDisable: Boolean = true,
-
-    val listaMunicipios: List<Constante> = emptyList(),
+    val navioDesabilitado: Boolean = true,
 
     val trechoOrigem: String = "",
-    val onTrechoOrigemChange: (String) -> Unit = {},
     val isTrechoOrigemError: Boolean = false,
-    val onClickLimparTrechoOrigem: () -> Unit = {},
 
     val trechoDestino: String = "",
-    val onTrechoDestinoChange: (String) -> Unit = {},
     val isTrechoDestinoError: Boolean = false,
-    val isTrechoDestinoDisabled: Boolean = true,
-    val onClickLimparTrechoDestino: () -> Unit = {},
+    val trechoDestinoDesabilitado: Boolean = true,
 
-    val isProcessando: Boolean = false
+    val listaEmpresas: List<Empresa> = emptyList(),
+    val listaNavios: List<Navio> = emptyList(),
+    val listaMunicipios: List<Constante> = emptyList(),
+
+    val isProcessando: Boolean = false,
 )

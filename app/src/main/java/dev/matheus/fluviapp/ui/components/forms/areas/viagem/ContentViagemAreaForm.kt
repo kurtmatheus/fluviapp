@@ -25,6 +25,12 @@ import dev.matheus.fluviapp.ui.states.FormViagemUiState
 fun ContentViagemAreaForm(
     modifier: Modifier,
     state: FormViagemUiState,
+    onEmpresaChange: (String) -> Unit,
+    onNavioChange: (String) -> Unit,
+    onTrechoOrigemChange: (String) -> Unit,
+    onLimparTrechoOrigem: () -> Unit,
+    onTrechoDestinoChange: (String) -> Unit,
+    onLimparTrechoDestino: () -> Unit,
     focusManager: FocusManager = LocalFocusManager.current,
 ) {
 
@@ -33,7 +39,7 @@ fun ContentViagemAreaForm(
         label = R.string.label_empresa,
         modifier = modifier.fillMaxWidth(),
         value = state.empresa,
-        onValueChange = state.onEmpresaChange,
+        onValueChange = onEmpresaChange,
         isError = state.isEmpresaError,
         focusManager = focusManager
     )
@@ -43,9 +49,9 @@ fun ContentViagemAreaForm(
         label = R.string.label_navio,
         modifier = modifier.fillMaxWidth(),
         value = state.navio,
-        onValueChange = state.onNavioChange,
+        onValueChange = onNavioChange,
         isError = state.isNavioError,
-        readOnly = state.isNavioDisable,
+        readOnly = state.navioDesabilitado,
         focusManager = focusManager
     )
 
@@ -55,18 +61,16 @@ fun ContentViagemAreaForm(
         verticalAlignment = Alignment.CenterVertically
     ) {
         DropDownFormField(
-            listaItens = state.listaMunicipios.mapDescricao().filter {
-                it != state.trechoDestino
-            },
+            listaItens = state.listaMunicipios.mapDescricao().filter { it != state.trechoDestino },
             label = R.string.label_trecho_origem,
             modifier = modifier,
             value = state.trechoOrigem,
-            onValueChange = state.onTrechoOrigemChange,
+            onValueChange = onTrechoOrigemChange,
             isError = state.isTrechoOrigemError,
             focusManager = focusManager
         )
 
-        IconButton(onClick = state.onClickLimparTrechoOrigem) {
+        IconButton(onClick = onLimparTrechoOrigem) {
             Icon(
                 imageVector = Icons.Filled.Clear,
                 contentDescription = stringResource(id = R.string.description_limpar),
@@ -81,19 +85,17 @@ fun ContentViagemAreaForm(
         verticalAlignment = Alignment.CenterVertically
     ) {
         DropDownFormField(
-            listaItens = state.listaMunicipios.mapDescricao().filter {
-                it != state.trechoOrigem
-            },
+            listaItens = state.listaMunicipios.mapDescricao().filter { it != state.trechoOrigem },
             label = R.string.label_trecho_destino,
             modifier = modifier,
             value = state.trechoDestino,
-            onValueChange = state.onTrechoDestinoChange,
+            onValueChange = onTrechoDestinoChange,
             isError = state.isTrechoDestinoError,
-            readOnly = state.isTrechoDestinoDisabled,
+            readOnly = state.trechoDestinoDesabilitado,
             focusManager = focusManager
         )
 
-        IconButton(onClick = state.onClickLimparTrechoDestino) {
+        IconButton(onClick = onLimparTrechoDestino) {
             Icon(
                 imageVector = Icons.Filled.Clear,
                 contentDescription = stringResource(id = R.string.description_limpar),
@@ -102,6 +104,7 @@ fun ContentViagemAreaForm(
         }
     }
 }
+
 @Preview(showBackground = true)
 @Composable
 private fun ContentViagemAreaFormPreview() {
@@ -109,6 +112,15 @@ private fun ContentViagemAreaFormPreview() {
         modifier = Modifier,
         titleArea = R.string.form_area_title_viagem
     ) {
-        ContentViagemAreaForm(modifier = it, state = FormViagemUiState())
+        ContentViagemAreaForm(
+            modifier = it,
+            state = FormViagemUiState(),
+            onEmpresaChange = {},
+            onNavioChange = {},
+            onTrechoOrigemChange = {},
+            onLimparTrechoOrigem = {},
+            onTrechoDestinoChange = {},
+            onLimparTrechoDestino = {},
+        )
     }
 }
