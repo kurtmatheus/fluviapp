@@ -133,15 +133,14 @@ class FormViagemHelper(
     ) {
         val formViagemUiState = uiState.value
 
-        val navio = formViagemUiState.listaNavios.extrairPorDescricao(formViagemUiState.navio)
-
-        val empresa = formViagemUiState.listaEmpresas.first { it.nome == formViagemUiState.empresa }
-
-        val trechoOrigem = formViagemUiState.listaMunicipios.extrairPorDescricao(formViagemUiState.trechoOrigem)
-
-        val trechoDestino = formViagemUiState.listaMunicipios.extrairPorDescricao(formViagemUiState.trechoDestino)
-
         try {
+            // Dentro do try: os lookups por descrição podem lançar NoSuchElementException se o texto
+            // não estiver na lista — vira toast de erro em vez de crash.
+            val navio = formViagemUiState.listaNavios.extrairPorDescricao(formViagemUiState.navio)
+            val empresa = formViagemUiState.listaEmpresas.first { it.nome == formViagemUiState.empresa }
+            val trechoOrigem = formViagemUiState.listaMunicipios.extrairPorDescricao(formViagemUiState.trechoOrigem)
+            val trechoDestino = formViagemUiState.listaMunicipios.extrairPorDescricao(formViagemUiState.trechoDestino)
+
             viagemRepository.salvar(
                 id = if (idViagem.isTextoNaoNulo()) idViagem else null,
                 navio = navio.descricaoNome,
@@ -149,11 +148,10 @@ class FormViagemHelper(
                 origem = trechoOrigem.descricaoNome,
                 destino = trechoDestino.descricaoNome,
             )
-        } catch (e: Exception) {
-            context.toastMessage(context.resources.getString(R.string.error_transmissao_viagem))
-        } finally {
             context.toastMessage(context.resources.getString(R.string.msg_transmissao_viagem))
             onNavegaParaMainScreen()
+        } catch (e: Exception) {
+            context.toastMessage(context.resources.getString(R.string.error_transmissao_viagem))
             atualizaIsProcessando()
         }
     }

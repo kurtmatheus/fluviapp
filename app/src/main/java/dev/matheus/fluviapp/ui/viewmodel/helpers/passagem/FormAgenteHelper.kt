@@ -85,26 +85,32 @@ class FormAgenteHelper(
         context: Context,
     ) {
         val state = uiState.value
-        var agenteExistente: Agente? = null
-        if (idAgente.isTextoNaoNulo()) {
-            agenteExistente = repository.obterPorId(idAgente)
-        }
 
-        val agente = agenteExistente ?: Agente(
-            id = "",
-            descricaoNome = state.agente,
-            agencia = state.agencia,
-            lotacao = state.lotacao
-        )
+        // Edição: parte do agente persistido e aplica os campos do form (preserva id e
+        // podeSelecionarFormaPagamento). Criação: novo agente com id vazio (auto-id).
+        val agente = if (idAgente.isTextoNaoNulo()) {
+            repository.obterPorId(idAgente).copy(
+                descricaoNome = state.agente,
+                agencia = state.agencia,
+                lotacao = state.lotacao,
+            )
+        } else {
+            Agente(
+                id = "",
+                descricaoNome = state.agente,
+                agencia = state.agencia,
+                lotacao = state.lotacao,
+            )
+        }
 
         try {
             repository.salvar(agente)
+            context.toastMessage(context.resources.getString(R.string.msg_salva_agent))
+            onNavegaParaMainScreen()
         } catch (e: Exception) {
             e.printStackTrace()
             context.toastMessage(context.resources.getString(R.string.error_salvar_agent))
-        } finally {
-            context.toastMessage(context.resources.getString(R.string.msg_salva_agent))
-            onNavegaParaMainScreen()
+            atualizarProcessamento()
         }
     }
 
