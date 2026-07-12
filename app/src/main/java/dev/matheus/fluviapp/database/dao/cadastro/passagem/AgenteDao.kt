@@ -14,7 +14,7 @@ interface AgenteDao {
     suspend fun salvar(agente: Agente)
 
     @Query("SELECT * FROM Agente WHERE id = :id")
-    fun obterPorId(id: String): Flow<Agente>
+    fun obterPorId(id: String): Flow<Agente?>
 
     @Query("SELECT * FROM Agente")
     fun obterTodos(): Flow<List<Agente>>

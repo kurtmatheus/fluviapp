@@ -30,14 +30,15 @@ import dev.matheus.fluviapp.ui.components.texts.TextRegularBrown
 import dev.matheus.fluviapp.ui.components.texts.TextSubTitleBrownItalic
 import dev.matheus.fluviapp.ui.components.texts.TextTitleBrownRegular
 import dev.matheus.fluviapp.ui.screens.forms.CommonScreenNoBottom
-import dev.matheus.fluviapp.ui.states.AgenteUiState
+import dev.matheus.fluviapp.ui.states.PesquisaAgenteUiState
 import dev.matheus.fluviapp.ui.theme.FluviAppTheme
 
 @Composable
 fun ResultSearchAgenteScreen(
-    uiState: AgenteUiState,
+    uiState: PesquisaAgenteUiState,
+    onAgenciaChange: (String) -> Unit = {},
     onClickVoltar: () -> Unit = {},
-    onNavegaParaEditor: (String) -> Unit = {}
+    onNavegaParaEditor: (String) -> Unit = {},
 ) {
     CommonScreenNoBottom(
         titleTopAppBar = R.string.title_top_agente,
@@ -45,47 +46,40 @@ fun ResultSearchAgenteScreen(
         isShowRightIcon = true,
         hasRefresh = false,
         isRefreshing = false,
-        onClickVoltar = onClickVoltar
+        onClickVoltar = onClickVoltar,
     ) { modifier, titulo ->
         Column {
             CommonTopRow(modifier = modifier, titulo = titulo)
 
             Column(
                 modifier = modifier.padding(10.dp, 10.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+                verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 FilterDropDownForm(
                     modifier = modifier.fillMaxWidth(),
                     listaItens = uiState.listaAgencia,
                     label = R.string.label_agencia,
                     value = uiState.agencia,
-                    isError = uiState.isAgenciaError,
-                    onValueChange = uiState.onAgenciaChange,
-                    keyboardType = KeyboardType.Text
+                    onValueChange = onAgenciaChange,
+                    keyboardType = KeyboardType.Text,
                 )
-
             }
             FormDashedDivider(modifier = modifier.fillMaxWidth())
 
             LazyColumn {
-                items(uiState.resultadosListaAgente.filtrarResultados(agencia = uiState.agencia)) {
+                items(uiState.resultados) {
                     CardResultAgente(modifier, it, onNavegaParaEditor)
                 }
             }
         }
     }
-
-}
-
-private fun List<Agente>.filtrarResultados(agencia: String): List<Agente> {
-    return filter { it.agencia.startsWith(agencia, ignoreCase = true) }
 }
 
 @Composable
 fun CardResultAgente(
     modifier: Modifier,
     agente: Agente,
-    onNavegaParaEditor: (String) -> Unit
+    onNavegaParaEditor: (String) -> Unit,
 ) {
     Column {
         Row(
@@ -94,23 +88,22 @@ fun CardResultAgente(
                 .padding(10.dp, 10.dp)
                 .clickable { onNavegaParaEditor(agente.id) },
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(20.dp)
+            horizontalArrangement = Arrangement.spacedBy(20.dp),
         ) {
             Icon(
                 modifier = modifier,
                 painter = painterResource(id = R.drawable.ic_user_75),
-                contentDescription = stringResource(R.string.description_icon_user)
+                contentDescription = stringResource(R.string.description_icon_user),
             )
 
             Column(
                 modifier = modifier.fillMaxHeight(),
                 horizontalAlignment = Alignment.Start,
-                verticalArrangement = Arrangement.SpaceEvenly
+                verticalArrangement = Arrangement.SpaceEvenly,
             ) {
                 TextSubTitleBrownItalic(text = agente.agencia)
                 TextTitleBrownRegular(text = agente.descricaoNome)
                 TextRegularBrown(text = agente.lotacao)
-
             }
         }
         HorizontalDivider(modifier = Modifier)
@@ -122,10 +115,10 @@ fun CardResultAgente(
 private fun ResultSearchAgenteScreenPreview() {
     FluviAppTheme {
         ResultSearchAgenteScreen(
-            uiState = AgenteUiState(
+            uiState = PesquisaAgenteUiState(
                 agencia = "AGENCIA LITORAL",
                 listaAgencia = listaAgenteSample.map { it.agencia },
-                resultadosListaAgente = listaAgenteSample.filter { it.agencia == "AGENCIA LITORAL" }
+                resultados = listaAgenteSample.filter { it.agencia == "AGENCIA LITORAL" },
             )
         )
     }

@@ -16,18 +16,20 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import dev.matheus.fluviapp.R
-import dev.matheus.fluviapp.model.cadastro.passagem.Agente.Agencia.MATRIZ
 import dev.matheus.fluviapp.ui.components.forms.areas.CommonAreaForm
-import dev.matheus.fluviapp.ui.components.forms.areas.passagem.ContentAgenteForm
+import dev.matheus.fluviapp.ui.components.forms.areas.agente.ContentAgenteForm
 import dev.matheus.fluviapp.ui.components.forms.buttons.CommonIconButton
 import dev.matheus.fluviapp.ui.screens.forms.CommonScreenNoBottom
-import dev.matheus.fluviapp.ui.states.AgenteUiState
+import dev.matheus.fluviapp.ui.states.FormAgenteUiState
 
 @Composable
 fun FormAgenteScreen(
-    uiState: AgenteUiState,
-    onClickVoltar: () -> Unit,
-    onClickSalvar: () -> Unit
+    uiState: FormAgenteUiState,
+    onAgenciaChange: (String) -> Unit = {},
+    onAgenteChange: (String) -> Unit = {},
+    onLotacaoChange: (String) -> Unit = {},
+    onClickSalvar: () -> Unit = {},
+    onClickVoltar: () -> Unit = {},
 ) {
     CommonScreenNoBottom(
         titleTopAppBar = R.string.title_top_agente,
@@ -42,18 +44,22 @@ fun FormAgenteScreen(
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(10.dp),
-
-            ) {
+        ) {
             CommonAreaForm(
                 modifier = modifier,
-                titleArea = uiState.titleJanela
+                titleArea = uiState.titulo,
             ) {
-                ContentAgenteForm(modifier = modifier, state = uiState)
+                ContentAgenteForm(
+                    modifier = modifier,
+                    state = uiState,
+                    onAgenciaChange = onAgenciaChange,
+                    onAgenteChange = onAgenteChange,
+                    onLotacaoChange = onLotacaoChange,
+                )
             }
             Column(
-                modifier = modifier
-                    .fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally
+                modifier = modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 CommonIconButton(
                     modifier = modifier,
@@ -62,29 +68,21 @@ fun FormAgenteScreen(
                     icon = {
                         Icon(
                             imageVector = Icons.Filled.Check,
-                            contentDescription = stringResource(id = R.string.description_confirmacao)
+                            contentDescription = stringResource(id = R.string.description_confirmacao),
                         )
                     },
                     color = MaterialTheme.colorScheme.primary,
-                    isProcessing = uiState.isProcessing
+                    isProcessing = uiState.isProcessing,
                 )
             }
         }
     }
 }
 
-
 @Preview(showBackground = true)
 @Composable
-private fun NovaViagemScreenPreview() {
+private fun FormAgenteScreenPreview() {
     FormAgenteScreen(
-        uiState = AgenteUiState(
-            agencia = MATRIZ.name,
-            agente = "Agente Modelo",
-            lotacao = "PORTO NORTE",
-            titleJanela = R.string.subtitle_cadastrar_novo_agente
-        ),
-        onClickSalvar = {},
-        onClickVoltar = {}
+        uiState = FormAgenteUiState(agencia = "MATRIZ", agente = "Agente Modelo", lotacao = "PORTO NORTE"),
     )
 }

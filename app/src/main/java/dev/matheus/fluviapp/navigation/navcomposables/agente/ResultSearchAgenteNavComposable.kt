@@ -7,22 +7,23 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import dev.matheus.fluviapp.navigation.destinations.FluviAppNavComposableDestinations
 import dev.matheus.fluviapp.ui.screens.forms.agentes.ResultSearchAgenteScreen
-import dev.matheus.fluviapp.ui.viewmodel.AgenteViewModel
+import dev.matheus.fluviapp.ui.viewmodel.agente.PesquisaAgenteViewModel
 
 fun NavGraphBuilder.resultSearchAgenteNavComposable(
     onClickVoltar: () -> Unit,
-    onNavegaParaEditorAgente: (String) -> Unit
+    onNavegaParaEditorAgente: (String) -> Unit,
 ) {
     composable(
-        route = "${FluviAppNavComposableDestinations.ResultPesquisarAgenteNavComposable.route}/{$ID_AGENTE_ARGUMENT}"
+        route = FluviAppNavComposableDestinations.ResultPesquisarAgenteNavComposable.route,
     ) {
-        val viewModel = hiltViewModel<AgenteViewModel>()
+        val viewModel = hiltViewModel<PesquisaAgenteViewModel>()
         val uiState by viewModel.uiState.collectAsState()
 
         ResultSearchAgenteScreen(
             uiState = uiState,
+            onAgenciaChange = viewModel::onAgenciaChange,
             onClickVoltar = onClickVoltar,
-            onNavegaParaEditor = onNavegaParaEditorAgente
+            onNavegaParaEditor = onNavegaParaEditorAgente,
         )
     }
 }
