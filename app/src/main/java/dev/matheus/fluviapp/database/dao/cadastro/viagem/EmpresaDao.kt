@@ -16,8 +16,8 @@ interface EmpresaDao {
     @Query("SELECT * FROM Empresa")
     fun obterTodas(): Flow<List<Empresa>>
 
-    @Query("SELECT * FROM Empresa WHERE id = :idEmpresa")
-    fun obterPorId(idEmpresa: Int): Flow<Empresa>
+    @Query("SELECT * FROM Empresa WHERE id = :id")
+    fun obterPorId(id: String): Flow<Empresa?>
 
     @Query("SELECT * FROM Empresa WHERE nome = :nome")
     fun obterPorNome(nome: String): Flow<Empresa>

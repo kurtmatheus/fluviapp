@@ -16,7 +16,7 @@ object PermissoesUsuario {
 
     fun podeAcessar(secao: SecaoMenu, cargo: String?): Boolean = when (secao) {
         SecaoMenu.PASSAGEM -> true
-        SecaoMenu.VIAGEM, SecaoMenu.AGENTE -> ehGestor(cargo)
+        SecaoMenu.VIAGEM, SecaoMenu.AGENTE, SecaoMenu.EMPRESA -> ehGestor(cargo)
     }
 
     fun secoesVisiveis(cargo: String?): List<SecaoMenu> =

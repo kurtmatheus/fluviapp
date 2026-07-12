@@ -153,6 +153,20 @@
     <string name="label_menu_agentes">Agentes</string>
     <string name="label_lotacao">Lotação</string>
     <string name="label_tema_escuro">Tema escuro</string>
+    <string name="label_menu_empresa">Empresas</string>
+
+    <!-- Empresa -->
+    <string name="title_top_empresa">Empresas</string>
+    <string name="subtitle_cadastrar_nova_empresa">Cadastrar Nova Empresa</string>
+    <string name="subtitle_editar_empresa">Editar Empresa</string>
+    <string name="label_nome_empresa">Nome</string>
+    <string name="label_razao_social">Razão Social</string>
+    <string name="label_cnpj">CNPJ</string>
+    <string name="label_endereco">Endereço</string>
+    <string name="label_telefone1">Telefone 1</string>
+    <string name="label_telefone2">Telefone 2</string>
+    <string name="error_cnpj_invalido">CNPJ inválido.</string>
+    <string name="btn_nova_empresa">Nova Empresa</string>
 
     <!-- Descriptions -->
     <string name="description_logo_do_app">Logo do FluviApp</string>

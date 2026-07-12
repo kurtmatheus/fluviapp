@@ -74,3 +74,7 @@ fun NavHostController.navegaParaResultPesquisarAgente() {
     navegaDireto("${FluviAppNavComposableDestinations.ResultPesquisarAgenteNavComposable.route}/null")
 }
 
+fun NavHostController.navegaParaFormularioEmpresa(idEmpresa: String = "") {
+    navegaDireto("${FluviAppNavComposableDestinations.FormEmpresaNavComposable.route}?idEmpresa=$idEmpresa")
+}
+
