@@ -77,8 +77,8 @@ fun NavGraphBuilder.mainScreenNavComposable(
 
         MainScreen(
             state = state,
+            acoesPorSecao = state.secoesVisiveis.associateWith(::acoesDe),
             onClickInicio = { viewModel.irParaHome() },
-            onSelecionarSecao = { secao -> viewModel.selecionarSecao(secao, acoesDe(secao)) },
             onClickDeslogar = {
                 coroutineScope.launch {
                     viewModel.deslogar()

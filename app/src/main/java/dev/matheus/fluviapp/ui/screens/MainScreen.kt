@@ -9,11 +9,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import dev.matheus.fluviapp.R
+import dev.matheus.fluviapp.model.screendata.DadosBotoesMenus
 import dev.matheus.fluviapp.model.screendata.SecaoMenu
-import dev.matheus.fluviapp.sampledata.listaBotoesMenuPassagensSample
 import dev.matheus.fluviapp.sampledata.listaDadosDadosViagemHomeSampleCards
 import dev.matheus.fluviapp.ui.components.contents.HomeContent
-import dev.matheus.fluviapp.ui.components.contents.MenuPassagem
 import dev.matheus.fluviapp.ui.components.drawer.FluviMenuDrawer
 import dev.matheus.fluviapp.ui.states.MainScreenState
 import dev.matheus.fluviapp.ui.states.MainScreenUiState
@@ -21,8 +20,8 @@ import dev.matheus.fluviapp.ui.states.MainScreenUiState
 @Composable
 fun MainScreen(
     state: MainScreenUiState,
+    acoesPorSecao: Map<SecaoMenu, List<DadosBotoesMenus>> = emptyMap(),
     onClickInicio: () -> Unit = {},
-    onSelecionarSecao: (SecaoMenu) -> Unit = {},
     onClickDeslogar: () -> Unit = {},
     onClickAdicionarPassagem: (String) -> Unit = {},
     onRefresh: () -> Unit = {},
@@ -30,15 +29,10 @@ fun MainScreen(
     onToggleTheme: () -> Unit = {},
 ) {
     val estado = state.mainScreenState
-    val naInicio = estado is MainScreenState.HOME || estado is MainScreenState.LOADING
-    val tituloConteudo = when (estado) {
-        is MainScreenState.SECAO -> estado.secao.titulo
-        else -> R.string.subtitle_viagens_disponiveis
-    }
 
     CommonScreen(
         modifier = Modifier,
-        titleTopContent = tituloConteudo,
+        titleTopContent = R.string.subtitle_viagens_disponiveis,
         isMainTopAppBar = true,
         titleTopAppBar = 0,
         userNameTopAppBar = state.userName,
@@ -46,18 +40,17 @@ fun MainScreen(
         isShowRightIcon = false,
         hasRefresh = true,
         isRefreshing = state.isRefreshing,
-        inicioAtivo = naInicio,
+        inicioAtivo = true,
         onClickInicio = onClickInicio,
         onRefresh = onRefresh,
         drawerContent = { fechar ->
             FluviMenuDrawer(
                 userName = state.userName,
                 secoes = state.secoesVisiveis,
-                naInicio = naInicio,
-                secaoAtual = (estado as? MainScreenState.SECAO)?.secao,
+                acoesPorSecao = acoesPorSecao,
                 isDarkTheme = isDarkTheme,
                 onInicio = { onClickInicio(); fechar() },
-                onSelecionar = { onSelecionarSecao(it); fechar() },
+                onNavegar = { acao -> acao.onClick(); fechar() },
                 onToggleTheme = onToggleTheme,
                 onDeslogar = onClickDeslogar,
             )
@@ -77,12 +70,6 @@ fun MainScreen(
                     listaViagens = state.listaViagens,
                     onClickNovaPassagem = onClickAdicionarPassagem,
                 )
-
-                is MainScreenState.SECAO -> MenuPassagem(
-                    modifier = modifier,
-                    titulo = titulo,
-                    listaBotoes = estado.acoes,
-                )
             }
         },
     )
@@ -97,18 +84,6 @@ private fun MainScreenHomePreview() {
             secoesVisiveis = SecaoMenu.entries,
             listaViagens = listaDadosDadosViagemHomeSampleCards,
             mainScreenState = MainScreenState.HOME,
-        )
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun MainScreenSecaoPreview() {
-    MainScreen(
-        MainScreenUiState(
-            userName = "Odair",
-            secoesVisiveis = SecaoMenu.entries,
-            mainScreenState = MainScreenState.SECAO(SecaoMenu.PASSAGEM, listaBotoesMenuPassagensSample),
         )
     )
 }

@@ -7,8 +7,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.matheus.fluviapp.model.mappers.ViagemDadosViagemMapper
 import dev.matheus.fluviapp.model.operacoes.PermissoesUsuario
-import dev.matheus.fluviapp.model.screendata.DadosBotoesMenus
-import dev.matheus.fluviapp.model.screendata.SecaoMenu
 import dev.matheus.fluviapp.preferences.PreferencesKey
 import dev.matheus.fluviapp.services.repository.cadastro.passagem.AgenteRepository
 import com.google.firebase.auth.FirebaseAuth
@@ -68,8 +66,7 @@ class MainScreenViewModel @Inject constructor(
             _uiState.update {
                 it.copy(
                     listaViagens = listaViagensCard,
-                    // Só volta p/ HOME no carregamento inicial; refresh preserva a seção atual.
-                    mainScreenState = if (isRefreshing) it.mainScreenState else MainScreenState.HOME,
+                    mainScreenState = MainScreenState.HOME,
                 )
             }
             if (isRefreshing) atualizarIsRefresing()
@@ -78,10 +75,6 @@ class MainScreenViewModel @Inject constructor(
 
     fun irParaHome() {
         _uiState.update { it.copy(mainScreenState = MainScreenState.HOME) }
-    }
-
-    fun selecionarSecao(secao: SecaoMenu, acoes: List<DadosBotoesMenus>) {
-        _uiState.update { it.copy(mainScreenState = MainScreenState.SECAO(secao, acoes)) }
     }
 
     suspend fun deslogar() {

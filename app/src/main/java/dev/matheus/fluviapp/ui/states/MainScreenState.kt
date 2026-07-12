@@ -1,17 +1,10 @@
 package dev.matheus.fluviapp.ui.states
 
-import dev.matheus.fluviapp.model.screendata.DadosBotoesMenus
-import dev.matheus.fluviapp.model.screendata.SecaoMenu
-
 /**
- * Conteúdo central da Main Screen. HOME = viagens disponíveis; SECAO = os cards de ação da seção
- * escolhida no drawer (Passagem/Viagem/Agente/…). Unifica os antigos PASSAGENS/OPERACOES.
+ * Conteúdo central da Main Screen. As seções não trocam mais o conteúdo — elas expandem como
+ * sub-menus dentro do drawer e navegam direto. Sobram o carregamento e o Início (viagens).
  */
 sealed class MainScreenState {
     data object LOADING : MainScreenState()
     data object HOME : MainScreenState()
-    data class SECAO(
-        val secao: SecaoMenu,
-        val acoes: List<DadosBotoesMenus>,
-    ) : MainScreenState()
 }

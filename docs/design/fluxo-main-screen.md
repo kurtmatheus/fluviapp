@@ -108,15 +108,15 @@ O arraste da borda direita e o gesto de fechar vêm de graça do `ModalNavigatio
 
 ## 3. Máquina de estados / navegação nova
 
-### Conteúdo (unifica PASSAGENS/OPERAÇÕES num renderer genérico)
+### Conteúdo (implementado)
 ```
-MainScreenState = LOADING | HOME | SECAO(secao: SecaoMenu)
-SecaoMenu       = PASSAGEM | VIAGEM | AGENTE | EMPRESA
+MainScreenState = LOADING | HOME       // sem SECAO: seções são acordeão no drawer
+SecaoMenu       = PASSAGEM | VIAGEM | AGENTE | (EMPRESA na fase 2)
 ```
-- `HOME` → `HomeContent` (inalterado).
-- `SECAO(x)` → renderer único que mostra os cards de ação da seção `x` (flat, estilo
-  `MenuPassagem`), cada card navegando para o form/pesquisa correspondente.
-- Remove `OPERACOES`, `MenuBotoesCategoria` (expansível) e o duplo-modelo de menu.
+- `HOME` → `HomeContent` (inalterado). Único conteúdo da MainScreen.
+- As seções e suas ações vivem no **drawer** (acordeão): expandir a seção lista os cards de ação,
+  que navegam direto (`DadosBotoesMenus.onClick`) e fecham o drawer.
+- Removidos `OPERACOES`, `MenuBotoesCategoria`, `MenuPassagem`, `CardBotaoMenu` e o duplo-modelo.
 
 ### Ações por seção
 | Seção | Cards de ação | Navega para (rota existente / nova) |
@@ -246,7 +246,10 @@ custo marginal) / **[oportuno]** (bom momento, opcional) / **[evitar]** (risco d
 
 ## 9. Decisões (resolvidas)
 1. **Modelo do Agente**: ✅ **reativar como está** (sem simplificar o modelo agora).
-2. **Interação do drawer**: ✅ **seção abre conteúdo na MainScreen** (tudo centralizado).
+2. **Interação do drawer**: ✅ (revisado) **sub-menus expansíveis (acordeão) dentro do drawer** —
+   a seção NÃO troca o conteúdo da MainScreen; expandir mostra as ações (cadastrar/pesquisar) que
+   navegam direto. A MainScreen mantém só o Início (viagens). Removidos o estado `SECAO`, o
+   `MenuPassagem` e o `CardBotaoMenu`.
 3. **Gate por cargo**: ✅ Agente/Empresa **restritos** a ADM/DIRETOR — e **centralizar a estrutura de
    validação** numa política única (item 8.4: `PermissoesUsuario`), eliminando os `cargo == …`
    espalhados.
