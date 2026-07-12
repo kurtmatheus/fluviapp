@@ -15,7 +15,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import dev.matheus.fluviapp.R
 import dev.matheus.fluviapp.ui.components.texts.TextRegularNoColor
-import dev.matheus.fluviapp.ui.theme.Brown
 
 @Composable
 fun CommonCheckboxField(
@@ -35,13 +34,13 @@ fun CommonCheckboxField(
             onCheckedChange = onCheck,
             colors = CheckboxDefaults.colors(
                 checkedColor = MaterialTheme.colorScheme.primary,
-                uncheckedColor = if (isError) Color.Red else Brown
+                uncheckedColor = if (isError) Color.Red else MaterialTheme.colorScheme.onBackground
             )
         )
 
         TextRegularNoColor(
             text = stringResource(id = label),
-            color = if (isError) Color.Red else Brown
+            color = if (isError) Color.Red else MaterialTheme.colorScheme.onBackground
         )
     }
 }
