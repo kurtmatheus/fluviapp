@@ -19,9 +19,9 @@ import javax.inject.Singleton
 class ViagemFirestoreRepository @Inject constructor(
     private val dao: ViagemDao,
     private val firestore: FirebaseFirestore
-) {
+) : ViagemRepository {
 
-    fun sincronizar() {
+    override fun sincronizar() {
         firestore.collection(COLLECTION_VIAGENS)
             .addSnapshotListener { value, error ->
                 value?.documents?.mapNotNull { document ->
@@ -39,7 +39,7 @@ class ViagemFirestoreRepository @Inject constructor(
             }
     }
 
-    suspend fun salvar(id: String?, navio: String, empresa: String, origem: String, destino: String) {
+    override suspend fun salvar(id: String?, navio: String, empresa: String, origem: String, destino: String) {
         val documento = retornaDocumentReference(id)
         Viagem(
             id = documento.id,
@@ -67,13 +67,13 @@ class ViagemFirestoreRepository @Inject constructor(
         } ?: firestore.collection(COLLECTION_VIAGENS).document()
     }
 
-    suspend fun obterPorId(id: String) = dao.obterPorId(id).first()
+    override suspend fun obterPorId(id: String) = dao.obterPorId(id).first()
 
-    suspend fun obterPorCodigo(codigo: String) = dao.obterPorCodigo(codigo).first()
+    override suspend fun obterPorCodigo(codigo: String) = dao.obterPorCodigo(codigo).first()
 
-    suspend fun obterTodas() = dao.obterTodas().first()
+    override suspend fun obterTodas() = dao.obterTodas().first()
 
-    suspend fun deletar(id: String) {
+    override suspend fun deletar(id: String) {
         val viagem = obterPorId(id)
         dao.deletar(viagem)
         try {

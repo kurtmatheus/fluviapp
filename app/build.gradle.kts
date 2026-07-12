@@ -47,6 +47,12 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+    testOptions {
+        unitTests {
+            // android.util.Log e afins viram no-op nos testes JVM (em vez de lançar "not mocked").
+            isReturnDefaultValues = true
+        }
+    }
 }
 
 dependencies {

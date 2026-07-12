@@ -12,7 +12,7 @@ import dev.matheus.fluviapp.navigation.navcomposables.viagem.ID_VIAGEM_ARGUMENT
 import dev.matheus.fluviapp.services.repository.cadastro.ConstanteRepository
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.EmpresaRepository
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.NavioRepository
-import dev.matheus.fluviapp.services.repository.firebase.ViagemFirestoreRepository
+import dev.matheus.fluviapp.services.repository.firebase.ViagemRepository
 import dev.matheus.fluviapp.ui.states.FormViagemUiState
 import dev.matheus.fluviapp.ui.viewmodel.helpers.viagem.validarViagem
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -35,7 +35,7 @@ class FormViagemViewModel @Inject constructor(
     private val empresaRepository: EmpresaRepository,
     private val navioRepository: NavioRepository,
     private val constanteRepository: ConstanteRepository,
-    private val viagemRepository: ViagemFirestoreRepository,
+    private val viagemRepository: ViagemRepository,
     private val viagemDadosViagemMapper: ViagemDadosViagemMapper,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
