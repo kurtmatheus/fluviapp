@@ -6,7 +6,7 @@ import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 
 /**
- * Impl real da [EmissaoTelemetry] (ADR-0004). Único ponto que toca o Firebase.
+ * Impl real da [Telemetry] (ADR-0004/ADR-0007). Único ponto que toca o Firebase.
  *
  * Espelho local↔remoto: além de mandar pro Firebase, escreve no logcat (tag [TAG]) — sucesso e
  * trilha ficam visíveis localmente E remoto numa só chamada.
@@ -18,10 +18,10 @@ import com.google.firebase.crashlytics.FirebaseCrashlytics
  * Requer o plugin Gradle `com.google.firebase.crashlytics` (injeta o build ID que o SDK lê no
  * init; sem ele, FirebaseCrashlytics.init lança IllegalStateException em runtime).
  */
-class FirebaseEmissaoTelemetry(
+class FirebaseTelemetry(
     private val analytics: FirebaseAnalytics,
     private val crashlytics: FirebaseCrashlytics,
-) : EmissaoTelemetry {
+) : Telemetry {
 
     override fun evento(nome: String, params: Map<String, String>) {
         Log.i(TAG, "evento=$nome $params")
@@ -40,6 +40,6 @@ class FirebaseEmissaoTelemetry(
     }
 
     companion object {
-        private const val TAG = "EmissaoTelemetry"
+        private const val TAG = "Telemetry"
     }
 }

@@ -13,7 +13,7 @@ import javax.inject.Inject
  * Offline nenhum dos dois dispara — o dado fica local e reconcilia; isso é esperado, não erro.
  */
 class RegistroEmissao @Inject constructor(
-    private val telemetry: EmissaoTelemetry,
+    private val telemetry: Telemetry,
 ) {
 
     /** SUCESSO local: passagem durável no Room. */

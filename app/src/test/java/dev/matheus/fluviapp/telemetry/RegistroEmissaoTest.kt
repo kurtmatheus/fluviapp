@@ -8,12 +8,12 @@ import org.junit.Test
 
 class RegistroEmissaoTest {
 
-    private lateinit var telemetry: FakeEmissaoTelemetry
+    private lateinit var telemetry: FakeTelemetry
     private lateinit var registro: RegistroEmissao
 
     @Before
     fun setUp() {
-        telemetry = FakeEmissaoTelemetry()
+        telemetry = FakeTelemetry()
         registro = RegistroEmissao(telemetry)
     }
 

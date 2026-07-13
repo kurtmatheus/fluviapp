@@ -18,7 +18,7 @@ import dev.matheus.fluviapp.services.repository.firebase.PassagemFirestoreReposi
 import dev.matheus.fluviapp.services.repository.firebase.ViagemFirestoreRepository
 import dev.matheus.fluviapp.services.repository.operacoes.UsuarioRepository
 import dev.matheus.fluviapp.services.repository.rascunho.RascunhoStore
-import dev.matheus.fluviapp.telemetry.EmissaoTelemetry
+import dev.matheus.fluviapp.telemetry.Telemetry
 import dev.matheus.fluviapp.ui.states.passagem.FormPassageiroUiState
 import dev.matheus.fluviapp.ui.states.passagem.FormPassagemUiState
 import dev.matheus.fluviapp.ui.states.passagem.FormVeiculoUiState
@@ -51,7 +51,7 @@ class FormPassagemViewModel @Inject constructor(
     private val agenteRepository: AgenteRepository,
     private val passagemRepository: PassagemFirestoreRepository,
     private val rascunhoStore: RascunhoStore,
-    private val emissaoTelemetry: EmissaoTelemetry,
+    private val emissaoTelemetry: Telemetry,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
