@@ -98,7 +98,9 @@ class PesquisarViagemViewModel @Inject constructor(
 
     private suspend fun carregarViagensPesquisadas() {
         val state = _uiState.value
-        val cards = viagemRepository.obterTodas().map { viagemDadosViagemMapper.map(it) }
+        val cards = buildList {
+            viagemRepository.obterTodas().forEach { add(viagemDadosViagemMapper.map(it)) }
+        }
 
         var filtradas = filtrarPor(state.isCheckedEmpresa, cards) { it.empresa == state.empresa }
         filtradas = filtrarPor(state.isCheckedNavio, filtradas) { it.navio == state.navio }

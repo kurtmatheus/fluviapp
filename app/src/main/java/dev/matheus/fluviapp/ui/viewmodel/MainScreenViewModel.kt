@@ -62,7 +62,9 @@ class MainScreenViewModel @Inject constructor(
     private fun atualizarListaViagem(isRefreshing: Boolean) {
         viewModelScope.launch {
             delay(1000)
-            val listaViagensCard = viagemRepository.obterTodas().map { viagemMapper.map(it) }
+            val listaViagensCard = buildList {
+                viagemRepository.obterTodas().forEach { add(viagemMapper.map(it)) }
+            }
             _uiState.update {
                 it.copy(
                     listaViagens = listaViagensCard,
