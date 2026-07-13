@@ -31,6 +31,13 @@ import dev.matheus.fluviapp.ui.states.PesquisarViagemUiState
 fun FormPesquisarViagemScreen(
     state: PesquisarViagemUiState,
     focusManager: FocusManager = LocalFocusManager.current,
+    onCheckEmpresa: () -> Unit = {},
+    onEmpresaChange: (String) -> Unit = {},
+    onCheckNavio: () -> Unit = {},
+    onNavioChange: (String) -> Unit = {},
+    onCheckTrecho: () -> Unit = {},
+    onOrigemChange: (String) -> Unit = {},
+    onDestinoChange: (String) -> Unit = {},
     onClickVoltar: () -> Unit = {},
     onClickPesquisar: () -> Unit = {},
 ) {
@@ -55,14 +62,14 @@ fun FormPesquisarViagemScreen(
                 modifier = modifier,
                 labelFiltro = R.string.label_filtro_empresa,
                 checked = state.isCheckedEmpresa,
-                onCheck = state.onCheckEmpresa
+                onCheck = { onCheckEmpresa() }
             ) {
                 DropDownFormField(
                     listaItens = state.listaEmpresas.map { it.nome },
                     label = R.string.label_empresa,
                     modifier = modifier.fillMaxWidth(),
                     value = state.empresa,
-                    onValueChange = state.onEmpresaChange,
+                    onValueChange = onEmpresaChange,
                     isError = state.isEmpresaError,
                     focusManager = focusManager
                 )
@@ -72,14 +79,14 @@ fun FormPesquisarViagemScreen(
                 modifier = modifier,
                 labelFiltro = R.string.label_filtro_navio,
                 checked = state.isCheckedNavio,
-                onCheck = state.onCheckNavio
+                onCheck = { onCheckNavio() }
             ) {
                 DropDownFormField(
                     listaItens = state.listaNavios.map { it.descricaoNome },
                     label = R.string.label_navio,
                     modifier = modifier.fillMaxWidth(),
                     value = state.navio,
-                    onValueChange = state.onNavioChange,
+                    onValueChange = onNavioChange,
                     isError = state.isNavioError,
                     focusManager = focusManager
                 )
@@ -89,14 +96,14 @@ fun FormPesquisarViagemScreen(
                 modifier = modifier,
                 labelFiltro = R.string.label_filtro_trecho,
                 checked = state.isCheckedTrecho,
-                onCheck = state.onCheckTrecho
+                onCheck = { onCheckTrecho() }
             ) {
                 DropDownFormField(
                     listaItens = state.listaMunicipios.map { it.descricaoNome },
                     label = R.string.label_trecho_origem,
                     modifier = modifier.fillMaxWidth(),
                     value = state.origem,
-                    onValueChange = state.onOrigemChange,
+                    onValueChange = onOrigemChange,
                     isError = state.isTrechoError,
                     focusManager = focusManager
                 )
@@ -106,7 +113,7 @@ fun FormPesquisarViagemScreen(
                     label = R.string.label_trecho_destino,
                     modifier = modifier.fillMaxWidth(),
                     value = state.destino,
-                    onValueChange = state.onDestinoChange,
+                    onValueChange = onDestinoChange,
                     isError = state.isTrechoError,
                     focusManager = focusManager
                 )
@@ -137,9 +144,8 @@ fun FormPesquisarViagemScreen(
 
 @Preview
 @Composable
-private fun PesquisarPassagemFormScreenPreview() {
-    FormPesquisarViagemScreen(state = PesquisarViagemUiState(
-        isCheckedTrecho = true,
-        isTrechoError = true
-    ))
+private fun FormPesquisarViagemScreenPreview() {
+    FormPesquisarViagemScreen(
+        state = PesquisarViagemUiState(isCheckedTrecho = true, isTrechoError = true),
+    )
 }
