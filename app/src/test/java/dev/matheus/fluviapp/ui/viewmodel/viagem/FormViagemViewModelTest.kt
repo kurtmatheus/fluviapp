@@ -100,7 +100,7 @@ class FormViagemViewModelTest {
 
         assertEquals(1, fakeViagem.salvos.size)
         val salvo = fakeViagem.salvos.first()
-        assertEquals(null, salvo.id) // criação → auto-id no repo
+        assertEquals("", salvo.id) // criação → id vazio; auto-id acontece na impl real
         assertEquals("ACME", salvo.empresa)
         assertEquals("F/B", salvo.navio)
         assertEquals("Porto Norte", salvo.origem)

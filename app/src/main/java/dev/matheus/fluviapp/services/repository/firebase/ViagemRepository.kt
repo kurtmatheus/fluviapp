@@ -8,7 +8,7 @@ import dev.matheus.fluviapp.model.viagem.Viagem
  */
 interface ViagemRepository {
     fun sincronizar()
-    suspend fun salvar(id: String?, navio: String, empresa: String, origem: String, destino: String)
+    suspend fun salvar(viagem: Viagem)
     suspend fun obterPorId(id: String): Viagem
     suspend fun obterPorCodigo(codigo: String): Viagem
     suspend fun obterTodas(): List<Viagem>

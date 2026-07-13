@@ -8,6 +8,7 @@ import dev.matheus.fluviapp.R
 import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Categoria.MUNICIPIO
 import dev.matheus.fluviapp.model.extrairPorDescricao
 import dev.matheus.fluviapp.model.mappers.ViagemDadosViagemMapper
+import dev.matheus.fluviapp.model.viagem.Viagem
 import dev.matheus.fluviapp.navigation.navcomposables.viagem.ID_VIAGEM_ARGUMENT
 import dev.matheus.fluviapp.services.repository.cadastro.ConstanteRepository
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.EmpresaRepository
@@ -140,11 +141,14 @@ class FormViagemViewModel @Inject constructor(
                 val destino = s.listaMunicipios.extrairPorDescricao(s.trechoDestino)
 
                 viagemRepository.salvar(
-                    id = idViagem.ifBlank { null },
-                    navio = navio.descricaoNome,
-                    empresa = empresa.nome,
-                    origem = origem.descricaoNome,
-                    destino = destino.descricaoNome,
+                    Viagem(
+                        id = idViagem, // "" na criação → auto-id no repo
+                        codigo = "", // derivado na persistência
+                        navio = navio.descricaoNome,
+                        empresa = empresa.nome,
+                        origem = origem.descricaoNome,
+                        destino = destino.descricaoNome,
+                    )
                 )
                 _sucesso.send(Unit)
             } catch (e: Exception) {
