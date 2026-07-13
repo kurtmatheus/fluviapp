@@ -1,11 +1,9 @@
 package dev.matheus.fluviapp.ui.viewmodel.viagem
 
-import android.content.Context
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import dev.matheus.fluviapp.R
 import dev.matheus.fluviapp.extensions.filtrarPor
-import dev.matheus.fluviapp.extensions.toastMessage
 import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Categoria.MUNICIPIO
 import dev.matheus.fluviapp.model.mappers.ViagemDadosViagemMapper
 import dev.matheus.fluviapp.services.repository.cadastro.ConstanteRepository
@@ -44,7 +42,9 @@ class PesquisarViagemViewModel @Inject constructor(
     private val _irParaResultados = Channel<Unit>(Channel.BUFFERED)
     val irParaResultados = _irParaResultados.receiveAsFlow()
 
-    lateinit var onNavegaParaMainScreen: () -> Unit // usado no delete (fatia 2)
+    /** Resultado da exclusão (true = sucesso) — a nav decide toast/navegação. */
+    private val _exclusao = Channel<Boolean>(Channel.BUFFERED)
+    val exclusao = _exclusao.receiveAsFlow()
 
     init {
         carregarFontes()
@@ -117,16 +117,21 @@ class PesquisarViagemViewModel @Inject constructor(
 
     fun exibirConfirmDeleteDialog() = _uiState.update { it.copy(isShowDeleteDialog = !it.isShowDeleteDialog) }
 
-    // TODO(fatia 2): sucesso reportado no finally + Context na camada de lógica.
-    suspend fun deletarViagem(idViagem: String, context: Context) {
-        try {
-            viagemRepository.deletar(idViagem)
-        } catch (e: Exception) {
-            context.toastMessage(context.resources.getString(R.string.error_transmissao_exclusao))
-        } finally {
-            context.toastMessage(context.resources.getString(R.string.msg_exclusao_viagem))
-            exibirConfirmDeleteDialog()
-            onNavegaParaMainScreen()
+    fun deletarViagem(idViagem: String) {
+        viewModelScope.launch {
+            val sucesso = try {
+                viagemRepository.deletar(idViagem)
+                true
+            } catch (e: Exception) {
+                Log.e(TAG, "deletarViagem: ${e.message}", e)
+                false
+            }
+            _uiState.update { it.copy(isShowDeleteDialog = false) }
+            _exclusao.send(sucesso) // a nav faz toast + navega (só no sucesso)
         }
+    }
+
+    private companion object {
+        const val TAG = "pesquisarViagemViewModel"
     }
 }
