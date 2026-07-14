@@ -59,4 +59,10 @@ significa), que fica numa camada por domínio.
 - **Latência/trace** (4º pilar SRE) — `suspend fun <T> trace(nome, bloco)` na porta, se quisermos medir
   o tempo de save/sync.
 - **Catálogo de nomes de evento** centralizado, se a quantidade de eventos crescer.
-- Rollout: ligar primeiro na **Empresa**, validar, depois Agente/Viagem.
+- Rollout: ligar primeiro na **Empresa**, validar, depois Agente/Viagem. **Feito** — os três cadastros
+  emitem `salvou`/`pendenteDeSync`/`falhou` no `salvar`.
+- **Observabilidade da exclusão** (dívida): `ViagemFirestoreRepository.deletar` ainda faz `.delete()`
+  fire-and-forget com só `Log.e` — o mesmo silêncio de transmissão do achado #2, agora na exclusão.
+  A taxonomia atual (`salvou`/`pendenteDeSync`/`falhou`) é sobre *gravação de cadastro*; cobrir exclusão
+  exige um desfecho semântico novo (ex.: `deletou`/`pendenteDeSyncDelecao`) + `.delete().await()`.
+  Fica fora deste ADR (escopo = `salvar`); reavaliar quando exclusão precisar ser observável.

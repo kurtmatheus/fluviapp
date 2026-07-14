@@ -7,9 +7,11 @@ import dev.matheus.fluviapp.model.viagem.Viagem
 import dev.matheus.fluviapp.model.viagem.toDocumento
 import dev.matheus.fluviapp.services.repository.firebase.documents.ViagemDocumento
 import dev.matheus.fluviapp.services.repository.firebase.documents.toViagem
+import dev.matheus.fluviapp.telemetry.RegistroCadastro
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.toObject
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -17,7 +19,8 @@ import javax.inject.Singleton
 @Singleton
 class ViagemFirestoreRepository @Inject constructor(
     private val dao: ViagemDao,
-    private val firestore: FirebaseFirestore
+    private val firestore: FirebaseFirestore,
+    private val registroCadastro: RegistroCadastro,
 ) : ViagemRepository {
 
     override fun sincronizar() = firestore.sincronizarColecao(
@@ -36,12 +39,22 @@ class ViagemFirestoreRepository @Inject constructor(
         // codigo é derivado na persistência (a partir do navio); id vem do doc.
         val comId = viagem.copy(id = documento.id)
         val completo = comId.copy(codigo = comId.formatarCodigoViagemNavioFB())
-        dao.salvar(completo)
+
+        // FALHA: Room não gravou — desfecho não recuperável, propaga pro VM tratar.
         try {
-            documento.set(completo.toDocumento())
+            dao.salvar(completo)
         } catch (e: Exception) {
-            Log.e(TAG, "salvar: ${e.message}", e)
+            registroCadastro.falhou(ENTIDADE, e)
             throw RuntimeException("Falha ao salvar viagem: ${e.message}", e)
+        }
+
+        // Room já tem o dado (otimista). Aguarda o ack do Firestore: SUCESSO se confirmar,
+        // WARNING (pendente-sync) se rejeitar/offline — não relança, o dado local reconcilia.
+        try {
+            documento.set(completo.toDocumento()).await()
+            registroCadastro.salvou(ENTIDADE, completo.id)
+        } catch (e: Exception) {
+            registroCadastro.pendenteDeSync(ENTIDADE, completo.id, e)
         }
     }
 
@@ -65,5 +78,6 @@ class ViagemFirestoreRepository @Inject constructor(
     private companion object {
         const val TAG = "viagemFirestoreRepository"
         const val COLLECTION_VIAGENS = "viagens"
+        const val ENTIDADE = "viagem"
     }
 }
