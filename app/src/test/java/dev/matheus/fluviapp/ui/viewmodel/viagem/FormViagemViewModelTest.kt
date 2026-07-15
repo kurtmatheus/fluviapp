@@ -33,8 +33,8 @@ class FormViagemViewModelTest {
     }
     private val fakeNavio = FakeNavioRepository().apply {
         navios = listOf(
-            Navio("n1", "F/B", 10, 2, 2, 2, "ACME"),
-            Navio("n2", "Outro", 5, 1, 1, 1, "OUTRA"),
+            Navio("n1", "F/B", 10, 2, 2, 2, "ACME", "e1"),
+            Navio("n2", "Outro", 5, 1, 1, 1, "OUTRA", "e2"),
         )
     }
     private val fakeConstante = FakeConstanteRepository().apply {
@@ -69,6 +69,41 @@ class FormViagemViewModelTest {
         assertEquals(1, vm.uiState.value.listaNavios.size)
         assertEquals("F/B", vm.uiState.value.listaNavios.first().descricaoNome)
         assertFalse(vm.uiState.value.navioDesabilitado)
+    }
+
+    @Test
+    fun `onEmpresaChange filtra por empresaId, nao por nome (rename-safe)`() = runTest(mainRule.dispatcher) {
+        val navioRepo = FakeNavioRepository().apply {
+            navios = listOf(
+                // nome divergente do atual, mas id casa → deve aparecer (rename-safe)
+                Navio("n1", "F/B I", 10, 2, 2, 2, "ACME (NOME ANTIGO)", "e1"),
+                // nome coincide, mas id diferente → NÃO deve aparecer (nome não engana)
+                Navio("n2", "F/B II", 5, 1, 1, 1, "ACME", "e2"),
+            )
+        }
+        val vm = FormViagemViewModel(
+            fakeEmpresa, navioRepo, fakeConstante, fakeViagem,
+            ViagemDadosViagemMapper(fakeEmpresa, navioRepo, fakeConstante), SavedStateHandle(),
+        )
+        advanceUntilIdle()
+
+        vm.onEmpresaChange("ACME") // resolve para empresaId "e1"
+        advanceUntilIdle()
+
+        val navios = vm.uiState.value.listaNavios
+        assertEquals(1, navios.size)
+        assertEquals("F/B I", navios.first().descricaoNome)
+    }
+
+    @Test
+    fun `onEmpresaChange com empresa fora da lista nao lista navios`() = runTest(mainRule.dispatcher) {
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        vm.onEmpresaChange("FANTASMA") // não existe em listaEmpresas → sem id
+        advanceUntilIdle()
+
+        assertTrue(vm.uiState.value.listaNavios.isEmpty())
     }
 
     @Test

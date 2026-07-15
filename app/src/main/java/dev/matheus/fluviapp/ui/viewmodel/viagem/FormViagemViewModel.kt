@@ -8,6 +8,7 @@ import dev.matheus.fluviapp.R
 import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Categoria.MUNICIPIO
 import dev.matheus.fluviapp.model.extrairPorDescricao
 import dev.matheus.fluviapp.model.mappers.ViagemDadosViagemMapper
+import dev.matheus.fluviapp.model.viagem.Navio
 import dev.matheus.fluviapp.model.viagem.Viagem
 import dev.matheus.fluviapp.navigation.navcomposables.viagem.ID_VIAGEM_ARGUMENT
 import dev.matheus.fluviapp.services.repository.cadastro.ConstanteRepository
@@ -50,43 +51,41 @@ class FormViagemViewModel @Inject constructor(
     val sucesso = _sucesso.receiveAsFlow()
 
     init {
-        carregarFontes()
-        if (idViagem.isNotBlank()) carregarParaEdicao()
-    }
-
-    private fun carregarFontes() {
+        // Sequenciado: a edição precisa da `listaEmpresas` pronta para resolver o empresaId (ADR-0008).
         viewModelScope.launch {
-            _uiState.update {
-                it.copy(
-                    listaEmpresas = empresaRepository.obterTodas(),
-                    listaMunicipios = constanteRepository.obterTodosPorCategoria(MUNICIPIO.name),
-                )
-            }
+            carregarFontes()
+            if (idViagem.isNotBlank()) carregarParaEdicao()
         }
     }
 
-    private fun carregarParaEdicao() {
-        viewModelScope.launch {
-            val card = viagemDadosViagemMapper.map(viagemRepository.obterPorId(idViagem))
-            val navios = navioRepository.obterTodos().filter { it.empresa == card.empresa }
-            _uiState.update {
-                it.copy(
-                    titulo = R.string.subtitle_editar_viagem,
-                    empresa = card.empresa,
-                    navio = card.navio,
-                    trechoOrigem = card.origem,
-                    trechoDestino = card.destino,
-                    navioDesabilitado = card.empresa.isBlank(),
-                    trechoDestinoDesabilitado = card.origem.isBlank(), // corrige o prefill (lia estado velho)
-                    listaNavios = navios,
-                )
-            }
+    private suspend fun carregarFontes() {
+        _uiState.update {
+            it.copy(
+                listaEmpresas = empresaRepository.obterTodas(),
+                listaMunicipios = constanteRepository.obterTodosPorCategoria(MUNICIPIO.name),
+            )
+        }
+    }
+
+    private suspend fun carregarParaEdicao() {
+        val card = viagemDadosViagemMapper.map(viagemRepository.obterPorId(idViagem))
+        _uiState.update {
+            it.copy(
+                titulo = R.string.subtitle_editar_viagem,
+                empresa = card.empresa,
+                navio = card.navio,
+                trechoOrigem = card.origem,
+                trechoDestino = card.destino,
+                navioDesabilitado = card.empresa.isBlank(),
+                trechoDestinoDesabilitado = card.origem.isBlank(), // corrige o prefill (lia estado velho)
+                listaNavios = naviosDaEmpresa(card.empresa),
+            )
         }
     }
 
     fun onEmpresaChange(empresa: String) {
         viewModelScope.launch {
-            val navios = navioRepository.obterTodos().filter { it.empresa == empresa }
+            val navios = naviosDaEmpresa(empresa)
             _uiState.update {
                 it.copy(
                     empresa = empresa,
@@ -97,6 +96,17 @@ class FormViagemViewModel @Inject constructor(
                 )
             }
         }
+    }
+
+    /**
+     * Navios da empresa selecionada — filtra pelo **empresaId** estável (ADR-0008), resolvido do nome
+     * via `listaEmpresas` em cache. Rename-safe: o vínculo não depende do rótulo. Sem id resolvido →
+     * lista vazia (nunca casa `empresaId == ""`, que pegaria navios sem vínculo).
+     */
+    private suspend fun naviosDaEmpresa(nomeEmpresa: String): List<Navio> {
+        val empresaId = _uiState.value.listaEmpresas.firstOrNull { it.nome == nomeEmpresa }?.id
+            ?: return emptyList()
+        return navioRepository.obterTodos().filter { it.empresaId == empresaId }
     }
 
     fun onNavioChange(navio: String) = _uiState.update { it.copy(navio = navio, isNavioError = false) }

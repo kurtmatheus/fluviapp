@@ -77,6 +77,9 @@ class SeedFirestore @Inject constructor(
         }
 
         listaNavioSample.forEach { n ->
+            // ADR-0008: o seed já nasce com o link estável (empresaId), resolvido do nome contra a
+            // empresa-sample. É a "prontidão de dado" da Fase 0 — substitui backfill (app portfólio).
+            val empresaId = listaEmpresaSample.firstOrNull { it.nome == n.empresa }?.id.orEmpty()
             firestore.collection(COLLECTION_NAVIOS).document(n.id).set(
                 NavioDocumento(
                     nome = n.descricaoNome,
@@ -85,6 +88,7 @@ class SeedFirestore @Inject constructor(
                     capacidadeSuite3 = n.capacidadeSuite3,
                     capacidadeCamarote = n.capacidadeCamarote,
                     empresa = n.empresa,
+                    empresaId = empresaId,
                 ),
             )
         }
