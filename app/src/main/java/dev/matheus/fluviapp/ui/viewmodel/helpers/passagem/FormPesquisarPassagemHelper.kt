@@ -1,7 +1,6 @@
 package dev.matheus.fluviapp.ui.viewmodel.helpers.passagem
 
 import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Categoria.STATUS_PASSAGEM
-import dev.matheus.fluviapp.model.cadastro.constantes.obterCategoriaFormatada
 import dev.matheus.fluviapp.services.repository.cadastro.ConstanteRepository
 import dev.matheus.fluviapp.services.repository.operacoes.UsuarioRepository
 import dev.matheus.fluviapp.ui.states.passagem.PesquisarPassagemUiState
@@ -40,7 +39,7 @@ class FormPesquisarPassagemHelper(
                 onPesquisaChange = {
                     atualizarBarraPesquisa(it)
                 },
-                listaSituacaoPassagem = runBlocking { constanteRepository.obterTodosPorCategoria(STATUS_PASSAGEM.obterCategoriaFormatada()) },
+                listaSituacaoPassagem = runBlocking { constanteRepository.obterTodosPorCategoria(STATUS_PASSAGEM.name) },
                 listaOperadores = runBlocking { usuarioRepository.obterTodos().map { it.nome } }
             )
         }

@@ -8,7 +8,6 @@ import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Categoria.TIPO_P
 import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.CNPJ
 import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.CPF
 import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.PASSAPORTE
-import dev.matheus.fluviapp.model.cadastro.constantes.obterCategoriaFormatada
 import dev.matheus.fluviapp.model.passagem.Passagem
 import dev.matheus.fluviapp.services.repository.cadastro.ConstanteRepository
 import dev.matheus.fluviapp.services.repository.firebase.PassagemFirestoreRepository
@@ -97,7 +96,7 @@ class FormPassageiroHelper(
                 },
                 listaNomePassageiro = passagemRepository.getListaNome(),
                 listaAcomodacao = runBlocking { constanteRepository.obterTodosPorCategoria(ACOMODACAO.name) },
-                listaTipoPassagem = runBlocking { constanteRepository.obterTodosPorCategoria(TIPO_PASSAGEM.obterCategoriaFormatada()) },
+                listaTipoPassagem = runBlocking { constanteRepository.obterTodosPorCategoria(TIPO_PASSAGEM.name) },
                 listaTipoGratuidade = runBlocking { constanteRepository.obterTodosPorCategoria(GRATUIDADE.name) }
             )
         }
