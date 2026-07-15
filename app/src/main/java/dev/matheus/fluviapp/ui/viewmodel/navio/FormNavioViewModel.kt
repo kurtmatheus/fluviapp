@@ -88,6 +88,9 @@ class FormNavioViewModel @Inject constructor(
         _uiState.update { it.copy(isProcessing = true) }
         viewModelScope.launch {
             val s = _uiState.value
+            // ADR-0008 (Fase 0/1): resolve o link estável na fronteira de escrita, a partir da lista
+            // já em cache. `empresa` (nome) segue gravado (dormente); ninguém lê `empresaId` ainda.
+            val empresaId = s.listaEmpresas.firstOrNull { it.nome == s.empresa }?.id.orEmpty()
             try {
                 navioRepository.salvar(
                     Navio(
@@ -98,6 +101,7 @@ class FormNavioViewModel @Inject constructor(
                         capacidadeSuite3 = s.capacidadeSuite3.toIntOrNull() ?: 0,
                         capacidadeCamarote = s.capacidadeCamarote.toIntOrNull() ?: 0,
                         empresa = s.empresa,
+                        empresaId = empresaId,
                     )
                 )
                 _sucesso.send(Unit)

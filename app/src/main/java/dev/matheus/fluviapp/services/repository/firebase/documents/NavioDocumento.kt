@@ -8,7 +8,10 @@ data class NavioDocumento(
     val capacidadeSuite2: Int = 0,
     val capacidadeSuite3: Int = 0,
     val capacidadeCamarote: Int = 0,
-    val empresa: String = ""
+    val empresa: String = "",
+    // Link estável para Empresa (ADR-0008, Fase 0/1). Dormente: coexiste com `empresa` (nome),
+    // que segue sendo o campo lido. Default "" cobre docs antigos (schemaless).
+    val empresaId: String = "",
 )
 
 fun NavioDocumento.toNavio(id: String): Navio {
@@ -19,6 +22,7 @@ fun NavioDocumento.toNavio(id: String): Navio {
         capacidadeSuite2 = capacidadeSuite2,
         capacidadeSuite3 = capacidadeSuite3,
         capacidadeCamarote = capacidadeCamarote,
-        empresa = empresa
+        empresa = empresa,
+        empresaId = empresaId,
     )
 }

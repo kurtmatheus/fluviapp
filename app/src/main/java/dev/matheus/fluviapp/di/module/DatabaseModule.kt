@@ -87,6 +87,17 @@ val MIGRATION_4_5 = object : Migration(4, 5) {
     }
 }
 
+/**
+ * v5 → v6: `Navio.empresaId` — link estável para Empresa (ADR-0008, Fase 0/1). Mesmo trade-off da
+ * 1→2: schemaless de graça no Firestore, ALTER TABLE tipado no Room. Aditiva e não-destrutiva;
+ * `empresa` (nome) segue dormente até a Fase 3.
+ */
+val MIGRATION_5_6 = object : Migration(5, 6) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE Navio ADD COLUMN empresaId TEXT NOT NULL DEFAULT ''")
+    }
+}
+
 @Module
 @InstallIn(SingletonComponent::class)
 class DatabaseModule {
@@ -98,7 +109,7 @@ class DatabaseModule {
             context,
             FluviAppDatabase::class.java,
             DATABASE_NAME
-        ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5).build()
+        ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6).build()
     }
 
     @Provides

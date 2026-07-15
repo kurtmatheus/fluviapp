@@ -59,11 +59,26 @@ class FormNavioViewModelTest {
         val salvo = navioFake.salvos.first()
         assertEquals("FLUVI I", salvo.descricaoNome)
         assertEquals("ACME", salvo.empresa)
+        assertEquals("e1", salvo.empresaId) // ADR-0008: link resolvido do nome selecionado
         assertEquals(12, salvo.capacidadeVeiculo)
         assertEquals(8, salvo.capacidadeCamarote)
         assertEquals(0, salvo.capacidadeSuite2) // em branco -> 0
         assertEquals(1, eventos.size)
         job.cancel()
+    }
+
+    @Test
+    fun `empresa sem match na lista salva com empresaId vazio (dormente, nao quebra)`() = runTest(mainRule.dispatcher) {
+        val navioFake = FakeNavioRepository()
+        val vm = FormNavioViewModel(navioFake, empresaFake(), SavedStateHandle())
+
+        vm.onNomeChange("FLUVI I")
+        vm.onEmpresaChange("EMPRESA FANTASMA") // não existe em listaEmpresas
+        vm.salvar()
+        advanceUntilIdle()
+
+        assertEquals(1, navioFake.salvos.size)
+        assertEquals("", navioFake.salvos.first().empresaId)
     }
 
     @Test
