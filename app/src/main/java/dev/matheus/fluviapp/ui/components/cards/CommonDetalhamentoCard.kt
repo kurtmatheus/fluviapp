@@ -9,6 +9,8 @@ import dev.matheus.fluviapp.ui.components.texts.FluviWordmark
 import dev.matheus.fluviapp.sampledata.dadosPassagemSample
 import dev.matheus.fluviapp.ui.components.contents.DetalhamentoPassagemContent
 import dev.matheus.fluviapp.ui.states.passagem.DetalhesPassagemState
+import dev.matheus.fluviapp.ui.theme.HeaderNavy
+import dev.matheus.fluviapp.ui.theme.SteelTeal
 
 @Composable
 fun CommonDetalhamentoCard(
@@ -21,7 +23,12 @@ fun CommonDetalhamentoCard(
         FluviWordmark(
             modifier = modifier.matchParentSize(),
             fontSize = 56.sp,
-            alpha = 0.3f
+            alpha = 0.3f,
+            // Marca d'água sobre papel claro: gradiente escuro (o default claro sumia). Alpha baixo
+            // mantém sutil, mas agora visível.
+            fluviColor = SteelTeal,
+            appGradient = listOf(SteelTeal, HeaderNavy, SteelTeal),
+            strokeWidth = 3f,
         )
 
         content(modifier)
