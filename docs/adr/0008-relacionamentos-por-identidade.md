@@ -1,6 +1,7 @@
 # ADR-0008: Relacionamentos do domínio por identidade — separar referência viva de snapshot histórico
 
-**Status:** Proposta (aguardando aceite; execução faseada e aditiva, não iniciada)
+**Status:** Aceita — validada pelo piloto Navio→Empresa (Fases 0-3 completas). Execução faseada e
+aditiva; replicação nas demais relações vivas em andamento.
 
 > Formaliza o [estudo do domínio](../design/dominio-relacionamentos-e-camadas.md). Escopo = a
 > **Opção 1** do estudo (consertar o relacionamento; manter o Room como cache). A decisão de eixo de
