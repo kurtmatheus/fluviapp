@@ -9,7 +9,7 @@ import dev.matheus.fluviapp.model.viagem.Navio
 interface NavioRepository {
     fun sincronizar()
     suspend fun obterTodos(): List<Navio>
-    suspend fun obterPorId(id: String): Navio
+    suspend fun obterPorId(id: String): Navio?
     suspend fun salvar(navio: Navio)
     suspend fun obterPorNome(nome: String): Navio
 }

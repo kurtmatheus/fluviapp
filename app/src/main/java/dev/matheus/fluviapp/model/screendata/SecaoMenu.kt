@@ -17,4 +17,5 @@ enum class SecaoMenu(
     VIAGEM(R.string.label_menu_viagens, R.drawable.ic_navio_75),
     AGENTE(R.string.label_menu_agentes, R.drawable.ic_user_75),
     EMPRESA(R.string.label_menu_empresa, R.drawable.ic_empresa_24),
+    NAVIO(R.string.label_menu_navios, R.drawable.ic_navio_75),
 }

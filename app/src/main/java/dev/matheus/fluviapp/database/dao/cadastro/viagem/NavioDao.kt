@@ -17,7 +17,7 @@ interface NavioDao {
     fun obterTodos(): Flow<List<Navio>>
 
     @Query("SELECT * FROM Navio WHERE id = :id")
-    fun obterPorId(id: String): Flow<Navio>
+    fun obterPorId(id: String): Flow<Navio?>
 
     @Insert(onConflict = REPLACE)
     suspend fun salvarTodos(vararg navio: Navio)

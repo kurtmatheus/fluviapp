@@ -4,6 +4,7 @@ import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
 import dev.matheus.fluviapp.model.IObjetoSimplificado
+import dev.matheus.fluviapp.services.repository.firebase.documents.NavioDocumento
 
 @Entity(indices = [Index("id")])
 data class Navio(
@@ -16,3 +17,13 @@ data class Navio(
     val capacidadeCamarote: Int,
     val empresa: String
 ): IObjetoSimplificado
+
+/** Model → documento do Firestore (espelho ADR-0003). Vínculo N-1 por nome (`empresa`). */
+fun Navio.toDocumento() = NavioDocumento(
+    nome = descricaoNome,
+    capacidadeVeiculo = capacidadeVeiculo,
+    capacidadeSuite2 = capacidadeSuite2,
+    capacidadeSuite3 = capacidadeSuite3,
+    capacidadeCamarote = capacidadeCamarote,
+    empresa = empresa,
+)

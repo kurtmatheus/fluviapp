@@ -154,6 +154,18 @@
     <string name="label_lotacao">Lotação</string>
     <string name="label_tema_escuro">Tema escuro</string>
     <string name="label_menu_empresa">Empresas</string>
+    <string name="label_menu_navios">Navios</string>
+
+    <!-- Navio -->
+    <string name="title_top_navio">Navios</string>
+    <string name="subtitle_cadastrar_novo_navio">Cadastrar Novo Navio</string>
+    <string name="subtitle_editar_navio">Editar Navio</string>
+    <string name="label_nome_navio">Nome</string>
+    <string name="label_capacidade_veiculo">Capacidade de Veículos</string>
+    <string name="label_capacidade_suite2">Capacidade Suíte 2</string>
+    <string name="label_capacidade_suite3">Capacidade Suíte 3</string>
+    <string name="label_capacidade_camarote">Capacidade Camarote</string>
+    <string name="btn_novo_navio">Novo Navio</string>
 
     <!-- Empresa -->
     <string name="title_top_empresa">Empresas</string>

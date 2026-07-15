@@ -16,6 +16,7 @@ import dev.matheus.fluviapp.extensions.navegaParaPesquisarPassagemGraph
 import dev.matheus.fluviapp.extensions.navegaParaPesquisarViagemGraph
 import dev.matheus.fluviapp.extensions.navegaParaRecuperarSenha
 import dev.matheus.fluviapp.extensions.navegaParaFormularioEmpresa
+import dev.matheus.fluviapp.extensions.navegaParaFormularioNavio
 import dev.matheus.fluviapp.extensions.navegaParaResultPesquisarAgente
 import dev.matheus.fluviapp.extensions.navegaParaResultadosPesquisarPassagem
 import dev.matheus.fluviapp.extensions.navegaParaResultadosPesquisarViagem
@@ -25,6 +26,7 @@ import dev.matheus.fluviapp.navigation.destinations.FluviAppGraphDestinations
 import dev.matheus.fluviapp.navigation.graphs.loginGraph
 import dev.matheus.fluviapp.navigation.graphs.mainScreenGraph
 import dev.matheus.fluviapp.navigation.navcomposables.empresa.formEmpresaNavComposable
+import dev.matheus.fluviapp.navigation.navcomposables.navio.formNavioNavComposable
 import dev.matheus.fluviapp.navigation.graphs.pesquisarPassagemGraph
 import dev.matheus.fluviapp.navigation.graphs.pesquisarViagemGraph
 import dev.matheus.fluviapp.navigation.graphs.splashGraph
@@ -99,6 +101,9 @@ fun FluviAppNavHost(
             },
             onNavegaParaFormularioNovaEmpresa = {
                 navController.navegaParaFormularioEmpresa()
+            },
+            onNavegaParaFormularioNovoNavio = {
+                navController.navegaParaFormularioNavio()
             }
         )
 
@@ -190,6 +195,15 @@ fun FluviAppNavHost(
         )
 
         formEmpresaNavComposable(
+            onNavegaParaMainScreen = {
+                navController.navegaParaMainScreenGraph()
+            },
+            onClickVoltar = {
+                navController.navigateUp()
+            }
+        )
+
+        formNavioNavComposable(
             onNavegaParaMainScreen = {
                 navController.navegaParaMainScreenGraph()
             },
