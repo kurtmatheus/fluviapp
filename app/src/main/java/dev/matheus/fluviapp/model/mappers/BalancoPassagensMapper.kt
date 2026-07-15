@@ -9,7 +9,6 @@ import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.MEIA
 import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.MOTO
 import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.REDE
 import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.SUITE
-import dev.matheus.fluviapp.model.extrairPorDescricao
 import dev.matheus.fluviapp.model.passagem.Passagem
 import dev.matheus.fluviapp.model.screendata.DadosBalancoPassagem
 import dev.matheus.fluviapp.model.viagem.Navio
@@ -29,8 +28,8 @@ class BalancoPassagensMapper @Inject constructor(
     override fun map(entry: List<Passagem>): List<DadosBalancoPassagem> {
         val mapViagem = entry.groupBy {
             val viagem = runBlocking { viagemRepository.obterPorCodigo(it.codigoViagem) }
-            val navio = runBlocking { navioRepository.obterTodos() }.extrairPorDescricao(viagem.navio)
-            navio
+            // Casa pelo id estável (ADR-0008), não pelo nome — rename-safe.
+            runBlocking { navioRepository.obterTodos() }.first { navio -> navio.id == viagem.navioId }
         }
 
         return mapViagem.map {

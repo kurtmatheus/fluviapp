@@ -116,6 +116,8 @@ class FormViagemViewModelTest {
         assertEquals("F/B", salvo.navio)
         assertEquals("Porto Norte", salvo.origem)
         assertEquals("Ilha Central", salvo.destino)
+        assertEquals("e1", salvo.empresaId) // ADR-0008: vínculo por id resolvido do nome
+        assertEquals("n1", salvo.navioId)
         assertEquals(1, eventos.size)
         job.cancel()
     }

@@ -158,6 +158,9 @@ class FormViagemViewModel @Inject constructor(
                         empresa = empresa.nome,
                         origem = origem.descricaoNome,
                         destino = destino.descricaoNome,
+                        // Vínculo vivo por id (ADR-0008); os nomes acima seguem como substrato.
+                        navioId = navio.id,
+                        empresaId = empresa.id,
                     )
                 )
                 _sucesso.send(Unit)

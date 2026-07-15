@@ -24,8 +24,10 @@ class ViagemDadosViagemMapper @Inject constructor(
     private val constanteRepository: ConstanteRepository,
 ) {
     suspend fun map(entry: Viagem): DadosViagemCard {
-        val navio = navioRepository.obterPorNome(entry.navio)
-        val empresa = empresaRepository.obterPorNome(entry.empresa)
+        // Resolve pelo id estável (ADR-0008) — rename-safe. Fallback ao nome-substrato guardado na
+        // própria Viagem se o id não resolver (defensivo).
+        val navio = navioRepository.obterPorId(entry.navioId)
+        val empresa = empresaRepository.obterPorId(entry.empresaId)
         val listaMunicipios = constanteRepository.obterTodosPorCategoria(MUNICIPIO.name)
 
         val origem = listaMunicipios.extrairPorDescricao(entry.origem)
@@ -34,15 +36,15 @@ class ViagemDadosViagemMapper @Inject constructor(
         return DadosViagemCard(
             idViagem = entry.id,
             codigo = entry.codigo,
-            empresa = empresa.nome,
-            navio = navio.descricaoNome,
+            empresa = empresa?.nome ?: entry.empresa,
+            navio = navio?.descricaoNome ?: entry.navio,
             origem = origem.descricaoNome,
             destino = destino.descricaoNome,
-            capacidadeVeiculos = navio.capacidadeVeiculo.toString(),
-            capacidadeSuites2Pessoas = navio.capacidadeSuite2.toString(),
-            capacidadeSuites3Pessoas = navio.capacidadeSuite3.toString(),
-            capacidadeSuites = (navio.capacidadeSuite2 + navio.capacidadeSuite3).toString(),
-            capacidadeCamarotes = navio.capacidadeCamarote.toString()
+            capacidadeVeiculos = (navio?.capacidadeVeiculo ?: 0).toString(),
+            capacidadeSuites2Pessoas = (navio?.capacidadeSuite2 ?: 0).toString(),
+            capacidadeSuites3Pessoas = (navio?.capacidadeSuite3 ?: 0).toString(),
+            capacidadeSuites = ((navio?.capacidadeSuite2 ?: 0) + (navio?.capacidadeSuite3 ?: 0)).toString(),
+            capacidadeCamarotes = (navio?.capacidadeCamarote ?: 0).toString()
         )
     }
 }

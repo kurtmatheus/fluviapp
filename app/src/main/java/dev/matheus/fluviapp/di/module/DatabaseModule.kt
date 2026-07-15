@@ -123,6 +123,18 @@ val MIGRATION_6_7 = object : Migration(6, 7) {
     }
 }
 
+/**
+ * v7 → v8: `Viagem.empresaId`/`navioId` — vínculo vivo por id (ADR-0008), replicando o piloto do
+ * Navio nas relações da Viagem. Aditiva; os nomes (empresa/navio) seguem, pois são substrato do
+ * snapshot da Passagem e da derivação do código (por isso não é Fase 3/drop aqui).
+ */
+val MIGRATION_7_8 = object : Migration(7, 8) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE Viagem ADD COLUMN empresaId TEXT NOT NULL DEFAULT ''")
+        db.execSQL("ALTER TABLE Viagem ADD COLUMN navioId TEXT NOT NULL DEFAULT ''")
+    }
+}
+
 @Module
 @InstallIn(SingletonComponent::class)
 class DatabaseModule {
@@ -136,6 +148,7 @@ class DatabaseModule {
             DATABASE_NAME
         ).addMigrations(
             MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7,
+            MIGRATION_7_8,
         ).build()
     }
 
