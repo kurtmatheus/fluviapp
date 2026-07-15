@@ -5,19 +5,20 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import dev.matheus.fluviapp.ui.theme.NavyBlue
 
 @Composable
 fun CommonExpansiveDialog(
     modifier: Modifier,
     onDismiss: () -> Unit,
-    containerColor: Color = NavyBlue,
-    contentColor: Color = Color.White,
+    // Navy da marca vindo do tema (ADR identidade visual): secondary = HeaderNavy nos dois temas.
+    containerColor: Color = MaterialTheme.colorScheme.secondary,
+    contentColor: Color = MaterialTheme.colorScheme.onSecondary,
     content: @Composable () -> Unit,
 ) {
     Dialog(
