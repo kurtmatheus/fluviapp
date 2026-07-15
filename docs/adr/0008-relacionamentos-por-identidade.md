@@ -60,9 +60,12 @@ lembrar**; master data vivo relaciona por identidade.
 
 *Fase 0 — Preparar (aditivo, sem flip).* Adicionar os campos de id nos `Documento` do Firestore
 (`empresaId` em `NavioDocumento`/`ViagemDocumento`, `navioId` em `ViagemDocumento`; `*Id` em
-`PassagemDocumento`) — schemaless, entra de graça. **Backfill** dos documentos existentes: resolver
-nome→id uma vez (assume nome único no momento do backfill). Manter os campos de nome vivos durante
-toda a transição.
+`PassagemDocumento`) — schemaless, entra de graça. Manter os campos de nome vivos durante toda a
+transição. **Prontidão de dado:** este é um app de **portfólio** — sem produção, sem dados oficiais,
+tudo nasce do `SeedFirestore`. Logo **não há "dado antigo" para migrar**: basta o seed escrever o id
+(ex.: `SeedFirestore` resolve `empresaId` do navio contra a empresa-sample). Backfill de documentos
+existentes seria over-engineering aqui (foi considerado e descartado); só faria sentido com uma base
+real em produção — e, mesmo lá, atenção a nome homônimo (que exige desempate manual).
 
 *Fase 1 — Escrever id junto do nome.* Cadastros passam a gravar o `id` do item selecionado (do
 dropdown), não só o nome. Mudança mínima possível: no `salvar`, resolver o nome selecionado → id via
@@ -88,8 +91,9 @@ de versão do Room (migração destrutiva segura).
   Política de órfão (bloquear/marcar) passa a ser possível — fica como trabalho à parte.
 - **Custo de leitura**: toda tela que mostra "empresa/navio" resolve nome via master list em cache.
   É barato (lista pequena, já em memória), mas é uma dependência de leitura nova a modelar nos VMs.
-- **Migração toca Firestore + Room** (não só Room): é uma migração de *dado*, com backfill nome→id.
-  O caráter aditivo/faseado mantém tudo funcionando até a Fase 3.
+- **Migração toca Firestore + Room** (não só Room), mas **sem backfill** (portfólio, sem dado real):
+  a prontidão de dado é o `SeedFirestore` gravar o id. O caráter aditivo/faseado mantém tudo
+  funcionando até a Fase 3.
 - **Ortogonal ao storage**: nada aqui decide SQL×NoSQL; ao contrário, torna as Opções 2/3 do estudo
   mais limpas (relações explícitas por id migram melhor pra qualquer substrato).
 
