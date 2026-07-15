@@ -9,6 +9,7 @@ import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Categoria.PAGAME
 import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Categoria.STATUS_PASSAGEM
 import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.A_EMITIR
 import dev.matheus.fluviapp.model.cadastro.constantes.obterDescricaoFormatada
+import dev.matheus.fluviapp.model.mappers.ViagemDadosViagemMapper
 import dev.matheus.fluviapp.model.passagem.Passagem
 import dev.matheus.fluviapp.model.passagem.Passagem.Companion.DESCONTO_ANTAC
 import dev.matheus.fluviapp.model.viagem.Viagem
@@ -31,6 +32,7 @@ class FormPassagemHelper(
     private val viagemRepository: ViagemFirestoreRepository,
     private val agenteRepository: AgenteRepository,
     private val passagemRepository: PassagemFirestoreRepository,
+    private val viagemDadosViagemMapper: ViagemDadosViagemMapper,
 ) {
 
     init {
@@ -373,13 +375,14 @@ class FormPassagemHelper(
     suspend fun atualizarDadosViagemPorId(idViagem: String) {
         viagem = viagemRepository.obterPorId(idViagem)
 
-        viagem.let {
-            atualizarEmpresaViagem(viagem.empresa)
-            atualizarNavioViagem(viagem.navio)
-            atualizarOrigemViagem(viagem.origem)
-            atualizarDestinoViagem(viagem.destino)
-            atualizarCodigoViagem(it.codigo)
-        }
+        // A Viagem relaciona por id (ADR-0008 Fase 3); resolve os nomes p/ o snapshot da Passagem via
+        // o mapper (mesma resolução do card). Esses nomes são congelados na Passagem na emissão.
+        val card = viagemDadosViagemMapper.map(viagem)
+        atualizarEmpresaViagem(card.empresa)
+        atualizarNavioViagem(card.navio)
+        atualizarOrigemViagem(card.origem)
+        atualizarDestinoViagem(card.destino)
+        atualizarCodigoViagem(card.codigo)
     }
 
     suspend fun salvarPassagem(

@@ -135,6 +135,28 @@ val MIGRATION_7_8 = object : Migration(7, 8) {
     }
 }
 
+/**
+ * v8 → v9: remove `Viagem.empresa`/`navio` (nomes) — ADR-0008 Fase 3: o vínculo com Empresa/Navio é
+ * só por id. Os nomes são resolvidos na fronteira (código + snapshot da Passagem). Recria a tabela
+ * (SQLite não garante DROP COLUMN no minSdk 26; padrão da 4→5/6→7). Espelho do Firestore → seguro.
+ */
+val MIGRATION_8_9 = object : Migration(8, 9) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `Viagem_novo` (`id` TEXT NOT NULL, `codigo` TEXT NOT NULL, " +
+                "`origem` TEXT NOT NULL, `destino` TEXT NOT NULL, `empresaId` TEXT NOT NULL, " +
+                "`navioId` TEXT NOT NULL, PRIMARY KEY(`id`))"
+        )
+        db.execSQL(
+            "INSERT INTO `Viagem_novo` (`id`, `codigo`, `origem`, `destino`, `empresaId`, `navioId`) " +
+                "SELECT `id`, `codigo`, `origem`, `destino`, `empresaId`, `navioId` FROM `Viagem`"
+        )
+        db.execSQL("DROP TABLE `Viagem`")
+        db.execSQL("ALTER TABLE `Viagem_novo` RENAME TO `Viagem`")
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_Viagem_id` ON `Viagem` (`id`)")
+    }
+}
+
 @Module
 @InstallIn(SingletonComponent::class)
 class DatabaseModule {
@@ -148,7 +170,7 @@ class DatabaseModule {
             DATABASE_NAME
         ).addMigrations(
             MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7,
-            MIGRATION_7_8,
+            MIGRATION_7_8, MIGRATION_8_9,
         ).build()
     }
 

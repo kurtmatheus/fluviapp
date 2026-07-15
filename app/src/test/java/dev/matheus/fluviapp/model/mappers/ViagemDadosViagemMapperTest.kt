@@ -30,12 +30,10 @@ class ViagemDadosViagemMapperTest {
     private val mapper = ViagemDadosViagemMapper(fakeEmpresa, fakeNavio, fakeConstante)
 
     @Test
-    fun `resolve empresa e navio pelo id, ignorando nomes desatualizados na viagem`() = runTest {
+    fun `resolve empresa e navio pelo id (Viagem nao guarda mais os nomes)`() = runTest {
         val viagem = Viagem(
             id = "v1",
             codigo = "COD",
-            empresa = "NOME VELHO", // substrato desatualizado — deve ser ignorado
-            navio = "NAVIO VELHO",
             origem = "Porto Norte",
             destino = "Ilha Central",
             empresaId = "e1",
@@ -44,7 +42,7 @@ class ViagemDadosViagemMapperTest {
 
         val card = mapper.map(viagem)
 
-        assertEquals("ACME ATUAL", card.empresa) // resolvido do id, não o nome velho
+        assertEquals("ACME ATUAL", card.empresa) // resolvido do id
         assertEquals("F/B ATUAL", card.navio)
         assertEquals("60", card.capacidadeVeiculos) // capacidades vêm do navio resolvido
         assertEquals("Porto Norte", card.origem)
@@ -52,12 +50,10 @@ class ViagemDadosViagemMapperTest {
     }
 
     @Test
-    fun `sem id resolvido, faz fallback ao nome-substrato da viagem`() = runTest {
+    fun `id nao resolvido deixa empresa e navio vazios`() = runTest {
         val viagem = Viagem(
             id = "v1",
             codigo = "COD",
-            empresa = "EMPRESA SUBSTRATO",
-            navio = "NAVIO SUBSTRATO",
             origem = "Porto Norte",
             destino = "Ilha Central",
             empresaId = "", // não resolve
@@ -66,8 +62,8 @@ class ViagemDadosViagemMapperTest {
 
         val card = mapper.map(viagem)
 
-        assertEquals("EMPRESA SUBSTRATO", card.empresa)
-        assertEquals("NAVIO SUBSTRATO", card.navio)
+        assertEquals("", card.empresa)
+        assertEquals("", card.navio)
         assertEquals("0", card.capacidadeVeiculos) // sem navio resolvido
     }
 }

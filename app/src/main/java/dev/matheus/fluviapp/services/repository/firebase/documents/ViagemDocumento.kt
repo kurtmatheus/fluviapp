@@ -15,11 +15,11 @@ data class ViagemDocumento(
 )
 
 fun ViagemDocumento.toViagem(id: String): Viagem {
+    // empresa/navio (nomes) do doc são ignorados na entidade — o vínculo é por id (ADR-0008 Fase 3);
+    // os nomes seguem no doc só para o papel de snapshot embutido na Passagem.
     return Viagem(
         id = id,
         codigo = codigo,
-        empresa = empresa,
-        navio = navio,
         origem = origem,
         destino = destino,
         empresaId = empresaId,

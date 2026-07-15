@@ -8,6 +8,7 @@ import dev.matheus.fluviapp.R
 import dev.matheus.fluviapp.extensions.isTextoNaoNulo
 import dev.matheus.fluviapp.extensions.toastMessage
 import dev.matheus.fluviapp.model.passagem.Passagem
+import dev.matheus.fluviapp.model.mappers.ViagemDadosViagemMapper
 import dev.matheus.fluviapp.model.rascunho.aplicarEm
 import dev.matheus.fluviapp.model.rascunho.montarRascunho
 import dev.matheus.fluviapp.navigation.navcomposables.passagem.EDIT_PASSAGEM_ARGUMENT
@@ -52,6 +53,7 @@ class FormPassagemViewModel @Inject constructor(
     private val passagemRepository: PassagemFirestoreRepository,
     private val rascunhoStore: RascunhoStore,
     private val emissaoTelemetry: Telemetry,
+    private val viagemDadosViagemMapper: ViagemDadosViagemMapper,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
@@ -131,7 +133,8 @@ class FormPassagemViewModel @Inject constructor(
             constanteRepository = constanteRepository,
             viagemRepository = viagemRepository,
             agenteRepository = agenteRepository,
-            passagemRepository = passagemRepository
+            passagemRepository = passagemRepository,
+            viagemDadosViagemMapper = viagemDadosViagemMapper,
         )
         formPassageiroHelper = FormPassageiroHelper(
             uiState = _uiStatePassageiro,

@@ -10,21 +10,19 @@ data class Viagem(
     @PrimaryKey
     val id: String,
     val codigo: String,
-    // empresa/navio (nomes) são mantidos: alimentam a derivação do `codigo` e o snapshot da Passagem
-    // na emissão (ADR-0008 — Viagem é fonte de snapshot). O vínculo vivo é por id (empresaId/navioId).
-    val empresa: String,
-    val navio: String,
     val origem: String,
     val destino: String,
-    val empresaId: String = "",
-    val navioId: String = "",
+    // Vínculo N-1 com Empresa/Navio só por id (ADR-0008, Fase 3). Os nomes são resolvidos na fronteira
+    // de escrita: derivação do `codigo` (repositório) e snapshot da Passagem (emissão).
+    val empresaId: String,
+    val navioId: String,
 )
 
 fun Viagem.toDocumento(): ViagemDocumento {
+    // empresa/navio (nomes) ficam vazios no doc de /viagens — o vínculo é por id. Os nomes só
+    // aparecem no ViagemDocumento *embutido* na Passagem (snapshot), montado à parte na emissão.
     return ViagemDocumento(
         codigo = codigo,
-        empresa = empresa,
-        navio = navio,
         origem = origem,
         destino = destino,
         empresaId = empresaId,

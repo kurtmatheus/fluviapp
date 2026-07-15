@@ -153,14 +153,12 @@ class FormViagemViewModel @Inject constructor(
                 viagemRepository.salvar(
                     Viagem(
                         id = idViagem, // "" na criação → auto-id no repo
-                        codigo = "", // derivado na persistência
-                        navio = navio.descricaoNome,
-                        empresa = empresa.nome,
+                        codigo = "", // derivado na persistência (resolve o nome do navio pelo id)
                         origem = origem.descricaoNome,
                         destino = destino.descricaoNome,
-                        // Vínculo vivo por id (ADR-0008); os nomes acima seguem como substrato.
-                        navioId = navio.id,
+                        // Vínculo vivo só por id (ADR-0008 Fase 3); nomes resolvidos na fronteira.
                         empresaId = empresa.id,
+                        navioId = navio.id,
                     )
                 )
                 _sucesso.send(Unit)

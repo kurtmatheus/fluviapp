@@ -41,7 +41,8 @@ class PesquisarViagemViewModelTest {
         )
     }
     private val fakeViagem = FakeViagemRepository().apply {
-        viagens = listOf(Viagem("v1", "COD", "ACME", "F/B", "Porto Norte", "Ilha Central"))
+        // Viagem relaciona por id (ADR-0008 Fase 3): empresaId "e1" (ACME), navioId "n1" (F/B).
+        viagens = listOf(Viagem("v1", "COD", "Porto Norte", "Ilha Central", "e1", "n1"))
     }
     private val mapper = ViagemDadosViagemMapper(fakeEmpresa, fakeNavio, fakeConstante)
 

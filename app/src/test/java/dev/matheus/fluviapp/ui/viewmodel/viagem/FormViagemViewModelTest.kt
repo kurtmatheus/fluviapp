@@ -112,11 +112,9 @@ class FormViagemViewModelTest {
         assertEquals(1, fakeViagem.salvos.size)
         val salvo = fakeViagem.salvos.first()
         assertEquals("", salvo.id) // criação → id vazio; auto-id acontece na impl real
-        assertEquals("ACME", salvo.empresa)
-        assertEquals("F/B", salvo.navio)
         assertEquals("Porto Norte", salvo.origem)
         assertEquals("Ilha Central", salvo.destino)
-        assertEquals("e1", salvo.empresaId) // ADR-0008: vínculo por id resolvido do nome
+        assertEquals("e1", salvo.empresaId) // ADR-0008 Fase 3: vínculo só por id (nomes não persistem)
         assertEquals("n1", salvo.navioId)
         assertEquals(1, eventos.size)
         job.cancel()

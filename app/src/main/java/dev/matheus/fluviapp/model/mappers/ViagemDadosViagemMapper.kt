@@ -24,8 +24,8 @@ class ViagemDadosViagemMapper @Inject constructor(
     private val constanteRepository: ConstanteRepository,
 ) {
     suspend fun map(entry: Viagem): DadosViagemCard {
-        // Resolve pelo id estável (ADR-0008) — rename-safe. Fallback ao nome-substrato guardado na
-        // própria Viagem se o id não resolver (defensivo).
+        // Resolve empresa/navio pelo id estável (ADR-0008) — rename-safe. A Viagem não guarda mais os
+        // nomes (Fase 3), então id não resolvido → vazio.
         val navio = navioRepository.obterPorId(entry.navioId)
         val empresa = empresaRepository.obterPorId(entry.empresaId)
         val listaMunicipios = constanteRepository.obterTodosPorCategoria(MUNICIPIO.name)
@@ -36,8 +36,8 @@ class ViagemDadosViagemMapper @Inject constructor(
         return DadosViagemCard(
             idViagem = entry.id,
             codigo = entry.codigo,
-            empresa = empresa?.nome ?: entry.empresa,
-            navio = navio?.descricaoNome ?: entry.navio,
+            empresa = empresa?.nome.orEmpty(),
+            navio = navio?.descricaoNome.orEmpty(),
             origem = origem.descricaoNome,
             destino = destino.descricaoNome,
             capacidadeVeiculos = (navio?.capacidadeVeiculo ?: 0).toString(),

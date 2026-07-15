@@ -5,6 +5,7 @@ import dev.matheus.fluviapp.database.dao.cadastro.viagem.ViagemDao
 import dev.matheus.fluviapp.extensions.formatarCodigoViagemNavioFB
 import dev.matheus.fluviapp.model.viagem.Viagem
 import dev.matheus.fluviapp.model.viagem.toDocumento
+import dev.matheus.fluviapp.services.repository.cadastro.viagem.NavioRepository
 import dev.matheus.fluviapp.services.repository.firebase.documents.ViagemDocumento
 import dev.matheus.fluviapp.services.repository.firebase.documents.toViagem
 import dev.matheus.fluviapp.telemetry.RegistroCadastro
@@ -21,6 +22,7 @@ class ViagemFirestoreRepository @Inject constructor(
     private val dao: ViagemDao,
     private val firestore: FirebaseFirestore,
     private val registroCadastro: RegistroCadastro,
+    private val navioRepository: NavioRepository,
 ) : ViagemRepository {
 
     override fun sincronizar() = firestore.sincronizarColecao(
@@ -36,9 +38,11 @@ class ViagemFirestoreRepository @Inject constructor(
         } else {
             firestore.collection(COLLECTION_VIAGENS).document(viagem.id)
         }
-        // codigo é derivado na persistência (a partir do navio); id vem do doc.
+        // codigo é derivado na persistência (a partir do navio); id vem do doc. O nome do navio é
+        // resolvido do navioId (ADR-0008 Fase 3 — a Viagem não guarda mais o nome).
         val comId = viagem.copy(id = documento.id)
-        val completo = comId.copy(codigo = comId.formatarCodigoViagemNavioFB())
+        val navioNome = navioRepository.obterPorId(comId.navioId)?.descricaoNome.orEmpty()
+        val completo = comId.copy(codigo = comId.formatarCodigoViagemNavioFB(navioNome))
 
         // FALHA: Room não gravou — desfecho não recuperável, propaga pro VM tratar.
         try {
