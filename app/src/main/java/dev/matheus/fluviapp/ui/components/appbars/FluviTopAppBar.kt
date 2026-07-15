@@ -48,8 +48,7 @@ fun FluviTopAppBar(
             title = {
                 FluviWordmark(
                     fontSize = 22.sp,
-                    fluviColor = AquaAccent,
-                    appColor = Color.White
+                    fluviColor = AquaAccent, // "App" usa o gradiente da marca (default)
                 )
             },
             colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
