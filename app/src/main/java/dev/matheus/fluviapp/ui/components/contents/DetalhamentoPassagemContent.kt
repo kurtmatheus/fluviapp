@@ -20,6 +20,8 @@ import dev.matheus.fluviapp.R
 import dev.matheus.fluviapp.sampledata.dadosPassagemSample
 import dev.matheus.fluviapp.ui.components.texts.FluviWordmark
 import dev.matheus.fluviapp.ui.components.texts.TextBoldNavyBlue
+import dev.matheus.fluviapp.ui.theme.HeaderNavy
+import dev.matheus.fluviapp.ui.theme.SteelTeal
 import dev.matheus.fluviapp.ui.components.texts.TextRegularBrownItalic
 import dev.matheus.fluviapp.ui.components.texts.TextTitleBrownItalic
 import dev.matheus.fluviapp.ui.states.passagem.DetalhesPassagemState
@@ -42,7 +44,12 @@ fun DetalhamentoPassagemContent(
         ) {
             FluviWordmark(
                 modifier = modifier.height(65.dp),
-                fontSize = 26.sp
+                fontSize = 26.sp,
+                // Superfície clara (papel): gradiente escuro navy/teal p/ legibilidade — o default
+                // (teal→amarelo→ciano) é claro e some sobre fundo claro.
+                fluviColor = SteelTeal,
+                appGradient = listOf(SteelTeal, HeaderNavy, SteelTeal),
+                strokeWidth = 3f,
             )
 
             TextRegularBrownItalic(

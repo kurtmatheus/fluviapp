@@ -20,6 +20,8 @@ import dev.matheus.fluviapp.model.screendata.DadosViagemCard
 import dev.matheus.fluviapp.sampledata.listaDadosDadosViagemHomeSampleCards
 import dev.matheus.fluviapp.ui.components.texts.FluviWordmark
 import dev.matheus.fluviapp.ui.components.texts.TextRegularBrownItalic
+import dev.matheus.fluviapp.ui.theme.HeaderNavy
+import dev.matheus.fluviapp.ui.theme.SteelTeal
 
 @Composable
 fun DetalhamentoViagemContent(
@@ -39,7 +41,12 @@ fun DetalhamentoViagemContent(
         ) {
             FluviWordmark(
                 modifier = modifier.height(65.dp),
-                fontSize = 26.sp
+                fontSize = 26.sp,
+                // Superfície clara (papel): gradiente escuro navy/teal p/ legibilidade — o default
+                // (teal→amarelo→ciano) é claro e some sobre fundo claro.
+                fluviColor = SteelTeal,
+                appGradient = listOf(SteelTeal, HeaderNavy, SteelTeal),
+                strokeWidth = 3f,
             )
 
             TextRegularBrownItalic(
