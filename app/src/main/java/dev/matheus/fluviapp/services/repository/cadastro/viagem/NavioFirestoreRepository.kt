@@ -62,6 +62,7 @@ class NavioFirestoreRepository @Inject constructor(
     override suspend fun obterPorNome(nome: String) = dao.obterPorNome(nome).first()
 
     private companion object {
+        const val TAG = "navioRepository"
         const val COLLECTION_NAVIOS = "navios"
         const val ENTIDADE = "navio"
     }
