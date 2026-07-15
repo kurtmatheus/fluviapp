@@ -98,6 +98,31 @@ val MIGRATION_5_6 = object : Migration(5, 6) {
     }
 }
 
+/**
+ * v6 → v7: remove `Navio.empresa` (nome) — ADR-0008 Fase 3: o vínculo com Empresa é só por
+ * `empresaId`. SQLite não garante DROP COLUMN no minSdk 26, então recria a tabela (padrão da 4→5).
+ * Navio é espelho do Firestore, então recriar é seguro (re-sincroniza).
+ */
+val MIGRATION_6_7 = object : Migration(6, 7) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `Navio_novo` (`id` TEXT NOT NULL, `descricaoNome` TEXT NOT NULL, " +
+                "`capacidadeVeiculo` INTEGER NOT NULL, `capacidadeSuite2` INTEGER NOT NULL, " +
+                "`capacidadeSuite3` INTEGER NOT NULL, `capacidadeCamarote` INTEGER NOT NULL, " +
+                "`empresaId` TEXT NOT NULL, PRIMARY KEY(`id`))"
+        )
+        db.execSQL(
+            "INSERT INTO `Navio_novo` (`id`, `descricaoNome`, `capacidadeVeiculo`, `capacidadeSuite2`, " +
+                "`capacidadeSuite3`, `capacidadeCamarote`, `empresaId`) " +
+                "SELECT `id`, `descricaoNome`, `capacidadeVeiculo`, `capacidadeSuite2`, " +
+                "`capacidadeSuite3`, `capacidadeCamarote`, `empresaId` FROM `Navio`"
+        )
+        db.execSQL("DROP TABLE `Navio`")
+        db.execSQL("ALTER TABLE `Navio_novo` RENAME TO `Navio`")
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_Navio_id` ON `Navio` (`id`)")
+    }
+}
+
 @Module
 @InstallIn(SingletonComponent::class)
 class DatabaseModule {
@@ -109,7 +134,9 @@ class DatabaseModule {
             context,
             FluviAppDatabase::class.java,
             DATABASE_NAME
-        ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6).build()
+        ).addMigrations(
+            MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7,
+        ).build()
     }
 
     @Provides

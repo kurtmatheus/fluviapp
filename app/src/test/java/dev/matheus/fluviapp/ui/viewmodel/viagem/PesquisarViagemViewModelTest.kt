@@ -32,7 +32,7 @@ class PesquisarViagemViewModelTest {
         empresas = listOf(Empresa("e1", "ACME", "ACME LTDA", "1", "end", "1", "2"))
     }
     private val fakeNavio = FakeNavioRepository().apply {
-        navios = listOf(Navio("n1", "F/B", 10, 2, 2, 2, "ACME"))
+        navios = listOf(Navio("n1", "F/B", 10, 2, 2, 2, "e1"))
     }
     private val fakeConstante = FakeConstanteRepository().apply {
         constantes = listOf(

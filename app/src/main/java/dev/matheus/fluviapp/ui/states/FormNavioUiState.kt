@@ -6,8 +6,8 @@ import dev.matheus.fluviapp.model.viagem.Empresa
 /**
  * Estado do formulário de navio — puro (só dados + flags). Sem lambdas embutidas: os eventos são
  * métodos no FormNavioViewModel (molde cadastro-modulos §7.2). As capacidades guardam só dígitos
- * (teclado numérico + filtro), então são sempre inteiros válidos (em branco = 0). Vínculo N-1 com
- * Empresa por nome (`empresa`), via dropdown de `listaEmpresas`.
+ * (teclado numérico + filtro), então são sempre inteiros válidos (em branco = 0). `empresa` é o nome
+ * selecionado no dropdown (estado de UI); o vínculo persistido é por id (o VM resolve — ADR-0008).
  */
 data class FormNavioUiState(
     val titulo: Int = R.string.subtitle_cadastrar_novo_navio,

@@ -122,7 +122,7 @@ val listaNavioSample = listOf(
         4,
         5,
         4,
-        "NAVEGACAO MODELO"
+        empresaId = "1", // Empresa "1" (NAVEGACAO MODELO) — vínculo por id (ADR-0008)
     )
 )
 val listaMunicipioSample = listOf(

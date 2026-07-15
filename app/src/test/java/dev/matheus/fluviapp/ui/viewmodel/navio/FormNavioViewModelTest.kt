@@ -58,7 +58,6 @@ class FormNavioViewModelTest {
         assertEquals(1, navioFake.salvos.size)
         val salvo = navioFake.salvos.first()
         assertEquals("FLUVI I", salvo.descricaoNome)
-        assertEquals("ACME", salvo.empresa)
         assertEquals("e1", salvo.empresaId) // ADR-0008: link resolvido do nome selecionado
         assertEquals(12, salvo.capacidadeVeiculo)
         assertEquals(8, salvo.capacidadeCamarote)
@@ -101,14 +100,14 @@ class FormNavioViewModelTest {
     @Test
     fun `edicao carrega navio existente`() = runTest(mainRule.dispatcher) {
         val navioFake = FakeNavioRepository().apply {
-            navios = listOf(Navio("n1", "FLUVI I", 10, 20, 30, 5, "ACME"))
+            navios = listOf(Navio("n1", "FLUVI I", 10, 20, 30, 5, "e1")) // vínculo por id
         }
         val vm = FormNavioViewModel(navioFake, empresaFake(), SavedStateHandle(mapOf("idNavio" to "n1")))
         advanceUntilIdle()
 
         val s = vm.uiState.value
         assertEquals("FLUVI I", s.nome)
-        assertEquals("ACME", s.empresa)
+        assertEquals("ACME", s.empresa) // ADR-0008: nome resolvido de volta do empresaId "e1"
         assertEquals("10", s.capacidadeVeiculo)
         assertEquals("5", s.capacidadeCamarote)
     }

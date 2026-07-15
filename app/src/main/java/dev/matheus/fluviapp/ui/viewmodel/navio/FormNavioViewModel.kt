@@ -24,7 +24,8 @@ import javax.inject.Inject
 /**
  * Cadastro/edição de navio no molde refatorado (cadastro-modulos §7.2): VM dona do estado; eventos
  * são métodos; validação pura; sucesso via evento one-shot; cargas suspensas (sem runBlocking); arg
- * de rota opcional; sem Context. Vínculo N-1 com Empresa por nome, via dropdown de `listaEmpresas`.
+ * de rota opcional; sem Context. Vínculo N-1 com Empresa por id (ADR-0008): o dropdown seleciona o
+ * nome, mas o `salvar` resolve e persiste o `empresaId`; a edição resolve o nome de volta do id.
  */
 @HiltViewModel
 class FormNavioViewModel @Inject constructor(
@@ -43,14 +44,16 @@ class FormNavioViewModel @Inject constructor(
     val sucesso = _sucesso.receiveAsFlow()
 
     init {
-        carregarFontes()
-        if (idNavio.isNotBlank()) carregar()
+        // Sequenciado: a edição resolve o nome da empresa a partir do empresaId, então precisa da
+        // `listaEmpresas` pronta antes (ADR-0008, Fase 3).
+        viewModelScope.launch {
+            carregarFontes()
+            if (idNavio.isNotBlank()) carregar()
+        }
     }
 
-    private fun carregarFontes() {
-        viewModelScope.launch {
-            _uiState.update { it.copy(listaEmpresas = empresaRepository.obterTodas()) }
-        }
+    private suspend fun carregarFontes() {
+        _uiState.update { it.copy(listaEmpresas = empresaRepository.obterTodas()) }
     }
 
     fun onNomeChange(v: String) = _uiState.update { it.copy(nome = v, isNomeError = false) }
@@ -60,20 +63,20 @@ class FormNavioViewModel @Inject constructor(
     fun onCapacidadeSuite3Change(v: String) = _uiState.update { it.copy(capacidadeSuite3 = v.filter(Char::isDigit)) }
     fun onCapacidadeCamaroteChange(v: String) = _uiState.update { it.copy(capacidadeCamarote = v.filter(Char::isDigit)) }
 
-    private fun carregar() {
-        viewModelScope.launch {
-            navioRepository.obterPorId(idNavio)?.let { navio ->
-                _uiState.update {
-                    it.copy(
-                        titulo = R.string.subtitle_editar_navio,
-                        nome = navio.descricaoNome,
-                        empresa = navio.empresa,
-                        capacidadeVeiculo = navio.capacidadeVeiculo.toString(),
-                        capacidadeSuite2 = navio.capacidadeSuite2.toString(),
-                        capacidadeSuite3 = navio.capacidadeSuite3.toString(),
-                        capacidadeCamarote = navio.capacidadeCamarote.toString(),
-                    )
-                }
+    private suspend fun carregar() {
+        navioRepository.obterPorId(idNavio)?.let { navio ->
+            // Nome exibido no dropdown resolvido do empresaId (o navio não guarda mais o nome).
+            val nomeEmpresa = _uiState.value.listaEmpresas.firstOrNull { it.id == navio.empresaId }?.nome.orEmpty()
+            _uiState.update {
+                it.copy(
+                    titulo = R.string.subtitle_editar_navio,
+                    nome = navio.descricaoNome,
+                    empresa = nomeEmpresa,
+                    capacidadeVeiculo = navio.capacidadeVeiculo.toString(),
+                    capacidadeSuite2 = navio.capacidadeSuite2.toString(),
+                    capacidadeSuite3 = navio.capacidadeSuite3.toString(),
+                    capacidadeCamarote = navio.capacidadeCamarote.toString(),
+                )
             }
         }
     }
@@ -100,7 +103,6 @@ class FormNavioViewModel @Inject constructor(
                         capacidadeSuite2 = s.capacidadeSuite2.toIntOrNull() ?: 0,
                         capacidadeSuite3 = s.capacidadeSuite3.toIntOrNull() ?: 0,
                         capacidadeCamarote = s.capacidadeCamarote.toIntOrNull() ?: 0,
-                        empresa = s.empresa,
                         empresaId = empresaId,
                     )
                 )

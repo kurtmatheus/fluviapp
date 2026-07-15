@@ -15,19 +15,17 @@ data class Navio(
     val capacidadeSuite2: Int,
     val capacidadeSuite3: Int,
     val capacidadeCamarote: Int,
-    val empresa: String,
-    // Link estável para Empresa (ADR-0008, Fase 0/1). Dormente: `empresa` (nome) segue sendo o
-    // campo lido; `empresaId` é gravado mas ainda não consultado. Ler por id = Fase 2.
-    val empresaId: String = "",
+    // Vínculo N-1 com Empresa por id estável (ADR-0008, Fase 3 — o nome foi aposentado). O nome de
+    // exibição é resolvido na leitura contra a lista de empresas em cache.
+    val empresaId: String,
 ): IObjetoSimplificado
 
-/** Model → documento do Firestore (espelho ADR-0003). Vínculo N-1 por nome (`empresa`) + id (ADR-0008). */
+/** Model → documento do Firestore (espelho ADR-0003). Vínculo N-1 por id (`empresaId`, ADR-0008). */
 fun Navio.toDocumento() = NavioDocumento(
     nome = descricaoNome,
     capacidadeVeiculo = capacidadeVeiculo,
     capacidadeSuite2 = capacidadeSuite2,
     capacidadeSuite3 = capacidadeSuite3,
     capacidadeCamarote = capacidadeCamarote,
-    empresa = empresa,
     empresaId = empresaId,
 )
