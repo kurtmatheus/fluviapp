@@ -1,7 +1,11 @@
 package dev.matheus.fluviapp.navigation.navcomposables.passagem
 
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavGraphBuilder
@@ -30,11 +34,13 @@ fun NavGraphBuilder.formPassagemNavComposable(
         val stateVeiculo = viewModel.uiStateVeiculo.collectAsState()
         val coroutineScope = rememberCoroutineScope()
         val context = LocalContext.current
+        var scrollParaErro by remember { mutableIntStateOf(0) }
 
         FormPassagemScreen(
             statePassagem = statePassagem.value,
             statePassageiro = statePassageiro.value,
             stateVeiculo = stateVeiculo.value,
+            scrollParaErro = scrollParaErro,
             onClickVoltar = onCLickVoltar,
             onClickAvancar = {
                 if (viewModel.validarFormularios()) {
@@ -47,6 +53,8 @@ fun NavGraphBuilder.formPassagemNavComposable(
                         )
                         viewModel.formPassagemHelper.atualizarIsSaving()
                     }
+                } else {
+                    scrollParaErro++ // rola até o 1º campo inválido (mais acima)
                 }
             },
         )

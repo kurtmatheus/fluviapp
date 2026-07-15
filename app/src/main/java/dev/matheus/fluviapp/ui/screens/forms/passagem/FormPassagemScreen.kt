@@ -5,7 +5,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -14,6 +17,8 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.platform.LocalFocusManager
@@ -39,12 +44,15 @@ import dev.matheus.fluviapp.ui.states.passagem.FormPassageiroUiState
 import dev.matheus.fluviapp.ui.states.passagem.FormPassagemUiState
 import dev.matheus.fluviapp.ui.states.passagem.FormVeiculoUiState
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun FormPassagemScreen(
     statePassagem: FormPassagemUiState,
     statePassageiro: FormPassageiroUiState,
     stateVeiculo: FormVeiculoUiState,
     focusManager: FocusManager = LocalFocusManager.current,
+    // Nonce: incrementado a cada "Avançar" com validação inválida → rola até o 1º erro (mais acima).
+    scrollParaErro: Int = 0,
     onClickVoltar: () -> Unit = {},
     onClickAvancar: () -> Unit = {},
 ) {
@@ -56,10 +64,49 @@ fun FormPassagemScreen(
         isRefreshing = false,
         onClickVoltar = onClickVoltar,
     ) { modifier, titulo ->
+        val scrollState = rememberScrollState()
+        // Âncoras de validação, na ordem vertical do form (topo → base).
+        val ancoraData = remember { BringIntoViewRequester() }
+        val ancoraHora = remember { BringIntoViewRequester() }
+        val ancoraAreaPassageiro = remember { BringIntoViewRequester() }
+        val ancoraPagamento = remember { BringIntoViewRequester() }
+
+        // Ao falhar a validação (nonce muda), rola até a primeira âncora com erro — a mais acima.
+        LaunchedEffect(scrollParaErro) {
+            if (scrollParaErro == 0) return@LaunchedEffect
+            val erroPassageiroOuVeiculo = if (statePassagem.isVeiculoChecked) {
+                with(stateVeiculo) {
+                    isTipoVeiculoError || isModeloVeiculoError || isPlacaVeiculoError || isCorVeiculoError ||
+                        isNomeResponsavelRetiradaError || isDocumentoResponsavelRetiradaError ||
+                        isTipoDocumentoResponsavelRetiradaError
+                }
+            } else {
+                with(statePassageiro) {
+                    isTipoPassagemError || isAcomodacaoError || isTipoGratuidadeError ||
+                        isTipoDocumentoPassageiro1Error || isDocumentoPassageiro1Error ||
+                        isNomePassageiro1Error || isDataNascimentoPassageiro1Error ||
+                        isTipoDocumentoPassageiro2Error || isDocumentoPassageiro2Error ||
+                        isNomePassageiro2Error || isDataNascimentoPassageiro2Error ||
+                        isTipoDocumentoPassageiro3Error || isDocumentoPassageiro3Error ||
+                        isNomePassageiro3Error || isDataNascimentoPassageiro3Error
+                }
+            }
+            val erroPagamento = with(statePassagem) {
+                isFormaPagamentoError || isValorPagoError || isValorPixError ||
+                    isValorDinheiroError || isValorDebitoError || isValorCreditoError
+            }
+            when {
+                statePassagem.isDataViagemError -> ancoraData.bringIntoView()
+                statePassagem.isHoraViagemError -> ancoraHora.bringIntoView()
+                erroPassageiroOuVeiculo -> ancoraAreaPassageiro.bringIntoView()
+                erroPagamento -> ancoraPagamento.bringIntoView()
+            }
+        }
+
         Column(
             modifier = modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState()),
+                .verticalScroll(scrollState),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             CommonTopRow(modifier = modifier, titulo = titulo)
@@ -70,7 +117,8 @@ fun FormPassagemScreen(
                 FormFieldCalendario(
                     modifier = modifier
                         .fillMaxWidth()
-                        .padding(10.dp, 0.dp),
+                        .padding(10.dp, 0.dp)
+                        .bringIntoViewRequester(ancoraData),
                     value = statePassagem.dataViagem,
                     onValueChange = statePassagem.onDataViagemChange,
                     label = R.string.label_data_viagem,
@@ -82,7 +130,8 @@ fun FormPassagemScreen(
                 FormFieldRelogio(
                     modifier = modifier
                         .fillMaxWidth()
-                        .padding(10.dp, 0.dp),
+                        .padding(10.dp, 0.dp)
+                        .bringIntoViewRequester(ancoraHora),
                     focusManager = focusManager,
                     label = R.string.label_hora_viagem,
                     value = statePassagem.horaViagem,
@@ -99,7 +148,7 @@ fun FormPassagemScreen(
 
                 if (statePassagem.isVeiculoChecked) {
                     CommonAreaForm(
-                        modifier = modifier,
+                        modifier = modifier.bringIntoViewRequester(ancoraAreaPassageiro),
                         titleArea = R.string.form_area_title_veiculo
                     ) {
                         ContentAreaVeiculoForm(
@@ -110,7 +159,7 @@ fun FormPassagemScreen(
                     }
                 } else {
                     CommonAreaForm(
-                        modifier = modifier,
+                        modifier = modifier.bringIntoViewRequester(ancoraAreaPassageiro),
                         titleArea = R.string.form_area_title_passageiro
                     ) {
                         ContentPassageiroAreaForm(
@@ -133,7 +182,7 @@ fun FormPassagemScreen(
 //                }
 
                 CommonAreaForm(
-                    modifier = modifier,
+                    modifier = modifier.bringIntoViewRequester(ancoraPagamento),
                     titleArea = R.string.form_area_title_pagamento
                 ) {
                     ContentPagamentoAreaForm(
