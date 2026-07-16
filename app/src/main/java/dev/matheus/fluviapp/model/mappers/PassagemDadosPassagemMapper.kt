@@ -15,7 +15,6 @@ import dev.matheus.fluviapp.model.passagem.Passagem.Companion.TARIFA_ANTAC
 import dev.matheus.fluviapp.model.screendata.DadosPassagem
 import dev.matheus.fluviapp.services.repository.cadastro.passagem.AgenteRepository
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.EmpresaRepository
-import dev.matheus.fluviapp.services.repository.firebase.ViagemFirestoreRepository
 import dev.matheus.fluviapp.util.Mapper
 import kotlinx.coroutines.runBlocking
 import java.math.BigDecimal
@@ -25,13 +24,14 @@ import javax.inject.Singleton
 
 @Singleton
 class PassagemDadosPassagemMapper @Inject constructor(
-    private val viagemRepository: ViagemFirestoreRepository,
     private val empresaRepository: EmpresaRepository,
     private val agenteRepository: AgenteRepository,
 ) : Mapper<Passagem, DadosPassagem> {
     override fun map(entry: Passagem): DadosPassagem {
-        val viagem = runBlocking { viagemRepository.obterPorCodigo(entry.codigoViagem) }
-        val empresa = runBlocking { empresaRepository.obterPorNome(entry.empresa) }
+        // Empresa resolvida por id (ADR-0008): rename-safe e órfão detectável (obterPorId → null),
+        // onde obterPorNome estourava. cnpj/endereço/telefones seguem vivos (nunca foram snapshot).
+        // Sem ida à Viagem: idViagem usa o viagemId congelado na Passagem (dropou ViagemRepository).
+        val empresa = runBlocking { empresaRepository.obterPorId(entry.empresaId) }
 
         // Flip da capability (ADR-0002/0003): deriva do agente que vendeu a passagem.
         // Best-effort — o agente é texto livre no form; casa por agência + nome no cadastro.
@@ -64,14 +64,14 @@ class PassagemDadosPassagemMapper @Inject constructor(
 
         return DadosPassagem(
             idPassagem = entry.id,
-            idViagem = viagem.id,
+            idViagem = entry.viagemId,
             numero = entry.numero,
-            empresaNome = empresa.nome,
-            empresaRazaoSocial = empresa.razaoSocial,
-            empresaCnpj = empresa.cnpj,
-            empresaEndereco = empresa.endereco,
-            empresaTelefone1 = empresa.telefone1,
-            empresaTelefone2 = empresa.telefone2,
+            empresaNome = empresa?.nome.orEmpty(),
+            empresaRazaoSocial = empresa?.razaoSocial.orEmpty(),
+            empresaCnpj = empresa?.cnpj.orEmpty(),
+            empresaEndereco = empresa?.endereco.orEmpty(),
+            empresaTelefone1 = empresa?.telefone1.orEmpty(),
+            empresaTelefone2 = empresa?.telefone2.orEmpty(),
             navio = entry.navio,
             dataViagem = entry.dataViagem,
             horaViagem = entry.horaViagem,
