@@ -17,6 +17,8 @@ class PassagemDocumentoMapperTest {
         id = "id-1",
         numero = "2444",
         viagemId = "viagem-abc",
+        navioId = "navio-xyz",
+        empresaId = "empresa-123",
         codigoViagem = "PN-IC-001",
         empresa = "Empresa Modelo",
         navio = "F/B Modelo",
@@ -44,6 +46,9 @@ class PassagemDocumentoMapperTest {
 
         // viagemId é FK top-level (ponteiro por id, ADR-0008), fora do snapshot `viagem` (por valor).
         assertEquals("viagem-abc", doc.viagemId)
+        // navioId/empresaId ficam DENTRO do snapshot `viagem` embutido (ids congelados da viagem).
+        assertEquals("navio-xyz", doc.viagem?.navioId)
+        assertEquals("empresa-123", doc.viagem?.empresaId)
         assertEquals("PN-IC-001", doc.viagem?.codigo)
         assertEquals("F/B Modelo", doc.viagem?.navio)
         assertEquals("RG", doc.passageiro1?.documento)
@@ -61,6 +66,8 @@ class PassagemDocumentoMapperTest {
 
         assertEquals("id-restaurado", passagem.id)
         assertEquals("viagem-abc", passagem.viagemId)
+        assertEquals("navio-xyz", passagem.navioId)
+        assertEquals("empresa-123", passagem.empresaId)
         assertEquals("PN-IC-001", passagem.codigoViagem)
         assertEquals("RG", passagem.documentoPassageiro1)
         // Lock da assimetria reversa do p3.
@@ -76,6 +83,8 @@ class PassagemDocumentoMapperTest {
 
         assertEquals(original.numero, roundTrip.numero)
         assertEquals(original.viagemId, roundTrip.viagemId)
+        assertEquals(original.navioId, roundTrip.navioId)
+        assertEquals(original.empresaId, roundTrip.empresaId)
         assertEquals(original.codigoViagem, roundTrip.codigoViagem)
         assertEquals(original.empresa, roundTrip.empresa)
         assertEquals(original.nomePassageiro1, roundTrip.nomePassageiro1)

@@ -207,6 +207,15 @@ class FormPassagemHelper(
         }
     }
 
+    private fun atualizarIdsViagem(navioId: String, empresaId: String) {
+        uiStatePassagem.update {
+            it.copy(
+                navioId = navioId,
+                empresaId = empresaId,
+            )
+        }
+    }
+
     private fun atualizarDataViagem(data: String) {
         uiStatePassagem.update {
             it.copy(
@@ -387,6 +396,7 @@ class FormPassagemHelper(
         // o mapper (mesma resolução do card). Esses nomes são congelados na Passagem na emissão.
         val card = viagemDadosViagemMapper.map(viagem)
         atualizarViagemId(viagem.id)
+        atualizarIdsViagem(navioId = viagem.navioId, empresaId = viagem.empresaId)
         atualizarEmpresaViagem(card.empresa)
         atualizarNavioViagem(card.navio)
         atualizarOrigemViagem(card.origem)
@@ -428,6 +438,8 @@ class FormPassagemHelper(
             id = passagemExistente?.id.orEmpty(),
             numero = passagemExistente?.numero ?: numeroBilhete.toString(),
             viagemId = statePassagem.viagemId,
+            navioId = statePassagem.navioId,
+            empresaId = statePassagem.empresaId,
             codigoViagem = statePassagem.codigoViagem,
             empresa = statePassagem.empresaViagem,
             navio = statePassagem.navioViagem,

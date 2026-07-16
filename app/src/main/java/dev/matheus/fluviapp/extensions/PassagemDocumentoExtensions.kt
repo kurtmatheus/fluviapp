@@ -16,6 +16,9 @@ fun Passagem.toPassagemDocumento(): PassagemDocumento {
             navio = navio,
             origem = origem,
             destino = destino,
+            // ids congelados no snapshot (ADR-0008): o balanço agrega por navioId (frozen).
+            empresaId = empresaId,
+            navioId = navioId,
         ),
         dataViagem = dataViagem,
         horaViagem = horaViagem,

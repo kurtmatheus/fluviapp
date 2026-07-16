@@ -13,7 +13,6 @@ import dev.matheus.fluviapp.model.passagem.Passagem
 import dev.matheus.fluviapp.model.screendata.DadosBalancoPassagem
 import dev.matheus.fluviapp.model.viagem.Navio
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.NavioRepository
-import dev.matheus.fluviapp.services.repository.firebase.ViagemFirestoreRepository
 import dev.matheus.fluviapp.util.Mapper
 import kotlinx.coroutines.runBlocking
 import javax.inject.Inject
@@ -21,20 +20,22 @@ import javax.inject.Singleton
 
 @Singleton
 class BalancoPassagensMapper @Inject constructor(
-    private val viagemRepository: ViagemFirestoreRepository,
     private val navioRepository: NavioRepository
 ) : Mapper<List<Passagem>, List<DadosBalancoPassagem>> {
 
     override fun map(entry: List<Passagem>): List<DadosBalancoPassagem> {
-        val mapViagem = entry.groupBy {
-            val viagem = runBlocking { viagemRepository.obterPorCodigo(it.codigoViagem) }
-            // Casa pelo id estável (ADR-0008), não pelo nome — rename-safe.
-            runBlocking { navioRepository.obterTodos() }.first { navio -> navio.id == viagem.navioId }
-        }
+        // Agrega pelo navioId CONGELADO na Passagem (ADR-0008 Fase 2): sem ida à Viagem viva, então
+        // rename/reatribuição posterior não altera balanços históricos. obterTodos uma vez (não N+1);
+        // runBlocking pontual porque o mapper roda no callback não-suspend do BalancoViewModel.
+        val navios = runBlocking { navioRepository.obterTodos() }
 
-        return mapViagem.map {
-            contador(it.key as Navio, it.value)
-        }
+        return entry
+            .groupBy { it.navioId }
+            .mapNotNull { (navioId, passagens) ->
+                // Navio removido → órfão detectável (lookup por id retorna null); descarta o grupo.
+                val navio = navios.firstOrNull { it.id == navioId } ?: return@mapNotNull null
+                contador(navio, passagens)
+            }
     }
 
     private fun contador(

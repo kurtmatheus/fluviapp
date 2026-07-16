@@ -168,6 +168,18 @@ val MIGRATION_9_10 = object : Migration(9, 10) {
     }
 }
 
+/**
+ * v10 → v11: `Passagem.navioId`/`empresaId` — ids congelados no snapshot (ADR-0008, Fase 2 da
+ * Passagem). O balanço passa a agregar por navioId (frozen), não pela Viagem viva. Aditiva/não-
+ * destrutiva. empresaId entra dormente (relação Passagem→Empresa por id é alvo futuro).
+ */
+val MIGRATION_10_11 = object : Migration(10, 11) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE Passagem ADD COLUMN navioId TEXT NOT NULL DEFAULT ''")
+        db.execSQL("ALTER TABLE Passagem ADD COLUMN empresaId TEXT NOT NULL DEFAULT ''")
+    }
+}
+
 @Module
 @InstallIn(SingletonComponent::class)
 class DatabaseModule {
@@ -181,7 +193,7 @@ class DatabaseModule {
             DATABASE_NAME
         ).addMigrations(
             MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7,
-            MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10,
+            MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11,
         ).build()
     }
 

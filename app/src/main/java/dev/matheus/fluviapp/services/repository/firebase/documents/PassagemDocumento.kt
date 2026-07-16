@@ -35,6 +35,9 @@ fun PassagemDocumento.toPassagem(id: String): Passagem {
         id = id,
         numero = numero,
         viagemId = viagemId,
+        // navioId/empresaId vêm do snapshot embutido (ViagemDocumento já os carrega — ADR-0008 Fase 0).
+        navioId = viagem?.navioId.orEmpty(),
+        empresaId = viagem?.empresaId.orEmpty(),
         codigoViagem = viagem?.codigo.orEmpty(),
         empresa = viagem?.empresa.orEmpty(),
         navio = viagem?.navio.orEmpty(),
