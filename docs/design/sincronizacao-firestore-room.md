@@ -138,12 +138,11 @@ UiState, **não** `MainScreenState.ERROR` (offline-first: o cache continua útil
 `msg_sincronizacao_offline`. Sem re-threading (o `registro` já circulava). Teste puro cobre erro→liga /
 servidor→desliga / cache→mantém.
 
-### D5 — Semântica do pull-to-refresh. **Decidido: (a) forçar busca no servidor.**
-Com a lista reativa, o gesto precisa de significado honesto:
-- **(a) Forçar busca no servidor** (ratificado): `get(Source.SERVER)` one-shot, grava no Room (o
-  Flow reflete), spinner até concluir. Ação real, coexiste com o listener, atende o "necessário a
-  nível de UX".
-- **(b) Cosmético**: spinner curto e pronto (só devolve controle) — descartado.
+### D5 — Semântica do pull-to-refresh. **FEITO: (a) forçar busca no servidor.**
+`ViagemRepository.atualizarDoServidor()` faz `get(Source.SERVER)` one-shot, grava em lote no Room (o
+Flow reativo reflete), e reporta ao `RegistroSincronizacao` (servidor → limpa o banner; falha offline
+→ liga). `MainScreenViewModel.refresh()` chama num `launch`, mantendo `isRefreshing` até concluir.
+Coexiste com o listener de sessão; atende o "necessário a nível de UX" (ação real, não cosmética).
 
 ## 7. Fora de escopo (adiado)
 
@@ -194,9 +193,9 @@ D2, então D3 desce para a Fase 2.
    sobre a porta `Telemetry`) instrumenta o ciclo de vida; depois o seam `FonteSnapshots` destrava o
    teste do ciclo sem Firebase. **Vem antes/junto do D4** (o banner do D4 consome o estado/erro que a
    observabilidade produz — ver D4).
-4. **UX**: **D4 (banner offline-first)** ✅ **FEITO** — `EstadoSincronizacao` (StateFlow) alimentado
-   pelo `RegistroSincronizacao`, banner não-bloqueante na `MainScreen` sobre o cache. Falta **D5**
-   (refresh = `get(Source.SERVER)`).
+4. **UX** ✅ **FEITO**: **D4** — `EstadoSincronizacao` (StateFlow) alimentado pelo
+   `RegistroSincronizacao`, banner não-bloqueante na `MainScreen` sobre o cache; **D5** —
+   `atualizarDoServidor()` (`get(Source.SERVER)`) no pull-to-refresh, grava no Room e o Flow reflete.
 
 Cada fase é aditiva. **Só se promove a ADR depois de observável e testável** — o `compile+suíte verde`
 prova que constrói, não que se comporta; a confiança vem da §10, não de conferir no device.

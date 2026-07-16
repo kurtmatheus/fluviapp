@@ -14,5 +14,7 @@ interface ViagemRepository {
     suspend fun obterTodas(): List<Viagem>
     /** Observação reativa do espelho Room (SSOT — estudo sincronizacao-firestore-room.md, D1). */
     fun observarTodas(): Flow<List<Viagem>>
+    /** Pull-to-refresh (D5): força busca no servidor e grava no Room; o Flow reativo reflete. */
+    suspend fun atualizarDoServidor()
     suspend fun deletar(id: String)
 }

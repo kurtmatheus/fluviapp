@@ -110,11 +110,17 @@ class MainScreenViewModel @Inject constructor(
     }
 
     fun refresh() {
-        // A lista já é reativa/viva (listener de sessão) e sincronizar() é idempotente (não re-anexa,
-        // D2). Sem re-emissão para encerrar o spinner, então encerra de imediato — o re-fetch
-        // explícito (get(Source.SERVER)) é o D5 (Fase 3).
-        sincronizarFirestore()
-        _uiState.update { it.copy(isRefreshing = false) }
+        // D5: pull-to-refresh força a busca no servidor (get(Source.SERVER)); grava no Room e o Flow
+        // reativo (observarViagens) reflete. O spinner fica até a busca concluir. Erro (offline) é
+        // reportado pelo repo → EstadoSincronizacao → banner (D4).
+        viewModelScope.launch {
+            _uiState.update { it.copy(isRefreshing = true) }
+            try {
+                viagemRepository.atualizarDoServidor()
+            } finally {
+                _uiState.update { it.copy(isRefreshing = false) }
+            }
+        }
     }
 
     private fun sincronizarFirestore() {

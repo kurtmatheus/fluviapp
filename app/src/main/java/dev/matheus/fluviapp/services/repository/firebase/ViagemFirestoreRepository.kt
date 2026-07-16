@@ -12,6 +12,7 @@ import dev.matheus.fluviapp.di.module.SyncScope
 import dev.matheus.fluviapp.telemetry.RegistroCadastro
 import dev.matheus.fluviapp.telemetry.RegistroSincronizacao
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Source
 import com.google.firebase.firestore.toObject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -82,6 +83,20 @@ class ViagemFirestoreRepository @Inject constructor(
 
     // Reativo (D1): devolve o Flow do DAO direto — a UI observa e reage; nada de .first() one-shot.
     override fun observarTodas() = dao.obterTodas()
+
+    // D5: pull-to-refresh força a busca no SERVIDOR (ignora o cache do Firestore), grava em lote no
+    // Room (o Flow reativo reflete). Reporta ao registro: servidor → limpa o banner; falha (offline)
+    // → liga o banner. Não relança — o VM só encerra o spinner.
+    override suspend fun atualizarDoServidor() {
+        try {
+            val snapshot = firestore.collection(COLLECTION_VIAGENS).get(Source.SERVER).await()
+            val viagens = snapshot.documents.mapNotNull { it.toObject<ViagemDocumento>()?.toViagem(it.id) }
+            dao.salvarTodas(*viagens.toTypedArray())
+            registroSincronizacao.snapshotRecebido(COLLECTION_VIAGENS, snapshot.size(), snapshot.metadata.isFromCache)
+        } catch (e: Exception) {
+            registroSincronizacao.erro(COLLECTION_VIAGENS, e)
+        }
+    }
 
     override suspend fun deletar(id: String) {
         val viagem = obterPorId(id)
