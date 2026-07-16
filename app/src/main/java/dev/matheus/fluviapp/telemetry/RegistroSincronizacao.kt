@@ -16,6 +16,7 @@ import javax.inject.Inject
  */
 class RegistroSincronizacao @Inject constructor(
     private val telemetry: Telemetry,
+    private val estado: EstadoSincronizacao,
 ) {
 
     /** Listener anexado (por coleção). Único por coleção ⇒ sem duplo-attach. */
@@ -24,7 +25,7 @@ class RegistroSincronizacao @Inject constructor(
         telemetry.evento(EVENTO_INICIADO, mapOf(PARAM_COLECAO to colecao))
     }
 
-    /** Snapshot recebido: quantos docs e de onde (cache × servidor). */
+    /** Snapshot recebido: quantos docs e de onde (cache × servidor). Servidor ⇒ conectado (limpa erro). */
     fun snapshotRecebido(colecao: String, docs: Int, doCache: Boolean) {
         val origem = if (doCache) ORIGEM_CACHE else ORIGEM_SERVIDOR
         telemetry.rastro("sync $colecao: snapshot ($docs docs, $origem)")
@@ -32,6 +33,7 @@ class RegistroSincronizacao @Inject constructor(
             EVENTO_SNAPSHOT,
             mapOf(PARAM_COLECAO to colecao, PARAM_DOCS to docs.toString(), PARAM_ORIGEM to origem),
         )
+        if (!doCache) estado.reportarSucesso()
     }
 
     /** Batch gravado no Room. */
@@ -45,13 +47,14 @@ class RegistroSincronizacao @Inject constructor(
         telemetry.evento(EVENTO_PARADO, mapOf(PARAM_COLECAO to colecao))
     }
 
-    /** WARNING: erro do listener; não fatal, o Firestore reconecta. */
+    /** WARNING: erro do listener; não fatal, o Firestore reconecta. Sinaliza o estado p/ o banner (D4). */
     fun erro(colecao: String, causa: Throwable) {
         telemetry.evento(
             EVENTO_ERRO,
             mapOf(PARAM_COLECAO to colecao, PARAM_MOTIVO to (causa.message ?: DESCONHECIDO)),
         )
         telemetry.naoFatal(causa, mapOf(PARAM_COLECAO to colecao))
+        estado.reportarErro()
     }
 
     companion object {

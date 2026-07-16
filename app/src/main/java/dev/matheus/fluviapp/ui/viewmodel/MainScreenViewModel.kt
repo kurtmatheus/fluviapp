@@ -13,6 +13,7 @@ import com.google.firebase.auth.FirebaseAuth
 import dev.matheus.fluviapp.services.repository.firebase.PassagemFirestoreRepository
 import dev.matheus.fluviapp.services.repository.firebase.SincronizacaoSessao
 import dev.matheus.fluviapp.services.repository.firebase.ViagemFirestoreRepository
+import dev.matheus.fluviapp.telemetry.EstadoSincronizacao
 import dev.matheus.fluviapp.ui.states.MainScreenState
 import dev.matheus.fluviapp.ui.states.MainScreenUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -33,6 +34,7 @@ class MainScreenViewModel @Inject constructor(
     private val agenteRepository: AgenteRepository,
     private val firebaseAuth: FirebaseAuth,
     private val sincronizacaoSessao: SincronizacaoSessao,
+    private val estadoSincronizacao: EstadoSincronizacao,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(MainScreenUiState())
@@ -43,7 +45,18 @@ class MainScreenViewModel @Inject constructor(
         _uiState.update { it.copy(mainScreenState = MainScreenState.LOADING) }
         obterUsuario()
         observarViagens()
+        observarSincronizacao()
         sincronizarFirestore()
+    }
+
+    // D4: reflete a saúde do sync (EstadoSincronizacao) num flag de UI — o banner offline-first é
+    // não-bloqueante (os cards do cache continuam). Limpa quando um snapshot do servidor chega.
+    private fun observarSincronizacao() {
+        viewModelScope.launch {
+            estadoSincronizacao.comErro.collect { comErro ->
+                _uiState.update { it.copy(sincronizacaoComErro = comErro) }
+            }
+        }
     }
 
     private fun obterUsuario() {

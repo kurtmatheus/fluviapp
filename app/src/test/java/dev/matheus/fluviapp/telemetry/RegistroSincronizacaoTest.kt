@@ -1,6 +1,7 @@
 package dev.matheus.fluviapp.telemetry
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -12,12 +13,14 @@ import org.junit.Test
 class RegistroSincronizacaoTest {
 
     private lateinit var telemetry: FakeTelemetry
+    private lateinit var estado: EstadoSincronizacao
     private lateinit var registro: RegistroSincronizacao
 
     @Before
     fun setup() {
         telemetry = FakeTelemetry()
-        registro = RegistroSincronizacao(telemetry)
+        estado = EstadoSincronizacao()
+        registro = RegistroSincronizacao(telemetry, estado)
     }
 
     @Test
@@ -70,6 +73,20 @@ class RegistroSincronizacaoTest {
         val evento = telemetry.eventos.single { it.nome == RegistroSincronizacao.EVENTO_ERRO }
         assertEquals("permission denied", evento.params[RegistroSincronizacao.PARAM_MOTIVO])
         assertTrue(telemetry.naoFatais.contains(causa))
+    }
+
+    @Test
+    fun `erro liga o estado e snapshot do servidor desliga (offline-first D4)`() {
+        registro.erro("viagens", RuntimeException("offline"))
+        assertTrue(estado.comErro.value)
+
+        // snapshot do CACHE não limpa (ainda offline)…
+        registro.snapshotRecebido("viagens", docs = 2, doCache = true)
+        assertTrue(estado.comErro.value)
+
+        // …snapshot do SERVIDOR limpa (reconectou).
+        registro.snapshotRecebido("viagens", docs = 2, doCache = false)
+        assertFalse(estado.comErro.value)
     }
 
     @Test

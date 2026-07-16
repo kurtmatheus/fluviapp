@@ -129,12 +129,14 @@ Constante/Agente), só **2 DAOs** têm salvar-em-lote (faltam Empresa/Agente/Con
 escopo de app** — a forma limpa do D3 depende do mesmo escopo de sessão do D2. Por isso D3 **não** é
 Fase 1; anda com o D2.
 
-### D4 — Falha visível. **Decidido: banner offline-first.**
-Adicionar erro ao estado (campo de erro ou `MainScreenState.ERROR`) e ligar o erro do sync (hoje só
-loga). **Consome a observabilidade da §10** — o banner é a face na UI do mesmo `sync_erro` que a
-`RegistroSincronizacao` emite; por isso a §10 vem antes/junto do D4.
-→ **Decisão (ratificado): offline-first** — manter os cards do cache + **banner não-bloqueante** ("sem
-conexão, mostrando dados salvos"), não tela de erro cheia. Combina com Room-espelho.
+### D4 — Falha visível. **FEITO: banner offline-first.**
+**Consome a observabilidade da §10**: `RegistroSincronizacao` alimenta um `@Singleton EstadoSincronizacao`
+(`StateFlow<Boolean> comErro`: erro → true; snapshot do **servidor** → false; cache não limpa). O
+`MainScreenViewModel` observa e expõe `sincronizacaoComErro` no UiState; a `MainScreen` mostra um
+banner não-bloqueante (`errorContainer`) **sobre** os cards do cache — não troca a tela. Campo no
+UiState, **não** `MainScreenState.ERROR` (offline-first: o cache continua útil). String
+`msg_sincronizacao_offline`. Sem re-threading (o `registro` já circulava). Teste puro cobre erro→liga /
+servidor→desliga / cache→mantém.
 
 ### D5 — Semântica do pull-to-refresh. **Decidido: (a) forçar busca no servidor.**
 Com a lista reativa, o gesto precisa de significado honesto:
@@ -192,8 +194,9 @@ D2, então D3 desce para a Fase 2.
    sobre a porta `Telemetry`) instrumenta o ciclo de vida; depois o seam `FonteSnapshots` destrava o
    teste do ciclo sem Firebase. **Vem antes/junto do D4** (o banner do D4 consome o estado/erro que a
    observabilidade produz — ver D4).
-4. **UX (D4 + D5)**: banner de erro offline-first (apoiado na observabilidade da fase 3); refresh =
-   `get(Source.SERVER)`.
+4. **UX**: **D4 (banner offline-first)** ✅ **FEITO** — `EstadoSincronizacao` (StateFlow) alimentado
+   pelo `RegistroSincronizacao`, banner não-bloqueante na `MainScreen` sobre o cache. Falta **D5**
+   (refresh = `get(Source.SERVER)`).
 
 Cada fase é aditiva. **Só se promove a ADR depois de observável e testável** — o `compile+suíte verde`
 prova que constrói, não que se comporta; a confiança vem da §10, não de conferir no device.
