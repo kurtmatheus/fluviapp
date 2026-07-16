@@ -1,17 +1,17 @@
 package dev.matheus.fluviapp.ui.components.dialogs
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
@@ -24,6 +24,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import dev.matheus.fluviapp.R
 import dev.matheus.fluviapp.model.screendata.DadosPassagem
 import dev.matheus.fluviapp.sampledata.dadosPassagemSample
@@ -33,9 +34,9 @@ import dev.matheus.fluviapp.ui.components.texts.FluviWordmark
 import dev.matheus.fluviapp.ui.components.texts.TextRegularBrown
 import dev.matheus.fluviapp.ui.components.texts.TextSubTitleBrownBold
 import dev.matheus.fluviapp.ui.components.texts.TextTitleBrownRegular
-import dev.matheus.fluviapp.ui.screens.forms.CommonScreenNoBottom
+import dev.matheus.fluviapp.ui.theme.HeaderNavy
 import dev.matheus.fluviapp.ui.theme.LightColors
-import kotlinx.coroutines.launch
+import dev.matheus.fluviapp.ui.theme.SteelTeal
 
 @Composable
 fun ImpressaoDigitalDialog(
@@ -44,19 +45,18 @@ fun ImpressaoDigitalDialog(
     onDismiss: () -> Unit,
     onProcessaImageBitmap: (ImageBitmap) -> Unit = {}
 ) {
-    val coroutineScope = rememberCoroutineScope()
     val graphicsLayer = rememberGraphicsLayer()
 
+    // usePlatformDefaultWidth = false: sem a largura estreita padrão do Dialog, o ticket ocupa a
+    // largura real e sai com as MESMAS proporções do preview (ConteudoTicketImpressao).
     Dialog(
-        onDismissRequest = onDismiss
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
-        // Ticket é capturado p/ impressão (fundo branco) — força esquema claro p/ o texto/wordmark
-        // saírem escuros e legíveis independente do tema do app.
-        MaterialTheme(colorScheme = LightColors) {
+        // Box de CAPTURA: grava o conteúdo desenhado no graphicsLayer p/ virar bitmap de impressão
+        // (fundo branco). O conteúdo visual em si mora em ConteudoTicketImpressao (previewável).
         Box(
             modifier = modifier
-                .fillMaxWidth()
-                .heightIn(min = 400.dp)
                 .drawWithContent {
                     graphicsLayer.record {
                         this@drawWithContent.drawRect(
@@ -67,38 +67,81 @@ fun ImpressaoDigitalDialog(
                     drawLayer(graphicsLayer)
                 }
         ) {
+            ConteudoTicketImpressao(
+                modifier = modifier,
+                dadosPassagem = dadosPassagem
+            )
+
+            LaunchedEffect(key1 = Unit) {
+                // Espera o conteúdo ser medido/desenhado (layer com tamanho) ANTES de capturar.
+                // Capturar no 1º frame pega o layout antes do posicionamento — daí a imagem saía
+                // com elementos sobrepostos e sem a formatação vista no preview.
+                while (graphicsLayer.size.width == 0 || graphicsLayer.size.height == 0) {
+                    withFrameNanos { }
+                }
+                onProcessaImageBitmap(graphicsLayer.toImageBitmap())
+            }
+        }
+    }
+}
+
+/**
+ * Conteúdo visual do ticket digital, SEM o Dialog/captura — por isso é renderizável no @Preview
+ * (o Dialog não aparece no preview do Android Studio). É aqui que se edita a aparência do bilhete.
+ * Força [LightColors] + fundo branco: o ticket é impresso em papel claro, independente do tema do app.
+ */
+@Composable
+private fun ConteudoTicketImpressao(
+    modifier: Modifier = Modifier,
+    dadosPassagem: DadosPassagem
+) {
+    MaterialTheme(colorScheme = LightColors) {
+        Box(
+            modifier = modifier
+                .fillMaxWidth()
+                .background(Color.White)
+                .heightIn(min = 400.dp)
+        ) {
             FluviWordmark(
-                modifier = modifier.matchParentSize(),
+                modifier = Modifier.matchParentSize(),
                 fontSize = 64.sp,
-                alpha = 0.15f
+                // Marca d'água no papel branco: gradiente ESCURO (o default claro some sobre fundo
+                // claro). Mesma receita legível do CommonDetalhamentoCard (commits de identidade).
+                alpha = 0.3f,
+                fluviColor = SteelTeal,
+                appGradient = listOf(SteelTeal, HeaderNavy, SteelTeal),
+                strokeWidth = 3f,
             )
 
             Column(
-                modifier = modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Row(
-                    modifier = modifier
-                        .fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     FluviWordmark(
-                        modifier = modifier.padding(16.dp),
-                        fontSize = 28.sp
+                        modifier = Modifier.padding(16.dp),
+                        fontSize = 28.sp,
+                        // Legível no papel branco: gradiente escuro no lugar do default claro.
+                        fluviColor = SteelTeal,
+                        appGradient = listOf(SteelTeal, HeaderNavy, SteelTeal),
+                        strokeWidth = 3f,
                     )
                     TextTitleBrownRegular(
-                        modifier = modifier.padding(40.dp),
+                        modifier = Modifier.padding(40.dp),
                         text = "#${dadosPassagem.numero}"
                     )
                 }
 
                 TextTitleBrownRegular(
-                    modifier = modifier.offset(y = calculaOffset()),
                     text = stringResource(R.string.card_title_detalhes_passagem)
                 )
 
                 TextRegularBrown(
-                    modifier = modifier.offset(y = calculaOffset(10)),
                     text = "${dadosPassagem.empresaNome} - ${dadosPassagem.navio}"
                 )
 
@@ -106,78 +149,64 @@ fun ImpressaoDigitalDialog(
                 else dadosPassagem.acomodacao
 
                 TextSubTitleBrownBold(
-                    modifier = modifier.offset(y = calculaOffset(20)),
                     text = "[$acomodacao]"
                 )
 
                 Column(
-                    modifier = modifier
-                        .fillMaxWidth()
-                        .offset(y = calculaOffset(40)),
+                    modifier = Modifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(15.dp)
                 ) {
                     CommonRowDetalhamento(
-                        modifier = modifier
-                            .padding(horizontal = 10.dp),
+                        modifier = Modifier.padding(horizontal = 10.dp),
                         label = R.string.label_tipo_passagem,
                         valor = dadosPassagem.tipoPassagem
                     )
 
                     if (dadosPassagem.temGratuidade) {
                         CommonRowDetalhamento(
-                            modifier = modifier
-                                .padding(horizontal = 10.dp),
+                            modifier = Modifier.padding(horizontal = 10.dp),
                             label = R.string.label_tipo_gratuidade,
                             valor = dadosPassagem.tipoGratuidade
                         )
                     }
 
                     if (!dadosPassagem.ehVeiculo) {
-                        SecaoPassageiros(modifier, dadosPassagem)
+                        SecaoPassageiros(dadosPassagem)
                     } else {
-                        SecaoVeiculo(modifier, dadosPassagem)
+                        SecaoVeiculo(dadosPassagem)
                     }
 
                     CommonRowDetalhamento(
-                        modifier = modifier
-                            .padding(horizontal = 10.dp),
+                        modifier = Modifier.padding(horizontal = 10.dp),
                         label = R.string.label_valor_pago,
                         valor = dadosPassagem.valorAPagar
                     )
 
                     Column(
-                        modifier = modifier
+                        modifier = Modifier
                             .fillMaxWidth()
                             .padding(top = 20.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         TextSubTitleBrownBold(
-                            modifier = modifier,
                             text = "${dadosPassagem.origem}/${dadosPassagem.destino}"
                         )
 
                         TextRegularBrown(
-                            modifier = modifier,
                             text = "${dadosPassagem.dataViagem} - ${dadosPassagem.horaViagem}"
                         )
                     }
                 }
             }
-            LaunchedEffect(key1 = Unit) {
-                coroutineScope.launch {
-                    onProcessaImageBitmap(graphicsLayer.toImageBitmap())
-                }
-            }
-        }
         }
     }
 }
 
 @Composable
 private fun SecaoPassageiros(
-    modifier: Modifier,
-    dadosPassagem: DadosPassagem
+    dadosPassagem: DadosPassagem,
+    modifier: Modifier = Modifier
 ) {
     CommonRowDetalhamento(
         modifier = modifier
@@ -227,9 +256,9 @@ private fun SecaoPassageiros(
 }
 
 @Composable
-fun SecaoVeiculo(
-    modifier: Modifier,
-    dadosPassagem: DadosPassagem
+private fun SecaoVeiculo(
+    dadosPassagem: DadosPassagem,
+    modifier: Modifier = Modifier
 ) {
     if (dadosPassagem.temResponsavel) {
         CommonRowDetalhamento(
@@ -270,40 +299,16 @@ fun SecaoVeiculo(
 
 }
 
-private fun calculaOffset(soma: Int = 0) = (-90 + soma).dp
-
-@Preview(showBackground = true)
+// Previews chamam o CONTEÚDO direto (não o Dialog, que não renderiza no preview). heightDp dá
+// espaço vertical p/ o ticket inteiro aparecer. É por aqui que se ajusta o visual do bilhete.
+@Preview(name = "Passageiro", showBackground = true, heightDp = 720)
 @Composable
-private fun ImpressaoDigitalDialogPreview() {
-    CommonScreenNoBottom(
-        titleTopAppBar = R.string.subtitle_nova_passagem,
-        titleTopContent = R.string.subtitle_menu_operacoes,
-        isShowRightIcon = false,
-        hasRefresh = false,
-        isRefreshing = false
-    ) { modifier, _ ->
-        ImpressaoDigitalDialog(
-            modifier = modifier,
-            dadosPassagem = dadosPassagemSample,
-            onDismiss = {}
-        )
-    }
+private fun ImpressaoDigitalPassageiroPreview() {
+    ConteudoTicketImpressao(dadosPassagem = dadosPassagemSample)
 }
 
-@Preview(showBackground = true)
+@Preview(name = "Veículo", showBackground = true, heightDp = 720)
 @Composable
-private fun ImpressaoDigitalDialogVeiculoPreview() {
-    CommonScreenNoBottom(
-        titleTopAppBar = R.string.subtitle_nova_passagem,
-        titleTopContent = R.string.subtitle_menu_operacoes,
-        isShowRightIcon = false,
-        hasRefresh = false,
-        isRefreshing = false
-    ) { modifier, _ ->
-        ImpressaoDigitalDialog(
-            modifier = modifier,
-            dadosPassagem = dadosPassagemVeiculoSample,
-            onDismiss = {}
-        )
-    }
+private fun ImpressaoDigitalVeiculoPreview() {
+    ConteudoTicketImpressao(dadosPassagem = dadosPassagemVeiculoSample)
 }
