@@ -5,10 +5,13 @@ import dev.matheus.fluviapp.model.viagem.Empresa
 import dev.matheus.fluviapp.model.viagem.toDocumento
 import dev.matheus.fluviapp.services.repository.firebase.documents.EmpresaDocumento
 import dev.matheus.fluviapp.services.repository.firebase.documents.toEmpresa
+import dev.matheus.fluviapp.di.module.SyncScope
 import dev.matheus.fluviapp.services.repository.firebase.sincronizarColecao
 import dev.matheus.fluviapp.telemetry.RegistroCadastro
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.toObject
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
@@ -20,14 +23,21 @@ class EmpresaFirestoreRepository @Inject constructor(
     private val dao: EmpresaDao,
     private val firestore: FirebaseFirestore,
     private val registroCadastro: RegistroCadastro,
+    @SyncScope private val syncScope: CoroutineScope,
 ) : EmpresaRepository {
 
-    override fun sincronizar() = firestore.sincronizarColecao(
-        colecao = COLLECTION_EMPRESAS,
-        tag = TAG,
-        paraModelo = { it.toObject<EmpresaDocumento>()?.toEmpresa(it.id) },
-        salvarLocal = { dao.salvar(it) },
-    )
+    private var syncJob: Job? = null
+
+    override fun sincronizar() {
+        if (syncJob?.isActive == true) return
+        syncJob = firestore.sincronizarColecao(
+            colecao = COLLECTION_EMPRESAS,
+            tag = TAG,
+            scope = syncScope,
+            paraModelo = { it.toObject<EmpresaDocumento>()?.toEmpresa(it.id) },
+            salvarTodos = { dao.salvarTodas(*it.toTypedArray()) },
+        )
+    }
 
     override suspend fun salvar(empresa: Empresa) {
         val documento = if (empresa.id.isBlank()) {

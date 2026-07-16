@@ -19,7 +19,14 @@ import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.QuerySnapshot
 import com.google.firebase.firestore.toObject
+import dev.matheus.fluviapp.di.module.SyncScope
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.runBlocking
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -30,29 +37,31 @@ class PassagemFirestoreRepository @Inject constructor(
     private val contadorDao: ContadorDao,
     private val firestore: FirebaseFirestore,
     private val registroEmissao: RegistroEmissao,
+    @SyncScope private val syncScope: CoroutineScope,
 ) {
 
-    fun sincronizarNumeroBilheteEmTempoReal() {
-        firestore.collection(COLLECTION_PASSAGENS)
-            .document(DOCUMENT_CONTADOR)
-            .addSnapshotListener { value, error ->
-                value?.let { documentSnapshot ->
-                    documentSnapshot.toObject<ContadorDocumento>()
-                        ?.toContadorBilhete()
-                        ?.let { contadorBilhete ->
-                            runBlocking {
-                                contadorDao.atualizarContagem(
-                                    ContadorBilhete(contagem = contadorBilhete.contagem)
-                                )
-                            }
-                        }
-                }
+    private var contadorJob: Job? = null
 
-                if (error != null) {
-                    Log.e(TAG, "sincronizarNumeroBilheteEmTempoReal: Exception: ${error.message}")
-                    throw RuntimeException("Falha na Requisicao: ${error.message}")
+    // Contador de bilhete como Flow gerenciado (estudo sync, D2/D3): idempotente (mata o duplo-attach
+    // Login+Main), grava sem runBlocking e NÃO lança dentro do callback (o `throw` antigo derrubava o
+    // app). awaitClose remove a registration quando o escopo de sessão é cancelado (logout).
+    fun sincronizarNumeroBilheteEmTempoReal() {
+        if (contadorJob?.isActive == true) return
+        contadorJob = callbackFlow {
+            val registration = firestore.collection(COLLECTION_PASSAGENS)
+                .document(DOCUMENT_CONTADOR)
+                .addSnapshotListener { value, error ->
+                    if (error != null) {
+                        Log.e(TAG, "sincronizarNumeroBilheteEmTempoReal: ${error.message}", error)
+                        return@addSnapshotListener
+                    }
+                    value?.toObject<ContadorDocumento>()?.toContadorBilhete()
+                        ?.let { trySend(it.contagem) }
                 }
-            }
+            awaitClose { registration.remove() }
+        }.onEach { contagem ->
+            contadorDao.atualizarContagem(ContadorBilhete(contagem = contagem))
+        }.launchIn(syncScope)
     }
 
     suspend fun salvar(id: String, passagem: Passagem): String {

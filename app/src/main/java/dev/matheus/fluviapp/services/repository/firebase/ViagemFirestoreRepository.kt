@@ -8,9 +8,12 @@ import dev.matheus.fluviapp.model.viagem.toDocumento
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.NavioRepository
 import dev.matheus.fluviapp.services.repository.firebase.documents.ViagemDocumento
 import dev.matheus.fluviapp.services.repository.firebase.documents.toViagem
+import dev.matheus.fluviapp.di.module.SyncScope
 import dev.matheus.fluviapp.telemetry.RegistroCadastro
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.toObject
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
@@ -23,14 +26,23 @@ class ViagemFirestoreRepository @Inject constructor(
     private val firestore: FirebaseFirestore,
     private val registroCadastro: RegistroCadastro,
     private val navioRepository: NavioRepository,
+    @SyncScope private val syncScope: CoroutineScope,
 ) : ViagemRepository {
 
-    override fun sincronizar() = firestore.sincronizarColecao(
-        colecao = COLLECTION_VIAGENS,
-        tag = TAG,
-        paraModelo = { it.toObject<ViagemDocumento>()?.toViagem(it.id) },
-        salvarLocal = { dao.salvar(it) },
-    )
+    private var syncJob: Job? = null
+
+    // Idempotente (D2): não re-anexa se já ativo — mata o vazamento/duplo-attach. Grava em lote no
+    // escopo de sessão, sem runBlocking (D3). Cancelado por SincronizacaoSessao.parar() no logout.
+    override fun sincronizar() {
+        if (syncJob?.isActive == true) return
+        syncJob = firestore.sincronizarColecao(
+            colecao = COLLECTION_VIAGENS,
+            tag = TAG,
+            scope = syncScope,
+            paraModelo = { it.toObject<ViagemDocumento>()?.toViagem(it.id) },
+            salvarTodos = { dao.salvarTodas(*it.toTypedArray()) },
+        )
+    }
 
     override suspend fun salvar(viagem: Viagem) {
         val documento = if (viagem.id.isBlank()) {

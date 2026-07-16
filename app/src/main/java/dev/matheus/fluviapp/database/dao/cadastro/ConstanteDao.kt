@@ -13,6 +13,9 @@ interface ConstanteDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun salvar(constante: Constante)
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun salvarTodas(vararg constante: Constante)
+
     @Query("SELECT * FROM Constante WHERE id = :id")
     fun obterPorId(id: String): Flow<Constante?>
 

@@ -13,6 +13,9 @@ interface AgenteDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun salvar(agente: Agente)
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun salvarTodos(vararg agente: Agente)
+
     @Query("SELECT * FROM Agente WHERE id = :id")
     fun obterPorId(id: String): Flow<Agente?>
 

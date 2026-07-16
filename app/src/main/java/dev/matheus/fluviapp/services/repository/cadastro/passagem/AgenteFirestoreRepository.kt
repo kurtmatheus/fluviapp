@@ -6,10 +6,13 @@ import dev.matheus.fluviapp.model.cadastro.passagem.toDocumento
 import dev.matheus.fluviapp.services.repository.cadastro.passagem.AgenteRepository.Companion.COLLECTION_AGENTS
 import dev.matheus.fluviapp.services.repository.firebase.documents.AgenteDocumento
 import dev.matheus.fluviapp.services.repository.firebase.documents.toAgente
+import dev.matheus.fluviapp.di.module.SyncScope
 import dev.matheus.fluviapp.services.repository.firebase.sincronizarColecao
 import dev.matheus.fluviapp.telemetry.RegistroCadastro
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.toObject
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
@@ -21,14 +24,21 @@ class AgenteFirestoreRepository @Inject constructor(
     private val dao: AgenteDao,
     private val firestore: FirebaseFirestore,
     private val registroCadastro: RegistroCadastro,
+    @SyncScope private val syncScope: CoroutineScope,
 ) : AgenteRepository {
 
-    override fun sincronizar() = firestore.sincronizarColecao(
-        colecao = COLLECTION_AGENTS,
-        tag = TAG,
-        paraModelo = { it.toObject<AgenteDocumento>()?.toAgente(it.id) },
-        salvarLocal = { dao.salvar(it) },
-    )
+    private var syncJob: Job? = null
+
+    override fun sincronizar() {
+        if (syncJob?.isActive == true) return
+        syncJob = firestore.sincronizarColecao(
+            colecao = COLLECTION_AGENTS,
+            tag = TAG,
+            scope = syncScope,
+            paraModelo = { it.toObject<AgenteDocumento>()?.toAgente(it.id) },
+            salvarTodos = { dao.salvarTodos(*it.toTypedArray()) },
+        )
+    }
 
     override suspend fun salvar(agente: Agente) {
         val documento = if (agente.id.isBlank()) {

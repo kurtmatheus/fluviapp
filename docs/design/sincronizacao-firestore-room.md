@@ -86,7 +86,7 @@ faz `observarTodas().map { it.map(viagemMapper::map) }.stateIn(...)`. Atualiza s
 muda. **Amarra boa:** `viagemMapper.map` já é `suspend` (ADR-0008) — dentro de `Flow.map` é natural;
 a dívida virou encaixe. Remove o `delay(1000)` e a leitura one-shot.
 
-### D2 — Ciclo de vida do listener. **Decidido: sessão + (b) callbackFlow.**
+### D2 — Ciclo de vida do listener. **Decidido + FEITO (Fase 2): sessão + (b) callbackFlow.**
 Separar em dois eixos:
 
 **Eixo 1 — tempo de vida:**
@@ -121,7 +121,7 @@ sessão = `@Singleton @Provides CoroutineScope(SupervisorJob() + Dispatchers.IO)
 Parada natural no `deslogar()` (`MainScreenViewModel`) + logout (`LoginViewModel`). Attach único no
 login corrige o duplo-attach (smell #6): `refresh()` nunca re-anexa.
 
-### D3 — Matar o `runBlocking`. **Proposto (executa junto do D2, na Fase 2).**
+### D3 — Matar o `runBlocking`. **FEITO (Fase 2, junto do D2).**
 Trocar `runBlocking { salvar }` por escrita no escopo coletor + **`salvarTodos(snapshot)` em lote**
 (1 transação por snapshot, não N bloqueantes). Cai naturalmente do D2(b). **Acoplamento medido na
 implementação:** o `sincronizarColecao` é compartilhado por **5 repos** (Viagem/Navio/Empresa/
@@ -179,9 +179,13 @@ D2, então D3 desce para a Fase 2.
    `MainScreenViewModel` (`observarTodas().map { it.map(viagemMapper::map) }.collect`); removidos
    `delay(1000)` e a leitura one-shot; `refresh()` força re-sync e o Flow encerra o spinner. Entrega o
    auto-update. O `runBlocking` do listener permanece (sem regressão — D1 independe de como o Room é escrito).
-2. **Ciclo de vida + escrita (D2 + D3)**: escopo de sessão (`@Singleton CoroutineScope`) +
-   `callbackFlow`/idempotência + parada no logout; no mesmo movimento, `salvarTodos` em lote sem
-   `runBlocking` (D3; +3 métodos de DAO). Corrige vazamento, duplo-attach e o bloqueio da thread.
+2. **Ciclo de vida + escrita (D2 + D3)** — ✅ **FEITO**: escopo de sessão `@SyncScope` (`@Singleton
+   CoroutineScope(SupervisorJob()+IO)`); `sincronizarColecao` virou `callbackFlow` gerenciado que
+   grava em lote (`salvarTodos`, +3 métodos de DAO) e devolve `Job`; cada repo guarda o `Job` e é
+   idempotente (`if (syncJob?.isActive == true) return`); `SincronizacaoSessao.parar()` cancela os
+   filhos do escopo no logout (`awaitClose` remove as registrations). O contador de bilhete
+   (`sincronizarNumeroBilheteEmTempoReal`) recebeu o mesmo tratamento — some o `throw` dentro do
+   callback (derrubava o app). Corrige vazamento (#3), `runBlocking`/thread (#4) e duplo-attach (#6).
 3. **UX (D4 + D5)**: banner de erro offline-first; refresh = `get(Source.SERVER)`.
 
 Cada fase é aditiva. Após validado, promover a um ADR de sincronização.

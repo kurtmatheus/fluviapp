@@ -11,6 +11,7 @@ import dev.matheus.fluviapp.preferences.PreferencesKey
 import dev.matheus.fluviapp.services.repository.cadastro.passagem.AgenteRepository
 import com.google.firebase.auth.FirebaseAuth
 import dev.matheus.fluviapp.services.repository.firebase.PassagemFirestoreRepository
+import dev.matheus.fluviapp.services.repository.firebase.SincronizacaoSessao
 import dev.matheus.fluviapp.services.repository.firebase.ViagemFirestoreRepository
 import dev.matheus.fluviapp.ui.states.MainScreenState
 import dev.matheus.fluviapp.ui.states.MainScreenUiState
@@ -31,6 +32,7 @@ class MainScreenViewModel @Inject constructor(
     private val passagemRepository: PassagemFirestoreRepository,
     private val agenteRepository: AgenteRepository,
     private val firebaseAuth: FirebaseAuth,
+    private val sincronizacaoSessao: SincronizacaoSessao,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(MainScreenUiState())
@@ -83,7 +85,9 @@ class MainScreenViewModel @Inject constructor(
     }
 
     suspend fun deslogar() {
-        // encerra a sessão do Firebase (autoridade) + limpa o cache de perfil no DataStore.
+        // para os listeners de sync da sessão (D2 — awaitClose remove as registrations), encerra a
+        // sessão do Firebase (autoridade) + limpa o cache de perfil no DataStore.
+        sincronizacaoSessao.parar()
         firebaseAuth.signOut()
         dataStore.edit {
             it[PreferencesKey.LOGADO] = false
@@ -93,10 +97,11 @@ class MainScreenViewModel @Inject constructor(
     }
 
     fun refresh() {
-        // A lista já é reativa; o refresh força um re-sync. isRefreshing volta a false quando o Flow
-        // reativo (observarViagens) emitir os dados atualizados. (D5 futuro: get(Source.SERVER).)
-        _uiState.update { it.copy(isRefreshing = true) }
+        // A lista já é reativa/viva (listener de sessão) e sincronizar() é idempotente (não re-anexa,
+        // D2). Sem re-emissão para encerrar o spinner, então encerra de imediato — o re-fetch
+        // explícito (get(Source.SERVER)) é o D5 (Fase 3).
         sincronizarFirestore()
+        _uiState.update { it.copy(isRefreshing = false) }
     }
 
     private fun sincronizarFirestore() {

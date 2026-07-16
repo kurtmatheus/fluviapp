@@ -13,6 +13,9 @@ interface EmpresaDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun salvar(empresa: Empresa)
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun salvarTodas(vararg empresa: Empresa)
+
     @Query("SELECT * FROM Empresa")
     fun obterTodas(): Flow<List<Empresa>>
 

@@ -5,10 +5,13 @@ import dev.matheus.fluviapp.model.viagem.Navio
 import dev.matheus.fluviapp.model.viagem.toDocumento
 import dev.matheus.fluviapp.services.repository.firebase.documents.NavioDocumento
 import dev.matheus.fluviapp.services.repository.firebase.documents.toNavio
+import dev.matheus.fluviapp.di.module.SyncScope
 import dev.matheus.fluviapp.services.repository.firebase.sincronizarColecao
 import dev.matheus.fluviapp.telemetry.RegistroCadastro
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.toObject
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
@@ -20,14 +23,21 @@ class NavioFirestoreRepository @Inject constructor(
     private val dao: NavioDao,
     private val firestore: FirebaseFirestore,
     private val registroCadastro: RegistroCadastro,
+    @SyncScope private val syncScope: CoroutineScope,
 ) : NavioRepository {
 
-    override fun sincronizar() = firestore.sincronizarColecao(
-        colecao = COLLECTION_NAVIOS,
-        tag = TAG,
-        paraModelo = { it.toObject<NavioDocumento>()?.toNavio(it.id) },
-        salvarLocal = { dao.salvar(it) },
-    )
+    private var syncJob: Job? = null
+
+    override fun sincronizar() {
+        if (syncJob?.isActive == true) return
+        syncJob = firestore.sincronizarColecao(
+            colecao = COLLECTION_NAVIOS,
+            tag = TAG,
+            scope = syncScope,
+            paraModelo = { it.toObject<NavioDocumento>()?.toNavio(it.id) },
+            salvarTodos = { dao.salvarTodos(*it.toTypedArray()) },
+        )
+    }
 
     override suspend fun obterTodos() = dao.obterTodos().first()
 
