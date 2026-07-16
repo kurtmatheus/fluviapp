@@ -64,8 +64,6 @@ class ViagemFirestoreRepository @Inject constructor(
 
     override suspend fun obterPorId(id: String) = dao.obterPorId(id).first()
 
-    override suspend fun obterPorCodigo(codigo: String) = dao.obterPorCodigo(codigo).first()
-
     override suspend fun obterTodas() = dao.obterTodas().first()
 
     override suspend fun deletar(id: String) {

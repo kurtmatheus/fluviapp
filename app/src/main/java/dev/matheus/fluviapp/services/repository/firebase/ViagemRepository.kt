@@ -10,7 +10,6 @@ interface ViagemRepository {
     fun sincronizar()
     suspend fun salvar(viagem: Viagem)
     suspend fun obterPorId(id: String): Viagem
-    suspend fun obterPorCodigo(codigo: String): Viagem
     suspend fun obterTodas(): List<Viagem>
     suspend fun deletar(id: String)
 }

@@ -13,7 +13,6 @@ class FakeViagemRepository : ViagemRepository {
     override fun sincronizar() = Unit
     override suspend fun salvar(viagem: Viagem) { salvos += viagem }
     override suspend fun obterPorId(id: String): Viagem = viagens.first { it.id == id }
-    override suspend fun obterPorCodigo(codigo: String): Viagem = viagens.first { it.codigo == codigo }
     override suspend fun obterTodas(): List<Viagem> = viagens
     override suspend fun deletar(id: String) {
         if (falharAoDeletar) throw RuntimeException("falha simulada")

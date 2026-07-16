@@ -28,7 +28,4 @@ interface ViagemDao {
 
     @Query("SELECT COUNT(*) From Viagem")
     fun obterContagem(): Flow<Int>
-
-    @Query("SELECT * FROM Viagem WHERE codigo = :codigo")
-    fun obterPorCodigo(codigo: String): Flow<Viagem>
 }
