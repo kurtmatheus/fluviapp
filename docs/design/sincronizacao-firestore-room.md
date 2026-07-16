@@ -1,7 +1,8 @@
 # Estudo de design — Sincronização Firestore↔Room (Main Screen)
 
-> Estudo pré-ADR do pipeline de sincronização que alimenta a Main Screen (lista de viagens) e o
-> espelho local em geral. Conversa com o [ADR-0003](../adr/0003-modelo-de-memoria-do-dado.md)
+> **Formalizado pelo [ADR-0009](../adr/0009-sincronizacao-reativa-firestore-room.md)** (sincronização
+> reativa). Este é o documento-base companheiro (mapeamento, opções e as decisões D1–D5 + §10).
+> Conversa com o [ADR-0003](../adr/0003-modelo-de-memoria-do-dado.md)
 > (Firestore = verdade, Room = espelho), o [ADR-0008](../adr/0008-relacionamentos-por-identidade.md)
 > (mappers agora `suspend`) e o [fluxo-main-screen.md](fluxo-main-screen.md) (§8.3 — normalizar os
 > repositórios espelhados). Ancorado no código concreto em `2026-07`.
@@ -199,8 +200,9 @@ D2, então D3 desce para a Fase 2.
 
 Cada fase é aditiva. Critério "observável + testável" (§10) **atingido** — observabilidade
 (`RegistroSincronizacao`) e testabilidade Níveis 1 e 2 (`FonteSnapshots` + testes do ciclo de vida
-sem Firebase). **Pronto para promover a um ADR de sincronização.** Falta só a validação em runtime no
-device (que a observabilidade agora torna verificável por telemetria, não por inspeção manual).
+sem Firebase). **Promovido ao [ADR-0009](../adr/0009-sincronizacao-reativa-firestore-room.md).** Falta
+só a validação em runtime no device (que a observabilidade agora torna verificável por telemetria,
+não por inspeção manual).
 
 ## 10. Observabilidade & Testabilidade (critério de pronto)
 
