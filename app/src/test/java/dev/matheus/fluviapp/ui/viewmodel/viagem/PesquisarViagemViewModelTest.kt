@@ -111,6 +111,24 @@ class PesquisarViagemViewModelTest {
     }
 
     @Test
+    fun `deletar remove a viagem da lista de resultados`() = runTest(mainRule.dispatcher) {
+        val vm = viewModel()
+        advanceUntilIdle()
+        vm.onCheckEmpresa()
+        vm.onEmpresaChange("ACME")
+        vm.pesquisar()
+        advanceUntilIdle()
+        assertEquals(1, vm.uiState.value.listaResultadoViagens.size)
+
+        vm.deletarViagem("v1")
+        advanceUntilIdle()
+
+        // reload pós-deleção reaplica o filtro sobre a lista já sem a viagem removida.
+        assertTrue(vm.uiState.value.listaResultadoViagens.isEmpty())
+        assertTrue(fakeViagem.deletados.contains("v1"))
+    }
+
+    @Test
     fun `deletar com falha emite false e nao reporta sucesso`() = runTest(mainRule.dispatcher) {
         fakeViagem.falharAoDeletar = true
         val vm = viewModel()

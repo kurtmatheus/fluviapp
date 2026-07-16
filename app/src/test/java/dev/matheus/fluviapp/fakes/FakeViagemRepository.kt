@@ -20,5 +20,6 @@ class FakeViagemRepository : ViagemRepository {
     override suspend fun deletar(id: String) {
         if (falharAoDeletar) throw RuntimeException("falha simulada")
         deletados += id
+        viagens = viagens.filterNot { it.id == id }
     }
 }

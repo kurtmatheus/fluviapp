@@ -12,7 +12,8 @@ import dev.matheus.fluviapp.ui.viewmodel.viagem.PesquisarViagemViewModel
 fun NavGraphBuilder.resultPesquisarViagemNavComposable(
     navController: NavController,
     onClickVoltar: () -> Unit,
-    onNavegParaDetalhesViagem: (String) -> Unit
+    onNavegParaDetalhesViagem: (String) -> Unit,
+    onNavegaParaFormularioViagem: (String) -> Unit,
 ) {
     composable(
         route = FluviAppNavComposableDestinations.ResultPesquisarViagemNavComposable.route
@@ -23,7 +24,9 @@ fun NavGraphBuilder.resultPesquisarViagemNavComposable(
         ResultadosViagemSearchScreen(
             state = state.value,
             onClickVoltar = onClickVoltar,
-            onClickViagem = onNavegParaDetalhesViagem
+            onClickViagem = onNavegParaDetalhesViagem,
+            onEditar = onNavegaParaFormularioViagem,
+            onDeletar = viewModel::deletarViagem,
         )
     }
 }

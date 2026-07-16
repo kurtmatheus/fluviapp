@@ -1,18 +1,33 @@
 package dev.matheus.fluviapp.ui.screens.forms.viagem
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import dev.matheus.fluviapp.R
+import dev.matheus.fluviapp.model.screendata.DadosViagemCard
 import dev.matheus.fluviapp.sampledata.listaDadosDadosViagemHomeSampleCards
 import dev.matheus.fluviapp.ui.components.cards.DetalhesViagemPreviewCard
 import dev.matheus.fluviapp.ui.components.contents.CommonTopRow
+import dev.matheus.fluviapp.ui.components.dialogs.CommonInformativeDialog
 import dev.matheus.fluviapp.ui.components.texts.TextRegularBrownItalic
 import dev.matheus.fluviapp.ui.screens.forms.CommonScreenNoBottom
 import dev.matheus.fluviapp.ui.states.PesquisarViagemUiState
@@ -22,6 +37,8 @@ fun ResultadosViagemSearchScreen(
     state: PesquisarViagemUiState,
     onClickVoltar: () -> Unit = {},
     onClickViagem: (String) -> Unit = {},
+    onEditar: (String) -> Unit = {},
+    onDeletar: (String) -> Unit = {},
 ) {
     CommonScreenNoBottom(
         titleTopAppBar = R.string.title_top_viagem,
@@ -31,17 +48,39 @@ fun ResultadosViagemSearchScreen(
         isRefreshing = false,
         onClickVoltar = onClickVoltar,
     ) { modifier, title ->
+        var viagemParaDeletar by remember { mutableStateOf<DadosViagemCard?>(null) }
+
         Column {
             CommonTopRow(modifier = modifier, titulo = title)
 
             if (state.listaResultadoViagens.isNotEmpty()) {
                 LazyColumn {
-                    items(state.listaResultadoViagens) {
-                        DetalhesViagemPreviewCard(
-                            modifier = modifier,
-                            dadosViagemCard = it,
-                            onClick = onClickViagem
-                        )
+                    items(state.listaResultadoViagens) { card ->
+                        Column {
+                            DetalhesViagemPreviewCard(
+                                modifier = modifier,
+                                dadosViagemCard = card,
+                                onClick = onClickViagem,
+                            )
+                            // Ações por item (editar/deletar) abaixo do card, sem alterar o card compartilhado.
+                            Row(
+                                modifier = modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.End,
+                            ) {
+                                IconButton(onClick = { onEditar(card.idViagem) }) {
+                                    Icon(
+                                        imageVector = Icons.Default.Edit,
+                                        contentDescription = stringResource(R.string.description_editar),
+                                    )
+                                }
+                                IconButton(onClick = { viagemParaDeletar = card }) {
+                                    Icon(
+                                        imageVector = Icons.Default.Delete,
+                                        contentDescription = stringResource(R.string.description_deletar),
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             } else {
@@ -54,6 +93,19 @@ fun ResultadosViagemSearchScreen(
             }
         }
 
+        viagemParaDeletar?.let { card ->
+            CommonInformativeDialog(
+                modifier = Modifier,
+                textMensagem = R.string.msg_confirmar_exclusao,
+                textConfirm = R.string.btn_excluir,
+                textDismiss = R.string.btn_cancelar,
+                onConfirm = {
+                    onDeletar(card.idViagem)
+                    viagemParaDeletar = null
+                },
+                onDismiss = { viagemParaDeletar = null },
+            )
+        }
     }
 }
 
@@ -69,7 +121,7 @@ private fun ResultadosViagemSearchScreenPreview() {
 
 @Preview
 @Composable
-private fun ResultadosViagemSearchScreenDialogPreview() {
+private fun ResultadosViagemSearchScreenVaziaPreview() {
     ResultadosViagemSearchScreen(
         state = PesquisarViagemUiState(
             listaResultadoViagens = emptyList(),

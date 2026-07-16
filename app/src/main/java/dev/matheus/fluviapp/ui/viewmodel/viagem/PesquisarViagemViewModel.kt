@@ -129,6 +129,9 @@ class PesquisarViagemViewModel @Inject constructor(
                 false
             }
             _uiState.update { it.copy(isShowDeleteDialog = false) }
+            // Recarrega os resultados para o item deletado sumir da lista da pesquisa (editar/deletar
+            // por item). Reaplica os filtros correntes sobre a lista já sem a viagem removida.
+            if (sucesso) carregarViagensPesquisadas()
             _exclusao.send(sucesso) // a nav faz toast + navega (só no sucesso)
         }
     }

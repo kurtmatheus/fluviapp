@@ -30,7 +30,8 @@ fun NavGraphBuilder.pesquisarViagemGraph(
         resultPesquisarViagemNavComposable(
             navController = navController,
             onClickVoltar = onClickVoltar,
-            onNavegParaDetalhesViagem = onNavegaParaDetalhesViagem
+            onNavegParaDetalhesViagem = onNavegaParaDetalhesViagem,
+            onNavegaParaFormularioViagem = onNavegaParaFormularioViagem,
         )
         detalhesViagemNavComposable(
             navController = navController,
