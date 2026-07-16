@@ -5,6 +5,8 @@ import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.INTEIR
 import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.REDE
 import dev.matheus.fluviapp.model.passagem.Passagem
 import dev.matheus.fluviapp.model.viagem.Navio
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -15,6 +17,7 @@ import org.junit.Test
  * Viagem viva nem pelo nome do navio. Consequências verificadas: rename-safe (nome atual do navio
  * vem do repo por id, não do snapshot) e órfão detectável (navioId sem navio → grupo descartado).
  */
+@OptIn(ExperimentalCoroutinesApi::class)
 class BalancoPassagensMapperTest {
 
     private fun navio(id: String, nome: String) = Navio(
@@ -56,7 +59,7 @@ class BalancoPassagensMapperTest {
     )
 
     @Test
-    fun `agrega por navioId congelado e resolve o nome atual do navio pelo id`() {
+    fun `agrega por navioId congelado e resolve o nome atual do navio pelo id`() = runTest {
         // navio renomeado: passagens carregam o nome ANTIGO no snapshot; o resultado deve usar o ATUAL.
         val navios = listOf(navio("navio-1", "F/B Nome Novo"))
         val passagens = listOf(
@@ -74,7 +77,7 @@ class BalancoPassagensMapperTest {
     }
 
     @Test
-    fun `separa grupos por navioId distinto`() {
+    fun `separa grupos por navioId distinto`() = runTest {
         val navios = listOf(navio("navio-1", "F/B Um"), navio("navio-2", "F/B Dois"))
         val passagens = listOf(
             passagem("1", navioId = "navio-1", navioSnapshot = "F/B Um"),
@@ -90,7 +93,7 @@ class BalancoPassagensMapperTest {
     }
 
     @Test
-    fun `descarta grupo orfao quando o navioId nao existe mais`() {
+    fun `descarta grupo orfao quando o navioId nao existe mais`() = runTest {
         val navios = listOf(navio("navio-1", "F/B Um"))
         val passagens = listOf(
             passagem("1", navioId = "navio-1", navioSnapshot = "F/B Um"),

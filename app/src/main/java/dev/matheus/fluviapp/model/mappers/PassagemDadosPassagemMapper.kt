@@ -16,7 +16,6 @@ import dev.matheus.fluviapp.model.screendata.DadosPassagem
 import dev.matheus.fluviapp.services.repository.cadastro.passagem.AgenteRepository
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.EmpresaRepository
 import dev.matheus.fluviapp.util.Mapper
-import kotlinx.coroutines.runBlocking
 import java.math.BigDecimal
 import java.math.RoundingMode
 import javax.inject.Inject
@@ -27,16 +26,16 @@ class PassagemDadosPassagemMapper @Inject constructor(
     private val empresaRepository: EmpresaRepository,
     private val agenteRepository: AgenteRepository,
 ) : Mapper<Passagem, DadosPassagem> {
-    override fun map(entry: Passagem): DadosPassagem {
+    override suspend fun map(entry: Passagem): DadosPassagem {
         // Empresa resolvida por id (ADR-0008): rename-safe e órfão detectável (obterPorId → null),
         // onde obterPorNome estourava. cnpj/endereço/telefones seguem vivos (nunca foram snapshot).
         // Sem ida à Viagem: idViagem usa o viagemId congelado na Passagem (dropou ViagemRepository).
-        val empresa = runBlocking { empresaRepository.obterPorId(entry.empresaId) }
+        val empresa = empresaRepository.obterPorId(entry.empresaId)
 
         // Flip da capability (ADR-0002/0003): deriva do agente que vendeu a passagem.
         // Best-effort — o agente é texto livre no form; casa por agência + nome no cadastro.
         val podeSelecionarFormaPagamento = if (entry.agencia.isNotBlank()) {
-            runBlocking { agenteRepository.obterAgentesPorAgencia(entry.agencia) }
+            agenteRepository.obterAgentesPorAgencia(entry.agencia)
                 .firstOrNull { it.descricaoNome == entry.agente }
                 ?.podeSelecionarFormaPagamento ?: false
         } else {

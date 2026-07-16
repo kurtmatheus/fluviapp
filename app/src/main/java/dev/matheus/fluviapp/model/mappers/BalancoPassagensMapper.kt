@@ -14,7 +14,6 @@ import dev.matheus.fluviapp.model.screendata.DadosBalancoPassagem
 import dev.matheus.fluviapp.model.viagem.Navio
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.NavioRepository
 import dev.matheus.fluviapp.util.Mapper
-import kotlinx.coroutines.runBlocking
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -23,11 +22,10 @@ class BalancoPassagensMapper @Inject constructor(
     private val navioRepository: NavioRepository
 ) : Mapper<List<Passagem>, List<DadosBalancoPassagem>> {
 
-    override fun map(entry: List<Passagem>): List<DadosBalancoPassagem> {
+    override suspend fun map(entry: List<Passagem>): List<DadosBalancoPassagem> {
         // Agrega pelo navioId CONGELADO na Passagem (ADR-0008 Fase 2): sem ida à Viagem viva, então
-        // rename/reatribuição posterior não altera balanços históricos. obterTodos uma vez (não N+1);
-        // runBlocking pontual porque o mapper roda no callback não-suspend do BalancoViewModel.
-        val navios = runBlocking { navioRepository.obterTodos() }
+        // rename/reatribuição posterior não altera balanços históricos. obterTodos uma vez (não N+1).
+        val navios = navioRepository.obterTodos()
 
         return entry
             .groupBy { it.navioId }

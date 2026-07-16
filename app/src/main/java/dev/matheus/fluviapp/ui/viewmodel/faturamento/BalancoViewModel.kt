@@ -9,6 +9,7 @@ import dev.matheus.fluviapp.services.repository.firebase.documents.toPassagem
 import dev.matheus.fluviapp.ui.states.faturamento.BalancoState
 import dev.matheus.fluviapp.ui.viewmodel.helpers.faturamento.BalancoHelper
 import com.google.firebase.firestore.toObject
+import kotlinx.coroutines.tasks.await
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -41,14 +42,14 @@ class BalancoViewModel @Inject constructor(
     }
 
     fun atualizarLista(data: String) {
-        passagemRepository.obterTodasPorData(data)
-            .addOnSuccessListener { snapshot ->
-                val listaPassagemNova = snapshot.documents.mapNotNull { document ->
-                    document.toObject<PassagemDocumento>()?.toPassagem(document.id)
-                }
-                helper.atualizarDadosBalanco(balancoPassagensMapper.map(listaPassagemNova))
-                helper.atualizarProcessamento()
+        viewModelScope.launch {
+            val snapshot = passagemRepository.obterTodasPorData(data).await()
+            val listaPassagemNova = snapshot.documents.mapNotNull { document ->
+                document.toObject<PassagemDocumento>()?.toPassagem(document.id)
             }
+            helper.atualizarDadosBalanco(balancoPassagensMapper.map(listaPassagemNova))
+            helper.atualizarProcessamento()
+        }
     }
 
 }

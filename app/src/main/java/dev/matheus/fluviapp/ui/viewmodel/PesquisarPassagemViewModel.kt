@@ -7,7 +7,6 @@ import dev.matheus.fluviapp.extensions.filtrarPor
 import dev.matheus.fluviapp.model.mappers.PassagemDadosPassagemMapper
 import dev.matheus.fluviapp.model.operacoes.Usuario
 import dev.matheus.fluviapp.model.operacoes.temPermissaoEspecialPassagem
-import dev.matheus.fluviapp.model.passagem.Passagem
 import dev.matheus.fluviapp.services.repository.cadastro.ConstanteRepository
 import dev.matheus.fluviapp.services.repository.firebase.PassagemFirestoreRepository
 import dev.matheus.fluviapp.services.repository.firebase.documents.PassagemDocumento
@@ -17,6 +16,7 @@ import dev.matheus.fluviapp.ui.states.passagem.PesquisarPassagemUiState
 import dev.matheus.fluviapp.ui.viewmodel.helpers.passagem.FormPesquisarPassagemHelper
 import dev.matheus.fluviapp.ui.viewmodel.helpers.passagem.validacao.ValidacaoFormPesquisarPassagemHelper
 import com.google.firebase.firestore.toObject
+import kotlinx.coroutines.tasks.await
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -74,20 +74,20 @@ class PesquisarPassagemViewModel @Inject constructor(
         usuarioRepository.obterUltimoUsuarioLogado()?.let { usuarioLogado ->
             val pesquisarPassagemUiState = _uiState.value
 
-            var listaPassagemFiltered: List<Passagem>
-
             val usuarioValidado = if (usuarioLogado.temPermissaoEspecialPassagem()) pesquisarPassagemUiState.operador else usuarioLogado.nome
 
-            passagemRepository.obterTodasPorDataStatus(
-                data = pesquisarPassagemUiState.data,
-                status = pesquisarPassagemUiState.situacao,
-                nomeFuncionario = usuarioValidado
-            ).addOnSuccessListener { snapshot ->
+            try {
+                val snapshot = passagemRepository.obterTodasPorDataStatus(
+                    data = pesquisarPassagemUiState.data,
+                    status = pesquisarPassagemUiState.situacao,
+                    nomeFuncionario = usuarioValidado
+                ).await()
+
                 val passagens = snapshot.documents.mapNotNull { document ->
                     document.toObject<PassagemDocumento>()?.toPassagem(document.id)
                 }.sortedBy { it.numero.toInt() }
 
-                listaPassagemFiltered = filtrarPor(pesquisarPassagemUiState.filtrarTodos, passagens) { true }
+                var listaPassagemFiltered = filtrarPor(pesquisarPassagemUiState.filtrarTodos, passagens) { true }
                 listaPassagemFiltered = filtrarPor(pesquisarPassagemUiState.filtrarVeiculos, listaPassagemFiltered) { it.ehVeiculo }
                 listaPassagemFiltered = filtrarPor(pesquisarPassagemUiState.filtrarPassageiros, listaPassagemFiltered) { !it.ehVeiculo }
 
@@ -104,9 +104,9 @@ class PesquisarPassagemViewModel @Inject constructor(
                 formPesquisarPassagemHelper.atualizarProcessamento()
 
                 onNavegaParaResultadosPesquisa()
-            }.addOnFailureListener {
-                Log.e(TAG, "obterTodasPorDataStatus: Exception: ${it.message}")
-                throw RuntimeException("Falha no Processo: ${it.message}")
+            } catch (e: Exception) {
+                Log.e(TAG, "obterTodasPorDataStatus: Exception: ${e.message}")
+                throw RuntimeException("Falha no Processo: ${e.message}")
             }
         }
     }

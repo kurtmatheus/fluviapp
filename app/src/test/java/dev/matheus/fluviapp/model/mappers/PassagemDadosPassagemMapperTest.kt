@@ -4,6 +4,8 @@ import dev.matheus.fluviapp.fakes.FakeAgenteRepository
 import dev.matheus.fluviapp.fakes.FakeEmpresaRepository
 import dev.matheus.fluviapp.model.passagem.Passagem
 import dev.matheus.fluviapp.model.viagem.Empresa
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -13,6 +15,7 @@ import org.junit.Test
  * ainda casa) e órfão detectável (empresa removida → campos vazios, sem estourar como `obterPorNome`
  * fazia). `idViagem` vem do `viagemId` congelado — sem ida à Viagem viva.
  */
+@OptIn(ExperimentalCoroutinesApi::class)
 class PassagemDadosPassagemMapperTest {
 
     private fun empresa(id: String, nome: String) = Empresa(
@@ -48,7 +51,7 @@ class PassagemDadosPassagemMapperTest {
     )
 
     @Test
-    fun `resolve empresa pelo id e ignora o nome defasado do snapshot`() {
+    fun `resolve empresa pelo id e ignora o nome defasado do snapshot`() = runTest {
         val empresas = listOf(empresa("empresa-1", "NOME NOVO"))
 
         val dados = mapper(empresas).map(passagem())
@@ -62,7 +65,7 @@ class PassagemDadosPassagemMapperTest {
     }
 
     @Test
-    fun `empresa removida deixa campos vazios sem estourar`() {
+    fun `empresa removida deixa campos vazios sem estourar`() = runTest {
         // repo vazio: obterPorId(empresaId) -> null (antes, obterPorNome estourava).
         val dados = mapper(emptyList()).map(passagem())
 
