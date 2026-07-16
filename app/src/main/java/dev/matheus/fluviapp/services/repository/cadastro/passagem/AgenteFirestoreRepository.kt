@@ -4,14 +4,14 @@ import dev.matheus.fluviapp.database.dao.cadastro.passagem.AgenteDao
 import dev.matheus.fluviapp.model.cadastro.passagem.Agente
 import dev.matheus.fluviapp.model.cadastro.passagem.toDocumento
 import dev.matheus.fluviapp.services.repository.cadastro.passagem.AgenteRepository.Companion.COLLECTION_AGENTS
-import dev.matheus.fluviapp.services.repository.firebase.documents.AgenteDocumento
+import dev.matheus.fluviapp.services.repository.firebase.FonteSnapshots
 import dev.matheus.fluviapp.services.repository.firebase.documents.toAgente
+import dev.matheus.fluviapp.services.repository.firebase.documents.toAgenteDocumento
 import dev.matheus.fluviapp.di.module.SyncScope
 import dev.matheus.fluviapp.services.repository.firebase.sincronizarColecao
 import dev.matheus.fluviapp.telemetry.RegistroCadastro
 import dev.matheus.fluviapp.telemetry.RegistroSincronizacao
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.toObject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.first
@@ -27,17 +27,19 @@ class AgenteFirestoreRepository @Inject constructor(
     private val registroCadastro: RegistroCadastro,
     @SyncScope private val syncScope: CoroutineScope,
     private val registroSincronizacao: RegistroSincronizacao,
+    private val fonteSnapshots: FonteSnapshots,
 ) : AgenteRepository {
 
     private var syncJob: Job? = null
 
     override fun sincronizar() {
         if (syncJob?.isActive == true) return
-        syncJob = firestore.sincronizarColecao(
+        syncJob = sincronizarColecao(
+            fonte = fonteSnapshots,
             colecao = COLLECTION_AGENTS,
             scope = syncScope,
             registro = registroSincronizacao,
-            paraModelo = { it.toObject<AgenteDocumento>()?.toAgente(it.id) },
+            paraModelo = { it.toAgenteDocumento().toAgente(it.id) },
             salvarTodos = { dao.salvarTodos(*it.toTypedArray()) },
         )
     }

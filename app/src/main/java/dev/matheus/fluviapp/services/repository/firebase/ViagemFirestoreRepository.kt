@@ -6,14 +6,13 @@ import dev.matheus.fluviapp.extensions.formatarCodigoViagemNavioFB
 import dev.matheus.fluviapp.model.viagem.Viagem
 import dev.matheus.fluviapp.model.viagem.toDocumento
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.NavioRepository
-import dev.matheus.fluviapp.services.repository.firebase.documents.ViagemDocumento
 import dev.matheus.fluviapp.services.repository.firebase.documents.toViagem
+import dev.matheus.fluviapp.services.repository.firebase.documents.toViagemDocumento
 import dev.matheus.fluviapp.di.module.SyncScope
 import dev.matheus.fluviapp.telemetry.RegistroCadastro
 import dev.matheus.fluviapp.telemetry.RegistroSincronizacao
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Source
-import com.google.firebase.firestore.toObject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.first
@@ -30,6 +29,7 @@ class ViagemFirestoreRepository @Inject constructor(
     private val navioRepository: NavioRepository,
     @SyncScope private val syncScope: CoroutineScope,
     private val registroSincronizacao: RegistroSincronizacao,
+    private val fonteSnapshots: FonteSnapshots,
 ) : ViagemRepository {
 
     private var syncJob: Job? = null
@@ -38,11 +38,12 @@ class ViagemFirestoreRepository @Inject constructor(
     // escopo de sessão, sem runBlocking (D3). Cancelado por SincronizacaoSessao.parar() no logout.
     override fun sincronizar() {
         if (syncJob?.isActive == true) return
-        syncJob = firestore.sincronizarColecao(
+        syncJob = sincronizarColecao(
+            fonte = fonteSnapshots,
             colecao = COLLECTION_VIAGENS,
             scope = syncScope,
             registro = registroSincronizacao,
-            paraModelo = { it.toObject<ViagemDocumento>()?.toViagem(it.id) },
+            paraModelo = { it.toViagemDocumento().toViagem(it.id) },
             salvarTodos = { dao.salvarTodas(*it.toTypedArray()) },
         )
     }
@@ -90,7 +91,9 @@ class ViagemFirestoreRepository @Inject constructor(
     override suspend fun atualizarDoServidor() {
         try {
             val snapshot = firestore.collection(COLLECTION_VIAGENS).get(Source.SERVER).await()
-            val viagens = snapshot.documents.mapNotNull { it.toObject<ViagemDocumento>()?.toViagem(it.id) }
+            val viagens = snapshot.documents
+                .map { DocumentoBruto(it.id, it.data.orEmpty()) }
+                .mapNotNull { it.toViagemDocumento().toViagem(it.id) }
             dao.salvarTodas(*viagens.toTypedArray())
             registroSincronizacao.snapshotRecebido(COLLECTION_VIAGENS, snapshot.size(), snapshot.metadata.isFromCache)
         } catch (e: Exception) {

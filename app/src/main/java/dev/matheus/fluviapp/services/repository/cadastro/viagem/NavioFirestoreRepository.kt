@@ -3,14 +3,14 @@ package dev.matheus.fluviapp.services.repository.cadastro.viagem
 import dev.matheus.fluviapp.database.dao.cadastro.viagem.NavioDao
 import dev.matheus.fluviapp.model.viagem.Navio
 import dev.matheus.fluviapp.model.viagem.toDocumento
-import dev.matheus.fluviapp.services.repository.firebase.documents.NavioDocumento
+import dev.matheus.fluviapp.services.repository.firebase.FonteSnapshots
 import dev.matheus.fluviapp.services.repository.firebase.documents.toNavio
+import dev.matheus.fluviapp.services.repository.firebase.documents.toNavioDocumento
 import dev.matheus.fluviapp.di.module.SyncScope
 import dev.matheus.fluviapp.services.repository.firebase.sincronizarColecao
 import dev.matheus.fluviapp.telemetry.RegistroCadastro
 import dev.matheus.fluviapp.telemetry.RegistroSincronizacao
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.toObject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.first
@@ -26,17 +26,19 @@ class NavioFirestoreRepository @Inject constructor(
     private val registroCadastro: RegistroCadastro,
     @SyncScope private val syncScope: CoroutineScope,
     private val registroSincronizacao: RegistroSincronizacao,
+    private val fonteSnapshots: FonteSnapshots,
 ) : NavioRepository {
 
     private var syncJob: Job? = null
 
     override fun sincronizar() {
         if (syncJob?.isActive == true) return
-        syncJob = firestore.sincronizarColecao(
+        syncJob = sincronizarColecao(
+            fonte = fonteSnapshots,
             colecao = COLLECTION_NAVIOS,
             scope = syncScope,
             registro = registroSincronizacao,
-            paraModelo = { it.toObject<NavioDocumento>()?.toNavio(it.id) },
+            paraModelo = { it.toNavioDocumento().toNavio(it.id) },
             salvarTodos = { dao.salvarTodos(*it.toTypedArray()) },
         )
     }

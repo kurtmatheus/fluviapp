@@ -9,9 +9,9 @@ import dev.matheus.fluviapp.extensions.toPassagemDocumento
 import dev.matheus.fluviapp.model.ContadorBilhete
 import dev.matheus.fluviapp.model.operacoes.Usuario
 import dev.matheus.fluviapp.model.passagem.Passagem
-import dev.matheus.fluviapp.services.repository.firebase.documents.ContadorDocumento
 import dev.matheus.fluviapp.services.repository.firebase.documents.PassagemDocumento
 import dev.matheus.fluviapp.services.repository.firebase.documents.toContadorBilhete
+import dev.matheus.fluviapp.services.repository.firebase.documents.toContadorDocumento
 import dev.matheus.fluviapp.services.repository.firebase.documents.toPassagem
 import dev.matheus.fluviapp.telemetry.RegistroEmissao
 import dev.matheus.fluviapp.telemetry.RegistroSincronizacao
@@ -23,10 +23,9 @@ import com.google.firebase.firestore.toObject
 import dev.matheus.fluviapp.di.module.SyncScope
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.channels.awaitClose
-import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.runBlocking
 import javax.inject.Inject
@@ -40,6 +39,7 @@ class PassagemFirestoreRepository @Inject constructor(
     private val registroEmissao: RegistroEmissao,
     @SyncScope private val syncScope: CoroutineScope,
     private val registroSincronizacao: RegistroSincronizacao,
+    private val fonteSnapshots: FonteSnapshots,
 ) {
 
     private var contadorJob: Job? = null
@@ -49,33 +49,27 @@ class PassagemFirestoreRepository @Inject constructor(
     // app). awaitClose remove a registration quando o escopo de sessão é cancelado (logout).
     fun sincronizarNumeroBilheteEmTempoReal() {
         if (contadorJob?.isActive == true) return
-        contadorJob = callbackFlow {
-            registroSincronizacao.iniciado(COLECAO_CONTADOR)
-            val registration = firestore.collection(COLLECTION_PASSAGENS)
-                .document(DOCUMENT_CONTADOR)
-                .addSnapshotListener { value, error ->
-                    if (error != null) {
-                        registroSincronizacao.erro(COLECAO_CONTADOR, error)
-                        return@addSnapshotListener
-                    }
-                    value?.let { snapshot ->
+        registroSincronizacao.iniciado(COLECAO_CONTADOR)
+        contadorJob = fonteSnapshots.observarDocumento(COLLECTION_PASSAGENS, DOCUMENT_CONTADOR)
+            .onEach { resultado ->
+                when (resultado) {
+                    is ResultadoDocumento.Dados -> {
                         registroSincronizacao.snapshotRecebido(
                             COLECAO_CONTADOR,
-                            docs = if (snapshot.exists()) 1 else 0,
-                            doCache = snapshot.metadata.isFromCache,
+                            docs = if (resultado.documento != null) 1 else 0,
+                            doCache = resultado.doCache,
                         )
-                        snapshot.toObject<ContadorDocumento>()?.toContadorBilhete()
-                            ?.let { trySend(it.contagem) }
+                        resultado.documento?.toContadorDocumento()?.toContadorBilhete()?.let {
+                            contadorDao.atualizarContagem(ContadorBilhete(contagem = it.contagem))
+                            registroSincronizacao.gravado(COLECAO_CONTADOR, 1)
+                        }
                     }
+
+                    is ResultadoDocumento.Falha -> registroSincronizacao.erro(COLECAO_CONTADOR, resultado.causa)
                 }
-            awaitClose {
-                registration.remove()
-                registroSincronizacao.parado(COLECAO_CONTADOR)
             }
-        }.onEach { contagem ->
-            contadorDao.atualizarContagem(ContadorBilhete(contagem = contagem))
-            registroSincronizacao.gravado(COLECAO_CONTADOR, 1)
-        }.launchIn(syncScope)
+            .onCompletion { registroSincronizacao.parado(COLECAO_CONTADOR) }
+            .launchIn(syncScope)
     }
 
     suspend fun salvar(id: String, passagem: Passagem): String {

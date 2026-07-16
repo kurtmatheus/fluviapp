@@ -197,8 +197,10 @@ D2, então D3 desce para a Fase 2.
    `RegistroSincronizacao`, banner não-bloqueante na `MainScreen` sobre o cache; **D5** —
    `atualizarDoServidor()` (`get(Source.SERVER)`) no pull-to-refresh, grava no Room e o Flow reflete.
 
-Cada fase é aditiva. **Só se promove a ADR depois de observável e testável** — o `compile+suíte verde`
-prova que constrói, não que se comporta; a confiança vem da §10, não de conferir no device.
+Cada fase é aditiva. Critério "observável + testável" (§10) **atingido** — observabilidade
+(`RegistroSincronizacao`) e testabilidade Níveis 1 e 2 (`FonteSnapshots` + testes do ciclo de vida
+sem Firebase). **Pronto para promover a um ADR de sincronização.** Falta só a validação em runtime no
+device (que a observabilidade agora torna verificável por telemetria, não por inspeção manual).
 
 ## 10. Observabilidade & Testabilidade (critério de pronto)
 
@@ -216,13 +218,15 @@ ADR-0004/0007) com `FakeTelemetry`, e camadas puras testadas (`RegistroCadastro`
 - `sync_gravado {colecao, n}` (batch no Room) · `sync_erro {colecao, motivo}` (`naoFatal`, reconecta) ·
   `sync_parado {colecao}` (no `awaitClose` — prova o logout parando).
 
-**Testabilidade — dois níveis:**
-- *Nível 1 (agora):* `RegistroSincronizacao` é **puro** → unit-testável com `FakeTelemetry` (como
+**Testabilidade — dois níveis, ambos ✅ FEITOS:**
+- *Nível 1:* `RegistroSincronizacao` é **puro** → unit-testável com `FakeTelemetry` (como
   `RegistroCadastroTest`). Trava a taxonomia dos eventos.
-- *Nível 2 (seam, depois):* testar o **ciclo de vida** (idempotência, batch, parada) exige tirar o
-  `FirebaseFirestore` concreto de dentro do `sincronizarColecao`. Porta candidata:
-  `FonteSnapshots.observar(colecao): Flow<ResultadoSnapshot>` (`{docs, doCache, erro}`) — impl real usa
-  `addSnapshotListener`, fake emite snapshots controlados. É o **mesmo seam** da dívida de DIP
-  (`MainScreenViewModel` com `ViagemFirestoreRepository`/`PassagemFirestoreRepository`/`FirebaseAuth`
-  concretos) e do §8.3 do [fluxo-main-screen.md](fluxo-main-screen.md). **Decisão que pesa** (introduz
-  porta nova sobre o Firestore) — tratada à parte, depois do Nível 1.
+- *Nível 2 (seam):* porta **`FonteSnapshots`** (`observar(colecao)` / `observarDocumento`) emitindo
+  **`DocumentoBruto` neutro** (`id` + `Map`, sem tipos Firebase — decisão do usuário: porta pura). Impl
+  `FonteSnapshotsFirestore` (`addSnapshotListener`+`callbackFlow`+`awaitClose`); fake
+  `FakeFonteSnapshots` emite snapshots controlados. O `sincronizarColecao` depende da porta, não do
+  `FirebaseFirestore` → `SincronizarColecaoTest` cobre o **ciclo de vida sem Firebase**: lote (1
+  snapshot → 1 `salvarTodos`), erro (registra sem encerrar), parada (cancelar → `sync_parado`). A
+  desserialização `Map→Documento` (que substituiu o `toObject`) virou funções puras testadas
+  (`DocumentoBrutoMappersTest`). Trade-off aceito: perdeu-se a desserialização tipada do Firestore, em
+  troca de mapeamento testável + porta livre de Firebase (fecha também a raiz da dívida de DIP).

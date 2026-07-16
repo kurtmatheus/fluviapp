@@ -1,49 +1,44 @@
 package dev.matheus.fluviapp.services.repository.firebase
 
-import com.google.firebase.firestore.DocumentSnapshot
-import com.google.firebase.firestore.FirebaseFirestore
 import dev.matheus.fluviapp.telemetry.RegistroSincronizacao
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.channels.awaitClose
-import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
 
 /**
- * Espelha uma coleção do Firestore no Room via snapshot listener (ADR-0003), como um Flow gerenciado
- * (estudo sincronizacao-firestore-room.md, D2/D3) e observável (§10):
- * - `callbackFlow` + `awaitClose`: a `ListenerRegistration` é removida quando o [scope] é cancelado
- *   — sem vazamento (o padrão antigo descartava a registration a cada chamada).
- * - grava em LOTE (`salvarTodos`) no [scope] — sem `runBlocking` bloqueando a thread do listener.
- * - no erro, apenas registra (NÃO fecha o flow), deixando o Firestore reconectar sozinho.
- * - emite o ciclo de vida via [registro]: iniciado / snapshot (cache×servidor) / gravado / parado / erro.
+ * Espelha uma coleção do Firestore no Room como um Flow gerenciado e OBSERVÁVEL, dependendo da porta
+ * [FonteSnapshots] — não mais do `FirebaseFirestore` concreto (estudo sincronizacao-firestore-room.md,
+ * §10 Nível 2). Assim o ciclo de vida é testável sem Firebase (fake de [FonteSnapshots]):
+ * - grava em LOTE (`salvarTodos`) no [scope], sem `runBlocking` (D3);
+ * - erro (`Falha`) só registra, não encerra o Flow — o Firestore reconecta;
+ * - `iniciado`/`parado` marcam anexar/remover (o `onCompletion` cobre o cancelamento do escopo).
  *
  * Devolve o [Job] para o repositório controlar idempotência (não re-anexar) e cancelamento.
  */
-fun <T> FirebaseFirestore.sincronizarColecao(
+fun <T> sincronizarColecao(
+    fonte: FonteSnapshots,
     colecao: String,
     scope: CoroutineScope,
     registro: RegistroSincronizacao,
-    paraModelo: (DocumentSnapshot) -> T?,
+    paraModelo: (DocumentoBruto) -> T?,
     salvarTodos: suspend (List<T>) -> Unit,
-): Job = callbackFlow {
+): Job {
     registro.iniciado(colecao)
-    val registration = collection(colecao).addSnapshotListener { value, error ->
-        if (error != null) {
-            registro.erro(colecao, error)
-            return@addSnapshotListener
+    return fonte.observar(colecao)
+        .onEach { resultado ->
+            when (resultado) {
+                is ResultadoColecao.Dados -> {
+                    registro.snapshotRecebido(colecao, resultado.documentos.size, resultado.doCache)
+                    val itens = resultado.documentos.mapNotNull(paraModelo)
+                    salvarTodos(itens)
+                    registro.gravado(colecao, itens.size)
+                }
+
+                is ResultadoColecao.Falha -> registro.erro(colecao, resultado.causa)
+            }
         }
-        value?.let {
-            registro.snapshotRecebido(colecao, it.size(), it.metadata.isFromCache)
-            trySend(it.documents.mapNotNull(paraModelo))
-        }
-    }
-    awaitClose {
-        registration.remove()
-        registro.parado(colecao)
-    }
-}.onEach { modelos ->
-    salvarTodos(modelos)
-    registro.gravado(colecao, modelos.size)
-}.launchIn(scope)
+        .onCompletion { registro.parado(colecao) }
+        .launchIn(scope)
+}
