@@ -23,6 +23,7 @@ data class RascunhoPassagemSnapshot(
     val valorCredito: String = "",
     val desconto: String = "",
     val observacao: String = "",
+    val viagemId: String = "",
     val empresaViagem: String = "",
     val navioViagem: String = "",
     val origemViagem: String = "",

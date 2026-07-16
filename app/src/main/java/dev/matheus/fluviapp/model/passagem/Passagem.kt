@@ -10,6 +10,9 @@ data class Passagem(
     @PrimaryKey
     val id: String,
     val numero: String,
+    // Ponteiro estável para a Viagem (ADR-0008): id p/ relacionar/agregar. codigoViagem e
+    // empresa/navio/origem/destino seguem como snapshot por valor (histórico imutável do bilhete).
+    val viagemId: String = "",
     val codigoViagem: String,
     val empresa: String,
     val navio: String,

@@ -9,6 +9,7 @@ import dev.matheus.fluviapp.services.repository.firebase.documents.ViagemDocumen
 fun Passagem.toPassagemDocumento(): PassagemDocumento {
     return PassagemDocumento(
         numero = numero,
+        viagemId = viagemId,
         viagem = ViagemDocumento(
             codigo = codigoViagem,
             empresa = empresa,

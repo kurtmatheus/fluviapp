@@ -199,6 +199,14 @@ class FormPassagemHelper(
         }
     }
 
+    private fun atualizarViagemId(id: String) {
+        uiStatePassagem.update {
+            it.copy(
+                viagemId = id
+            )
+        }
+    }
+
     private fun atualizarDataViagem(data: String) {
         uiStatePassagem.update {
             it.copy(
@@ -378,6 +386,7 @@ class FormPassagemHelper(
         // A Viagem relaciona por id (ADR-0008 Fase 3); resolve os nomes p/ o snapshot da Passagem via
         // o mapper (mesma resolução do card). Esses nomes são congelados na Passagem na emissão.
         val card = viagemDadosViagemMapper.map(viagem)
+        atualizarViagemId(viagem.id)
         atualizarEmpresaViagem(card.empresa)
         atualizarNavioViagem(card.navio)
         atualizarOrigemViagem(card.origem)
@@ -418,6 +427,7 @@ class FormPassagemHelper(
         return Passagem(
             id = passagemExistente?.id.orEmpty(),
             numero = passagemExistente?.numero ?: numeroBilhete.toString(),
+            viagemId = statePassagem.viagemId,
             codigoViagem = statePassagem.codigoViagem,
             empresa = statePassagem.empresaViagem,
             navio = statePassagem.navioViagem,

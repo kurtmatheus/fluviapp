@@ -15,6 +15,7 @@ data class FormPassagemUiState(
 
     val listaTipoDocumento: List<Constante> = emptyList(),
 
+    val viagemId: String = "",
     val empresaViagem: String = "",
     val navioViagem: String = "",
     val origemViagem: String = "",

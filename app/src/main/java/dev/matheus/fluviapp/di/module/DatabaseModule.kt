@@ -157,6 +157,17 @@ val MIGRATION_8_9 = object : Migration(8, 9) {
     }
 }
 
+/**
+ * v9 → v10: `Passagem.viagemId` — ponteiro estável p/ a Viagem (ADR-0008, Fase 2 da Passagem). A
+ * Passagem passa a relacionar por id, mantendo o snapshot por valor (codigoViagem/empresa/navio/…).
+ * Aditiva e não-destrutiva (padrão da 3→4/5→6/7→8) — preserva PassagemDigital (única local-only).
+ */
+val MIGRATION_9_10 = object : Migration(9, 10) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE Passagem ADD COLUMN viagemId TEXT NOT NULL DEFAULT ''")
+    }
+}
+
 @Module
 @InstallIn(SingletonComponent::class)
 class DatabaseModule {
@@ -170,7 +181,7 @@ class DatabaseModule {
             DATABASE_NAME
         ).addMigrations(
             MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7,
-            MIGRATION_7_8, MIGRATION_8_9,
+            MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10,
         ).build()
     }
 

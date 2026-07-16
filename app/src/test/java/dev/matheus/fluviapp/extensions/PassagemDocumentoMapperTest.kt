@@ -16,6 +16,7 @@ class PassagemDocumentoMapperTest {
     private fun passagemModelo() = Passagem(
         id = "id-1",
         numero = "2444",
+        viagemId = "viagem-abc",
         codigoViagem = "PN-IC-001",
         empresa = "Empresa Modelo",
         navio = "F/B Modelo",
@@ -41,6 +42,8 @@ class PassagemDocumentoMapperTest {
     fun `toPassagemDocumento aninha viagem e passageiros`() {
         val doc = passagemModelo().toPassagemDocumento()
 
+        // viagemId é FK top-level (ponteiro por id, ADR-0008), fora do snapshot `viagem` (por valor).
+        assertEquals("viagem-abc", doc.viagemId)
         assertEquals("PN-IC-001", doc.viagem?.codigo)
         assertEquals("F/B Modelo", doc.viagem?.navio)
         assertEquals("RG", doc.passageiro1?.documento)
@@ -57,6 +60,7 @@ class PassagemDocumentoMapperTest {
         val passagem = passagemModelo().toPassagemDocumento().toPassagem("id-restaurado")
 
         assertEquals("id-restaurado", passagem.id)
+        assertEquals("viagem-abc", passagem.viagemId)
         assertEquals("PN-IC-001", passagem.codigoViagem)
         assertEquals("RG", passagem.documentoPassageiro1)
         // Lock da assimetria reversa do p3.
@@ -71,6 +75,7 @@ class PassagemDocumentoMapperTest {
         val roundTrip = original.toPassagemDocumento().toPassagem(original.id)
 
         assertEquals(original.numero, roundTrip.numero)
+        assertEquals(original.viagemId, roundTrip.viagemId)
         assertEquals(original.codigoViagem, roundTrip.codigoViagem)
         assertEquals(original.empresa, roundTrip.empresa)
         assertEquals(original.nomePassageiro1, roundTrip.nomePassageiro1)

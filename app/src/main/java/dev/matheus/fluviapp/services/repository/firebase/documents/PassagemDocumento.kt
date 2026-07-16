@@ -4,6 +4,9 @@ import dev.matheus.fluviapp.model.passagem.Passagem
 
 data class PassagemDocumento(
     val numero: String = "",
+    // FK da Passagem -> Viagem por id (ADR-0008). Fica top-level (é ponteiro que a passagem possui),
+    // separado do `viagem` embutido, que é o snapshot por valor. Default "" cobre docs antigos.
+    val viagemId: String = "",
     val viagem: ViagemDocumento? = null,
     val dataViagem: String = "",
     val horaViagem: String = "",
@@ -31,6 +34,7 @@ fun PassagemDocumento.toPassagem(id: String): Passagem {
     return Passagem(
         id = id,
         numero = numero,
+        viagemId = viagemId,
         codigoViagem = viagem?.codigo.orEmpty(),
         empresa = viagem?.empresa.orEmpty(),
         navio = viagem?.navio.orEmpty(),

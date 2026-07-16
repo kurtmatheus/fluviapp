@@ -17,6 +17,7 @@ class RascunhoPassagemMapperTest {
         valorPix = "100",
         desconto = "30",
         observacao = "obs",
+        viagemId = "viagem-abc",
         codigoViagem = "PN-IC-001",
     )
     private val passageiro = FormPassageiroUiState(
@@ -67,6 +68,7 @@ class RascunhoPassagemMapperTest {
             .aplicarEm(FormPassagemUiState(), FormPassageiroUiState(), FormVeiculoUiState())
 
         assertEquals(passagem.dataViagem, restaurado.passagem.dataViagem)
+        assertEquals(passagem.viagemId, restaurado.passagem.viagemId)
         assertEquals(passagem.agencia, restaurado.passagem.agencia)
         assertEquals(passagem.valorPix, restaurado.passagem.valorPix)
         assertEquals(passagem.desconto, restaurado.passagem.desconto)
