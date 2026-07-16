@@ -130,7 +130,9 @@ escopo de app** — a forma limpa do D3 depende do mesmo escopo de sessão do D2
 Fase 1; anda com o D2.
 
 ### D4 — Falha visível. **Decidido: banner offline-first.**
-Adicionar erro ao estado (campo de erro ou `MainScreenState.ERROR`) e ligar o `onErro` (hoje no-op).
+Adicionar erro ao estado (campo de erro ou `MainScreenState.ERROR`) e ligar o erro do sync (hoje só
+loga). **Consome a observabilidade da §10** — o banner é a face na UI do mesmo `sync_erro` que a
+`RegistroSincronizacao` emite; por isso a §10 vem antes/junto do D4.
 → **Decisão (ratificado): offline-first** — manter os cards do cache + **banner não-bloqueante** ("sem
 conexão, mostrando dados salvos"), não tela de erro cheia. Combina com Room-espelho.
 
@@ -186,12 +188,39 @@ D2, então D3 desce para a Fase 2.
    filhos do escopo no logout (`awaitClose` remove as registrations). O contador de bilhete
    (`sincronizarNumeroBilheteEmTempoReal`) recebeu o mesmo tratamento — some o `throw` dentro do
    callback (derrubava o app). Corrige vazamento (#3), `runBlocking`/thread (#4) e duplo-attach (#6).
-3. **UX (D4 + D5)**: banner de erro offline-first; refresh = `get(Source.SERVER)`.
+3. **Observabilidade + Testabilidade (§10)** — 🔜 **EM ANDAMENTO**: `RegistroSincronizacao` (puro,
+   sobre a porta `Telemetry`) instrumenta o ciclo de vida; depois o seam `FonteSnapshots` destrava o
+   teste do ciclo sem Firebase. **Vem antes/junto do D4** (o banner do D4 consome o estado/erro que a
+   observabilidade produz — ver D4).
+4. **UX (D4 + D5)**: banner de erro offline-first (apoiado na observabilidade da fase 3); refresh =
+   `get(Source.SERVER)`.
 
-Cada fase é aditiva. Após validado, promover a um ADR de sincronização.
+Cada fase é aditiva. **Só se promove a ADR depois de observável e testável** — o `compile+suíte verde`
+prova que constrói, não que se comporta; a confiança vem da §10, não de conferir no device.
 
-> **Nota de testabilidade (achado da Fase 1):** um unit test de `MainScreenViewModel` esbarra em
-> dependências concretas Firebase (`PassagemFirestoreRepository`, `FirebaseAuth`) que **não são
-> portas** — não dá para fakear sem refatorar. O mapeamento reativo em si é coberto pelo
-> `ViagemDadosViagemMapperTest` + `FakeViagemRepository.observarTodas`. Transformar essas duas
-> dependências em portas é candidato natural (casa com o §8.3 do [fluxo-main-screen.md](fluxo-main-screen.md)).
+## 10. Observabilidade & Testabilidade (critério de pronto)
+
+"Como sabemos que a sync funciona?" não se responde no device (anedótico, cego para cache×servidor e
+para attach duplicado). Responde-se com **observabilidade** (ver os eventos) + **testabilidade**
+(asserir a lógica sem Firebase). O app já tem o molde: porta `Telemetry` (`evento`/`rastro`/`naoFatal`,
+ADR-0004/0007) com `FakeTelemetry`, e camadas puras testadas (`RegistroCadastro`).
+
+**Observabilidade — `RegistroSincronizacao` (puro, só depende de `Telemetry`).** Eventos do ciclo:
+- `sync_iniciado {colecao}` — anexou. Como o `iniciado` só dispara quando `sincronizarColecao` é
+  chamado (i.e., passou a guarda de idempotência), **um único `iniciado` por coleção prova que não há
+  duplo-attach** (a idempotência é observável, não presumida).
+- `sync_snapshot {colecao, docs, origem=cache|servidor}` — de `SnapshotMetadata.isFromCache`: responde
+  *"o espelho veio do servidor ou do cache?"*, o cerne do "está fresco?" (hoje descartado).
+- `sync_gravado {colecao, n}` (batch no Room) · `sync_erro {colecao, motivo}` (`naoFatal`, reconecta) ·
+  `sync_parado {colecao}` (no `awaitClose` — prova o logout parando).
+
+**Testabilidade — dois níveis:**
+- *Nível 1 (agora):* `RegistroSincronizacao` é **puro** → unit-testável com `FakeTelemetry` (como
+  `RegistroCadastroTest`). Trava a taxonomia dos eventos.
+- *Nível 2 (seam, depois):* testar o **ciclo de vida** (idempotência, batch, parada) exige tirar o
+  `FirebaseFirestore` concreto de dentro do `sincronizarColecao`. Porta candidata:
+  `FonteSnapshots.observar(colecao): Flow<ResultadoSnapshot>` (`{docs, doCache, erro}`) — impl real usa
+  `addSnapshotListener`, fake emite snapshots controlados. É o **mesmo seam** da dívida de DIP
+  (`MainScreenViewModel` com `ViagemFirestoreRepository`/`PassagemFirestoreRepository`/`FirebaseAuth`
+  concretos) e do §8.3 do [fluxo-main-screen.md](fluxo-main-screen.md). **Decisão que pesa** (introduz
+  porta nova sobre o Firestore) — tratada à parte, depois do Nível 1.

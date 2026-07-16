@@ -9,6 +9,7 @@ import dev.matheus.fluviapp.services.repository.firebase.documents.toAgente
 import dev.matheus.fluviapp.di.module.SyncScope
 import dev.matheus.fluviapp.services.repository.firebase.sincronizarColecao
 import dev.matheus.fluviapp.telemetry.RegistroCadastro
+import dev.matheus.fluviapp.telemetry.RegistroSincronizacao
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.toObject
 import kotlinx.coroutines.CoroutineScope
@@ -25,6 +26,7 @@ class AgenteFirestoreRepository @Inject constructor(
     private val firestore: FirebaseFirestore,
     private val registroCadastro: RegistroCadastro,
     @SyncScope private val syncScope: CoroutineScope,
+    private val registroSincronizacao: RegistroSincronizacao,
 ) : AgenteRepository {
 
     private var syncJob: Job? = null
@@ -33,8 +35,8 @@ class AgenteFirestoreRepository @Inject constructor(
         if (syncJob?.isActive == true) return
         syncJob = firestore.sincronizarColecao(
             colecao = COLLECTION_AGENTS,
-            tag = TAG,
             scope = syncScope,
+            registro = registroSincronizacao,
             paraModelo = { it.toObject<AgenteDocumento>()?.toAgente(it.id) },
             salvarTodos = { dao.salvarTodos(*it.toTypedArray()) },
         )
@@ -77,7 +79,6 @@ class AgenteFirestoreRepository @Inject constructor(
         dao.obterTodosPorAgencia(agencia).first()
 
     private companion object {
-        const val TAG = "agenteRepository"
         const val ENTIDADE = "agente"
     }
 }

@@ -6,6 +6,7 @@ import dev.matheus.fluviapp.services.repository.firebase.documents.ConstanteDocu
 import dev.matheus.fluviapp.services.repository.firebase.documents.toConstante
 import dev.matheus.fluviapp.di.module.SyncScope
 import dev.matheus.fluviapp.services.repository.firebase.sincronizarColecao
+import dev.matheus.fluviapp.telemetry.RegistroSincronizacao
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.toObject
 import kotlinx.coroutines.CoroutineScope
@@ -20,6 +21,7 @@ class ConstanteFirestoreRepository @Inject constructor(
     private val dao: ConstanteDao,
     private val firestore: FirebaseFirestore,
     @SyncScope private val syncScope: CoroutineScope,
+    private val registroSincronizacao: RegistroSincronizacao,
 ) : ConstanteRepository {
 
     private var syncJob: Job? = null
@@ -28,8 +30,8 @@ class ConstanteFirestoreRepository @Inject constructor(
         if (syncJob?.isActive == true) return
         syncJob = firestore.sincronizarColecao(
             colecao = COLLECTION_CONSTANTS,
-            tag = TAG,
             scope = syncScope,
+            registro = registroSincronizacao,
             paraModelo = { it.toObject<ConstanteDocumento>()?.toConstante(it.id) },
             salvarTodos = { dao.salvarTodas(*it.toTypedArray()) },
         )
@@ -39,8 +41,4 @@ class ConstanteFirestoreRepository @Inject constructor(
         dao.obterTodosPorCategoria(categoria = categoria).first()
 
     override suspend fun obterTodas() = dao.obterTodos().first()
-
-    private companion object {
-        const val TAG = "constantesRepository"
-    }
 }

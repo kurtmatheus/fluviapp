@@ -10,6 +10,7 @@ import dev.matheus.fluviapp.services.repository.firebase.documents.ViagemDocumen
 import dev.matheus.fluviapp.services.repository.firebase.documents.toViagem
 import dev.matheus.fluviapp.di.module.SyncScope
 import dev.matheus.fluviapp.telemetry.RegistroCadastro
+import dev.matheus.fluviapp.telemetry.RegistroSincronizacao
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.toObject
 import kotlinx.coroutines.CoroutineScope
@@ -27,6 +28,7 @@ class ViagemFirestoreRepository @Inject constructor(
     private val registroCadastro: RegistroCadastro,
     private val navioRepository: NavioRepository,
     @SyncScope private val syncScope: CoroutineScope,
+    private val registroSincronizacao: RegistroSincronizacao,
 ) : ViagemRepository {
 
     private var syncJob: Job? = null
@@ -37,8 +39,8 @@ class ViagemFirestoreRepository @Inject constructor(
         if (syncJob?.isActive == true) return
         syncJob = firestore.sincronizarColecao(
             colecao = COLLECTION_VIAGENS,
-            tag = TAG,
             scope = syncScope,
+            registro = registroSincronizacao,
             paraModelo = { it.toObject<ViagemDocumento>()?.toViagem(it.id) },
             salvarTodos = { dao.salvarTodas(*it.toTypedArray()) },
         )

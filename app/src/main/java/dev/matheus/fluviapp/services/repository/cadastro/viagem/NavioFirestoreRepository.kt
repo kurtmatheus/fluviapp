@@ -8,6 +8,7 @@ import dev.matheus.fluviapp.services.repository.firebase.documents.toNavio
 import dev.matheus.fluviapp.di.module.SyncScope
 import dev.matheus.fluviapp.services.repository.firebase.sincronizarColecao
 import dev.matheus.fluviapp.telemetry.RegistroCadastro
+import dev.matheus.fluviapp.telemetry.RegistroSincronizacao
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.toObject
 import kotlinx.coroutines.CoroutineScope
@@ -24,6 +25,7 @@ class NavioFirestoreRepository @Inject constructor(
     private val firestore: FirebaseFirestore,
     private val registroCadastro: RegistroCadastro,
     @SyncScope private val syncScope: CoroutineScope,
+    private val registroSincronizacao: RegistroSincronizacao,
 ) : NavioRepository {
 
     private var syncJob: Job? = null
@@ -32,8 +34,8 @@ class NavioFirestoreRepository @Inject constructor(
         if (syncJob?.isActive == true) return
         syncJob = firestore.sincronizarColecao(
             colecao = COLLECTION_NAVIOS,
-            tag = TAG,
             scope = syncScope,
+            registro = registroSincronizacao,
             paraModelo = { it.toObject<NavioDocumento>()?.toNavio(it.id) },
             salvarTodos = { dao.salvarTodos(*it.toTypedArray()) },
         )
@@ -72,7 +74,6 @@ class NavioFirestoreRepository @Inject constructor(
     override suspend fun obterPorNome(nome: String) = dao.obterPorNome(nome).first()
 
     private companion object {
-        const val TAG = "navioRepository"
         const val COLLECTION_NAVIOS = "navios"
         const val ENTIDADE = "navio"
     }

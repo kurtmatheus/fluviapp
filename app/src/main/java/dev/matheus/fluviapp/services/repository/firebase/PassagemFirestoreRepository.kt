@@ -14,6 +14,7 @@ import dev.matheus.fluviapp.services.repository.firebase.documents.PassagemDocum
 import dev.matheus.fluviapp.services.repository.firebase.documents.toContadorBilhete
 import dev.matheus.fluviapp.services.repository.firebase.documents.toPassagem
 import dev.matheus.fluviapp.telemetry.RegistroEmissao
+import dev.matheus.fluviapp.telemetry.RegistroSincronizacao
 import com.google.android.gms.tasks.Task
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.FirebaseFirestore
@@ -38,6 +39,7 @@ class PassagemFirestoreRepository @Inject constructor(
     private val firestore: FirebaseFirestore,
     private val registroEmissao: RegistroEmissao,
     @SyncScope private val syncScope: CoroutineScope,
+    private val registroSincronizacao: RegistroSincronizacao,
 ) {
 
     private var contadorJob: Job? = null
@@ -48,19 +50,31 @@ class PassagemFirestoreRepository @Inject constructor(
     fun sincronizarNumeroBilheteEmTempoReal() {
         if (contadorJob?.isActive == true) return
         contadorJob = callbackFlow {
+            registroSincronizacao.iniciado(COLECAO_CONTADOR)
             val registration = firestore.collection(COLLECTION_PASSAGENS)
                 .document(DOCUMENT_CONTADOR)
                 .addSnapshotListener { value, error ->
                     if (error != null) {
-                        Log.e(TAG, "sincronizarNumeroBilheteEmTempoReal: ${error.message}", error)
+                        registroSincronizacao.erro(COLECAO_CONTADOR, error)
                         return@addSnapshotListener
                     }
-                    value?.toObject<ContadorDocumento>()?.toContadorBilhete()
-                        ?.let { trySend(it.contagem) }
+                    value?.let { snapshot ->
+                        registroSincronizacao.snapshotRecebido(
+                            COLECAO_CONTADOR,
+                            docs = if (snapshot.exists()) 1 else 0,
+                            doCache = snapshot.metadata.isFromCache,
+                        )
+                        snapshot.toObject<ContadorDocumento>()?.toContadorBilhete()
+                            ?.let { trySend(it.contagem) }
+                    }
                 }
-            awaitClose { registration.remove() }
+            awaitClose {
+                registration.remove()
+                registroSincronizacao.parado(COLECAO_CONTADOR)
+            }
         }.onEach { contagem ->
             contadorDao.atualizarContagem(ContadorBilhete(contagem = contagem))
+            registroSincronizacao.gravado(COLECAO_CONTADOR, 1)
         }.launchIn(syncScope)
     }
 
@@ -179,6 +193,7 @@ class PassagemFirestoreRepository @Inject constructor(
         private const val TAG = "passagemFirestoreRepository"
         private const val COLLECTION_PASSAGENS = "passagens"
         private const val DOCUMENT_CONTADOR = "contador"
+        private const val COLECAO_CONTADOR = "contador_bilhete"
         private const val FIELD_NUMERO = "numeroBilhete"
         private const val FIELD_DATA_VIAGEM = "dataViagem"
         private const val FIELD_STATUS = "status"
