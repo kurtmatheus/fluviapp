@@ -121,9 +121,13 @@ sessão = `@Singleton @Provides CoroutineScope(SupervisorJob() + Dispatchers.IO)
 Parada natural no `deslogar()` (`MainScreenViewModel`) + logout (`LoginViewModel`). Attach único no
 login corrige o duplo-attach (smell #6): `refresh()` nunca re-anexa.
 
-### D3 — Matar o `runBlocking`. **Proposto.**
-Trocar `runBlocking { salvar }` por escrita no escopo coletor + **`salvarTodas(snapshot)` em lote**
-(1 transação por snapshot, não N bloqueantes). Cai naturalmente do D2(b).
+### D3 — Matar o `runBlocking`. **Proposto (executa junto do D2, na Fase 2).**
+Trocar `runBlocking { salvar }` por escrita no escopo coletor + **`salvarTodos(snapshot)` em lote**
+(1 transação por snapshot, não N bloqueantes). Cai naturalmente do D2(b). **Acoplamento medido na
+implementação:** o `sincronizarColecao` é compartilhado por **5 repos** (Viagem/Navio/Empresa/
+Constante/Agente), só **2 DAOs** têm salvar-em-lote (faltam Empresa/Agente/Constante) e **não há
+escopo de app** — a forma limpa do D3 depende do mesmo escopo de sessão do D2. Por isso D3 **não** é
+Fase 1; anda com o D2.
 
 ### D4 — Falha visível. **Decidido: banner offline-first.**
 Adicionar erro ao estado (campo de erro ou `MainScreenState.ERROR`) e ligar o `onErro` (hoje no-op).
@@ -166,13 +170,24 @@ Com a lista reativa, o gesto precisa de significado honesto:
 **Remover**
 - `delay(1000)`; a leitura `.first()` do caminho de UI.
 
-## 9. Faseamento sugerido
+## 9. Faseamento (revisado na implementação)
 
-1. **Reativo (D1 + D3)**: `observarTodas` Flow→UI, listener grava em lote sem `runBlocking`. Já
-   entrega auto-update e mata `delay(1000)`. Menor risco, maior ganho.
-2. **Ciclo de vida (D2)**: escopo de sessão + `callbackFlow`/idempotência + parada no logout. Corrige
-   vazamento e duplo-attach.
-3. **UX (D4 + D5)**: estado/banner de erro; refresh = busca no servidor.
+Recorte ajustado ao medir o raio do D3 (ver D3): a forma limpa do D3 depende do escopo de sessão do
+D2, então D3 desce para a Fase 2.
 
-Cada fase é aditiva e testável (o mapper reativo e a idempotência do listener são unit-testáveis com
-os fakes existentes). Após validado, promover a um ADR de sincronização.
+1. **Reativo (D1)** — ✅ **FEITO**: `ViagemRepository.observarTodas(): Flow` + coleta reativa no
+   `MainScreenViewModel` (`observarTodas().map { it.map(viagemMapper::map) }.collect`); removidos
+   `delay(1000)` e a leitura one-shot; `refresh()` força re-sync e o Flow encerra o spinner. Entrega o
+   auto-update. O `runBlocking` do listener permanece (sem regressão — D1 independe de como o Room é escrito).
+2. **Ciclo de vida + escrita (D2 + D3)**: escopo de sessão (`@Singleton CoroutineScope`) +
+   `callbackFlow`/idempotência + parada no logout; no mesmo movimento, `salvarTodos` em lote sem
+   `runBlocking` (D3; +3 métodos de DAO). Corrige vazamento, duplo-attach e o bloqueio da thread.
+3. **UX (D4 + D5)**: banner de erro offline-first; refresh = `get(Source.SERVER)`.
+
+Cada fase é aditiva. Após validado, promover a um ADR de sincronização.
+
+> **Nota de testabilidade (achado da Fase 1):** um unit test de `MainScreenViewModel` esbarra em
+> dependências concretas Firebase (`PassagemFirestoreRepository`, `FirebaseAuth`) que **não são
+> portas** — não dá para fakear sem refatorar. O mapeamento reativo em si é coberto pelo
+> `ViagemDadosViagemMapperTest` + `FakeViagemRepository.observarTodas`. Transformar essas duas
+> dependências em portas é candidato natural (casa com o §8.3 do [fluxo-main-screen.md](fluxo-main-screen.md)).

@@ -66,6 +66,9 @@ class ViagemFirestoreRepository @Inject constructor(
 
     override suspend fun obterTodas() = dao.obterTodas().first()
 
+    // Reativo (D1): devolve o Flow do DAO direto — a UI observa e reage; nada de .first() one-shot.
+    override fun observarTodas() = dao.obterTodas()
+
     override suspend fun deletar(id: String) {
         val viagem = obterPorId(id)
         dao.deletar(viagem)

@@ -15,10 +15,10 @@ import dev.matheus.fluviapp.services.repository.firebase.ViagemFirestoreReposito
 import dev.matheus.fluviapp.ui.states.MainScreenState
 import dev.matheus.fluviapp.ui.states.MainScreenUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -40,7 +40,7 @@ class MainScreenViewModel @Inject constructor(
     init {
         _uiState.update { it.copy(mainScreenState = MainScreenState.LOADING) }
         obterUsuario()
-        atualizarListaViagem(isRefreshing = false)
+        observarViagens()
         sincronizarFirestore()
     }
 
@@ -59,19 +59,22 @@ class MainScreenViewModel @Inject constructor(
         }
     }
 
-    private fun atualizarListaViagem(isRefreshing: Boolean) {
+    // Coleta reativa do espelho Room (SSOT — estudo sincronizacao-firestore-room.md, D1). A UI
+    // atualiza sozinha quando o listener grava dados novos; sem delay(1000) nem leitura one-shot. O
+    // mapper é suspend (ADR-0008) e encaixa no Flow.map. Encerra o refresh quando a emissão chega.
+    private fun observarViagens() {
         viewModelScope.launch {
-            delay(1000)
-            val listaViagensCard = buildList {
-                viagemRepository.obterTodas().forEach { add(viagemMapper.map(it)) }
-            }
-            _uiState.update {
-                it.copy(
-                    listaViagens = listaViagensCard,
-                    mainScreenState = MainScreenState.HOME,
-                )
-            }
-            if (isRefreshing) atualizarIsRefresing()
+            viagemRepository.observarTodas()
+                .map { viagens -> viagens.map { viagemMapper.map(it) } }
+                .collect { cards ->
+                    _uiState.update {
+                        it.copy(
+                            listaViagens = cards,
+                            mainScreenState = MainScreenState.HOME,
+                            isRefreshing = false,
+                        )
+                    }
+                }
         }
     }
 
@@ -89,13 +92,10 @@ class MainScreenViewModel @Inject constructor(
         }
     }
 
-    private fun atualizarIsRefresing() {
-        _uiState.update { it.copy(isRefreshing = !it.isRefreshing) }
-    }
-
     fun refresh() {
-        atualizarIsRefresing()
-        atualizarListaViagem(isRefreshing = true)
+        // A lista já é reativa; o refresh força um re-sync. isRefreshing volta a false quando o Flow
+        // reativo (observarViagens) emitir os dados atualizados. (D5 futuro: get(Source.SERVER).)
+        _uiState.update { it.copy(isRefreshing = true) }
         sincronizarFirestore()
     }
 
