@@ -25,8 +25,12 @@ import dev.matheus.fluviapp.navigation.destinations.ARG_EMAIL_PREFILL
 import dev.matheus.fluviapp.navigation.destinations.FluviAppGraphDestinations
 import dev.matheus.fluviapp.navigation.graphs.loginGraph
 import dev.matheus.fluviapp.navigation.graphs.mainScreenGraph
+import dev.matheus.fluviapp.extensions.navegaParaResultPesquisarEmpresa
+import dev.matheus.fluviapp.extensions.navegaParaResultPesquisarNavio
 import dev.matheus.fluviapp.navigation.navcomposables.empresa.formEmpresaNavComposable
+import dev.matheus.fluviapp.navigation.navcomposables.empresa.resultSearchEmpresaNavComposable
 import dev.matheus.fluviapp.navigation.navcomposables.navio.formNavioNavComposable
+import dev.matheus.fluviapp.navigation.navcomposables.navio.resultSearchNavioNavComposable
 import dev.matheus.fluviapp.navigation.graphs.pesquisarPassagemGraph
 import dev.matheus.fluviapp.navigation.graphs.pesquisarViagemGraph
 import dev.matheus.fluviapp.navigation.graphs.splashGraph
@@ -102,8 +106,14 @@ fun FluviAppNavHost(
             onNavegaParaFormularioNovaEmpresa = {
                 navController.navegaParaFormularioEmpresa()
             },
+            onNavegaParaFormularioPesquisaEmpresa = {
+                navController.navegaParaResultPesquisarEmpresa()
+            },
             onNavegaParaFormularioNovoNavio = {
                 navController.navegaParaFormularioNavio()
+            },
+            onNavegaParaFormularioPesquisaNavio = {
+                navController.navegaParaResultPesquisarNavio()
             }
         )
 
@@ -203,12 +213,30 @@ fun FluviAppNavHost(
             }
         )
 
+        resultSearchEmpresaNavComposable(
+            onClickVoltar = {
+                navController.navigateUp()
+            },
+            onNavegaParaEditorEmpresa = {
+                navController.navegaParaFormularioEmpresa(it)
+            }
+        )
+
         formNavioNavComposable(
             onNavegaParaMainScreen = {
                 navController.navegaParaMainScreenGraph()
             },
             onClickVoltar = {
                 navController.navigateUp()
+            }
+        )
+
+        resultSearchNavioNavComposable(
+            onClickVoltar = {
+                navController.navigateUp()
+            },
+            onNavegaParaEditorNavio = {
+                navController.navegaParaFormularioNavio(it)
             }
         )
     }

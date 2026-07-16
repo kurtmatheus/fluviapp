@@ -32,7 +32,9 @@ fun NavGraphBuilder.mainScreenNavComposable(
     onNavegaParaFormularioNovoAgente: () -> Unit,
     onNavegaParaFormularioPesquisaAgente: () -> Unit,
     onNavegaParaFormularioNovaEmpresa: () -> Unit,
-    onNavegaParaFormularioNovoNavio: () -> Unit
+    onNavegaParaFormularioPesquisaEmpresa: () -> Unit,
+    onNavegaParaFormularioNovoNavio: () -> Unit,
+    onNavegaParaFormularioPesquisaNavio: () -> Unit
 ) {
     composable(
         route = FluviAppNavComposableDestinations.MainScreenNavComposable.route
@@ -78,10 +80,12 @@ fun NavGraphBuilder.mainScreenNavComposable(
 
             SecaoMenu.EMPRESA -> listOf(
                 DadosBotoesMenus(R.string.btn_nova_empresa, R.drawable.ic_add_75, onNavegaParaFormularioNovaEmpresa),
+                DadosBotoesMenus(R.string.btn_pesquisar_empresa, R.drawable.ic_lupa_75, onNavegaParaFormularioPesquisaEmpresa),
             )
 
             SecaoMenu.NAVIO -> listOf(
                 DadosBotoesMenus(R.string.btn_novo_navio, R.drawable.ic_add_75, onNavegaParaFormularioNovoNavio),
+                DadosBotoesMenus(R.string.btn_pesquisar_navio, R.drawable.ic_lupa_75, onNavegaParaFormularioPesquisaNavio),
             )
         }
 

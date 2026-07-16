@@ -25,4 +25,6 @@ interface EmpresaDao {
     @Query("SELECT * FROM Empresa WHERE nome = :nome")
     fun obterPorNome(nome: String): Flow<Empresa>
 
+    @Query("DELETE FROM Empresa WHERE id = :id")
+    suspend fun deletar(id: String)
 }

@@ -22,6 +22,9 @@ interface NavioDao {
     @Insert(onConflict = REPLACE)
     suspend fun salvarTodos(vararg navio: Navio)
 
+    @Query("DELETE FROM Navio WHERE id = :id")
+    suspend fun deletar(id: String)
+
     @Query("SELECT * FROM Navio WHERE descricaoNome = :nome")
     fun obterPorNome(nome: String): Flow<Navio>
 }

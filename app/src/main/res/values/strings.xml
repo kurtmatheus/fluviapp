@@ -159,6 +159,8 @@
     <!-- Navio -->
     <string name="title_top_navio">Navios</string>
     <string name="subtitle_cadastrar_novo_navio">Cadastrar Novo Navio</string>
+    <string name="subtitle_pesquisar_navios">Pesquisar Navios</string>
+    <string name="btn_pesquisar_navio">Pesquisar Navio</string>
     <string name="subtitle_editar_navio">Editar Navio</string>
     <string name="label_nome_navio">Nome</string>
     <string name="label_capacidade_veiculo">Capacidade de Veículos</string>
@@ -170,6 +172,8 @@
     <!-- Empresa -->
     <string name="title_top_empresa">Empresas</string>
     <string name="subtitle_cadastrar_nova_empresa">Cadastrar Nova Empresa</string>
+    <string name="subtitle_pesquisar_empresas">Pesquisar Empresas</string>
+    <string name="btn_pesquisar_empresa">Pesquisar Empresa</string>
     <string name="subtitle_editar_empresa">Editar Empresa</string>
     <string name="label_nome_empresa">Nome</string>
     <string name="label_razao_social">Razão Social</string>

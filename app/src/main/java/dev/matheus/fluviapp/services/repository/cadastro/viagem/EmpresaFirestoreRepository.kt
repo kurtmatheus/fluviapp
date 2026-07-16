@@ -1,5 +1,6 @@
 package dev.matheus.fluviapp.services.repository.cadastro.viagem
 
+import android.util.Log
 import dev.matheus.fluviapp.database.dao.cadastro.viagem.EmpresaDao
 import dev.matheus.fluviapp.model.viagem.Empresa
 import dev.matheus.fluviapp.model.viagem.toDocumento
@@ -75,7 +76,19 @@ class EmpresaFirestoreRepository @Inject constructor(
 
     override suspend fun obterPorNome(nome: String) = dao.obterPorNome(nome).first()
 
+    // Deleta local (otimista) + doc do Firestore. Offline-first: falha no servidor só loga (o listener
+    // de sessão reconcilia); não derruba a UI.
+    override suspend fun deletar(id: String) {
+        dao.deletar(id)
+        try {
+            firestore.collection(COLLECTION_EMPRESAS).document(id).delete().await()
+        } catch (e: Exception) {
+            Log.e(TAG, "deletar($id): ${e.message}", e)
+        }
+    }
+
     private companion object {
+        const val TAG = "empresaRepository"
         const val COLLECTION_EMPRESAS = "empresas"
         const val ENTIDADE = "empresa"
     }

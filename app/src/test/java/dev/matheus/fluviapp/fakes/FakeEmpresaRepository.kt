@@ -7,6 +7,7 @@ import dev.matheus.fluviapp.services.repository.cadastro.viagem.EmpresaRepositor
 class FakeEmpresaRepository : EmpresaRepository {
     var empresas: List<Empresa> = emptyList()
     val salvos = mutableListOf<Empresa>()
+    val deletados = mutableListOf<String>()
     var falharAoSalvar = false
 
     override fun sincronizar() = Unit
@@ -17,4 +18,8 @@ class FakeEmpresaRepository : EmpresaRepository {
     override suspend fun obterTodas(): List<Empresa> = empresas
     override suspend fun obterPorId(id: String): Empresa? = empresas.find { it.id == id }
     override suspend fun obterPorNome(nome: String): Empresa = empresas.first { it.nome == nome }
+    override suspend fun deletar(id: String) {
+        deletados += id
+        empresas = empresas.filterNot { it.id == id }
+    }
 }

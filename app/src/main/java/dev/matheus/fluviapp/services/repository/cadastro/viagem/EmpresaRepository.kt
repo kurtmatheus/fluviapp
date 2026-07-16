@@ -12,4 +12,5 @@ interface EmpresaRepository {
     suspend fun obterTodas(): List<Empresa>
     suspend fun obterPorId(id: String): Empresa?
     suspend fun obterPorNome(nome: String): Empresa
+    suspend fun deletar(id: String)
 }

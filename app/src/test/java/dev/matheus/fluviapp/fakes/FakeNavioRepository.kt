@@ -7,6 +7,7 @@ import dev.matheus.fluviapp.services.repository.cadastro.viagem.NavioRepository
 class FakeNavioRepository : NavioRepository {
     var navios: List<Navio> = emptyList()
     val salvos = mutableListOf<Navio>()
+    val deletados = mutableListOf<String>()
     var falharAoSalvar = false
 
     override fun sincronizar() = Unit
@@ -17,4 +18,8 @@ class FakeNavioRepository : NavioRepository {
         salvos += navio
     }
     override suspend fun obterPorNome(nome: String): Navio = navios.first { it.descricaoNome == nome }
+    override suspend fun deletar(id: String) {
+        deletados += id
+        navios = navios.filterNot { it.id == id }
+    }
 }

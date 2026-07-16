@@ -82,3 +82,11 @@ fun NavHostController.navegaParaFormularioNavio(idNavio: String = "") {
     navegaDireto("${FluviAppNavComposableDestinations.FormNavioNavComposable.route}?idNavio=$idNavio")
 }
 
+fun NavHostController.navegaParaResultPesquisarEmpresa() {
+    navegaDireto(FluviAppNavComposableDestinations.ResultPesquisarEmpresaNavComposable.route)
+}
+
+fun NavHostController.navegaParaResultPesquisarNavio() {
+    navegaDireto(FluviAppNavComposableDestinations.ResultPesquisarNavioNavComposable.route)
+}
+

@@ -12,4 +12,5 @@ interface NavioRepository {
     suspend fun obterPorId(id: String): Navio?
     suspend fun salvar(navio: Navio)
     suspend fun obterPorNome(nome: String): Navio
+    suspend fun deletar(id: String)
 }
