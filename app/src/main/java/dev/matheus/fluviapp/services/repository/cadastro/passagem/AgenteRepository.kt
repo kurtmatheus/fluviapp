@@ -13,6 +13,7 @@ interface AgenteRepository {
     suspend fun obterTodasAgencias(): List<String>
     suspend fun obterTodosAgentes(): List<Agente>
     suspend fun obterAgentesPorAgencia(agencia: String): List<Agente>
+    suspend fun deletar(id: String)
 
     companion object {
         const val COLLECTION_AGENTS = "agents"

@@ -22,8 +22,10 @@ fun NavGraphBuilder.resultSearchAgenteNavComposable(
         ResultSearchAgenteScreen(
             uiState = uiState,
             onAgenciaChange = viewModel::onAgenciaChange,
+            onLotacaoChange = viewModel::onLotacaoChange,
             onClickVoltar = onClickVoltar,
             onNavegaParaEditor = onNavegaParaEditorAgente,
+            onDeletar = viewModel::onDeletar,
         )
     }
 }

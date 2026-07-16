@@ -29,20 +29,41 @@ class PesquisaAgenteViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            todos = agenteRepository.obterTodosAgentes()
-            _uiState.update {
-                it.copy(
-                    listaAgencia = agenteRepository.obterTodasAgencias(),
-                    resultados = filtrar(""),
-                )
-            }
+            recarregar()
         }
     }
 
     fun onAgenciaChange(agencia: String) = _uiState.update {
-        it.copy(agencia = agencia, resultados = filtrar(agencia))
+        it.copy(agencia = agencia, resultados = filtrar(agencia, it.lotacao))
     }
 
-    private fun filtrar(agencia: String): List<Agente> =
-        todos.filter { it.agencia.startsWith(agencia, ignoreCase = true) }
+    fun onLotacaoChange(lotacao: String) = _uiState.update {
+        it.copy(lotacao = lotacao, resultados = filtrar(it.agencia, lotacao))
+    }
+
+    fun onDeletar(id: String) {
+        viewModelScope.launch {
+            agenteRepository.deletar(id)
+            recarregar()
+        }
+    }
+
+    /** Recarrega `todos` do repo e reaplica os filtros correntes (usado no init e pós-deleção). */
+    private suspend fun recarregar() {
+        todos = agenteRepository.obterTodosAgentes()
+        _uiState.update {
+            it.copy(
+                listaAgencia = agenteRepository.obterTodasAgencias(),
+                listaLotacao = todos.map { agente -> agente.lotacao }.distinct(),
+                resultados = filtrar(it.agencia, it.lotacao),
+            )
+        }
+    }
+
+    // Agência: prefixo (dropdown editável). Lotação: seleção exata do dropdown (vazio = sem filtro).
+    private fun filtrar(agencia: String, lotacao: String): List<Agente> =
+        todos.filter {
+            it.agencia.startsWith(agencia, ignoreCase = true) &&
+                (lotacao.isBlank() || it.lotacao.equals(lotacao, ignoreCase = true))
+        }
 }

@@ -7,6 +7,7 @@ import dev.matheus.fluviapp.services.repository.cadastro.passagem.AgenteReposito
 class FakeAgenteRepository : AgenteRepository {
     var agentes: List<Agente> = emptyList()
     val salvos = mutableListOf<Agente>()
+    val deletados = mutableListOf<String>()
 
     override fun sincronizar() = Unit
     override suspend fun salvar(agente: Agente) { salvos += agente }
@@ -15,4 +16,9 @@ class FakeAgenteRepository : AgenteRepository {
     override suspend fun obterTodosAgentes(): List<Agente> = agentes
     override suspend fun obterAgentesPorAgencia(agencia: String): List<Agente> =
         agentes.filter { it.agencia == agencia }
+
+    override suspend fun deletar(id: String) {
+        deletados += id
+        agentes = agentes.filterNot { it.id == id }
+    }
 }

@@ -1,5 +1,6 @@
 package dev.matheus.fluviapp.services.repository.cadastro.passagem
 
+import android.util.Log
 import dev.matheus.fluviapp.database.dao.cadastro.passagem.AgenteDao
 import dev.matheus.fluviapp.model.cadastro.passagem.Agente
 import dev.matheus.fluviapp.model.cadastro.passagem.toDocumento
@@ -80,7 +81,19 @@ class AgenteFirestoreRepository @Inject constructor(
     override suspend fun obterAgentesPorAgencia(agencia: String) =
         dao.obterTodosPorAgencia(agencia).first()
 
+    // Deleta local (otimista) + doc do Firestore. O listener de sessão (ADR-0009) reconcilia o Room.
+    // Falha no servidor não derruba a UI — só loga (o doc remanescente re-sincroniza depois).
+    override suspend fun deletar(id: String) {
+        dao.deletar(id)
+        try {
+            firestore.collection(COLLECTION_AGENTS).document(id).delete().await()
+        } catch (e: Exception) {
+            Log.e(TAG, "deletar($id): ${e.message}", e)
+        }
+    }
+
     private companion object {
+        const val TAG = "agenteRepository"
         const val ENTIDADE = "agente"
     }
 }

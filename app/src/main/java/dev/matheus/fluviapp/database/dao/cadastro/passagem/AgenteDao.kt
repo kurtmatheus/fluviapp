@@ -27,4 +27,7 @@ interface AgenteDao {
 
     @Query("SELECT agencia From Agente")
     fun obterTodasAgencias(): Flow<List<String>>
+
+    @Query("DELETE FROM Agente WHERE id = :id")
+    suspend fun deletar(id: String)
 }

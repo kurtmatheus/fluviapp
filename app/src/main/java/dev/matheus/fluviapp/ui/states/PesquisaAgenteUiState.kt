@@ -9,5 +9,7 @@ import dev.matheus.fluviapp.model.cadastro.passagem.Agente
 data class PesquisaAgenteUiState(
     val agencia: String = "",
     val listaAgencia: List<String> = emptyList(),
+    val lotacao: String = "",
+    val listaLotacao: List<String> = emptyList(),
     val resultados: List<Agente> = emptyList(),
 )
