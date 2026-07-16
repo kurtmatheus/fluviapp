@@ -88,25 +88,30 @@ fun String.extrairDocumentoFormatado(
     comMascara: Boolean = false,
     tipoDocumento: String?
 ): String {
+    // Robustez: os formatadores abaixo fatiam por índice fixo (slice/replaceRange) e estouram
+    // StringIndexOutOfBounds em documento vazio/incompleto. Uma passagem com dado ruim não pode
+    // derrubar toda a listagem/detalhe — então só formata quando há tamanho suficiente; senão,
+    // devolve o valor cru.
+    if (isBlank()) return ""
     return when (tipoDocumento) {
         CPF.name -> {
-            formatarCPF(comMascara)
+            if (length >= 11) formatarCPF(comMascara) else this
         }
 
         CNPJ.name -> {
-            formatarCNPJ()
+            if (length >= 14) formatarCNPJ() else this
         }
 
         CNH.name -> {
-            if (comMascara) this.mascararCNH() else this
+            if (comMascara && length >= 8) this.mascararCNH() else this
         }
 
         PASSAPORTE.name -> {
-            formatarPassaporte(comMascara)
+            if (length >= 8) formatarPassaporte(comMascara) else this
         }
 
         RG.name -> {
-            if (comMascara) this.mascararRG() else this
+            if (comMascara && length >= 4) this.mascararRG() else this
         }
 
         else -> {
