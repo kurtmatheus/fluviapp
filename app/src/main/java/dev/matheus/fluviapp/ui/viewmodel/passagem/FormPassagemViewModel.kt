@@ -197,7 +197,8 @@ class FormPassagemViewModel @Inject constructor(
         return usuarioLogado?.let {
             val id = formPassagemHelper.salvarPassagem(
                 idPassagem = idPassagem,
-                funcionarioResponsavel = it.nome
+                funcionarioResponsavel = it.nome,
+                funcionarioId = it.id
             )
             // promoção volátil/cacheada -> sólida: descarta o rascunho (invariante snapshot ⇔ rascunho).
             rascunhoStore.remover()

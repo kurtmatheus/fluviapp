@@ -407,17 +407,23 @@ class FormPassagemHelper(
     suspend fun salvarPassagem(
         idPassagem: String,
         funcionarioResponsavel: String,
+        funcionarioId: String,
     ): String {
 
         val passagem = montarPassagem(
             idPassagem = idPassagem,
-            funcionarioResponsavel = funcionarioResponsavel
+            funcionarioResponsavel = funcionarioResponsavel,
+            funcionarioId = funcionarioId
         )
 
         return passagemRepository.salvar(idPassagem, passagem)
     }
 
-    private suspend fun montarPassagem(idPassagem: String, funcionarioResponsavel: String): Passagem {
+    private suspend fun montarPassagem(
+        idPassagem: String,
+        funcionarioResponsavel: String,
+        funcionarioId: String,
+    ): Passagem {
         val statePassagem = uiStatePassagem.value
         val statePassageiro = uiStatePassageiro.value
         val stateVeiculo = uiStateVeiculo.value
@@ -478,7 +484,10 @@ class FormPassagemHelper(
             modeloVeiculo = stateVeiculo.modeloVeiculo,
             placaVeiculo = stateVeiculo.placaVeiculo,
             corVeiculo = stateVeiculo.corVeiculo,
-            funcionarioResponsavel = funcionarioResponsavel,
+            // Autoria congelada na emissão (ADR-0008/0010): só a CRIAÇÃO carimba o usuário atual;
+            // editar preserva dono/responsável originais (um gestor editar não vira dono).
+            funcionarioResponsavel = passagemExistente?.funcionarioResponsavel ?: funcionarioResponsavel,
+            funcionarioId = passagemExistente?.funcionarioId ?: funcionarioId,
             status = situacaoPassagem
         )
     }

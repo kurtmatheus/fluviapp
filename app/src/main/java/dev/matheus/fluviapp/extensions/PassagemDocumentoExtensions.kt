@@ -62,6 +62,7 @@ fun Passagem.toPassagemDocumento(): PassagemDocumento {
             corVeiculo = corVeiculo
         ),
         funcionarioResponsavel = funcionarioResponsavel,
+        funcionarioId = funcionarioId,
         status = status
     )
 }

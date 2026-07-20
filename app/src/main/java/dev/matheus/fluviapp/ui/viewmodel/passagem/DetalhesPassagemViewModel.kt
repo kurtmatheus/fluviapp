@@ -46,6 +46,9 @@ class DetalhesPassagemViewModel @Inject constructor(
 
     private val idPassagem: String = checkNotNull(savedStateHandle[DETALHES_PASSAGEM_ARGUMENT])
 
+    // uid do dono da passagem (ADR-0010 Fase 2), capturado do modelo bruto antes de mapear p/ card.
+    private var funcionarioIdPassagem: String = ""
+
     lateinit var impressaoHelper: ImpressaoHelper
     lateinit var passagemDigitalHelper: PassagemDigitalHelper
 
@@ -70,6 +73,7 @@ class DetalhesPassagemViewModel @Inject constructor(
 
     private suspend fun inicializarState() {
         passagemRepository.obterPorId(idPassagem).let { passagem ->
+            funcionarioIdPassagem = passagem.funcionarioId
             if (passagem.ehVeiculo) atualizarShowDadosVeiculo()
 
             val passagemCard = passagemMapper.map(passagem)
@@ -120,8 +124,9 @@ class DetalhesPassagemViewModel @Inject constructor(
         val usuarioLogado = usuarioRepository.obterUltimoUsuarioLogado() ?: return
         dataStore.data.collect { preferences ->
             val cargo = preferences[PreferencesKey.CARGO_ATUAL]
-            // Posse por nome (dívida da Fase 1, ADR-0010): compara o dono DA PASSAGEM com o logado.
-            val ehDono = _uiState.value.dadosPassagem.funcionario == usuarioLogado.nome
+            // Posse por identidade (ADR-0010 Fase 2): uid do dono DA PASSAGEM × uid logado
+            // (Usuario.id = doc id de users/{uid}). Passagens sem id (anteriores à Fase 2) → não-dono.
+            val ehDono = funcionarioIdPassagem.isNotEmpty() && funcionarioIdPassagem == usuarioLogado.id
             _uiState.update { state ->
                 state.copy(
                     isAdminOuFuncResposavel = PermissoesUsuario.podeEditarPassagem(cargo, ehDono)

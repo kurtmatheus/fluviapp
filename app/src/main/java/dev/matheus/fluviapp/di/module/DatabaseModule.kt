@@ -180,6 +180,18 @@ val MIGRATION_10_11 = object : Migration(10, 11) {
     }
 }
 
+/**
+ * v11 → v12: `Passagem.funcionarioId` — dono estável (uid do criador) para autorização por
+ * identidade (ADR-0010 Fase 2), fechando o débito de posse-por-nome do ADR-0008. Aditiva e não-
+ * destrutiva (padrão da 9→10/10→11). Sem backfill: app de portfólio, passagens nascem em runtime já
+ * carimbadas; bilhetes anteriores ficam com id vazio (tratados como "sem dono" no gate de edição).
+ */
+val MIGRATION_11_12 = object : Migration(11, 12) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE Passagem ADD COLUMN funcionarioId TEXT NOT NULL DEFAULT ''")
+    }
+}
+
 @Module
 @InstallIn(SingletonComponent::class)
 class DatabaseModule {
@@ -193,7 +205,7 @@ class DatabaseModule {
             DATABASE_NAME
         ).addMigrations(
             MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7,
-            MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11,
+            MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12,
         ).build()
     }
 

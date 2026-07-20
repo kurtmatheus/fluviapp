@@ -57,6 +57,9 @@ data class Passagem(
     val placaVeiculo: String? = null,
     val corVeiculo: String? = null,
     val funcionarioResponsavel: String,
+    // Dono estável da passagem = uid do criador (ADR-0010 Fase 2). Congelado na emissão; o nome
+    // (funcionarioResponsavel) segue como snapshot de exibição. Default "" cobre bilhetes anteriores.
+    val funcionarioId: String = "",
     val status: String,
 ) {
     @Ignore

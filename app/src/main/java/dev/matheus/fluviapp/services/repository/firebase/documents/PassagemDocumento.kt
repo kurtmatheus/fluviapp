@@ -27,6 +27,8 @@ data class PassagemDocumento(
     val gratuidade: String? = null,
     val acomodacao: String? = null,
     val funcionarioResponsavel: String = "",
+    // uid do criador (ADR-0010 Fase 2). Top-level, schemaless; default "" cobre docs anteriores.
+    val funcionarioId: String = "",
     val status: String = ""
 )
 
@@ -77,6 +79,7 @@ fun PassagemDocumento.toPassagem(id: String): Passagem {
         placaVeiculo = veiculo?.placaVeiculo,
         corVeiculo = veiculo?.corVeiculo,
         funcionarioResponsavel = funcionarioResponsavel,
+        funcionarioId = funcionarioId,
         status = status
     )
 }

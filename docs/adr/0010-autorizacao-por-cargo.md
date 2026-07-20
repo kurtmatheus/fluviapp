@@ -1,7 +1,7 @@
 # ADR-0010: Autorização por cargo — política única, dois eixos, posse por identidade
 
-**Status:** Aceita (direção). Fase 1 (política + correção de comportamento) implementada; Fase 2
-(posse por identidade) faseada e aditiva; Fase 3 (regras Firestore) fica para ADR futuro.
+**Status:** Aceita (direção). Fase 1 (política + correção de comportamento) e Fase 2 (posse por
+identidade) implementadas; Fase 3 (regras Firestore por cargo) fica para ADR futuro.
 
 > Formaliza o [estudo de autorização](../design/autorizacao-por-cargo.md). Conversa com o
 > [ADR-0005](0005-autenticacao-sessao-firebase-datastore.md) (sessão Firebase + DataStore guarda
@@ -85,11 +85,19 @@ bugado. O gate do detalhe passa a computar `ehDono` contra o `funcionario` **da 
 (`DetalhesPassagemState.dadosPassagem.funcionario`), ainda por nome, temporariamente. Corrige o
 comportamento já aqui.
 
-*Fase 2 — Posse por `uid` (aditivo).* A sessão passa a guardar o `uid` (o DataStore só tem nome+cargo
-hoje — ADR-0005; o `uid` já existe em `PerfilAutenticado.id`/`currentUser.uid`). `Passagem`/
-`PassagemDocumento` ganham `funcionarioId` (campo novo no documento = schemaless, entra de graça); o
-`salvar` grava o `uid`; `ehDono = passagem.funcionarioId == sessao.uid`. Sem backfill — o
-`SeedFirestore` grava o `funcionarioId` (app de portfólio, sem dado real).
+*Fase 2 — Posse por `uid` (aditivo). **Feita.*** `Passagem`/`PassagemDocumento` ganham `funcionarioId`
+(campo novo = schemaless no Firestore, `ALTER TABLE` v11→v12 no Room, ambos default `""`). A criação
+carimba o `uid`; **a edição preserva** dono/responsável originais (autoria congelada na emissão,
+ADR-0008 — um gestor editar não vira dono; corrige de passagem o overwrite que existia no
+`montarPassagem`). `ehDono = passagem.funcionarioId == usuarioLogado.id`.
+
+> **Correções ao plano original:** (a) **não** foi preciso tocar sessão/DataStore — o `uid` já chega
+> via `Usuario.id` (doc id de `users/{uid}`) por `obterUltimoUsuarioLogado()`; (b) **não** há seed de
+> passagens (o `SeedFirestore` só grava catálogos + o doc `contador`), então não há o que semear —
+> passagens nascem em runtime já carimbadas. Sem backfill (portfólio): bilhetes anteriores ficam com
+> `funcionarioId` vazio e são tratados como "sem dono" (só gestor/Colab editam). A **pesquisa**
+> permanece filtrando por nome (é filtro de leitura/UX, não a fronteira de autorização — que é o gate
+> de editar/deletar, agora por id).
 
 *Fase 3 — Regras Firestore por cargo (ADR futuro).* Fora do escopo "UI": endurecer as regras
 (`request.auth != null` hoje) lendo o **mesmo** modelo de cargo. A política é a costura que torna

@@ -37,6 +37,7 @@ class PassagemDocumentoMapperTest {
         placaVeiculo = "ABC1D23",
         tipoVeiculo = "CARRO",
         funcionarioResponsavel = "Operador",
+        funcionarioId = "uid-operador-1",
         status = "A_EMITIR",
     )
 
@@ -58,6 +59,8 @@ class PassagemDocumentoMapperTest {
         assertEquals("Agente Modelo", doc.agente)
         // Lock da assimetria do p3: o "documento" do doc vem de tipoDocumentoPassageiro3.
         assertEquals("CPF3", doc.passageiro3?.documento)
+        // uid do dono viaja top-level para o Firestore (ADR-0010 Fase 2).
+        assertEquals("uid-operador-1", doc.funcionarioId)
     }
 
     @Test
@@ -73,6 +76,7 @@ class PassagemDocumentoMapperTest {
         // Lock da assimetria reversa do p3.
         assertEquals("CPF3", passagem.tipoDocumentoPassageiro3)
         assertEquals("ABC1D23", passagem.placaVeiculo)
+        assertEquals("uid-operador-1", passagem.funcionarioId)
     }
 
     @Test
@@ -95,5 +99,6 @@ class PassagemDocumentoMapperTest {
         assertEquals(original.placaVeiculo, roundTrip.placaVeiculo)
         assertEquals(original.status, roundTrip.status)
         assertEquals(original.funcionarioResponsavel, roundTrip.funcionarioResponsavel)
+        assertEquals(original.funcionarioId, roundTrip.funcionarioId)
     }
 }
