@@ -5,8 +5,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.matheus.fluviapp.extensions.filtrarPor
 import dev.matheus.fluviapp.model.mappers.PassagemDadosPassagemMapper
+import dev.matheus.fluviapp.model.operacoes.PermissoesUsuario
 import dev.matheus.fluviapp.model.operacoes.Usuario
-import dev.matheus.fluviapp.model.operacoes.temPermissaoEspecialPassagem
 import dev.matheus.fluviapp.services.repository.cadastro.ConstanteRepository
 import dev.matheus.fluviapp.services.repository.firebase.PassagemFirestoreRepository
 import dev.matheus.fluviapp.services.repository.firebase.documents.PassagemDocumento
@@ -65,7 +65,7 @@ class PesquisarPassagemViewModel @Inject constructor(
     }
 
     private fun inicializarPermissaoEspecial() {
-        if (usuarioLogado.temPermissaoEspecialPassagem()) {
+        if (PermissoesUsuario.podeVerTodasPassagens(usuarioLogado.cargo)) {
             formPesquisarPassagemHelper.atualizaPermissaoEspecial()
         }
     }
@@ -74,7 +74,7 @@ class PesquisarPassagemViewModel @Inject constructor(
         usuarioRepository.obterUltimoUsuarioLogado()?.let { usuarioLogado ->
             val pesquisarPassagemUiState = _uiState.value
 
-            val usuarioValidado = if (usuarioLogado.temPermissaoEspecialPassagem()) pesquisarPassagemUiState.operador else usuarioLogado.nome
+            val usuarioValidado = if (PermissoesUsuario.podeVerTodasPassagens(usuarioLogado.cargo)) pesquisarPassagemUiState.operador else usuarioLogado.nome
 
             // try só na chamada de rede (equivalente ao antigo addOnFailureListener). Erros de
             // mapeamento NÃO entram aqui — surgem com o próprio stack, não mascarados de "Falha no Processo".

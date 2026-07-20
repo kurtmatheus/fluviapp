@@ -7,7 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.matheus.fluviapp.business.ImpressaoPassagem
 import dev.matheus.fluviapp.model.mappers.PassagemDadosPassagemMapper
-import dev.matheus.fluviapp.model.operacoes.Usuario
+import dev.matheus.fluviapp.model.operacoes.PermissoesUsuario
 import dev.matheus.fluviapp.model.screendata.DadosPassagem
 import dev.matheus.fluviapp.navigation.navcomposables.passagem.DETALHES_PASSAGEM_ARGUMENT
 import dev.matheus.fluviapp.preferences.PreferencesKey
@@ -117,19 +117,15 @@ class DetalhesPassagemViewModel @Inject constructor(
     }
 
     private suspend fun atualizarIsAdminOuFuncResponsavel() {
-        val usuarioLogado = usuarioRepository.obterUltimoUsuarioLogado()
-        dataStore.data.collect {
-            val cargo = it[PreferencesKey.CARGO_ATUAL]
-            val usuario = it[PreferencesKey.USUARIO_ATUAL]
-            if (cargo != Usuario.Cargo.ADM.name ||
-                cargo == Usuario.Cargo.DIRETOR.name ||
-                usuario == usuarioLogado!!.nome
-            ) {
-                _uiState.update { state ->
-                    state.copy(
-                        isAdminOuFuncResposavel = true
-                    )
-                }
+        val usuarioLogado = usuarioRepository.obterUltimoUsuarioLogado() ?: return
+        dataStore.data.collect { preferences ->
+            val cargo = preferences[PreferencesKey.CARGO_ATUAL]
+            // Posse por nome (dívida da Fase 1, ADR-0010): compara o dono DA PASSAGEM com o logado.
+            val ehDono = _uiState.value.dadosPassagem.funcionario == usuarioLogado.nome
+            _uiState.update { state ->
+                state.copy(
+                    isAdminOuFuncResposavel = PermissoesUsuario.podeEditarPassagem(cargo, ehDono)
+                )
             }
         }
     }

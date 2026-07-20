@@ -3,9 +3,6 @@ package dev.matheus.fluviapp.model.operacoes
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
-import dev.matheus.fluviapp.model.operacoes.Usuario.Cargo.ADM
-import dev.matheus.fluviapp.model.operacoes.Usuario.Cargo.COLABORADOR_MASTER
-import dev.matheus.fluviapp.model.operacoes.Usuario.Cargo.DIRETOR
 
 @Entity(indices = [Index("id")])
 data class Usuario(
@@ -19,7 +16,13 @@ data class Usuario(
     enum class Cargo {
         ADM,
         DIRETOR,
-        COLABORADOR_MASTER
+        COLABORADOR_MASTER,
+        OPERADOR;
+
+        companion object {
+            /** Converte o cargo persistido (String) no enum canônico; null se desconhecido. */
+            fun de(valor: String?): Cargo? = entries.firstOrNull { it.name == valor }
+        }
     }
 
     companion object {
@@ -29,10 +32,4 @@ data class Usuario(
 
 fun Usuario.Cargo.obterDescricaoFormatada(): String {
     return this.name.replace("_", " ")
-}
-
-fun Usuario.temPermissaoEspecialPassagem(): Boolean {
-    return cargo == ADM.name ||
-            cargo == DIRETOR.name ||
-            cargo == COLABORADOR_MASTER.obterDescricaoFormatada()
 }
