@@ -12,6 +12,7 @@ import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.REDE
 import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.VEICULO
 import dev.matheus.fluviapp.model.passagem.Passagem
 import dev.matheus.fluviapp.model.passagem.Passagem.Companion.TARIFA_ANTAC
+import dev.matheus.fluviapp.model.passagem.StatusPassagem
 import dev.matheus.fluviapp.model.screendata.DadosPassagem
 import dev.matheus.fluviapp.services.repository.cadastro.passagem.AgenteRepository
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.EmpresaRepository
@@ -90,7 +91,8 @@ class PassagemDadosPassagemMapper @Inject constructor(
             observacao = entry.observacao.orEmpty(),
             tipoPassagem = entry.tipoPassagem.orEmpty(),
             tipoGratuidade = entry.gratuidade.orEmpty(),
-            situacao = entry.status,
+            // Exibição pelo rótulo do tipo (ADR-0012); tolera grafia legada de bilhetes antigos.
+            situacao = StatusPassagem.de(entry.status)?.rotulo() ?: entry.status,
             categoriaPassagem = if (entry.ehVeiculo) VEICULO.name else PASSAGEIRO.name,
             funcionario = entry.funcionarioResponsavel,
             idPassageiro1 = "",

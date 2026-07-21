@@ -7,10 +7,9 @@ import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Categoria.CATEGO
 import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Categoria.DOCUMENTO
 import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Categoria.PAGAMENTO
 import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Categoria.STATUS_PASSAGEM
-import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.A_EMITIR
-import dev.matheus.fluviapp.model.cadastro.constantes.obterDescricaoFormatada
 import dev.matheus.fluviapp.model.mappers.ViagemDadosViagemMapper
 import dev.matheus.fluviapp.model.passagem.Passagem
+import dev.matheus.fluviapp.model.passagem.StatusPassagem
 import dev.matheus.fluviapp.model.passagem.Passagem.Companion.DESCONTO_ANTAC
 import dev.matheus.fluviapp.model.viagem.Viagem
 import dev.matheus.fluviapp.services.repository.cadastro.ConstanteRepository
@@ -428,7 +427,8 @@ class FormPassagemHelper(
         val statePassageiro = uiStatePassageiro.value
         val stateVeiculo = uiStateVeiculo.value
 
-        val situacaoPassagem = A_EMITIR.obterDescricaoFormatada()
+        // Status canônico (ADR-0012): grava o .name do tipo de domínio; formatação fica na exibição.
+        val situacaoPassagem = StatusPassagem.A_EMITIR.name
 
         val desconto = verificarDesconto(statePassageiro, statePassagem)
 

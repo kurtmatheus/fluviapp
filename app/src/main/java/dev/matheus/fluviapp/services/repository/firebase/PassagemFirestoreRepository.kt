@@ -9,6 +9,7 @@ import dev.matheus.fluviapp.extensions.toPassagemDocumento
 import dev.matheus.fluviapp.model.ContadorBilhete
 import dev.matheus.fluviapp.model.operacoes.Usuario
 import dev.matheus.fluviapp.model.passagem.Passagem
+import dev.matheus.fluviapp.model.passagem.StatusPassagem
 import dev.matheus.fluviapp.services.repository.firebase.documents.PassagemDocumento
 import dev.matheus.fluviapp.services.repository.firebase.documents.toContadorBilhete
 import dev.matheus.fluviapp.services.repository.firebase.documents.toContadorDocumento
@@ -144,9 +145,12 @@ class PassagemFirestoreRepository @Inject constructor(
     suspend fun obterContagem() = contadorDao.obterContagem().first()
 
     fun obterTodasPorDataStatus(data: String, status: String, nomeFuncionario: String): Task<QuerySnapshot> {
+        // Canoniza o filtro (ADR-0012): o dropdown traz o rótulo ("A EMITIR"), mas o status é gravado
+        // pelo .name do tipo ("A_EMITIR"). Sem isso a query não casaria com o armazenamento canônico.
+        val statusCanonico = StatusPassagem.de(status)?.name ?: status
         val queryStatusData = firestore.collection(COLLECTION_PASSAGENS)
             .whereEqualTo(FIELD_DATA_VIAGEM, data)
-            .whereEqualTo(FIELD_STATUS, status)
+            .whereEqualTo(FIELD_STATUS, statusCanonico)
         return if (nomeFuncionario != Usuario.GERAL) {
             queryStatusData
                 .whereEqualTo(FIELD_NOME_FUNC, nomeFuncionario)
@@ -171,10 +175,24 @@ class PassagemFirestoreRepository @Inject constructor(
         }
     }
 
-    fun atualizarSituacao(idPassagem: String, status: String) {
+    /**
+     * Transição de status como máquina de estados (ADR-0012). Fail-closed: só aplica arestas legais
+     * (`A_EMITIR→EMITIDA→EMBARCADA`); idempotente (reimpressão do já EMITIDA é no-op); transição ilegal
+     * é ignorada com log, sem quebrar o fluxo do chamador. Espelha no Room também (SSOT, ADR-0009) —
+     * o antigo `atualizarSituacao` só tocava o Firestore.
+     */
+    suspend fun transicionar(idPassagem: String, novo: StatusPassagem) {
+        val passagem = obterPorId(idPassagem)
+        val atual = StatusPassagem.de(passagem.status)
+        if (atual == novo) return
+        if (atual == null || !atual.podeTransicionarPara(novo)) {
+            Log.w(TAG, "transicao ilegal ignorada: $atual -> $novo (id=$idPassagem)")
+            return
+        }
+        dao.salvar(passagem.copy(status = novo.name))
         firestore.collection(COLLECTION_PASSAGENS)
             .document(idPassagem)
-            .update(mapOf(FIELD_STATUS to status))
+            .update(mapOf(FIELD_STATUS to novo.name))
     }
 
     private fun atualizarContador(numero: Int) {

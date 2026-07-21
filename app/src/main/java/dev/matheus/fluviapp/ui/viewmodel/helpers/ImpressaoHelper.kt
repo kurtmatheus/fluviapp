@@ -10,7 +10,7 @@ import android.util.Log
 import dev.matheus.fluviapp.R
 import dev.matheus.fluviapp.business.ImpressaoPassagem
 import dev.matheus.fluviapp.extensions.toastMessage
-import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.EMITIDA
+import dev.matheus.fluviapp.model.passagem.StatusPassagem
 import dev.matheus.fluviapp.model.screendata.DadosImpressora
 import dev.matheus.fluviapp.services.printerservice.PrinterService
 import dev.matheus.fluviapp.services.printerservice.printer.ThermalPrinterConnection
@@ -31,9 +31,9 @@ class ImpressaoHelper(
         if (!ImpressaoPassagem.IS_VIA_CLIENTE || isImpressaoDigital) {
             runBlocking {
                 try {
-                    passagemRepository.atualizarSituacao(
+                    passagemRepository.transicionar(
                         idPassagem = ImpressaoPassagem.dadosPassagem.idPassagem,
-                        status = EMITIDA.name
+                        novo = StatusPassagem.EMITIDA
                     )
                 } catch (e: Exception) {
                     context.toastMessage(context.resources.getString(R.string.error_falha_passagem))
