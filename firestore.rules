@@ -1,0 +1,105 @@
+rules_version = '2';
+
+// Fronteira de autorização por cargo (ADR-0011). Espelha PermissoesUsuario.kt — a mesma matriz do
+// ADR-0010, agora imposta no servidor. O cargo é lido de users/{uid}; a posse, do funcionarioId da
+// passagem (ADR-0008/0010 Fase 2). Mudou um papel? Mude AQUI e no Kotlin — os dois são a fonte.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // --- Helpers ---
+
+    function autenticado() {
+      return request.auth != null;
+    }
+
+    // Perfil do autor (users/{uid}). Chamado só após autenticado() num && (short-circuit protege o get).
+    function cargo() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.cargo;
+    }
+
+    function cargoConhecido() {
+      return cargo() in ['ADM', 'DIRETOR', 'COLABORADOR_MASTER', 'OPERADOR'];
+    }
+
+    function ehGestor() {
+      return cargo() in ['ADM', 'DIRETOR'];
+    }
+
+    function podeEditarQualquerPassagem() {
+      return ehGestor() || cargo() == 'COLABORADOR_MASTER';
+    }
+
+    function ehDonoPassagem() {
+      return resource.data.funcionarioId == request.auth.uid;
+    }
+
+    // --- Perfis de usuário: cargo imutável pelo cliente (anti-escalonamento) ---
+    match /users/{uid} {
+      allow read: if autenticado();
+      // Provisionamento: só o próprio dono, e sempre no menor privilégio (nunca nasce ADM pelo cliente).
+      allow create: if autenticado()
+                    && request.auth.uid == uid
+                    && request.resource.data.cargo == 'OPERADOR';
+      // Edita o próprio perfil, mas NUNCA o cargo (promoção é operação de console/backend).
+      allow update: if autenticado()
+                    && request.auth.uid == uid
+                    && request.resource.data.cargo == resource.data.cargo;
+      allow delete: if false;
+    }
+
+    // --- Catálogos / master data: leitura p/ todo autenticado (venda precisa ler), escrita só gestor ---
+    match /constants/{doc} {
+      allow read: if autenticado();
+      allow write: if autenticado() && ehGestor();
+    }
+    match /empresas/{doc} {
+      allow read: if autenticado();
+      allow write: if autenticado() && ehGestor();
+    }
+    match /navios/{doc} {
+      allow read: if autenticado();
+      allow write: if autenticado() && ehGestor();
+    }
+    match /agents/{doc} {
+      allow read: if autenticado();
+      allow write: if autenticado() && ehGestor();
+    }
+    match /viagens/{doc} {
+      allow read: if autenticado();
+      allow write: if autenticado() && ehGestor();
+    }
+
+    // --- Passagens: create sem forjar dono; update/delete por posse ou editar-qualquer ---
+    match /passagens/{id} {
+      allow read: if autenticado();
+
+      // Doc especial do contador de bilhete (passagens/contador): quem emite passagem incrementa
+      // o número. Endurecido — o contador é infra compartilhada, então o cargo certo ainda escreve,
+      // mas só preservando o invariante: incremento MONOTÔNICO (nunca retrocede → sem bilhete
+      // duplicado por rewind) e SEM delete (não é concedido → default-deny). Bootstrap/seed via create.
+      // (A corrida de dois clientes no mesmo N não é resolvível por regra — exige transação no app.)
+      allow create: if autenticado() && id == 'contador' && cargoConhecido();
+      allow update: if autenticado() && id == 'contador' && cargoConhecido()
+                    && request.resource.data.numeroBilhete > resource.data.get('numeroBilhete', -1);
+
+      // Emissão: cargo conhecido e o dono declarado tem que ser o próprio autor (não dá forjar).
+      allow create: if autenticado()
+                    && id != 'contador'
+                    && cargoConhecido()
+                    && request.resource.data.funcionarioId == request.auth.uid;
+
+      // Editar: gestor/Colab (qualquer) ou o dono; o funcionarioId é imutável (não reatribui dono).
+      allow update: if autenticado()
+                    && id != 'contador'
+                    && (podeEditarQualquerPassagem() || ehDonoPassagem())
+                    && request.resource.data.funcionarioId == resource.data.funcionarioId;
+
+      // Deletar: mesmas regras de editar (ADR-0010).
+      allow delete: if autenticado()
+                    && id != 'contador'
+                    && (podeEditarQualquerPassagem() || ehDonoPassagem());
+    }
+
+    // Coleções não listadas: negadas por omissão (default-deny).
+  }
+}
