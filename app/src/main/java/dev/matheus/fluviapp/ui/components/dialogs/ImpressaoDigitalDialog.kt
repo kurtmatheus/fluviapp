@@ -1,5 +1,6 @@
 package dev.matheus.fluviapp.ui.components.dialogs
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -8,15 +9,18 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.layer.drawLayer
 import androidx.compose.ui.graphics.rememberGraphicsLayer
 import androidx.compose.ui.res.stringResource
@@ -34,6 +38,7 @@ import dev.matheus.fluviapp.ui.components.texts.FluviWordmark
 import dev.matheus.fluviapp.ui.components.texts.TextRegularBrown
 import dev.matheus.fluviapp.ui.components.texts.TextSubTitleBrownBold
 import dev.matheus.fluviapp.ui.components.texts.TextTitleBrownRegular
+import dev.matheus.fluviapp.services.printerservice.qrcode.QRCodeGenerator
 import dev.matheus.fluviapp.ui.theme.HeaderNavy
 import dev.matheus.fluviapp.ui.theme.LightColors
 import dev.matheus.fluviapp.ui.theme.SteelTeal
@@ -197,9 +202,44 @@ private fun ConteudoTicketImpressao(
                             text = "${dadosPassagem.dataViagem} - ${dadosPassagem.horaViagem}"
                         )
                     }
+
+                    QrCodeEmbarque(idPassagem = dadosPassagem.idPassagem)
                 }
             }
         }
+    }
+}
+
+/**
+ * QR de embarque no bilhete digital — paridade com o físico (ImpressaoHelper.printQrCode), que já
+ * codifica o id da passagem. É um ponteiro (ADR-0012): o validador lê o doc ao vivo pelo id. Fundo
+ * branco fixo (o ticket é papel claro). Só renderiza com id presente (sample/preview sem id: sem QR).
+ */
+@Composable
+private fun QrCodeEmbarque(
+    idPassagem: String,
+    modifier: Modifier = Modifier
+) {
+    if (idPassagem.isBlank()) return
+    val qrBitmap = remember(idPassagem) {
+        runCatching { QRCodeGenerator().generate(idPassagem, 240) }.getOrNull()
+    } ?: return
+
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(top = 16.dp, bottom = 20.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        Image(
+            bitmap = qrBitmap.asImageBitmap(),
+            contentDescription = stringResource(R.string.label_qr_embarque),
+            modifier = Modifier
+                .size(148.dp)
+                .background(Color.White)
+        )
+        TextRegularBrown(text = stringResource(R.string.label_qr_embarque))
     }
 }
 

@@ -99,8 +99,10 @@ espelhando as decisões que o ADR-0010 já tomou para o cargo. Ciclo alvo (decid
   exibição formata via `rotulo()` (`PassagemDadosPassagemMapper`). *Sem backfill* (portfólio; docs
   legados leem via `de()`). Testes JVM `StatusPassagemTest` (verdes) + `testDebugUnitTest` compila o
   main OK.
-- **Fase 2 — Bilhete digital com QR.** Desenhar o QR (`= id`) no `ImpressaoDigitalDialog` (paridade com o
-  físico). Baixo esforço — `QRCodeGenerator` já existe.
+- **Fase 2 — Bilhete digital com QR. FEITA.** QR (`= idPassagem`) desenhado no rodapé do
+  `ImpressaoDigitalDialog` (composable `QrCodeEmbarque`), reusando `QRCodeGenerator` (ZXing) — paridade
+  com o físico. Entra no bitmap capturado/compartilhado; fundo branco fixo; só renderiza com id presente.
+  Rótulo `label_qr_embarque`. Compila (`compileDebugKotlin`).
 - **Fase 3 — Tela de validação/embarque (scanner).** Leitor de QR por câmera com **CameraX + ML Kit
   Barcode Scanning** (offline, integra com Compose), resolve a passagem pelo id, mostra os dados e
   confirma `EMITIDA→EMBARCADA` carimbando `embarcadaPorId`/`embarcadaPor`/`embarcadaEm`. Consome o eixo

@@ -105,6 +105,7 @@
     <string name="label_capac_camarotes">Capacidade de Camarotes</string>
     <string name="label_funcionario">Funcionário</string>
     <string name="label_situacao">Status da Passagem</string>
+    <string name="label_qr_embarque">Apresente no embarque</string>
     <string name="label_acomodacao">Acomodação</string>
     <string name="label_checkbox_passageiro2">Passageiro N° 2</string>
     <string name="label_checkbox_passageiro3">Passageiro N° 3</string>
