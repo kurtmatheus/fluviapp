@@ -59,6 +59,8 @@ dependencies {
     val lifecycleVersion = "2.8.7"
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:$lifecycleVersion")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:$lifecycleVersion")
+    // LocalLifecycleOwner p/ vincular a câmera ao ciclo de vida (ADR-0012, tela de embarque).
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:$lifecycleVersion")
 
     val navVersion = "2.8.5"
     implementation("androidx.navigation:navigation-compose:$navVersion")
@@ -101,7 +103,15 @@ dependencies {
 
     implementation("androidx.datastore:datastore-preferences:1.1.1")
 
+    // Geração de QR (bilhete): ZXing. Leitura de QR no embarque (ADR-0012): CameraX + ML Kit.
     implementation("com.google.zxing:core:3.5.3")
+
+    val cameraxVersion = "1.3.4"
+    implementation("androidx.camera:camera-core:$cameraxVersion")
+    implementation("androidx.camera:camera-camera2:$cameraxVersion")
+    implementation("androidx.camera:camera-lifecycle:$cameraxVersion")
+    implementation("androidx.camera:camera-view:$cameraxVersion")
+    implementation("com.google.mlkit:barcode-scanning:17.3.0")
 
     implementation("com.google.code.gson:gson:2.11.0")
 

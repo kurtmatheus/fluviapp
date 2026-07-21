@@ -9,6 +9,7 @@ import dev.matheus.fluviapp.extensions.toPassagemDocumento
 import dev.matheus.fluviapp.model.ContadorBilhete
 import dev.matheus.fluviapp.model.operacoes.Usuario
 import dev.matheus.fluviapp.model.passagem.Passagem
+import dev.matheus.fluviapp.model.passagem.ResultadoEmbarque
 import dev.matheus.fluviapp.model.passagem.StatusPassagem
 import dev.matheus.fluviapp.services.repository.firebase.documents.PassagemDocumento
 import dev.matheus.fluviapp.services.repository.firebase.documents.toContadorBilhete
@@ -29,6 +30,10 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.tasks.await
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -195,6 +200,51 @@ class PassagemFirestoreRepository @Inject constructor(
             .update(mapOf(FIELD_STATUS to novo.name))
     }
 
+    /**
+     * Lê a passagem AO VIVO do Firestore pelo id (ADR-0012): o QR é ponteiro, então o embarque valida
+     * contra o servidor (fonte de verdade), não contra o espelho Room — que pode não ter o bilhete
+     * emitido em outro device. `null` se o doc não existir.
+     */
+    suspend fun obterDoServidorPorId(id: String): Passagem? {
+        val snapshot = firestore.collection(COLLECTION_PASSAGENS).document(id).get().await()
+        return snapshot.toObject<PassagemDocumento>()?.toPassagem(snapshot.id)
+    }
+
+    /**
+     * Confirma o embarque (ADR-0012): lê ao vivo, valida a aresta EMITIDA→EMBARCADA (FSM, fail-closed
+     * e idempotente) e carimba o operador que validou o QR (id + nome snapshot + quando). Grava o
+     * Firestore (fronteira) e espelha o Room best-effort. Retorna o caso p/ a UI reagir.
+     */
+    suspend fun confirmarEmbarque(idPassagem: String, operadorId: String, operadorNome: String): ResultadoEmbarque {
+        val passagem = obterDoServidorPorId(idPassagem) ?: return ResultadoEmbarque.NaoEncontrada
+        val atual = StatusPassagem.de(passagem.status)
+        return when {
+            atual == StatusPassagem.EMBARCADA ->
+                ResultadoEmbarque.JaEmbarcada(passagem.embarcadaPor, passagem.embarcadaEm)
+            atual == null || !atual.podeTransicionarPara(StatusPassagem.EMBARCADA) ->
+                ResultadoEmbarque.NaoEmitida
+            else -> {
+                val agora = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale("pt", "BR")).format(Date())
+                val embarcada = passagem.copy(
+                    status = StatusPassagem.EMBARCADA.name,
+                    embarcadaPorId = operadorId,
+                    embarcadaPor = operadorNome,
+                    embarcadaEm = agora,
+                )
+                firestore.collection(COLLECTION_PASSAGENS).document(idPassagem).update(
+                    mapOf(
+                        FIELD_STATUS to embarcada.status,
+                        FIELD_EMBARCADA_POR_ID to operadorId,
+                        FIELD_EMBARCADA_POR to operadorNome,
+                        FIELD_EMBARCADA_EM to agora,
+                    )
+                ).await()
+                runCatching { dao.salvar(embarcada) } // espelho local best-effort (pode não existir)
+                ResultadoEmbarque.Confirmada(embarcada)
+            }
+        }
+    }
+
     private fun atualizarContador(numero: Int) {
         firestore.collection(COLLECTION_PASSAGENS)
             .document(DOCUMENT_CONTADOR)
@@ -210,5 +260,8 @@ class PassagemFirestoreRepository @Inject constructor(
         private const val FIELD_DATA_VIAGEM = "dataViagem"
         private const val FIELD_STATUS = "status"
         private const val FIELD_NOME_FUNC = "funcionarioResponsavel"
+        private const val FIELD_EMBARCADA_POR_ID = "embarcadaPorId"
+        private const val FIELD_EMBARCADA_POR = "embarcadaPor"
+        private const val FIELD_EMBARCADA_EM = "embarcadaEm"
     }
 }

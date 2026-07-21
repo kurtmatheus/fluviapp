@@ -38,6 +38,7 @@ import dev.matheus.fluviapp.navigation.navcomposables.faturamento.balancoNavComp
 import dev.matheus.fluviapp.navigation.navcomposables.agente.formAgenteNavComposable
 import dev.matheus.fluviapp.navigation.navcomposables.agente.resultSearchAgenteNavComposable
 import dev.matheus.fluviapp.navigation.navcomposables.passagem.formPassagemNavComposable
+import dev.matheus.fluviapp.navigation.navcomposables.passagem.embarqueNavComposable
 import dev.matheus.fluviapp.navigation.navcomposables.viagem.formViagemNavComposable
 
 @RequiresApi(Build.VERSION_CODES.S)
@@ -181,6 +182,12 @@ fun FluviAppNavHost(
 
         balancoNavComposable(
             navController = navController,
+            onClickVoltar = {
+                navController.navigateUp()
+            }
+        )
+
+        embarqueNavComposable(
             onClickVoltar = {
                 navController.navigateUp()
             }

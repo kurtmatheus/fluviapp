@@ -106,6 +106,16 @@
     <string name="label_funcionario">Funcionário</string>
     <string name="label_situacao">Status da Passagem</string>
     <string name="label_qr_embarque">Apresente no embarque</string>
+    <string name="title_top_embarque">Embarque</string>
+    <string name="subtitle_embarque">Validar bilhete por QR</string>
+    <string name="msg_aponte_qr">Aponte a câmera para o QR do bilhete</string>
+    <string name="msg_permissao_camera_negada">Permissão de câmera necessária para validar o embarque</string>
+    <string name="btn_confirmar_embarque">Confirmar embarque</string>
+    <string name="btn_escanear_outro">Escanear outro</string>
+    <string name="msg_embarque_confirmado">Embarque confirmado</string>
+    <string name="msg_embarque_ja_utilizado">Bilhete já utilizado</string>
+    <string name="msg_embarque_nao_emitida">Bilhete não emitido — não pode embarcar</string>
+    <string name="msg_embarque_nao_encontrada">Bilhete não encontrado</string>
     <string name="label_acomodacao">Acomodação</string>
     <string name="label_checkbox_passageiro2">Passageiro N° 2</string>
     <string name="label_checkbox_passageiro3">Passageiro N° 3</string>
