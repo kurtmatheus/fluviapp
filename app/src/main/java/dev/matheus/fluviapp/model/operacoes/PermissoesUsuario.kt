@@ -55,4 +55,11 @@ object PermissoesUsuario {
 
     /** Ver todas as passagens na pesquisa (não só as próprias) acompanha o editar-qualquer. */
     fun podeVerTodasPassagens(cargo: String?): Boolean = podeEditarQualquerPassagem(cargo)
+
+    /**
+     * Confirmar embarque (validar o QR na doca) — eixo NOVO (ADR-0012). Validar embarque **≠** editar
+     * o conteúdo do bilhete: qualquer cargo conhecido pode validar (é ação de doca, mesmo sem ter
+     * vendido); cargo desconhecido, não (fail-closed).
+     */
+    fun podeConfirmarEmbarque(cargo: String?): Boolean = Cargo.de(cargo) != null
 }

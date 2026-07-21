@@ -29,7 +29,11 @@ data class PassagemDocumento(
     val funcionarioResponsavel: String = "",
     // uid do criador (ADR-0010 Fase 2). Top-level, schemaless; default "" cobre docs anteriores.
     val funcionarioId: String = "",
-    val status: String = ""
+    val status: String = "",
+    // Registro do embarque (ADR-0012), top-level e schemaless; default "" cobre docs anteriores.
+    val embarcadaPorId: String = "",
+    val embarcadaPor: String = "",
+    val embarcadaEm: String = ""
 )
 
 fun PassagemDocumento.toPassagem(id: String): Passagem {
@@ -80,6 +84,9 @@ fun PassagemDocumento.toPassagem(id: String): Passagem {
         corVeiculo = veiculo?.corVeiculo,
         funcionarioResponsavel = funcionarioResponsavel,
         funcionarioId = funcionarioId,
-        status = status
+        status = status,
+        embarcadaPorId = embarcadaPorId,
+        embarcadaPor = embarcadaPor,
+        embarcadaEm = embarcadaEm
     )
 }

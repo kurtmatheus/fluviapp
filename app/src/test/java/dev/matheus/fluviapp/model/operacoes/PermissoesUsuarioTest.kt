@@ -146,6 +146,21 @@ class PermissoesUsuarioTest {
         assertFalse(PermissoesUsuario.podeEditarPassagem(null, ehDono = false))
     }
 
+    // --- Eixo ação: confirmar embarque (ADR-0012) ---
+
+    @Test
+    fun `qualquer cargo conhecido pode confirmar embarque`() {
+        listOf(adm, diretor, colab, operador).forEach {
+            assertTrue("cargo $it deveria poder confirmar embarque", PermissoesUsuario.podeConfirmarEmbarque(it))
+        }
+    }
+
+    @Test
+    fun `cargo desconhecido nao confirma embarque`() {
+        assertFalse(PermissoesUsuario.podeConfirmarEmbarque(null))
+        assertFalse(PermissoesUsuario.podeConfirmarEmbarque("GERENTE"))
+    }
+
     // --- Deletar segue as mesmas regras de editar ---
 
     @Test

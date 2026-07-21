@@ -63,6 +63,9 @@ fun Passagem.toPassagemDocumento(): PassagemDocumento {
         ),
         funcionarioResponsavel = funcionarioResponsavel,
         funcionarioId = funcionarioId,
-        status = status
+        status = status,
+        embarcadaPorId = embarcadaPorId,
+        embarcadaPor = embarcadaPor,
+        embarcadaEm = embarcadaEm
     )
 }

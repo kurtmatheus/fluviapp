@@ -192,6 +192,20 @@ val MIGRATION_11_12 = object : Migration(11, 12) {
     }
 }
 
+/**
+ * v12 → v13: registro do embarque na `Passagem` (ADR-0012): `embarcadaPorId` (uid do operador que
+ * validou o QR), `embarcadaPor` (nome, snapshot de exibição) e `embarcadaEm` (quando). Aditiva e não-
+ * destrutiva (padrão da 9→10/10→11/11→12). Sem backfill: bilhetes anteriores ficam com "" (nunca
+ * embarcados via QR).
+ */
+val MIGRATION_12_13 = object : Migration(12, 13) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE Passagem ADD COLUMN embarcadaPorId TEXT NOT NULL DEFAULT ''")
+        db.execSQL("ALTER TABLE Passagem ADD COLUMN embarcadaPor TEXT NOT NULL DEFAULT ''")
+        db.execSQL("ALTER TABLE Passagem ADD COLUMN embarcadaEm TEXT NOT NULL DEFAULT ''")
+    }
+}
+
 @Module
 @InstallIn(SingletonComponent::class)
 class DatabaseModule {
@@ -206,6 +220,7 @@ class DatabaseModule {
         ).addMigrations(
             MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7,
             MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12,
+            MIGRATION_12_13,
         ).build()
     }
 

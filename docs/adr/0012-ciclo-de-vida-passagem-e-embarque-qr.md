@@ -117,6 +117,13 @@ espelhando as decisões que o ADR-0010 já tomou para o cargo. Ciclo alvo (decid
     permissão → não abre o preview, mostra rationale).
   - **Acesso**: 3ª opção **no centro** da barra inferior (ver *UI e navegação*) — ação de rotina, a um
     toque.
+
+  Sub-checkpoints: **3a — fundação de domínio. FEITA.** Campos `embarcadaPorId`/`embarcadaPor`/
+  `embarcadaEm` em `Passagem`+`PassagemDocumento`+mappers; migração Room v12→v13 (aditiva); eixo
+  `PermissoesUsuario.podeConfirmarEmbarque` (qualquer cargo conhecido) + testes; suíte JVM verde.
+  **3b — câmera + validação. PENDENTE.** Deps CameraX + ML Kit; `confirmarEmbarque` no repositório
+  (leitura ao vivo do Firestore pelo id + carimbo do operador + FSM); `EmbarqueViewModel` +
+  `EmbarqueScreen` (Scaffold próprio) com permissão `CAMERA`. **Não verificável em runtime aqui.**
 - **Fase 4 — Regras Firestore da transição** (estende ADR-0011) + casos na suíte de emulador.
 - **Fase 5 — UI de badge/cor de status** (Detalhes + card da lista).
 

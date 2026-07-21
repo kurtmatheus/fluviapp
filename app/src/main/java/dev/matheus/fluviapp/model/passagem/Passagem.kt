@@ -61,6 +61,11 @@ data class Passagem(
     // (funcionarioResponsavel) segue como snapshot de exibição. Default "" cobre bilhetes anteriores.
     val funcionarioId: String = "",
     val status: String,
+    // Registro do embarque (ADR-0012): quem validou o QR (uid, chave estável ADR-0008), o nome como
+    // snapshot de exibição, e quando. Aditivos; default "" cobre bilhetes não embarcados/anteriores.
+    val embarcadaPorId: String = "",
+    val embarcadaPor: String = "",
+    val embarcadaEm: String = "",
 ) {
     @Ignore
     val temPassageiro2 = !nomePassageiro2.isNullOrEmpty()
