@@ -331,10 +331,10 @@ private fun SecaoGeral(modifier: Modifier, state: DetalhesPassagemState) {
             valor = state.dadosPassagem.funcionario,
         )
 
-        CommonRowDetalhamento(
+        CommonRowDetalhamentoStatus(
             modifier = modifier,
             label = R.string.label_situacao,
-            valor = state.dadosPassagem.situacao,
+            situacao = state.dadosPassagem.situacao,
         )
 
         CommonRowDetalhamento(

@@ -26,6 +26,7 @@ import dev.matheus.fluviapp.R
 import dev.matheus.fluviapp.model.screendata.DadosPassagem
 import dev.matheus.fluviapp.sampledata.dadosPassagemSample
 import dev.matheus.fluviapp.sampledata.dadosPassagemVeiculoSample
+import dev.matheus.fluviapp.ui.components.StatusPassagemBadge
 import dev.matheus.fluviapp.ui.components.texts.TextBoldNavyBlue
 import dev.matheus.fluviapp.ui.components.texts.TextBoldWhiteItalic
 import dev.matheus.fluviapp.ui.components.texts.TextRegularWhite
@@ -66,17 +67,24 @@ fun PassagemPreviewCard(
                 TextTitleWhiteItalic(
                     text = dadosPassagem.navio
                 )
-                Card(
-                    modifier = modifier
-                        .widthIn(min = 50.dp),
-                    shape = RoundedCornerShape(15)
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    TextBoldNavyBlue(
+                    // Status de relance (ADR-0012 Fase 5): o card não mostrava status nenhum.
+                    StatusPassagemBadge(situacao = dadosPassagem.situacao)
+                    Card(
                         modifier = modifier
-                            .padding(5.dp)
-                            .align(Alignment.CenterHorizontally),
-                        text = "#${dadosPassagem.numero}"
-                    )
+                            .widthIn(min = 50.dp),
+                        shape = RoundedCornerShape(15)
+                    ) {
+                        TextBoldNavyBlue(
+                            modifier = modifier
+                                .padding(5.dp)
+                                .align(Alignment.CenterHorizontally),
+                            text = "#${dadosPassagem.numero}"
+                        )
+                    }
                 }
             }
             if (dadosPassagem.ehVeiculo) {

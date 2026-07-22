@@ -6,6 +6,7 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import dev.matheus.fluviapp.extensions.navegaParaBalancos
+import dev.matheus.fluviapp.extensions.navegaParaEmbarque
 import dev.matheus.fluviapp.extensions.navegaParaDetalhesPassagem
 import dev.matheus.fluviapp.extensions.navegaParaDetalhesViagem
 import dev.matheus.fluviapp.extensions.navegaParaFormularioAgente
@@ -94,6 +95,9 @@ fun FluviAppNavHost(
             },
             onNavegaParaFormularioPesquisaPassagem = {
                 navController.navegaParaPesquisarPassagemGraph()
+            },
+            onNavegaParaEmbarque = {
+                navController.navegaParaEmbarque()
             },
             onNavegaParaRelatorios = {
                 navController.navegaParaBalancos()

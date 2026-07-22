@@ -28,6 +28,7 @@ fun NavGraphBuilder.mainScreenNavComposable(
     onNavegaParaFormularioPesquisaViagem: () -> Unit,
     onNavegaParaFormularioNovaPassagemComViagem: (String) -> Unit,
     onNavegaParaFormularioPesquisaPassagem: () -> Unit,
+    onNavegaParaEmbarque: () -> Unit,
     onNavegaParaBalanco: () -> Unit,
     onNavegaParaFormularioNovoAgente: () -> Unit,
     onNavegaParaFormularioPesquisaAgente: () -> Unit,
@@ -93,6 +94,7 @@ fun NavGraphBuilder.mainScreenNavComposable(
             state = state,
             acoesPorSecao = state.secoesVisiveis.associateWith(::acoesDe),
             onClickInicio = { viewModel.irParaHome() },
+            onClickEmbarque = onNavegaParaEmbarque,
             onClickDeslogar = {
                 coroutineScope.launch {
                     viewModel.deslogar()

@@ -35,6 +35,7 @@ fun MainScreen(
     state: MainScreenUiState,
     acoesPorSecao: Map<SecaoMenu, List<DadosBotoesMenus>> = emptyMap(),
     onClickInicio: () -> Unit = {},
+    onClickEmbarque: () -> Unit = {},
     onClickDeslogar: () -> Unit = {},
     onClickAdicionarPassagem: (String) -> Unit = {},
     onRefresh: () -> Unit = {},
@@ -55,6 +56,7 @@ fun MainScreen(
         isRefreshing = state.isRefreshing,
         inicioAtivo = true,
         onClickInicio = onClickInicio,
+        onClickEmbarque = onClickEmbarque,
         onRefresh = onRefresh,
         drawerContent = { fechar ->
             FluviMenuDrawer(

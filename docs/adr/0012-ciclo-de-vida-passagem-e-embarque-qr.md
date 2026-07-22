@@ -135,7 +135,20 @@ espelhando as decisões que o ADR-0010 já tomou para o cargo. Ciclo alvo (decid
   autoria, como o `funcionarioId==uid` da emissão). Grafia legada `"A EMITIR"` normalizada só na leitura
   (espelha `StatusPassagem.de`). Suíte de emulador (`firestore-tests/`) ganha 10 casos novos (embarque
   por não-dono OK, forjar autoria negado, sem carimbo negado, piggyback negado, retrocesso/pulo negados).
-- **Fase 5 — UI de badge/cor de status** (Detalhes + card da lista).
+- **Fase 5 — Barra inferior (embarque alcançável) + badge de status. FEITA.** A `FluviBottomAppBar`
+  passa de 2 para 3 lugares — **Início · Embarque · Menu** — com o embarque promovido ao centro como
+  botão de acento elevado (`Surface` circular, `colorScheme.primary`, ícone `QrCodeScanner`) e a seleção
+  trocada do retângulo a 12% pela **pílula Material 3** (ícone/label tingidos de acento). A barra passa a
+  **disparar rota**: `onClickEmbarque` é propagado por `FluviBottomAppBar → CommonScaffold →
+  CommonScreen → MainScreen → MainScreenNavComposable`, e daí para `onNavegaParaEmbarque` que o
+  `MainScreenGraphNavigation`/`FluviAppNavHost` ligam a `navController.navegaParaEmbarque()` — só assim a
+  `EmbarqueScreen` (existente desde a Fase 3b) fica alcançável. **Badge de status** (`StatusPassagemBadge`,
+  pílula preenchida com tokens da paleta: A EMITIR=amarelo/marrom "atenção", EMITIDA=aqua/navy "pronta",
+  EMBARCADA=steel/mist "consumida") entra **no card da lista** (`PassagemPreviewCard`, que não mostrava
+  status) e nos **Detalhes** (`CommonRowDetalhamentoStatus`, no lugar do texto puro). Decisão de design do
+  FAB fechada com o analista: **seguir `colorScheme.primary`** (SteelTeal no claro / AquaAccent no escuro),
+  contraste do ícone via `onPrimary` — 100% dentro do `colorScheme`, sem cor hardcoded.
+  Verificação: `compileDebugKotlin` verde (só o warning inócuo de `@OptIn ExperimentalGetImage` da F3b).
 
 ## Consequências
 
@@ -176,11 +189,15 @@ espelhando as decisões que o ADR-0010 já tomou para o cargo. Ciclo alvo (decid
 
 ## UI e navegação (Fase 5 — redesign da barra inferior)
 
-**Estado atual** (`FluviBottomAppBar.kt`): `BottomAppBar` custom com **2 itens** — *Início* (`Home`, só reseta
+> **Feito na Fase 5** (ver *Plano de migração*). O texto abaixo é o **estado anterior** (registro do
+> ponto de partida); a barra hoje tem os três lugares e dispara rota.
+
+**Estado anterior** (`FluviBottomAppBar.kt`): `BottomAppBar` com **2 itens** — *Início* (`Home`, só reseta
 o conteúdo da Main para HOME) e *Menu* (`Menu`, abre o `ModalNavigationDrawer` ancorado à direita). Fundo
-`HeaderNavy` nos dois temas; realce só do *Início*, um retângulo translúcido a 12%; **sem FAB, sem
-indicador de seleção Material 3**. Ponto crucial: **a barra não navega** — a navegação real mora no
-NavHost (`FluviAppNavHost.kt`) e sai do drawer.
+navy nos dois temas (via `colorScheme.secondary` = `HeaderNavy`, **não** hardcoded — a barra já era temada);
+realce só do *Início*, um retângulo translúcido a 12%; **sem FAB, sem indicador de seleção Material 3**.
+Ponto crucial: **a barra não navegava** — a navegação real morava no NavHost (`FluviAppNavHost.kt`) e saía
+do drawer.
 
 **Layout decidido** — `Início | [Embarque] | Menu`:
 - **Início** à esquerda (mantém).
