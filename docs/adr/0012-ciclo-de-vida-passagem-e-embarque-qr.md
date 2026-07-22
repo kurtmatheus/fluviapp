@@ -137,8 +137,10 @@ espelhando as decisões que o ADR-0010 já tomou para o cargo. Ciclo alvo (decid
   por não-dono OK, forjar autoria negado, sem carimbo negado, piggyback negado, retrocesso/pulo negados).
 - **Fase 5 — Barra inferior (embarque alcançável) + badge de status. FEITA.** A `FluviBottomAppBar`
   passa de 2 para 3 lugares — **Início · Embarque · Menu** — com o embarque promovido ao centro como
-  botão de acento elevado (`Surface` circular, `colorScheme.primary`, ícone `QrCodeScanner`) e a seleção
-  trocada do retângulo a 12% pela **pílula Material 3** (ícone/label tingidos de acento). A barra passa a
+  **FAB protruso** (`FloatingActionButton` no slot `floatingActionButton` do Scaffold, `FabPosition.Center`,
+  deslocado para atravessar a borda superior da barra; `colorScheme.primary`, ícone `QrCodeScanner`); o
+  lugar central da barra fica só com o rótulo, sob o FAB. A seleção troca o retângulo a 12% pela
+  **pílula Material 3** (ícone/label tingidos de acento). A barra passa a
   **disparar rota**: `onClickEmbarque` é propagado por `FluviBottomAppBar → CommonScaffold →
   CommonScreen → MainScreen → MainScreenNavComposable`, e daí para `onNavegaParaEmbarque` que o
   `MainScreenGraphNavigation`/`FluviAppNavHost` ligam a `navController.navegaParaEmbarque()` — só assim a

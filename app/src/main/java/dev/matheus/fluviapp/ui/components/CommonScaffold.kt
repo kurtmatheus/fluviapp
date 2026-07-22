@@ -8,6 +8,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FabPosition
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -24,6 +25,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import dev.matheus.fluviapp.R
+import dev.matheus.fluviapp.ui.components.appbars.FabEmbarque
 import dev.matheus.fluviapp.ui.components.appbars.FluviBottomAppBar
 import dev.matheus.fluviapp.ui.components.appbars.FluviTopAppBar
 import kotlinx.coroutines.launch
@@ -157,6 +159,11 @@ private fun ScaffoldConteudo(
                 onClickMenu = onClickMenu,
             )
         },
+        // FAB de embarque protruso, ancorado ao centro sobre a barra (só onde a barra aparece).
+        floatingActionButton = {
+            if (isShowBottomAppBar) FabEmbarque(onClick = onClickEmbarque)
+        },
+        floatingActionButtonPosition = FabPosition.Center,
     ) {
         if (hasRefresh) {
             PullToRefreshBox(
