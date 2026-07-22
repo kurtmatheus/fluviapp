@@ -124,7 +124,17 @@ espelhando as decisões que o ADR-0010 já tomou para o cargo. Ciclo alvo (decid
   **3b — câmera + validação. PENDENTE.** Deps CameraX + ML Kit; `confirmarEmbarque` no repositório
   (leitura ao vivo do Firestore pelo id + carimbo do operador + FSM); `EmbarqueViewModel` +
   `EmbarqueScreen` (Scaffold próprio) com permissão `CAMERA`. **Não verificável em runtime aqui.**
-- **Fase 4 — Regras Firestore da transição** (estende ADR-0011) + casos na suíte de emulador.
+- **Fase 4 — Regras Firestore da transição** (estende ADR-0011). **FEITA.** `firestore.rules` passa a
+  impor a FSM no `update` de `passagens`: `funcionarioId` imutável (ADR-0011) **e** `transicaoStatusLegal()`
+  (só as arestas `A_EMITIR→EMITIDA`/`EMITIDA→EMBARCADA` ou status inalterado — bloqueia retrocesso e o
+  pulo `A_EMITIR→EMBARCADA`), com dois eixos de autz: **confirmação de embarque** (`EMITIDA→EMBARCADA`
+  carimbada) por `podeConfirmarEmbarque()` = qualquer cargo conhecido; qualquer outra edição pelo gate
+  ADR-0011 (dono ∨ editar-qualquer). A confirmação é *endurecida*: `ehConfirmacaoEmbarque()` exige que o
+  update toque **só** os 4 campos do embarque (`hasOnly`, sem contrabandear edição de conteúdo por
+  não-dono) e que carimbe o **próprio uid** como `embarcadaPorId` + nome + timestamp (não dá forjar
+  autoria, como o `funcionarioId==uid` da emissão). Grafia legada `"A EMITIR"` normalizada só na leitura
+  (espelha `StatusPassagem.de`). Suíte de emulador (`firestore-tests/`) ganha 10 casos novos (embarque
+  por não-dono OK, forjar autoria negado, sem carimbo negado, piggyback negado, retrocesso/pulo negados).
 - **Fase 5 — UI de badge/cor de status** (Detalhes + card da lista).
 
 ## Consequências

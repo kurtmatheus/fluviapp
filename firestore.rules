@@ -33,6 +33,47 @@ service cloud.firestore {
       return resource.data.funcionarioId == request.auth.uid;
     }
 
+    // Embarque é um eixo NOVO (ADR-0012): validar embarque ≠ editar conteúdo. Quem está na doca valida,
+    // mesmo sem ter vendido → qualquer cargo conhecido. NÃO colapsar em podeEditarQualquerPassagem.
+    function podeConfirmarEmbarque() {
+      return cargoConhecido();
+    }
+
+    // --- Ciclo de vida da passagem (ADR-0012): a FSM Kotlin (StatusPassagem) imposta no servidor ---
+    // Tolerante à grafia legada só na leitura (espelha StatusPassagem.de): "A EMITIR" → "A_EMITIR".
+    // A escrita é sempre canônica (Fase 1), então normalizamos apenas o valor legado conhecido.
+    function normStatus(s) {
+      return s == 'A EMITIR' ? 'A_EMITIR' : s;
+    }
+    function statusAtual() {
+      return normStatus(resource.data.get('status', ''));
+    }
+    function statusNovo() {
+      return normStatus(request.resource.data.get('status', ''));
+    }
+    // Só as arestas legais da FSM (mesma matriz do Kotlin) ou status inalterado (edição de conteúdo).
+    // Bloqueia retrocesso (EMBARCADA→*) e pulo (A_EMITIR→EMBARCADA sem passar por EMITIDA).
+    function transicaoStatusLegal() {
+      return statusAtual() == statusNovo()
+          || (statusAtual() == 'A_EMITIR' && statusNovo() == 'EMITIDA')
+          || (statusAtual() == 'EMITIDA' && statusNovo() == 'EMBARCADA');
+    }
+    // Confirmação de embarque: a aresta EMITIDA→EMBARCADA que (a) toca SÓ os 4 campos do embarque —
+    // sem contrabandear edição de conteúdo por não-dono — e (b) carimba o PRÓPRIO uid como quem embarcou
+    // (não dá forjar autoria, como o funcionarioId==uid da emissão), com nome e timestamp presentes.
+    function embarqueCarimbado() {
+      return request.resource.data.get('embarcadaPorId', '') == request.auth.uid
+          && request.resource.data.get('embarcadaPor', '') != ''
+          && request.resource.data.get('embarcadaEm', '') != '';
+    }
+    function ehConfirmacaoEmbarque() {
+      return statusAtual() == 'EMITIDA'
+          && statusNovo() == 'EMBARCADA'
+          && embarqueCarimbado()
+          && request.resource.data.diff(resource.data).affectedKeys()
+               .hasOnly(['status', 'embarcadaPorId', 'embarcadaPor', 'embarcadaEm']);
+    }
+
     // --- Perfis de usuário: cargo imutável pelo cliente (anti-escalonamento) ---
     match /users/{uid} {
       allow read: if autenticado();
@@ -88,11 +129,17 @@ service cloud.firestore {
                     && cargoConhecido()
                     && request.resource.data.funcionarioId == request.auth.uid;
 
-      // Editar: gestor/Colab (qualquer) ou o dono; o funcionarioId é imutável (não reatribui dono).
+      // Editar: o funcionarioId é sempre imutável (não reatribui dono) e o status só percorre arestas
+      // legais da FSM (ADR-0012), nunca retrocede nem pula. Dois eixos de autorização:
+      //  - confirmação de embarque (EMITIDA→EMBARCADA, carimbada): QUALQUER cargo conhecido (eixo novo);
+      //  - qualquer outra edição (inclui emitir A_EMITIR→EMITIDA): gestor/Colab (qualquer) ou o dono.
       allow update: if autenticado()
                     && id != 'contador'
-                    && (podeEditarQualquerPassagem() || ehDonoPassagem())
-                    && request.resource.data.funcionarioId == resource.data.funcionarioId;
+                    && request.resource.data.funcionarioId == resource.data.funcionarioId
+                    && transicaoStatusLegal()
+                    && (ehConfirmacaoEmbarque()
+                          ? podeConfirmarEmbarque()
+                          : (podeEditarQualquerPassagem() || ehDonoPassagem()));
 
       // Deletar: mesmas regras de editar (ADR-0010).
       allow delete: if autenticado()

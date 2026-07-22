@@ -65,6 +65,17 @@ beforeEach(async () => {
     // Passagem alheia (dono = OPERADOR_B) e o contador.
     await setDoc(doc(db, 'passagens', 'alheia'), { funcionarioId: OPERADOR_B, valor: 10 });
     await setDoc(doc(db, 'passagens', 'contador'), { numeroBilhete: 100 });
+    // Passagens em estados conhecidos do ciclo de vida (ADR-0012), donas do OPERADOR_B (alheias ao A).
+    await setDoc(doc(db, 'passagens', 'aemitir-b'), { funcionarioId: OPERADOR_B, status: 'A_EMITIR' });
+    await setDoc(doc(db, 'passagens', 'emitida-b'), { funcionarioId: OPERADOR_B, status: 'EMITIDA' });
+    await setDoc(doc(db, 'passagens', 'embarcada-b'), {
+      funcionarioId: OPERADOR_B,
+      status: 'EMBARCADA',
+      embarcadaPorId: OPERADOR_A,
+      embarcadaPor: 'Op A',
+      embarcadaEm: '01/07/2026 08:00',
+    });
+    await setDoc(doc(db, 'passagens', 'aemitir-a'), { funcionarioId: OPERADOR_A, status: 'A_EMITIR' });
   });
 });
 
@@ -185,5 +196,62 @@ describe('passagens/contador — incremento monotônico e indestrutível', () =>
 
   test('deletar o contador → NEGADO', async () => {
     await assertFails(deleteDoc(doc(asAdm(), 'passagens', 'contador')));
+  });
+});
+
+// --- Ciclo de vida da passagem (ADR-0012 Fase 4): FSM imposta no servidor ---
+// Carimbo de embarque que o app grava: status + o próprio uid como embarcadaPorId + nome + quando.
+const carimboEmbarque = (uid, nome) => ({
+  status: 'EMBARCADA',
+  embarcadaPorId: uid,
+  embarcadaPor: nome,
+  embarcadaEm: '02/07/2026 09:30',
+});
+
+describe('passagens — confirmação de embarque (eixo novo, qualquer cargo)', () => {
+  test('operador NÃO-dono confirma embarque (EMITIDA→EMBARCADA) carimbando o próprio uid → OK', async () => {
+    // OPERADOR_A embarca a passagem 'emitida-b' (dono = OPERADOR_B): quem está na doca valida.
+    await assertSucceeds(updateDoc(doc(asOperadorA(), 'passagens', 'emitida-b'), carimboEmbarque(OPERADOR_A, 'Op A')));
+  });
+
+  test('gestor (ADM) confirma embarque de passagem alheia → OK', async () => {
+    await assertSucceeds(updateDoc(doc(asAdm(), 'passagens', 'emitida-b'), carimboEmbarque(ADM, 'Adm')));
+  });
+
+  test('embarque carimbando OUTRO uid como quem embarcou (forjar autoria) → NEGADO', async () => {
+    await assertFails(updateDoc(doc(asOperadorA(), 'passagens', 'emitida-b'), carimboEmbarque(OPERADOR_B, 'Op B')));
+  });
+
+  test('marcar EMBARCADA sem carimbo (só status) → NEGADO (embarque tem que ser auditado)', async () => {
+    await assertFails(updateDoc(doc(asOperadorA(), 'passagens', 'emitida-b'), { status: 'EMBARCADA' }));
+  });
+
+  test('embarque contrabandeando edição de conteúdo (altera valor junto) por não-dono → NEGADO', async () => {
+    await assertFails(updateDoc(doc(asOperadorA(), 'passagens', 'emitida-b'), {
+      ...carimboEmbarque(OPERADOR_A, 'Op A'),
+      valor: 999,
+    }));
+  });
+});
+
+describe('passagens — arestas legais da FSM (avança, nunca retrocede nem pula)', () => {
+  test('dono emite a própria passagem (A_EMITIR→EMITIDA) → OK', async () => {
+    await assertSucceeds(updateDoc(doc(asOperadorA(), 'passagens', 'aemitir-a'), { status: 'EMITIDA' }));
+  });
+
+  test('operador NÃO-dono emite passagem alheia (A_EMITIR→EMITIDA) → NEGADO (não é o eixo de embarque)', async () => {
+    await assertFails(updateDoc(doc(asOperadorA(), 'passagens', 'aemitir-b'), { status: 'EMITIDA' }));
+  });
+
+  test('pulo A_EMITIR→EMBARCADA (sem passar por EMITIDA) → NEGADO', async () => {
+    await assertFails(updateDoc(doc(asAdm(), 'passagens', 'aemitir-b'), carimboEmbarque(ADM, 'Adm')));
+  });
+
+  test('retrocesso EMBARCADA→EMITIDA (mesmo gestor) → NEGADO (embarque é irreversível)', async () => {
+    await assertFails(updateDoc(doc(asAdm(), 'passagens', 'embarcada-b'), { status: 'EMITIDA' }));
+  });
+
+  test('retrocesso EMITIDA→A_EMITIR → NEGADO', async () => {
+    await assertFails(updateDoc(doc(asAdm(), 'passagens', 'emitida-b'), { status: 'A_EMITIR' }));
   });
 });

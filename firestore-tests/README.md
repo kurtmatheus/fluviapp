@@ -1,4 +1,4 @@
-# Testes das regras do Firestore (ADR-0011)
+# Testes das regras do Firestore (ADR-0011 / ADR-0012)
 
 Suíte que **trava a paridade** entre `../firestore.rules` e a política Kotlin `PermissoesUsuario`
 (ADR-0010). Cada teste corresponde a uma linha da matriz de autorização — se alguém afrouxar uma
@@ -34,6 +34,10 @@ roda o Jest contra ele e derruba tudo ao final). Não precisa de credenciais: us
 - **Passagens**: não dá para forjar dono na emissão (`funcionarioId == uid`); operador só edita/deleta
   as próprias; Colaborador Master e gestor editam qualquer; o `funcionarioId` é imutável no update.
 - **Contador** (`passagens/contador`): incremento monotônico (não retrocede) e sem delete.
+- **Ciclo de vida da passagem** (ADR-0012 Fase 4): a FSM imposta no `update` — só arestas legais
+  (`A_EMITIR→EMITIDA`/`EMITIDA→EMBARCADA`), sem retrocesso nem pulo; confirmação de embarque por
+  qualquer cargo conhecido, mas carimbando o próprio uid (não forja autoria), tocando só os 4 campos
+  do embarque (sem contrabandear edição) e nunca sem carimbo.
 
 ## Manutenção
 
