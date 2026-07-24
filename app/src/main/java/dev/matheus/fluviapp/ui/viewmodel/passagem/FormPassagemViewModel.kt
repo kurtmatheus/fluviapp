@@ -27,9 +27,10 @@ import dev.matheus.fluviapp.ui.states.passagem.FormVeiculoUiState
 import dev.matheus.fluviapp.ui.viewmodel.helpers.passagem.FormPassageiroHelper
 import dev.matheus.fluviapp.ui.viewmodel.helpers.passagem.FormPassagemHelper
 import dev.matheus.fluviapp.ui.viewmodel.helpers.passagem.FormVeiculoHelper
+import dev.matheus.fluviapp.ui.viewmodel.helpers.passagem.validacao.ErrosPassageiro
 import dev.matheus.fluviapp.ui.viewmodel.helpers.passagem.validacao.ErrosVeiculo
-import dev.matheus.fluviapp.ui.viewmodel.helpers.passagem.validacao.ValidacaoFormPassageiroHelper
 import dev.matheus.fluviapp.ui.viewmodel.helpers.passagem.validacao.ValidacaoFormPassagemHelper
+import dev.matheus.fluviapp.ui.viewmodel.helpers.passagem.validacao.validarPassageiro
 import dev.matheus.fluviapp.ui.viewmodel.helpers.passagem.validacao.validarVeiculo
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -79,7 +80,6 @@ class FormPassagemViewModel @Inject constructor(
     private lateinit var formPassageiroHelper: FormPassageiroHelper
     private lateinit var formVeiculoHelper: FormVeiculoHelper
     private lateinit var validacaoFormPassagemHelper: ValidacaoFormPassagemHelper
-    private lateinit var validacaoFormPassageiroHelper: ValidacaoFormPassageiroHelper
 
     init {
         viewModelScope.launch {
@@ -152,10 +152,6 @@ class FormPassagemViewModel @Inject constructor(
         validacaoFormPassagemHelper = ValidacaoFormPassagemHelper(
             uiState = _uiStatePassagem,
             uiStatePassageiro = _uiStatePassageiro
-        )
-        validacaoFormPassageiroHelper = ValidacaoFormPassageiroHelper(
-            uiState = _uiStatePassageiro,
-            uiStatePassagem = _uiStatePassagem
         )
     }
 
@@ -232,7 +228,10 @@ class FormPassagemViewModel @Inject constructor(
             // Validação PURA do veículo (molde ADR-0006): calcula os erros e o VM os aplica ao estado.
             aplicarErrosVeiculo(validarVeiculo(_uiStateVeiculo.value))
         } else {
-            validacaoFormPassageiroHelper.isFormularioPassageiroValido()
+            // Validação PURA do passageiro (molde ADR-0006, fatia 2).
+            aplicarErrosPassageiro(
+                validarPassageiro(_uiStatePassageiro.value, _uiStatePassagem.value.dataViagem)
+            )
         }
 
         return formPassagemvalido && formPassageiroVeiculoValido
@@ -247,6 +246,28 @@ class FormPassagemViewModel @Inject constructor(
                 isModeloVeiculoError = erros.modeloVeiculo,
                 isPlacaVeiculoError = erros.placaVeiculo,
                 isCilindradaError = erros.cilindrada,
+            )
+        }
+        return erros.valido
+    }
+
+    /** Aplica os erros da validação pura do passageiro no estado e devolve se ficou válido. */
+    private fun aplicarErrosPassageiro(erros: ErrosPassageiro): Boolean {
+        _uiStatePassageiro.update {
+            it.copy(
+                isAcomodacaoError = erros.acomodacao,
+                isTipoPassagemError = erros.tipoPassagem,
+                isTipoGratuidadeError = erros.tipoGratuidade,
+                isNomePassageiro1Error = erros.nomeP1,
+                isDocumentoPassageiro1Error = erros.documentoP1,
+                isDataNascimentoPassageiro1Error = erros.dataNascimentoP1,
+                textDataNascimentoError = erros.textDataNascimentoP1,
+                isNomePassageiro2Error = erros.nomeP2,
+                isDocumentoPassageiro2Error = erros.documentoP2,
+                isDataNascimentoPassageiro2Error = erros.dataNascimentoP2,
+                isDocumentoPassageiro3Error = erros.documentoP3,
+                isNomePassageiro3Error = erros.nomeP3,
+                isDataNascimentoPassageiro3Error = erros.dataNascimentoP3,
             )
         }
         return erros.valido
