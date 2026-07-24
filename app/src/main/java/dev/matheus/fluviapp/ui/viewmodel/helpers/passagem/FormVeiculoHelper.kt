@@ -15,7 +15,6 @@ import dev.matheus.fluviapp.ui.viewmodel.passagem.TAMANHO_CPF
 import dev.matheus.fluviapp.ui.viewmodel.passagem.TAMANHO_PASS
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.runBlocking
 
 class FormVeiculoHelper(
     private val uiState: MutableStateFlow<FormVeiculoUiState>,
@@ -58,8 +57,14 @@ class FormVeiculoHelper(
                     atualizarCilindrada(it)
                 },
                 listaNomeResponsavelRetirada = passagemRepository.getListaNome(),
-                listaTipoVeiculo = runBlocking { constanteRepository.obterTodosPorCategoria(VEICULO.name) }
             )
+        }
+    }
+
+    /** Carga suspensa das listas (molde ADR-0006): sem `runBlocking` na thread principal no init. */
+    suspend fun carregarListas() {
+        uiState.update {
+            it.copy(listaTipoVeiculo = constanteRepository.obterTodosPorCategoria(VEICULO.name))
         }
     }
 

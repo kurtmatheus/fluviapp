@@ -18,7 +18,6 @@ import dev.matheus.fluviapp.ui.viewmodel.passagem.TAMANHO_CPF
 import dev.matheus.fluviapp.ui.viewmodel.passagem.TAMANHO_PASS
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.runBlocking
 
 class FormPassageiroHelper(
     private val uiState: MutableStateFlow<FormPassageiroUiState>,
@@ -95,9 +94,17 @@ class FormPassageiroHelper(
                     atualizarDataNascimentoPassageiro3(it)
                 },
                 listaNomePassageiro = passagemRepository.getListaNome(),
-                listaAcomodacao = runBlocking { constanteRepository.obterTodosPorCategoria(ACOMODACAO.name) },
-                listaTipoPassagem = runBlocking { constanteRepository.obterTodosPorCategoria(TIPO_PASSAGEM.name) },
-                listaTipoGratuidade = runBlocking { constanteRepository.obterTodosPorCategoria(GRATUIDADE.name) }
+            )
+        }
+    }
+
+    /** Carga suspensa das listas (molde ADR-0006): sem `runBlocking` na thread principal no init. */
+    suspend fun carregarListas() {
+        uiState.update {
+            it.copy(
+                listaAcomodacao = constanteRepository.obterTodosPorCategoria(ACOMODACAO.name),
+                listaTipoPassagem = constanteRepository.obterTodosPorCategoria(TIPO_PASSAGEM.name),
+                listaTipoGratuidade = constanteRepository.obterTodosPorCategoria(GRATUIDADE.name),
             )
         }
     }

@@ -94,12 +94,20 @@ class FormPassagemHelper(
                 onObservacaoChange = { obs, ehFalado ->
                     atualizaObservacao(obs, ehFalado)
                 },
-                listaTipoDocumento = runBlocking { constanteRepository.obterTodosPorCategoria(DOCUMENTO.name) },
-                listaAgencia = runBlocking { agenteRepository.obterTodasAgencias() },
-                listaAgente = runBlocking { agenteRepository.obterTodosAgentes() },
-                listaFormaPagamento = runBlocking { constanteRepository.obterTodosPorCategoria(PAGAMENTO.name) },
-                listaSituacaoPassagem = runBlocking { constanteRepository.obterTodosPorCategoria(STATUS_PASSAGEM.name) },
-                listaCategoriaPassagem = runBlocking { constanteRepository.obterTodosPorCategoria(CATEGORIA_PASSAGEM.name) }
+            )
+        }
+    }
+
+    /** Carga suspensa das listas (molde ADR-0006): sem `runBlocking` na thread principal no init. */
+    suspend fun carregarListas() {
+        uiStatePassagem.update {
+            it.copy(
+                listaTipoDocumento = constanteRepository.obterTodosPorCategoria(DOCUMENTO.name),
+                listaAgencia = agenteRepository.obterTodasAgencias(),
+                listaAgente = agenteRepository.obterTodosAgentes(),
+                listaFormaPagamento = constanteRepository.obterTodosPorCategoria(PAGAMENTO.name),
+                listaSituacaoPassagem = constanteRepository.obterTodosPorCategoria(STATUS_PASSAGEM.name),
+                listaCategoriaPassagem = constanteRepository.obterTodosPorCategoria(CATEGORIA_PASSAGEM.name),
             )
         }
     }

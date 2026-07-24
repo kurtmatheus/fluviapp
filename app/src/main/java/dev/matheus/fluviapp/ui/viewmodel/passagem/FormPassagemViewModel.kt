@@ -84,6 +84,7 @@ class FormPassagemViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             inicializarHelpers()
+            carregarListas()
             preencherViagem()
             inicializarEditor()
             // Rascunho (ADR-0004) só no fluxo de NOVA passagem; editar carrega a verdade do repo.
@@ -149,6 +150,13 @@ class FormPassagemViewModel @Inject constructor(
             constanteRepository = constanteRepository,
             passagemRepository = passagemRepository
         )
+    }
+
+    /** Carga suspensa das listas dos sub-forms (molde ADR-0006) — tira o runBlocking do init. */
+    private suspend fun carregarListas() {
+        formPassagemHelper.carregarListas()
+        formPassageiroHelper.carregarListas()
+        formVeiculoHelper.carregarListas()
     }
 
     private suspend fun preencherViagem() {
