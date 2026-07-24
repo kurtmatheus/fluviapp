@@ -64,7 +64,9 @@ class ValidacaoFormPassageiroHelper(
             }
         }
 
-        if (state.tipoDocumentoPassageiro3.isNotBlank() && state.documentoPassageiro1.isBlank()) {
+        // Doc do passageiro 1: tipo selecionado mas número em branco. (Antes referenciava o tipo do
+        // passageiro 3 — copy-paste; corrigido para o próprio passageiro 1.)
+        if (state.tipoDocumentoPassageiro1.isNotBlank() && state.documentoPassageiro1.isBlank()) {
             uiState.update {
                 it.copy(
                     isDocumentoPassageiro1Error = true
@@ -80,6 +82,8 @@ class ValidacaoFormPassageiroHelper(
             }
         }
 
+        // Gratuidade CRIANCA_ATE_5 (ADR-0013): "até 5 anos inclusive" = nascido há MENOS de 6 anos na data
+        // da viagem (limite exclusivo de 6 anos, abaixo). O `6` codifica exatamente essa faixa.
         val gratuidadeCrianca = state.isGratuidade &&
                 state.tipoGratuidade.contains("CRIANCA", true)
 
@@ -142,8 +146,10 @@ class ValidacaoFormPassageiroHelper(
         }
 
         if (state.isPassageiro3Checked) {
+            // Doc do passageiro 3: tipo selecionado mas número em branco. (Antes checava o número do
+            // passageiro 1 — copy-paste; corrigido para o próprio passageiro 3.)
             if (state.tipoDocumentoPassageiro3.isNotBlank() &&
-                state.documentoPassageiro1.isBlank()
+                state.documentoPassageiro3.isBlank()
             ) {
                 uiState.update {
                     it.copy(

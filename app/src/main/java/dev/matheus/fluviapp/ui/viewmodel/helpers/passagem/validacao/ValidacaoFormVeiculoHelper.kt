@@ -1,5 +1,6 @@
 package dev.matheus.fluviapp.ui.viewmodel.helpers.passagem.validacao
 
+import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.MOTO
 import dev.matheus.fluviapp.ui.states.passagem.FormVeiculoUiState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
@@ -16,7 +17,8 @@ class ValidacaoFormVeiculoHelper(
                 !uiState.value.isTipoVeiculoError &&
                 !uiState.value.isModeloVeiculoError &&
                 !uiState.value.isPlacaVeiculoError &&
-                !uiState.value.isCorVeiculoError
+                // cor é opcional (nunca setada) — removido o check morto que a fingia validar.
+                !uiState.value.isCilindradaError
     }
 
     private fun validarFormulario(state: FormVeiculoUiState) {
@@ -48,6 +50,16 @@ class ValidacaoFormVeiculoHelper(
             uiState.update {
                 it.copy(
                     isPlacaVeiculoError = true
+                )
+            }
+        }
+
+        // Moto exige cilindrada (ADR-0013): ela alimenta a tarifaMotoBase. Validar aqui evita o bloqueio
+        // enganoso "sem tarifa cadastrada" na emissão (a causa real seria o cc ausente).
+        if (state.tipoVeiculo == MOTO.name && state.cilindrada.isBlank()) {
+            uiState.update {
+                it.copy(
+                    isCilindradaError = true
                 )
             }
         }
