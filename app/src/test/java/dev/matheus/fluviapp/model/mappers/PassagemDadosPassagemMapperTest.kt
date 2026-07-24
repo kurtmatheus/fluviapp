@@ -1,13 +1,16 @@
 package dev.matheus.fluviapp.model.mappers
 
+import dev.matheus.fluviapp.extensions.formataParaMoedaBrasileira
 import dev.matheus.fluviapp.fakes.FakeAgenteRepository
 import dev.matheus.fluviapp.fakes.FakeEmpresaRepository
 import dev.matheus.fluviapp.model.passagem.Passagem
+import dev.matheus.fluviapp.model.passagem.TipoPassagem
 import dev.matheus.fluviapp.model.viagem.Empresa
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Test
+import java.math.BigDecimal
 
 /**
  * Trava a relação Passagem→Empresa por id (ADR-0008): a DadosPassagem resolve a empresa pelo
@@ -75,5 +78,53 @@ class PassagemDadosPassagemMapperTest {
         // resto da passagem segue mapeado normalmente.
         assertEquals("2444", dados.numero)
         assertEquals("viagem-abc", dados.idViagem)
+    }
+
+    // --- Preço tabelado (ADR-0013): derivado da tarifaBase congelada ---
+
+    private fun moeda(valor: String) = BigDecimal(valor).formataParaMoedaBrasileira()
+
+    @Test
+    fun `inteira deriva a devida da tarifaBase e o desconto do residuo abaixo dela`() = runTest {
+        val dados = mapper(emptyList()).map(
+            passagem().copy(tarifaBase = 300.0, tipoPassagem = TipoPassagem.INTEIRA.name, valorPago = 280.0),
+        )
+
+        assertEquals(moeda("300.00"), dados.tarifa)      // base da célula
+        assertEquals(moeda("300.00"), dados.valorTotal)  // devida (inteira = base)
+        assertEquals(moeda("20.00"), dados.desconto)     // resíduo abaixo da devida
+        assertEquals(moeda("280.00"), dados.valorAPagar)
+    }
+
+    @Test
+    fun `meia deve metade da base e a reducao mandatoria nao vira desconto`() = runTest {
+        val dados = mapper(emptyList()).map(
+            passagem().copy(tarifaBase = 300.0, tipoPassagem = TipoPassagem.MEIA.name, valorDinheiro = 150.0),
+        )
+
+        assertEquals(moeda("150.00"), dados.valorTotal) // metade
+        assertEquals(moeda("0.00"), dados.desconto)     // cobrou a devida → sem desconto
+        assertEquals(moeda("150.00"), dados.valorAPagar)
+    }
+
+    @Test
+    fun `gratuidade zera a devida e o desconto`() = runTest {
+        val dados = mapper(emptyList()).map(
+            passagem().copy(tarifaBase = 300.0, tipoPassagem = TipoPassagem.GRATUIDADE.name),
+        )
+
+        assertEquals(moeda("0.00"), dados.valorTotal)
+        assertEquals(moeda("0.00"), dados.desconto)
+    }
+
+    @Test
+    fun `sem tarifaBase degrada para o valor cobrado mais o desconto persistido`() = runTest {
+        val dados = mapper(emptyList()).map(
+            passagem().copy(tarifaBase = null, valorPago = 100.0, desconto = 10.0),
+        )
+
+        assertEquals(moeda("110.00"), dados.valorTotal)  // cobrado + desconto legado
+        assertEquals(moeda("10.00"), dados.desconto)
+        assertEquals(moeda("100.00"), dados.valorAPagar)
     }
 }

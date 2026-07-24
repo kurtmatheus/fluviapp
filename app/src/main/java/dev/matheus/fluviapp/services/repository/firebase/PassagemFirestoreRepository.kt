@@ -143,6 +143,22 @@ class PassagemFirestoreRepository @Inject constructor(
             .get()
     }
 
+    /**
+     * Conta as passagens de uma viagem com a gratuidade da categoria dada (ADR-0013 §8, cota por viagem).
+     * Firestore-driven: lê a coleção ao vivo. Consulta por `viagemId` (índice simples, sem composto) e
+     * filtra a categoria em memória. `excetoId` exclui o próprio bilhete (edição não conta a si mesmo).
+     * Ressalva de concorrência conhecida (não é atômico com a emissão).
+     */
+    suspend fun contarGratuidadePorViagem(viagemId: String, gratuidade: String, excetoId: String): Int {
+        val snapshot = firestore.collection(COLLECTION_PASSAGENS)
+            .whereEqualTo(FIELD_VIAGEM_ID, viagemId)
+            .get()
+            .await()
+        return snapshot.documents.count {
+            it.id != excetoId && it.getString(FIELD_GRATUIDADE) == gratuidade
+        }
+    }
+
     fun getListaNome(): List<String> {
         return emptyList()
     }
@@ -258,6 +274,8 @@ class PassagemFirestoreRepository @Inject constructor(
         private const val COLECAO_CONTADOR = "contador_bilhete"
         private const val FIELD_NUMERO = "numeroBilhete"
         private const val FIELD_DATA_VIAGEM = "dataViagem"
+        private const val FIELD_VIAGEM_ID = "viagemId"
+        private const val FIELD_GRATUIDADE = "gratuidade"
         private const val FIELD_STATUS = "status"
         private const val FIELD_NOME_FUNC = "funcionarioResponsavel"
         private const val FIELD_EMBARCADA_POR_ID = "embarcadaPorId"

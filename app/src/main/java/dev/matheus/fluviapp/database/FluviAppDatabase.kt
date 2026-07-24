@@ -7,6 +7,7 @@ import dev.matheus.fluviapp.database.dao.cadastro.ConstanteDao
 import dev.matheus.fluviapp.database.dao.cadastro.passagem.AgenteDao
 import dev.matheus.fluviapp.database.dao.cadastro.viagem.EmpresaDao
 import dev.matheus.fluviapp.database.dao.cadastro.viagem.NavioDao
+import dev.matheus.fluviapp.database.dao.cadastro.viagem.TarifaViagemDao
 import dev.matheus.fluviapp.database.dao.cadastro.viagem.ViagemDao
 import dev.matheus.fluviapp.database.dao.operacoes.UsuarioDao
 import dev.matheus.fluviapp.database.dao.passagem.PassagemDao
@@ -20,6 +21,7 @@ import dev.matheus.fluviapp.model.passagem.Passagem
 import dev.matheus.fluviapp.model.passagem.PassagemDigital
 import dev.matheus.fluviapp.model.viagem.Empresa
 import dev.matheus.fluviapp.model.viagem.Navio
+import dev.matheus.fluviapp.model.viagem.TarifaViagem
 import dev.matheus.fluviapp.model.viagem.Viagem
 
 @Database(
@@ -30,12 +32,13 @@ import dev.matheus.fluviapp.model.viagem.Viagem
         Navio::class,
         Agente::class,
         Viagem::class,
+        TarifaViagem::class,
         Passagem::class,
         ContadorBilhete::class,
         PassagemDigital::class,
         RascunhoPassagemEntity::class
     ],
-    version = 13,
+    version = 16,
     exportSchema = false
 )
 abstract class FluviAppDatabase : RoomDatabase() {
@@ -44,6 +47,7 @@ abstract class FluviAppDatabase : RoomDatabase() {
     abstract fun empresaDao(): EmpresaDao
     abstract fun navioDao(): NavioDao
     abstract fun viagemDao(): ViagemDao
+    abstract fun tarifaViagemDao(): TarifaViagemDao
     abstract fun agenteDao(): AgenteDao
     abstract fun passagemDao(): PassagemDao
     abstract fun contadorDao(): ContadorDao

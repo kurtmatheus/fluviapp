@@ -189,6 +189,7 @@ fun FormPassagemScreen(
                         modifier = it,
                         state = statePassagem,
                         statePassageiro = statePassageiro,
+                        stateVeiculo = stateVeiculo,
                         focusManager = focusManager
                     )
                 }

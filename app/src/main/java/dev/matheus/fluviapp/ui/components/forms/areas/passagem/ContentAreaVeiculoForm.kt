@@ -19,9 +19,11 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import dev.matheus.fluviapp.R
+import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.MOTO
 import dev.matheus.fluviapp.extensions.keyboardType
 import dev.matheus.fluviapp.extensions.visualTransformation
 import dev.matheus.fluviapp.model.mapDescricao
@@ -105,6 +107,18 @@ fun ContentAreaVeiculoForm(
         isError = stateVeiculo.isTipoVeiculoError,
         focusManager = focusManager
     )
+
+    // Cilindrada só para moto (ADR-0013): numérica, filtro de dígito no handler. Alimenta a tarifa por cc.
+    if (stateVeiculo.tipoVeiculo == MOTO.name) {
+        FormTextFieldBrownNoIcon(
+            modifier = modifier.fillMaxWidth(),
+            value = stateVeiculo.cilindrada,
+            onValueChange = stateVeiculo.onCilindradaChange,
+            label = R.string.label_cilindrada,
+            isError = stateVeiculo.isCilindradaError,
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next, keyboardType = KeyboardType.Number),
+        )
+    }
 
     FormTextFieldBrownNoIcon(
         modifier = modifier.fillMaxWidth(),

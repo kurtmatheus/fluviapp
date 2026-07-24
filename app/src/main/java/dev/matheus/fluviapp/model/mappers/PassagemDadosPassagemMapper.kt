@@ -4,21 +4,17 @@ import dev.matheus.fluviapp.extensions.converterParaBigDecimal
 import dev.matheus.fluviapp.extensions.extrairDocumentoFormatado
 import dev.matheus.fluviapp.extensions.formataParaMoedaBrasileira
 import dev.matheus.fluviapp.extensions.getValorFormatadoOrEmpty
-import dev.matheus.fluviapp.extensions.toBigDecimal
-import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.GRATUIDADE
-import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.MEIA
 import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.PASSAGEIRO
-import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.REDE
 import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.VEICULO
 import dev.matheus.fluviapp.model.passagem.Passagem
-import dev.matheus.fluviapp.model.passagem.Passagem.Companion.TARIFA_ANTAC
 import dev.matheus.fluviapp.model.passagem.StatusPassagem
+import dev.matheus.fluviapp.model.passagem.TipoPassagem
+import dev.matheus.fluviapp.model.passagem.descontoDerivado
 import dev.matheus.fluviapp.model.screendata.DadosPassagem
 import dev.matheus.fluviapp.services.repository.cadastro.passagem.AgenteRepository
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.EmpresaRepository
 import dev.matheus.fluviapp.util.Mapper
 import java.math.BigDecimal
-import java.math.RoundingMode
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -43,24 +39,27 @@ class PassagemDadosPassagemMapper @Inject constructor(
             false
         }
 
-        val valorPagoAvulso = entry.valorPago.converterParaBigDecimal()
         val valorPix = entry.valorPix.converterParaBigDecimal()
         val valorDinheiro = entry.valorDinheiro.converterParaBigDecimal()
         val valorDebito = entry.valorDebito.converterParaBigDecimal()
         val valorCredito = entry.valorCredito.converterParaBigDecimal()
-        val desconto = entry.desconto.converterParaBigDecimal()
+        val valorPagoAvulso = entry.valorPago.converterParaBigDecimal()
+        val valorCobrado = valorPagoAvulso + valorPix + valorDinheiro + valorDebito + valorCredito
 
-        val valorTotal = if (entry.acomodacao != null &&
-            entry.acomodacao == REDE.name &&
-            entry.tipoPassagem != null &&
-            entry.tipoPassagem != GRATUIDADE.name
-        ) {
-            obterTotalTarifa(entry.tipoPassagem == MEIA.name)
+        // Preço tabelado (ADR-0013): da tarifa da inteira congelada (tarifaBase) deriva a tarifa devida
+        // por categoria (meia = metade, gratuidade = 0) e o desconto (resíduo abaixo da devida — só a
+        // redução discricionária, sem embaralhar a meia). Sem tarifaBase (bilhete anterior / veículo, cuja
+        // tarifa por classe é Fase 3) degrada para o valor cobrado + o desconto persistido.
+        val precos = if (entry.tarifaBase != null) {
+            val tarifaBase = entry.tarifaBase.converterParaBigDecimal()
+            val tarifaDevida = TipoPassagem.de(entry.tipoPassagem)?.tarifaDevida(tarifaBase) ?: tarifaBase
+            val descontoDado = descontoDerivado(tarifaDevida, valorCobrado)
+            Precos(tarifaBase, tarifaDevida, descontoDado, tarifaDevida - descontoDado)
         } else {
-            getValorTotal(valorPagoAvulso, valorPix, valorDinheiro, valorDebito, valorCredito, desconto)
+            val descontoLegado = entry.desconto.converterParaBigDecimal()
+            val total = valorCobrado + descontoLegado
+            Precos(total, total, descontoLegado, valorCobrado)
         }
-
-        val valorAPagar = valorTotal - desconto
 
         return DadosPassagem(
             idPassagem = entry.id,
@@ -80,14 +79,14 @@ class PassagemDadosPassagemMapper @Inject constructor(
             agencia = entry.agencia,
             agente = entry.agente,
             podeSelecionarFormaPagamento = podeSelecionarFormaPagamento,
-            tarifa = BigDecimal(TARIFA_ANTAC).formataParaMoedaBrasileira(),
-            valorTotal = valorTotal.formataParaMoedaBrasileira(),
+            tarifa = precos.tarifa.formataParaMoedaBrasileira(),
+            valorTotal = precos.total.formataParaMoedaBrasileira(),
             valorPix = valorPix.getValorFormatadoOrEmpty(),
             valorDinheiro = valorDinheiro.getValorFormatadoOrEmpty(),
             valorDebito = valorDebito.getValorFormatadoOrEmpty(),
             valorCredito = valorCredito.getValorFormatadoOrEmpty(),
-            desconto = desconto.formataParaMoedaBrasileira(),
-            valorAPagar = valorAPagar.formataParaMoedaBrasileira(),
+            desconto = precos.desconto.formataParaMoedaBrasileira(),
+            valorAPagar = precos.aPagar.formataParaMoedaBrasileira(),
             observacao = entry.observacao.orEmpty(),
             tipoPassagem = entry.tipoPassagem.orEmpty(),
             tipoGratuidade = entry.gratuidade.orEmpty(),
@@ -132,27 +131,12 @@ class PassagemDadosPassagemMapper @Inject constructor(
         )
     }
 
-    private fun obterTotalTarifa(isMeia: Boolean): BigDecimal {
-        return if (isMeia) {
-            TARIFA_ANTAC.toBigDecimal().divide(BigDecimal("2"), RoundingMode.UP)
-        } else {
-            TARIFA_ANTAC.toBigDecimal()
-        }
-    }
 }
 
-private fun getValorTotal(
-    valorPago: BigDecimal,
-    valorPix: BigDecimal,
-    valorDinheiro: BigDecimal,
-    valorDebito: BigDecimal,
-    valorCredito: BigDecimal,
-    desconto: BigDecimal,
-): BigDecimal {
-    return valorPago +
-            valorPix +
-            valorDinheiro +
-            valorDebito +
-            valorCredito +
-            desconto
-}
+/** Preços derivados de uma passagem (ADR-0013), em BigDecimal, prontos para formatar na projeção de tela. */
+private data class Precos(
+    val tarifa: BigDecimal,
+    val total: BigDecimal,
+    val desconto: BigDecimal,
+    val aPagar: BigDecimal,
+)

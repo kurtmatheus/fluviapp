@@ -34,4 +34,10 @@ data class FormVeiculoUiState(
     val corVeiculo: String = "",
     val onCorVeiculoChange: (String) -> Unit = {},
     val isCorVeiculoError: Boolean = false,
+
+    // Cilindrada da moto (ADR-0013) — só relevante quando tipoVeiculo = MOTO. Numérico, com filtro de
+    // dígito no handler (descarta caractere acidental). Alimenta a regra tarifaMotoBase na emissão.
+    val cilindrada: String = "",
+    val onCilindradaChange: (String) -> Unit = {},
+    val isCilindradaError: Boolean = false,
 )

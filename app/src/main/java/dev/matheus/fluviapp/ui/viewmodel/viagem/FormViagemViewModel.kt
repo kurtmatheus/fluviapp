@@ -5,10 +5,14 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.matheus.fluviapp.R
+import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Categoria.ACOMODACAO
 import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Categoria.MUNICIPIO
+import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Categoria.VEICULO
+import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.MOTO
 import dev.matheus.fluviapp.model.extrairPorDescricao
 import dev.matheus.fluviapp.model.mappers.ViagemDadosViagemMapper
 import dev.matheus.fluviapp.model.viagem.Navio
+import dev.matheus.fluviapp.model.viagem.TarifaViagem
 import dev.matheus.fluviapp.model.viagem.Viagem
 import dev.matheus.fluviapp.navigation.navcomposables.viagem.ID_VIAGEM_ARGUMENT
 import dev.matheus.fluviapp.services.repository.cadastro.ConstanteRepository
@@ -16,7 +20,9 @@ import dev.matheus.fluviapp.services.repository.cadastro.viagem.EmpresaRepositor
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.NavioRepository
 import dev.matheus.fluviapp.services.repository.firebase.ViagemRepository
 import dev.matheus.fluviapp.ui.states.FormViagemUiState
+import dev.matheus.fluviapp.ui.states.TarifaInputUiState
 import dev.matheus.fluviapp.ui.viewmodel.helpers.viagem.validarViagem
+import java.math.BigDecimal
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -59,18 +65,28 @@ class FormViagemViewModel @Inject constructor(
     }
 
     private suspend fun carregarFontes() {
+        // Um input de tarifa por célula do catálogo (ADR-0013): acomodação (passageiro) + classe de veículo.
+        // Moto sai da lista — sua tarifa é a regra por cilindrada (Fase 3), não uma célula cadastrada.
+        val acomodacoes = constanteRepository.obterTodosPorCategoria(ACOMODACAO.name)
+            .map { TarifaInputUiState(chave = it.descricaoNome, grupoTitulo = R.string.label_grupo_tarifa_acomodacao) }
+        val veiculos = constanteRepository.obterTodosPorCategoria(VEICULO.name)
+            .filterNot { it.descricaoNome == MOTO.name }
+            .map { TarifaInputUiState(chave = it.descricaoNome, grupoTitulo = R.string.label_grupo_tarifa_veiculo) }
         _uiState.update {
             it.copy(
                 listaEmpresas = empresaRepository.obterTodas(),
                 listaMunicipios = constanteRepository.obterTodosPorCategoria(MUNICIPIO.name),
+                tarifas = acomodacoes + veiculos,
             )
         }
     }
 
     private suspend fun carregarParaEdicao() {
         val card = viagemDadosViagemMapper.map(viagemRepository.obterPorId(idViagem))
-        _uiState.update {
-            it.copy(
+        // Prefill das tarifas já cadastradas, casadas por chave (acomodação sem tarifa fica em branco).
+        val valores = viagemRepository.obterTarifas(idViagem).associate { it.chave to it.valor }
+        _uiState.update { st ->
+            st.copy(
                 titulo = R.string.subtitle_editar_viagem,
                 empresa = card.empresa,
                 navio = card.navio,
@@ -79,6 +95,9 @@ class FormViagemViewModel @Inject constructor(
                 navioDesabilitado = card.empresa.isBlank(),
                 trechoDestinoDesabilitado = card.origem.isBlank(), // corrige o prefill (lia estado velho)
                 listaNavios = naviosDaEmpresa(card.empresa),
+                tarifas = st.tarifas.map { input ->
+                    valores[input.chave]?.let { input.copy(valor = it.paraCampoMoeda()) } ?: input
+                },
             )
         }
     }
@@ -127,6 +146,14 @@ class FormViagemViewModel @Inject constructor(
         it.copy(trechoDestino = "", isTrechoDestinoError = false)
     }
 
+    fun onTarifaChange(chave: String, valor: String) = _uiState.update { st ->
+        st.copy(
+            tarifas = st.tarifas.map {
+                if (it.chave == chave) it.copy(valor = valor, isError = false) else it
+            },
+        )
+    }
+
     fun salvar() {
         val erros = validarViagem(_uiState.value)
         if (!erros.valido) {
@@ -136,6 +163,7 @@ class FormViagemViewModel @Inject constructor(
                     isNavioError = erros.navio,
                     isTrechoOrigemError = erros.trechoOrigem,
                     isTrechoDestinoError = erros.trechoDestino,
+                    tarifas = it.tarifas.map { t -> t.copy(isError = t.chave in erros.tarifasInvalidas) },
                 )
             }
             return
@@ -150,6 +178,12 @@ class FormViagemViewModel @Inject constructor(
                 val origem = s.listaMunicipios.extrairPorDescricao(s.trechoOrigem)
                 val destino = s.listaMunicipios.extrairPorDescricao(s.trechoDestino)
 
+                // Só acomodações com valor preenchido viram célula (branco = não ofertada, ADR-0013). O
+                // viagemId é (re)carimbado no repo — na criação o id só existe lá.
+                val tarifas = s.tarifas
+                    .filter { it.valor.isNotBlank() }
+                    .map { TarifaViagem(idViagem, it.chave, it.valor.trim().replace(",", ".").toDouble()) }
+
                 viagemRepository.salvar(
                     Viagem(
                         id = idViagem, // "" na criação → auto-id no repo
@@ -159,7 +193,8 @@ class FormViagemViewModel @Inject constructor(
                         // Vínculo vivo só por id (ADR-0008 Fase 3); nomes resolvidos na fronteira.
                         empresaId = empresa.id,
                         navioId = navio.id,
-                    )
+                    ),
+                    tarifas,
                 )
                 _sucesso.send(Unit)
             } catch (e: Exception) {
@@ -168,6 +203,10 @@ class FormViagemViewModel @Inject constructor(
             }
         }
     }
+
+    /** Double armazenado → texto do campo, sem zeros/`.0` supérfluos (300.0 → "300", 150.5 → "150.5"). */
+    private fun Double.paraCampoMoeda(): String =
+        BigDecimal.valueOf(this).stripTrailingZeros().toPlainString()
 
     private companion object {
         const val TAG = "formViagemViewModel"

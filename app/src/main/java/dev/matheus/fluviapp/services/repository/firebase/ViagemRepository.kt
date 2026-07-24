@@ -1,5 +1,6 @@
 package dev.matheus.fluviapp.services.repository.firebase
 
+import dev.matheus.fluviapp.model.viagem.TarifaViagem
 import dev.matheus.fluviapp.model.viagem.Viagem
 import kotlinx.coroutines.flow.Flow
 
@@ -9,8 +10,11 @@ import kotlinx.coroutines.flow.Flow
  */
 interface ViagemRepository {
     fun sincronizar()
-    suspend fun salvar(viagem: Viagem)
+    /** Salva a viagem e sua tabela de tarifas (ADR-0013) — os dois juntos, como agregado. */
+    suspend fun salvar(viagem: Viagem, tarifas: List<TarifaViagem>)
     suspend fun obterPorId(id: String): Viagem
+    /** Tarifas cadastradas da viagem (ADR-0013), p/ prefill na edição. */
+    suspend fun obterTarifas(viagemId: String): List<TarifaViagem>
     suspend fun obterTodas(): List<Viagem>
     /** Observação reativa do espelho Room (SSOT — estudo sincronizacao-firestore-room.md, D1). */
     fun observarTodas(): Flow<List<Viagem>>

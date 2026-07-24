@@ -30,6 +30,7 @@ fun Passagem.toPassagemDocumento(): PassagemDocumento {
         valorDebito = valorDebito,
         valorCredito = valorCredito,
         desconto = desconto,
+        tarifaBase = tarifaBase,
         observacao = observacao,
         tipoPassagem = tipoPassagem,
         gratuidade = gratuidade,
@@ -59,7 +60,8 @@ fun Passagem.toPassagemDocumento(): PassagemDocumento {
             tipoVeiculo = tipoVeiculo,
             modeloVeiculo = modeloVeiculo,
             placaVeiculo = placaVeiculo,
-            corVeiculo = corVeiculo
+            corVeiculo = corVeiculo,
+            cilindrada = cilindrada
         ),
         funcionarioResponsavel = funcionarioResponsavel,
         funcionarioId = funcionarioId,

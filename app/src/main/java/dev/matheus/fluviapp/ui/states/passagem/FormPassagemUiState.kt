@@ -23,6 +23,9 @@ data class FormPassagemUiState(
     val origemViagem: String = "",
     val destinoViagem: String = "",
     val codigoViagem: String = "",
+    // Tabela de tarifas da viagem selecionada (ADR-0013), chave (acomodação) → valor da inteira. Alimenta
+    // o preview de tarifa/valor no form; a célula é escolhida pela acomodação do passageiro.
+    val tarifasViagem: Map<String, Double> = emptyMap(),
 
     val horaViagem: String = "",
     val onHoraViagemChange: (String) -> Unit = {},

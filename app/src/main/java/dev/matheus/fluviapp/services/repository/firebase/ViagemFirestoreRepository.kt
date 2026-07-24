@@ -1,8 +1,12 @@
 package dev.matheus.fluviapp.services.repository.firebase
 
 import android.util.Log
+import dev.matheus.fluviapp.database.dao.cadastro.viagem.TarifaViagemDao
 import dev.matheus.fluviapp.database.dao.cadastro.viagem.ViagemDao
 import dev.matheus.fluviapp.extensions.formatarCodigoViagemNavioFB
+import dev.matheus.fluviapp.extensions.paraMapaTarifas
+import dev.matheus.fluviapp.extensions.tarifasParaLinhas
+import dev.matheus.fluviapp.model.viagem.TarifaViagem
 import dev.matheus.fluviapp.model.viagem.Viagem
 import dev.matheus.fluviapp.model.viagem.toDocumento
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.NavioRepository
@@ -24,6 +28,7 @@ import javax.inject.Singleton
 @Singleton
 class ViagemFirestoreRepository @Inject constructor(
     private val dao: ViagemDao,
+    private val tarifaDao: TarifaViagemDao,
     private val firestore: FirebaseFirestore,
     private val registroCadastro: RegistroCadastro,
     private val navioRepository: NavioRepository,
@@ -43,12 +48,20 @@ class ViagemFirestoreRepository @Inject constructor(
             colecao = COLLECTION_VIAGENS,
             scope = syncScope,
             registro = registroSincronizacao,
-            paraModelo = { it.toViagemDocumento().toViagem(it.id) },
-            salvarTodos = { dao.salvarTodas(*it.toTypedArray()) },
+            // Espelha a viagem E sua tabela de tarifas (ADR-0013): o doc traz o mapa aninhado, achatado
+            // em linhas TarifaViagem por viagemId.
+            paraModelo = { bruto ->
+                val doc = bruto.toViagemDocumento()
+                doc.toViagem(bruto.id) to doc.tarifasParaLinhas(bruto.id)
+            },
+            salvarTodos = { pares ->
+                dao.salvarTodas(*pares.map { it.first }.toTypedArray())
+                espelharTarifas(pares.map { it.first.id to it.second })
+            },
         )
     }
 
-    override suspend fun salvar(viagem: Viagem) {
+    override suspend fun salvar(viagem: Viagem, tarifas: List<TarifaViagem>) {
         val documento = if (viagem.id.isBlank()) {
             firestore.collection(COLLECTION_VIAGENS).document()
         } else {
@@ -68,15 +81,24 @@ class ViagemFirestoreRepository @Inject constructor(
             throw RuntimeException("Falha ao salvar viagem: ${e.message}", e)
         }
 
+        // Tarifas (ADR-0013): re-carimba o viagemId (na criação o id só nasce aqui) e substitui o
+        // conjunto local (delete+insert). O mesmo conjunto vira o mapa aninhado do doc — o `.set`
+        // reescreve o doc inteiro, então a tabela tem de ir junta ou seria apagada.
+        val linhas = tarifas.map { it.copy(viagemId = completo.id) }
+        tarifaDao.deletarPorViagem(completo.id)
+        if (linhas.isNotEmpty()) tarifaDao.salvarTodas(*linhas.toTypedArray())
+
         // Room já tem o dado (otimista). Aguarda o ack do Firestore: SUCESSO se confirmar,
         // WARNING (pendente-sync) se rejeitar/offline — não relança, o dado local reconcilia.
         try {
-            documento.set(completo.toDocumento()).await()
+            documento.set(completo.toDocumento().copy(tarifas = linhas.paraMapaTarifas())).await()
             registroCadastro.salvou(ENTIDADE, completo.id)
         } catch (e: Exception) {
             registroCadastro.pendenteDeSync(ENTIDADE, completo.id, e)
         }
     }
+
+    override suspend fun obterTarifas(viagemId: String) = tarifaDao.obterPorViagemAgora(viagemId)
 
     override suspend fun obterPorId(id: String) = dao.obterPorId(id).first()
 
@@ -91,19 +113,34 @@ class ViagemFirestoreRepository @Inject constructor(
     override suspend fun atualizarDoServidor() {
         try {
             val snapshot = firestore.collection(COLLECTION_VIAGENS).get(Source.SERVER).await()
-            val viagens = snapshot.documents
-                .map { DocumentoBruto(it.id, it.data.orEmpty()) }
-                .mapNotNull { it.toViagemDocumento().toViagem(it.id) }
-            dao.salvarTodas(*viagens.toTypedArray())
+            val docs = snapshot.documents.map { doc ->
+                val bruto = DocumentoBruto(doc.id, doc.data.orEmpty()).toViagemDocumento()
+                doc.id to bruto
+            }
+            dao.salvarTodas(*docs.map { (id, doc) -> doc.toViagem(id) }.toTypedArray())
+            espelharTarifas(docs.map { (id, doc) -> id to doc.tarifasParaLinhas(id) })
             registroSincronizacao.snapshotRecebido(COLLECTION_VIAGENS, snapshot.size(), snapshot.metadata.isFromCache)
         } catch (e: Exception) {
             registroSincronizacao.erro(COLLECTION_VIAGENS, e)
         }
     }
 
+    /**
+     * Espelha o conjunto de tarifas de cada viagem no Room (ADR-0013). Delete+insert por viagem = espelho
+     * honesto: uma célula removida no Firestore não fica órfã localmente (diferente do upsert-só das
+     * entidades). O balanço lê tarifas por viagemId, então a fidelidade importa.
+     */
+    private suspend fun espelharTarifas(porViagem: List<Pair<String, List<TarifaViagem>>>) {
+        porViagem.forEach { (viagemId, tarifas) ->
+            tarifaDao.deletarPorViagem(viagemId)
+            if (tarifas.isNotEmpty()) tarifaDao.salvarTodas(*tarifas.toTypedArray())
+        }
+    }
+
     override suspend fun deletar(id: String) {
         val viagem = obterPorId(id)
         dao.deletar(viagem)
+        tarifaDao.deletarPorViagem(id) // limpa a tabela de tarifas da viagem (ADR-0013)
         try {
             firestore.collection(COLLECTION_VIAGENS).document(id).delete()
         } catch (e: Exception) {

@@ -126,6 +126,7 @@
     <string name="label_carros">Carros</string>
     <string name="label_motos">Motos</string>
     <string name="label_caminhoes">Caminhões</string>
+    <string name="label_carretas">Carretas</string>
     <string name="label_suites_2">Suíte 2 Pessoas</string>
     <string name="label_suites_3">Suítes 3 Pessoas</string>
     <string name="label_pix">Pix</string>
@@ -160,6 +161,10 @@
     <string name="label_cor_preview">Cor</string>
     <string name="label_filtro_empresa">Por Empresa</string>
     <string name="label_tarifa">Tarifa</string>
+    <string name="label_cilindrada">Cilindrada (cc)</string>
+    <string name="label_tarifas_titulo">Tarifa da inteira</string>
+    <string name="label_grupo_tarifa_acomodacao">Passageiro (por acomodação)</string>
+    <string name="label_grupo_tarifa_veiculo">Veículo (moto é calculada pela cilindrada)</string>
     <string name="label_valor_pago">Valor Pago</string>
     <string name="label_menu_viagens">Viagens</string>
     <string name="label_menu_agentes">Agentes</string>
@@ -249,6 +254,9 @@
     <string name="error_senha_curta">Senha deve ter ao menos 6 caracteres.</string>
     <string name="error_senhas_diferentes">As senhas não conferem.</string>
     <string name="error_camp_obrig">Campo Obrigatório</string>
+    <string name="error_valor_invalido">Informe um valor maior que zero</string>
+    <string name="error_emissao_sem_tarifa">Sem tarifa cadastrada para esta viagem. Cadastre a tarifa na viagem antes de emitir.</string>
+    <string name="error_emissao_cota_gratuidade">Cota de gratuidade atingida nesta viagem para: %1$s (máx. 2 por categoria).</string>
     <string name="error_data_menor">Data Inválida. Selecione Data atual ou maior.</string>
     <string name="error_usuario_inexistente">Usuário Inexistente ou Desabilitado.</string>
     <string name="error_data_crianca">Data de Nascimento deve ser menor que 6 anos.</string>

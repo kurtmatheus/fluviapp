@@ -30,5 +30,22 @@ data class FormViagemUiState(
     val listaNavios: List<Navio> = emptyList(),
     val listaMunicipios: List<Constante> = emptyList(),
 
+    // Tarifa da inteira por acomodação (ADR-0013) — um input por acomodação do catálogo. Branco = não
+    // ofertada (não vira célula TarifaViagem). Preparado p/ as classes de veículo (Fase 3, mesma forma).
+    val tarifas: List<TarifaInputUiState> = emptyList(),
+
     val isProcessando: Boolean = false,
+)
+
+/**
+ * Entrada de tarifa da inteira de UMA célula no form de Viagem (ADR-0013). `chave` = chave tarifária
+ * canônica — acomodação (REDE/SUITE/CAMAROTE) p/ passageiro, ou classe (CARRO/CARRETA/CAMINHAO) p/ veículo
+ * (moto é por regra, não entra aqui). `valor` é texto livre (branco = não ofertada → sem célula; preenchido
+ * tem de ser número > 0). `grupoTitulo` (@StringRes) rotula a seção onde a entrada aparece.
+ */
+data class TarifaInputUiState(
+    val chave: String,
+    val valor: String = "",
+    val isError: Boolean = false,
+    val grupoTitulo: Int = R.string.label_tarifas_titulo,
 )

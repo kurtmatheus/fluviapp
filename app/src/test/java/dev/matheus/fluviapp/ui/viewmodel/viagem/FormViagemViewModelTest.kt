@@ -6,10 +6,13 @@ import dev.matheus.fluviapp.fakes.FakeEmpresaRepository
 import dev.matheus.fluviapp.fakes.FakeNavioRepository
 import dev.matheus.fluviapp.fakes.FakeViagemRepository
 import dev.matheus.fluviapp.model.cadastro.constantes.Constante
+import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Categoria.ACOMODACAO
 import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Categoria.MUNICIPIO
+import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Categoria.VEICULO
 import dev.matheus.fluviapp.model.mappers.ViagemDadosViagemMapper
 import dev.matheus.fluviapp.model.viagem.Empresa
 import dev.matheus.fluviapp.model.viagem.Navio
+import dev.matheus.fluviapp.model.viagem.TarifaViagem
 import dev.matheus.fluviapp.util.MainDispatcherRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.toList
@@ -41,6 +44,11 @@ class FormViagemViewModelTest {
         constantes = listOf(
             Constante("1", "Porto Norte", MUNICIPIO.name),
             Constante("2", "Ilha Central", MUNICIPIO.name),
+            Constante("a1", "REDE", ACOMODACAO.name),
+            Constante("a2", "SUITE", ACOMODACAO.name),
+            Constante("v1", "CARRO", VEICULO.name),
+            Constante("v2", "MOTO", VEICULO.name),
+            Constante("v3", "CARRETA", VEICULO.name),
         )
     }
     private val fakeViagem = FakeViagemRepository()
@@ -118,5 +126,70 @@ class FormViagemViewModelTest {
         assertEquals("n1", salvo.navioId)
         assertEquals(1, eventos.size)
         job.cancel()
+    }
+
+    @Test
+    fun `carrega tarifas de acomodacao e de veiculo, excluindo a moto`() = runTest(mainRule.dispatcher) {
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        val chaves = vm.uiState.value.tarifas.map { it.chave }.toSet()
+        // acomodações + classes de veículo; MOTO fora (tarifa por cilindrada, não célula).
+        assertEquals(setOf("REDE", "SUITE", "CARRO", "CARRETA"), chaves)
+        assertTrue(vm.uiState.value.tarifas.all { it.valor.isBlank() }) // nova viagem: tudo em branco
+    }
+
+    @Test
+    fun `salvar com tarifa preenchida persiste a linha`() = runTest(mainRule.dispatcher) {
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        vm.onEmpresaChange("ACME")
+        advanceUntilIdle()
+        vm.onNavioChange("F/B")
+        vm.onTrechoOrigemChange("Porto Norte")
+        vm.onTrechoDestinoChange("Ilha Central")
+        vm.onTarifaChange("REDE", "300")
+        vm.salvar()
+        advanceUntilIdle()
+
+        assertEquals(1, fakeViagem.salvos.size)
+        // só a REDE (preenchida) vira célula; a SUITE em branco não. viagemId "" na criação (repo carimba).
+        assertEquals(listOf(TarifaViagem("", "REDE", 300.0)), fakeViagem.tarifasSalvas)
+    }
+
+    @Test
+    fun `tarifa em branco nao vira linha`() = runTest(mainRule.dispatcher) {
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        vm.onEmpresaChange("ACME")
+        advanceUntilIdle()
+        vm.onNavioChange("F/B")
+        vm.onTrechoOrigemChange("Porto Norte")
+        vm.onTrechoDestinoChange("Ilha Central")
+        vm.salvar() // nenhuma tarifa preenchida
+        advanceUntilIdle()
+
+        assertEquals(1, fakeViagem.salvos.size)
+        assertTrue(fakeViagem.tarifasSalvas.isEmpty())
+    }
+
+    @Test
+    fun `tarifa invalida bloqueia o salvar e marca o campo`() = runTest(mainRule.dispatcher) {
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        vm.onEmpresaChange("ACME")
+        advanceUntilIdle()
+        vm.onNavioChange("F/B")
+        vm.onTrechoOrigemChange("Porto Norte")
+        vm.onTrechoDestinoChange("Ilha Central")
+        vm.onTarifaChange("REDE", "abc") // não numérico
+        vm.salvar()
+        advanceUntilIdle()
+
+        assertTrue(fakeViagem.salvos.isEmpty())
+        assertTrue(vm.uiState.value.tarifas.first { it.chave == "REDE" }.isError)
     }
 }

@@ -235,6 +235,51 @@ fun FormTextFieldBrownNoIcon(
     )
 }
 
+/**
+ * Igual ao [FormTextFieldBrownLeadingIcon], mas com **rótulo dinâmico** (`String`, não `@StringRes`) — p/
+ * campos guiados por dado, como a tarifa por acomodação (ADR-0013), cujo rótulo vem do catálogo `Constante`
+ * e não de um recurso fixo.
+ */
+@Composable
+fun FormTextFieldBrownLeadingIconLabelText(
+    modifier: Modifier,
+    value: String,
+    label: String,
+    onValueChange: (String) -> Unit,
+    keyboardOptions: KeyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+    focusManager: FocusManager = LocalFocusManager.current,
+    isError: Boolean = false,
+    textoErro: Int = R.string.error_camp_obrig,
+    leadingIcon: @Composable () -> Unit = {},
+) {
+    OutlinedTextField(
+        modifier = modifier,
+        leadingIcon = leadingIcon,
+        value = value,
+        onValueChange = onValueChange,
+        label = { Text(label) },
+        keyboardOptions = keyboardOptions,
+        keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Next) }),
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedTextColor = MaterialTheme.colorScheme.onBackground,
+            unfocusedTextColor = MaterialTheme.colorScheme.onBackground,
+            focusedBorderColor = MaterialTheme.colorScheme.onBackground,
+            unfocusedBorderColor = MaterialTheme.colorScheme.onBackground,
+            focusedLabelColor = MaterialTheme.colorScheme.onBackground,
+            unfocusedLabelColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.75f),
+            focusedLeadingIconColor = MaterialTheme.colorScheme.onBackground,
+            unfocusedLeadingIconColor = MaterialTheme.colorScheme.onBackground,
+            errorLeadingIconColor = Red,
+            errorBorderColor = Red,
+            errorLabelColor = Red,
+            errorSupportingTextColor = Red,
+        ),
+        shape = RoundedCornerShape(16.dp),
+        isError = isError,
+        supportingText = { if (isError) Text(text = stringResource(id = textoErro)) },
+    )
+}
+
 @Preview(showBackground = true)
 @Composable
 private fun FormTextFieldBrownTrailingIconPreview() {

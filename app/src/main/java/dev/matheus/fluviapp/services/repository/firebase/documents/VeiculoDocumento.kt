@@ -8,4 +8,6 @@ data class VeiculoDocumento(
     val modeloVeiculo: String? = null,
     val placaVeiculo: String? = null,
     val corVeiculo: String? = null,
+    // Cilindrada da moto (ADR-0013): registra o cc que justificou a tarifaBase (regra por cilindrada).
+    val cilindrada: String? = null,
 )

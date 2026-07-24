@@ -43,4 +43,28 @@ class DocumentoBrutoMappersTest {
 
         assertEquals(42, doc.numeroBilhete)
     }
+
+    @Test
+    fun `toViagemDocumento coage o mapa de tarifas (valores como Number)`() {
+        val bruto = DocumentoBruto(
+            "v1",
+            mapOf(
+                "codigo" to "MAN-STZ-BALV",
+                // Firestore devolve número ora Double, ora Long — ambos têm de virar Double.
+                "tarifas" to mapOf("REDE" to 300.0, "SUITE" to 450L),
+            ),
+        )
+
+        val doc = bruto.toViagemDocumento()
+
+        assertEquals(300.0, doc.tarifas["REDE"]!!, 0.0)
+        assertEquals(450.0, doc.tarifas["SUITE"]!!, 0.0)
+    }
+
+    @Test
+    fun `toViagemDocumento sem tarifas vira mapa vazio`() {
+        val doc = DocumentoBruto("v1", mapOf("codigo" to "X")).toViagemDocumento()
+
+        assertTrue(doc.tarifas.isEmpty())
+    }
 }

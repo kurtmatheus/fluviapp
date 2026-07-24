@@ -7,10 +7,12 @@ import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Categoria.CATEGO
 import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Categoria.DOCUMENTO
 import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Categoria.PAGAMENTO
 import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Categoria.STATUS_PASSAGEM
+import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.MOTO
 import dev.matheus.fluviapp.model.mappers.ViagemDadosViagemMapper
 import dev.matheus.fluviapp.model.passagem.Passagem
+import dev.matheus.fluviapp.model.passagem.ResultadoEmissao
 import dev.matheus.fluviapp.model.passagem.StatusPassagem
-import dev.matheus.fluviapp.model.passagem.Passagem.Companion.DESCONTO_ANTAC
+import dev.matheus.fluviapp.model.passagem.tarifaMotoBase
 import dev.matheus.fluviapp.model.viagem.Viagem
 import dev.matheus.fluviapp.services.repository.cadastro.ConstanteRepository
 import dev.matheus.fluviapp.services.repository.cadastro.passagem.AgenteRepository
@@ -401,6 +403,41 @@ class FormPassagemHelper(
         atualizarOrigemViagem(card.origem)
         atualizarDestinoViagem(card.destino)
         atualizarCodigoViagem(card.codigo)
+
+        // Tabela de tarifas da viagem (ADR-0013): alimenta o preview de valor e a tarifaBase congelada.
+        val tarifas = viagemRepository.obterTarifas(viagem.id).associate { it.chave to it.valor }
+        uiStatePassagem.update { it.copy(tarifasViagem = tarifas) }
+    }
+
+    /**
+     * Guardas de emissão (ADR-0013 §2b), fail-closed. Roda antes de montar/salvar:
+     * - **Sem tarifa**: a chave escolhida (acomodação/classe/moto) não resolve uma tarifaBase → bloqueia
+     *   (sem base não há como medir desconto/déficit).
+     * - **Cota de gratuidade**: só na criação, máx. 2 por categoria por viagem (contagem firestore-driven).
+     */
+    suspend fun validarEmissao(idPassagem: String): ResultadoEmissao {
+        val statePassagem = uiStatePassagem.value
+        val statePassageiro = uiStatePassageiro.value
+        val stateVeiculo = uiStateVeiculo.value
+
+        val tarifaBase = resolverTarifaBase(statePassagem, statePassageiro, stateVeiculo)
+        if (tarifaBase == null) return ResultadoEmissao.SemTarifa
+
+        // Cota vale na criação E na edição que vira gratuidade; o próprio bilhete é excluído da contagem
+        // (excetoId) para uma edição não bloquear a si mesma.
+        if (statePassageiro.isGratuidade) {
+            val categoria = statePassageiro.tipoGratuidade
+            val emitidas = passagemRepository.contarGratuidadePorViagem(
+                viagemId = statePassagem.viagemId,
+                gratuidade = categoria,
+                excetoId = idPassagem,
+            )
+            if (emitidas >= LIMITE_GRATUIDADE_POR_CATEGORIA) {
+                return ResultadoEmissao.CotaGratuidadeAtingida(categoria)
+            }
+        }
+
+        return ResultadoEmissao.Ok
     }
 
     suspend fun salvarPassagem(
@@ -430,7 +467,10 @@ class FormPassagemHelper(
         // Status canônico (ADR-0012): grava o .name do tipo de domínio; formatação fica na exibição.
         val situacaoPassagem = StatusPassagem.A_EMITIR.name
 
-        val desconto = verificarDesconto(statePassageiro, statePassagem)
+        // Desconto discricionário informado pelo operador (ADR-0013): guardado cru, sem acúmulo ANTAC. Para
+        // bilhetes com tarifaBase o mapper DERIVA o desconto (resíduo abaixo da devida); este valor serve de
+        // fallback (veículo / bilhete sem tarifa tabelada).
+        val desconto = statePassagem.desconto.toDoubleOrNull()
 
         var passagemExistente: Passagem? = null
 
@@ -439,6 +479,12 @@ class FormPassagemHelper(
         }
 
         val numeroBilhete = passagemRepository.obterContagem().inc()
+
+        // Congela a tarifa da inteira (ADR-0013): célula da tabela da Viagem p/ a chave escolhida
+        // (acomodação do passageiro ou classe do veículo), resolvida na emissão. Preservada na edição
+        // (snapshot, como a autoria). Moto → null (tarifa por cilindrada, próxima fatia da Fase 3).
+        val tarifaBase = passagemExistente?.tarifaBase
+            ?: resolverTarifaBase(statePassagem, statePassageiro, stateVeiculo)
 
         return Passagem(
             id = passagemExistente?.id.orEmpty(),
@@ -461,6 +507,7 @@ class FormPassagemHelper(
             valorDebito = statePassagem.valorDebito.toDoubleOrNull(),
             valorCredito = statePassagem.valorCredito.toDoubleOrNull(),
             desconto = desconto,
+            tarifaBase = tarifaBase,
             observacao = statePassagem.observacao,
             tipoPassagem = statePassageiro.tipoPassagem,
             gratuidade = statePassageiro.tipoGratuidade,
@@ -484,6 +531,7 @@ class FormPassagemHelper(
             modeloVeiculo = stateVeiculo.modeloVeiculo,
             placaVeiculo = stateVeiculo.placaVeiculo,
             corVeiculo = stateVeiculo.corVeiculo,
+            cilindrada = stateVeiculo.cilindrada,
             // Autoria congelada na emissão (ADR-0008/0010): só a CRIAÇÃO carimba o usuário atual;
             // editar preserva dono/responsável originais (um gestor editar não vira dono).
             funcionarioResponsavel = passagemExistente?.funcionarioResponsavel ?: funcionarioResponsavel,
@@ -492,10 +540,30 @@ class FormPassagemHelper(
         )
     }
 
-    private fun verificarDesconto(
+    /**
+     * Tarifa da inteira da célula (viagem × chave tarifária) na tabela cadastrada (ADR-0013). A **chave** é
+     * a acomodação (passageiro) ou o tipo de veículo (CARRO/CARRETA/CAMINHAO). Lê o espelho local das
+     * tarifas da viagem. Moto cai em null aqui: não há célula — sua tarifa é a regra por cilindrada (próxima
+     * fatia da Fase 3). Chave em branco ou célula sem tarifa cadastrada → null (o fail-closed é passo à parte).
+     */
+    private suspend fun resolverTarifaBase(
+        statePassagem: FormPassagemUiState,
         statePassageiro: FormPassageiroUiState,
-        statePassagem: FormPassagemUiState
-    ): Double = calcularDesconto(statePassageiro, statePassagem)
+        stateVeiculo: FormVeiculoUiState,
+    ): Double? {
+        val ehVeiculo = statePassagem.isVeiculoChecked
+
+        // Moto: tarifa pela regra da cilindrada (ADR-0013), não por célula cadastrada.
+        if (ehVeiculo && stateVeiculo.tipoVeiculo == MOTO.name) {
+            val cc = stateVeiculo.cilindrada.toIntOrNull() ?: return null
+            return tarifaMotoBase(cc).toDouble()
+        }
+
+        val chave = if (ehVeiculo) stateVeiculo.tipoVeiculo else statePassageiro.acomodacao
+        if (chave.isBlank()) return null
+        return viagemRepository.obterTarifas(statePassagem.viagemId)
+            .firstOrNull { it.chave == chave }?.valor
+    }
 
     fun preencherDadosPassagem(
         passagem: Passagem,
@@ -540,5 +608,6 @@ class FormPassagemHelper(
 
     companion object {
         private val COMANDOS_VOZ = listOf("apagar", "deletar", "apaga", "deleta")
+        private const val LIMITE_GRATUIDADE_POR_CATEGORIA = 2
     }
 }

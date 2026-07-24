@@ -12,6 +12,11 @@ data class ViagemDocumento(
     // Passagem e da derivação do código. Default "" cobre docs antigos (schemaless).
     val empresaId: String = "",
     val navioId: String = "",
+    // Tabela de tarifas da inteira (ADR-0013) na forma natural do Firestore: mapa aninhado chave→valor
+    // (acomodação REDE/SUITE/CAMAROTE p/ passageiro; classe CARRO/CARRETA/CAMINHAO p/ veículo — moto é
+    // por regra). Espelha a tabela-filha TarifaViagem no Room; o mapper achata mapa↔linhas
+    // (TarifaViagemExtensions). Default vazio cobre docs antigos (schemaless).
+    val tarifas: Map<String, Double> = emptyMap(),
 )
 
 fun ViagemDocumento.toViagem(id: String): Viagem {

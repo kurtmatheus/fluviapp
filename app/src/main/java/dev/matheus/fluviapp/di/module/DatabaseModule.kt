@@ -11,6 +11,7 @@ import dev.matheus.fluviapp.database.dao.cadastro.ConstanteDao
 import dev.matheus.fluviapp.database.dao.cadastro.passagem.AgenteDao
 import dev.matheus.fluviapp.database.dao.cadastro.viagem.EmpresaDao
 import dev.matheus.fluviapp.database.dao.cadastro.viagem.NavioDao
+import dev.matheus.fluviapp.database.dao.cadastro.viagem.TarifaViagemDao
 import dev.matheus.fluviapp.database.dao.cadastro.viagem.ViagemDao
 import dev.matheus.fluviapp.database.dao.operacoes.UsuarioDao
 import dev.matheus.fluviapp.database.dao.passagem.PassagemDao
@@ -206,6 +207,43 @@ val MIGRATION_12_13 = object : Migration(12, 13) {
     }
 }
 
+/**
+ * v13 → v14: tabela-filha `TarifaViagem` (ADR-0013) — tabela de tarifas da Viagem na forma normalizada
+ * (uma linha por `viagemId`+`chave`), o lado "SQL" do trade-off do ADR-0003, para o balanço agregar por
+ * viagem. Aditiva e não-destrutiva (padrão da 2→3: `CREATE TABLE IF NOT EXISTS`). PK composta
+ * `(viagemId, chave)`; `valor` REAL (Double na fronteira, ADR-0013 §6). Espelho do mapa no Firestore.
+ */
+val MIGRATION_13_14 = object : Migration(13, 14) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `TarifaViagem` " +
+                "(`viagemId` TEXT NOT NULL, `chave` TEXT NOT NULL, `valor` REAL NOT NULL, " +
+                "PRIMARY KEY(`viagemId`, `chave`))"
+        )
+    }
+}
+
+/**
+ * v14 → v15: `Passagem.tarifaBase` — a tarifa da inteira congelada na emissão (ADR-0013), fonte da tarifa
+ * devida e do desconto derivado. Aditiva e não-destrutiva; coluna anulável (null cobre bilhetes anteriores
+ * e o veículo, cuja tarifa por classe é Fase 3). Sem backfill (portfólio; regenera via seed).
+ */
+val MIGRATION_14_15 = object : Migration(14, 15) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE Passagem ADD COLUMN tarifaBase REAL")
+    }
+}
+
+/**
+ * v15 → v16: `Passagem.cilindrada` — o cc da moto que justificou a tarifaBase (ADR-0013), registro do
+ * bilhete e prefill na edição. Aditiva e não-destrutiva; coluna anulável (null cobre não-moto/anteriores).
+ */
+val MIGRATION_15_16 = object : Migration(15, 16) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE Passagem ADD COLUMN cilindrada TEXT")
+    }
+}
+
 @Module
 @InstallIn(SingletonComponent::class)
 class DatabaseModule {
@@ -220,7 +258,7 @@ class DatabaseModule {
         ).addMigrations(
             MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7,
             MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12,
-            MIGRATION_12_13,
+            MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16,
         ).build()
     }
 
@@ -247,6 +285,11 @@ class DatabaseModule {
     @Provides
     fun provideViagemDao(db: FluviAppDatabase): ViagemDao {
         return db.viagemDao()
+    }
+
+    @Provides
+    fun provideTarifaViagemDao(db: FluviAppDatabase): TarifaViagemDao {
+        return db.tarifaViagemDao()
     }
 
     @Provides

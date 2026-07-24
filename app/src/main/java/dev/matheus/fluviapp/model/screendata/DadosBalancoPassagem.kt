@@ -11,6 +11,7 @@ data class DadosBalancoPassagem(
     val totalCarros: String = "0",
     val totalMotos: String = "0",
     val totalCaminhoes: String = "0",
+     val totalCarretas: String = "0",
     val preenchidasSuitesGeral: String = "0",
     val capacidadeSuitesGeral: String = "0",
     val preenchidasSuites2Pessoas: String = "0",
@@ -20,3 +21,4 @@ data class DadosBalancoPassagem(
     val preenchidosCamarotes: String = "0",
     val capacidadeCamarotes: String = "0"
 )
+

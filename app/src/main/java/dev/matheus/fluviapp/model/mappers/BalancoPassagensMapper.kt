@@ -2,6 +2,7 @@ package dev.matheus.fluviapp.model.mappers
 
 import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.CAMAROTE
 import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.CAMINHAO
+import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.CARRETA
 import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.CARRO
 import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.GRATUIDADE
 import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.INTEIRA
@@ -52,6 +53,7 @@ class BalancoPassagensMapper @Inject constructor(
         var totalCarros = 0
         var totalMotos = 0
         var totalCaminhoes = 0
+        var totalCarretas = 0
 
         listaPassagem.forEach { passagem ->
             if (!passagem.ehVeiculo) {
@@ -112,6 +114,11 @@ class BalancoPassagensMapper @Inject constructor(
                         totalCaminhoes = totalCaminhoes.inc()
                     }
 
+                    CARRETA.name -> {
+                        preenchidosVeiculos = preenchidosVeiculos.inc()
+                        totalCarretas = totalCarretas.inc()
+                    }
+
                     else -> {}
                 }
             }
@@ -127,6 +134,7 @@ class BalancoPassagensMapper @Inject constructor(
             totalCarros = totalCarros.toString(),
             totalMotos = totalMotos.toString(),
             totalCaminhoes = totalCaminhoes.toString(),
+            totalCarretas = totalCarretas.toString(),
             capacidadeVeiculos = navio.capacidadeVeiculo.toString(),
             preenchidasSuitesGeral = preenchidasSuite.toString(),
             capacidadeSuitesGeral = (navio.capacidadeSuite2 + navio.capacidadeSuite3).toString(),

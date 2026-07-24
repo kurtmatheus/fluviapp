@@ -31,6 +31,7 @@ fun FormViagemScreen(
     onLimparTrechoOrigem: () -> Unit = {},
     onTrechoDestinoChange: (String) -> Unit = {},
     onLimparTrechoDestino: () -> Unit = {},
+    onTarifaChange: (String, String) -> Unit = { _, _ -> },
     onClickSalvar: () -> Unit = {},
     onClickVoltar: () -> Unit = {},
 ) {
@@ -61,6 +62,7 @@ fun FormViagemScreen(
                     onLimparTrechoOrigem = onLimparTrechoOrigem,
                     onTrechoDestinoChange = onTrechoDestinoChange,
                     onLimparTrechoDestino = onLimparTrechoDestino,
+                    onTarifaChange = onTarifaChange,
                 )
             }
             Column(

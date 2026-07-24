@@ -8,6 +8,7 @@ import dev.matheus.fluviapp.R
 import dev.matheus.fluviapp.extensions.isTextoNaoNulo
 import dev.matheus.fluviapp.extensions.toastMessage
 import dev.matheus.fluviapp.model.passagem.Passagem
+import dev.matheus.fluviapp.model.passagem.ResultadoEmissao
 import dev.matheus.fluviapp.model.mappers.ViagemDadosViagemMapper
 import dev.matheus.fluviapp.model.rascunho.aplicarEm
 import dev.matheus.fluviapp.model.rascunho.montarRascunho
@@ -192,6 +193,24 @@ class FormPassagemViewModel @Inject constructor(
     }
 
     suspend fun salvarPassagem(context: Context): String? {
+        // Guardas de emissão (ADR-0013 §2b), fail-closed: bloqueia sem tarifa tabelada ou com a cota de
+        // gratuidade da viagem já atingida. Mensagem via toast; não salva.
+        when (val emissao = formPassagemHelper.validarEmissao(idPassagem)) {
+            ResultadoEmissao.SemTarifa -> {
+                context.toastMessage(context.resources.getString(R.string.error_emissao_sem_tarifa))
+                return null
+            }
+
+            is ResultadoEmissao.CotaGratuidadeAtingida -> {
+                context.toastMessage(
+                    context.resources.getString(R.string.error_emissao_cota_gratuidade, emissao.categoria)
+                )
+                return null
+            }
+
+            ResultadoEmissao.Ok -> Unit
+        }
+
         val usuarioLogado = usuarioRepository.obterUltimoUsuarioLogado()
 
         return usuarioLogado?.let {

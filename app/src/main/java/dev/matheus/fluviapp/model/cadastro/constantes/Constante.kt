@@ -37,6 +37,7 @@ data class Constante(
         CARRO,
         MOTO,
         CAMINHAO,
+        CARRETA,
 
         //FORMA PAGAMENTO
         PIX,

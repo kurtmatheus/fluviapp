@@ -207,7 +207,8 @@ val listaTipoGratuidadeSample = listOf(
 val listaTipoVeiculoSample = listOf(
     Constante("1", "CARRO", VEICULO.name),
     Constante("2", "MOTO", VEICULO.name),
-    Constante("3", "CAMINHAO", VEICULO.name)
+    Constante("3", "CAMINHAO", VEICULO.name),
+    Constante("4", "CARRETA", VEICULO.name)
 )
 
 val dadosPassagemSample = DadosPassagem(

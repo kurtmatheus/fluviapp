@@ -33,6 +33,10 @@ data class Passagem(
     val valorDebito: Double? = null,
     val valorCredito: Double? = null,
     val desconto: Double? = null,
+    // Tarifa da inteira congelada na emissão (ADR-0013): a célula da tabela da Viagem para a acomodação
+    // escolhida. É a base de que a tarifa devida (meia = metade, gratuidade = 0) e o desconto derivam.
+    // Aditivo; null cobre bilhetes anteriores e o veículo (tarifa por classe é Fase 3).
+    val tarifaBase: Double? = null,
     val observacao: String? = null,
     val tipoPassagem: String? = null,
     val gratuidade: String? = null,
@@ -56,6 +60,8 @@ data class Passagem(
     val modeloVeiculo: String? = null,
     val placaVeiculo: String? = null,
     val corVeiculo: String? = null,
+    // Cilindrada da moto (ADR-0013): o cc que justificou a tarifaBase; registro do bilhete. Aditivo.
+    val cilindrada: String? = null,
     val funcionarioResponsavel: String,
     // Dono estável da passagem = uid do criador (ADR-0010 Fase 2). Congelado na emissão; o nome
     // (funcionarioResponsavel) segue como snapshot de exibição. Default "" cobre bilhetes anteriores.
@@ -75,11 +81,6 @@ data class Passagem(
 
     @Ignore
     val ehVeiculo = !placaVeiculo.isNullOrEmpty()
-
-    companion object {
-        const val TARIFA_ANTAC = "300"
-        const val DESCONTO_ANTAC = "50"
-    }
 }
 
 

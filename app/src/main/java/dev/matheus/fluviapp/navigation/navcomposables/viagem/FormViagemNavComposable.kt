@@ -49,6 +49,7 @@ fun NavGraphBuilder.formViagemNavComposable(
             onLimparTrechoOrigem = viewModel::onLimparTrechoOrigem,
             onTrechoDestinoChange = viewModel::onTrechoDestinoChange,
             onLimparTrechoDestino = viewModel::onLimparTrechoDestino,
+            onTarifaChange = viewModel::onTarifaChange,
             onClickSalvar = viewModel::salvar,
             onClickVoltar = onClickVoltar,
         )

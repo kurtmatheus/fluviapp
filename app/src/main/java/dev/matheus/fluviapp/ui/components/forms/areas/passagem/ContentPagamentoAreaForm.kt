@@ -39,15 +39,18 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import dev.matheus.fluviapp.R
+import dev.matheus.fluviapp.extensions.formataParaMoedaBrasileira
 import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.CREDITO
 import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.DEBITO
 import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.DINHEIRO
 import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.GRATUIDADE
 import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.MEIA
+import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.MOTO
 import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.PIX
 import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.REDE
 import dev.matheus.fluviapp.model.cadastro.passagem.Agente.Agencia.MATRIZ
-import dev.matheus.fluviapp.model.passagem.Passagem
+import dev.matheus.fluviapp.model.passagem.TipoPassagem
+import dev.matheus.fluviapp.model.passagem.tarifaMotoBase
 import dev.matheus.fluviapp.sampledata.listaFormaPagamentoSample
 import dev.matheus.fluviapp.ui.components.cards.CommonCard
 import dev.matheus.fluviapp.ui.components.forms.areas.CommonAreaForm
@@ -59,20 +62,37 @@ import dev.matheus.fluviapp.ui.components.texts.TextBoldBrownItalic
 import dev.matheus.fluviapp.ui.components.texts.TextRegularBrown
 import dev.matheus.fluviapp.ui.states.passagem.FormPassageiroUiState
 import dev.matheus.fluviapp.ui.states.passagem.FormPassagemUiState
+import dev.matheus.fluviapp.ui.states.passagem.FormVeiculoUiState
 import dev.matheus.fluviapp.ui.theme.Yellow
+import java.math.BigDecimal
 
 @Composable
 fun ContentPagamentoAreaForm(
     modifier: Modifier,
     state: FormPassagemUiState,
     statePassageiro: FormPassageiroUiState,
+    stateVeiculo: FormVeiculoUiState = FormVeiculoUiState(),
     focusManager: FocusManager = LocalFocusManager.current,
 ) {
 
-    if (statePassageiro.ehAcomodacaoRede) {
+    // Preview do valor tabelado (ADR-0013): a tarifa da célula da chave escolhida na tabela da viagem —
+    // acomodação (passageiro) ou classe (veículo); moto pela regra da cilindrada. Sem tarifa → sem card.
+    val tarifaBase: Double? = if (state.isVeiculoChecked) {
+        if (stateVeiculo.tipoVeiculo == MOTO.name) {
+            stateVeiculo.cilindrada.toIntOrNull()?.let { tarifaMotoBase(it).toDouble() }
+        } else {
+            state.tarifasViagem[stateVeiculo.tipoVeiculo]
+        }
+    } else {
+        state.tarifasViagem[statePassageiro.acomodacao]
+    }
+    if (tarifaBase != null) {
         CardValor(
             modifier = modifier,
-            state = statePassageiro
+            tarifaBase = tarifaBase,
+            // Veículo é sempre inteira (sem meia/gratuidade); passageiro segue o tipo escolhido.
+            tipo = if (state.isVeiculoChecked) TipoPassagem.INTEIRA
+            else TipoPassagem.de(statePassageiro.tipoPassagem) ?: TipoPassagem.INTEIRA,
         )
     }
 
@@ -142,24 +162,8 @@ fun ContentPagamentoAreaForm(
         )
     }
 
-//    FormTextFieldBrownLeadingIcon(
-//        modifier = modifier.fillMaxWidth(),
-//        value = state.desconto,
-//        label = R.string.label_desconto,
-//        onValueChange = state.onDescontoChange,
-//        enabled = state.isDescontoEnabled,
-//        leadingIcon = {
-//            Icon(
-//                painter = painterResource(id = R.drawable.ic_cifrao_24),
-//                contentDescription = stringResource(id = R.string.description_valor),
-//            )
-//        },
-//        focusManager = focusManager,
-//        keyboardOptions = KeyboardOptions(
-//            imeAction = ImeAction.Next,
-//            keyboardType = KeyboardType.Decimal
-//        )
-//    )
+    // Campo de desconto manual removido (ADR-0013): o desconto é DERIVADO (tarifa devida − valor cobrado),
+    // não digitado. O operador informa só o que cobrou; o desconto emerge no detalhe/impressão/balanço.
 
     FormTextFieldBrownTrailingIcon(
         modifier = modifier
@@ -184,10 +188,13 @@ fun ContentPagamentoAreaForm(
 @Composable
 private fun CardValor(
     modifier: Modifier,
-    state: FormPassageiroUiState,
+    tarifaBase: Double,
+    tipo: TipoPassagem,
 ) {
-    val tarifa = Passagem.TARIFA_ANTAC.formatarValoresMeia(state.isMeiaPassagem, state.isGratuidade)
-    val desconto = Passagem.DESCONTO_ANTAC.formatarValoresMeia(state.isMeiaPassagem, state.isGratuidade)
+    // Tarifa da inteira (base) e o valor devido da categoria (meia = metade, gratuidade = 0), da tabela
+    // real da viagem (ADR-0013). O desconto não entra aqui — só se conhece após o valor cobrado.
+    val base = BigDecimal.valueOf(tarifaBase)
+    val devida = tipo.tarifaDevida(base)
 
     CommonCard(
         modifier = modifier.fillMaxWidth(),
@@ -204,29 +211,14 @@ private fun CardValor(
             CardValorComponent(
                 modifier = modifier,
                 label = R.string.label_tarifa,
-                valor = tarifa
-            )
-            CardValorComponent(
-                modifier = modifier,
-                label = R.string.label_desconto,
-                valor = desconto
+                valor = base.formataParaMoedaBrasileira()
             )
             CardValorComponent(
                 modifier = modifier,
                 label = R.string.label_valor_total,
-                valor = (tarifa.toInt() - desconto.toInt()).toString()
+                valor = devida.formataParaMoedaBrasileira()
             )
         }
-    }
-}
-
-private fun String.formatarValoresMeia(isMeia: Boolean, isGratuidade: Boolean): String {
-    return if (isMeia) {
-        toInt().div(2).toString()
-    } else if (isGratuidade) {
-        "0"
-    } else {
-        this
     }
 }
 

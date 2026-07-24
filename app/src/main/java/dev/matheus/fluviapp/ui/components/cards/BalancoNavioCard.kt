@@ -99,6 +99,11 @@ fun BalancoNavioCard(
                     label = R.string.label_caminhoes,
                     valor = dadosBalancoPassagem.totalCaminhoes
                 )
+                CommonRowDetalhamento(
+                    modifier = modifier,
+                    label = R.string.label_carretas,
+                    valor = dadosBalancoPassagem.totalCarretas
+                )
             }
 
             CommonRowDetalhamento(

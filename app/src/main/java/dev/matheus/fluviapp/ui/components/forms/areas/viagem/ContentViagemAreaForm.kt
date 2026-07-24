@@ -1,24 +1,32 @@
 package dev.matheus.fluviapp.ui.components.forms.areas.viagem
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import dev.matheus.fluviapp.R
 import dev.matheus.fluviapp.model.mapDescricao
 import dev.matheus.fluviapp.ui.components.forms.areas.CommonAreaForm
 import dev.matheus.fluviapp.ui.components.forms.dropdowns.DropDownFormField
+import dev.matheus.fluviapp.ui.components.forms.fields.FormTextFieldBrownLeadingIconLabelText
 import dev.matheus.fluviapp.ui.states.FormViagemUiState
 
 @Composable
@@ -31,6 +39,7 @@ fun ContentViagemAreaForm(
     onLimparTrechoOrigem: () -> Unit,
     onTrechoDestinoChange: (String) -> Unit,
     onLimparTrechoDestino: () -> Unit,
+    onTarifaChange: (String, String) -> Unit,
     focusManager: FocusManager = LocalFocusManager.current,
 ) {
 
@@ -103,6 +112,49 @@ fun ContentViagemAreaForm(
             )
         }
     }
+
+    // Tarifa da inteira por acomodação (ADR-0013). Um campo por acomodação do catálogo; branco = não
+    // ofertada (não vira célula). O valor é a base da qual meia/gratuidade e desconto derivam.
+    if (state.tarifas.isNotEmpty()) {
+        Column(
+            modifier = modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Text(
+                text = stringResource(id = R.string.label_tarifas_titulo),
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onBackground,
+            )
+
+            state.tarifas.forEachIndexed { index, tarifa ->
+                // Subcabeçalho por grupo (Passageiro / Veículo) quando o grupo muda.
+                if (index == 0 || state.tarifas[index - 1].grupoTitulo != tarifa.grupoTitulo) {
+                    Text(
+                        text = stringResource(id = tarifa.grupoTitulo),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onBackground,
+                    )
+                }
+                val ultima = index == state.tarifas.lastIndex
+                FormTextFieldBrownLeadingIconLabelText(
+                    modifier = modifier.fillMaxWidth(),
+                    value = tarifa.valor,
+                    label = tarifa.chave,
+                    onValueChange = { onTarifaChange(tarifa.chave, it) },
+                    isError = tarifa.isError,
+                    textoErro = R.string.error_valor_invalido,
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Decimal,
+                        imeAction = if (ultima) ImeAction.Done else ImeAction.Next,
+                    ),
+                    focusManager = focusManager,
+                    leadingIcon = {
+                        Icon(imageVector = Icons.Filled.AttachMoney, contentDescription = null)
+                    },
+                )
+            }
+        }
+    }
 }
 
 @Preview(showBackground = true)
@@ -121,6 +173,7 @@ private fun ContentViagemAreaFormPreview() {
             onLimparTrechoOrigem = {},
             onTrechoDestinoChange = {},
             onLimparTrechoDestino = {},
+            onTarifaChange = { _, _ -> },
         )
     }
 }

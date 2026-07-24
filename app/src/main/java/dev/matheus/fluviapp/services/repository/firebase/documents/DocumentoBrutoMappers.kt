@@ -16,6 +16,7 @@ fun DocumentoBruto.toViagemDocumento() = ViagemDocumento(
     navio = texto("navio"),
     empresaId = texto("empresaId"),
     navioId = texto("navioId"),
+    tarifas = mapaDeDoubles("tarifas"),
 )
 
 fun DocumentoBruto.toNavioDocumento() = NavioDocumento(

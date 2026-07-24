@@ -35,7 +35,9 @@ class PassagemDocumentoMapperTest {
         numeroDocumentoPassageiro3 = "333",
         nomePassageiro3 = "Passageiro Tres",
         placaVeiculo = "ABC1D23",
-        tipoVeiculo = "CARRO",
+        tipoVeiculo = "MOTO",
+        cilindrada = "250",
+        tarifaBase = 300.0,
         funcionarioResponsavel = "Operador",
         funcionarioId = "uid-operador-1",
         status = "A_EMITIR",
@@ -100,5 +102,9 @@ class PassagemDocumentoMapperTest {
         assertEquals(original.status, roundTrip.status)
         assertEquals(original.funcionarioResponsavel, roundTrip.funcionarioResponsavel)
         assertEquals(original.funcionarioId, roundTrip.funcionarioId)
+        // tarifaBase congelada (ADR-0013) sobrevive ao flatten↔nest.
+        assertEquals(original.tarifaBase, roundTrip.tarifaBase)
+        // cilindrada da moto (ADR-0013) idem.
+        assertEquals(original.cilindrada, roundTrip.cilindrada)
     }
 }

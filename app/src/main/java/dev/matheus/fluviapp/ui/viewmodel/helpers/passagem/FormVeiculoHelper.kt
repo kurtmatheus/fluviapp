@@ -54,6 +54,9 @@ class FormVeiculoHelper(
                 onCorVeiculoChange = {
                     atualizaCorVeiculo(it)
                 },
+                onCilindradaChange = {
+                    atualizarCilindrada(it)
+                },
                 listaNomeResponsavelRetirada = passagemRepository.getListaNome(),
                 listaTipoVeiculo = runBlocking { constanteRepository.obterTodosPorCategoria(VEICULO.name) }
             )
@@ -169,6 +172,16 @@ class FormVeiculoHelper(
         }
     }
 
+    private fun atualizarCilindrada(valor: String) {
+        uiState.update {
+            it.copy(
+                // Filtro de dígito: guarda contra qualquer caractere acidental não-numérico (ADR-0013).
+                cilindrada = valor.extrairNumeros(),
+                isCilindradaError = false
+            )
+        }
+    }
+
     fun preencherDadosVeiculo(passagem: Passagem) {
         val temResponsavelRetirada = !passagem.nomeResponsavelRetirada.isNullOrEmpty() &&
                 !passagem.documentoResponsavelRetirada.isNullOrEmpty() &&
@@ -183,7 +196,8 @@ class FormVeiculoHelper(
                 tipoVeiculo = passagem.tipoVeiculo.orEmpty(),
                 modeloVeiculo = passagem.modeloVeiculo.orEmpty(),
                 placaVeiculo = passagem.placaVeiculo.orEmpty(),
-                corVeiculo = passagem.corVeiculo.orEmpty()
+                corVeiculo = passagem.corVeiculo.orEmpty(),
+                cilindrada = passagem.cilindrada.orEmpty()
             )
         }
     }
@@ -198,6 +212,7 @@ class FormVeiculoHelper(
                 modeloVeiculo = "",
                 placaVeiculo = "",
                 corVeiculo = "",
+                cilindrada = "",
             )
         }
     }
