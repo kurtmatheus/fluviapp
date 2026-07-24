@@ -93,6 +93,38 @@ Trazer o form de passagem para o molde, começando pelo maior ganho: **validaç�
 Fatiável e reversível — a validação pura primeiro (isolada, testável), depois estado/threading, por último
 a UX do bloqueio.
 
+## 7. Mapa do §1b — migração das lambdas do UiState para métodos do VM
+
+Superfície (medida no código):
+
+- **~40 lambdas** (`onXChange`/`onClick…`) como campos de estado em 3 UiStates —
+  `FormPassagemUiState` (16), `FormPassageiroUiState` (20), `FormVeiculoUiState` (9).
+- **~42 consumos** nas telas Compose (`state.onX`) em 4 `Content…AreaForm` — Passageiro (20), Pagamento
+  (11), Veículo (9), Agência (2, hoje comentada).
+- **3 helpers** (`FormPassagemHelper`/`FormPassageiroHelper`/`FormVeiculoHelper`) populam as lambdas em
+  `atualizaCampos` via `uiState.update { it.copy(onX = { atualizarX(it) }) }`.
+
+**Mecânica (baixo risco de lógica, alta superfície).** A lógica **já vive em métodos dos helpers**
+(`atualizarValorPago`, `atualizarAcomodacao`, …) — o lambda no estado só **encaminha** para eles. Migrar
+não reescreve lógica, só a **fiação**:
+
+1. **VM expõe os eventos como métodos** (`fun onValorPagoChange(v) = formPassagemHelper.atualizarValorPago(v)`),
+   tornando os `atualizar…` dos helpers acessíveis.
+2. **UiState puro** — remover os campos-lambda dos 3 estados.
+3. **Content…AreaForm recebe os `onX` como parâmetros** (padrão do `ContentViagemAreaForm`), no lugar de
+   ler `state.onX`.
+4. **`FormPassagemScreen` + o NavComposable threadam `viewModel::onX`** até os Content.
+
+**Riscos:** superfície grande e **UI-não-testável** (só compila + verificação visual). Cada evento
+perdido/mal-threadado = campo que não responde. Casos especiais: `onObservacaoChange: (String, Boolean)`,
+`isAcomodacaoSelecionada: (String) -> Boolean` (é **predicado**, não evento — tratar à parte),
+`onClickLimpar…`.
+
+**Fatiamento proposto (por sub-form, do menor):** Veículo (9) → Passageiro (20) → Passagem (16). Cada fatia
+= UiState puro + métodos no VM + Content por parâmetro + Screen threada; compila e é verificável no app por
+sub-form. O `atualizarListaAgente` (runBlocking na mudança de agência) e a área de Agência ficam para a
+rework do agente/Equipe.
+
 ## 6. Agente = usuário; plataforma multi-agência (direção do analista)
 
 Decisão do analista que reenquadra os achados de `agencia`/`agente`/capability: **o agente É o usuário** da
