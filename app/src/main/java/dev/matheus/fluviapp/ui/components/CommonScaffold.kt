@@ -10,25 +10,27 @@ import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FabPosition
 import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.PermanentNavigationDrawer
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import dev.matheus.fluviapp.R
 import dev.matheus.fluviapp.ui.components.appbars.FabEmbarque
 import dev.matheus.fluviapp.ui.components.appbars.FluviBottomAppBar
 import dev.matheus.fluviapp.ui.components.appbars.FluviTopAppBar
 import kotlinx.coroutines.launch
+
+/** Largura mínima (dp) para tratar a tela como tablet — aí o menu lateral fica permanente (sempre aberto). */
+private const val LARGURA_MINIMA_TABLET_DP = 600
 
 @Composable
 fun CommonScaffold(
@@ -47,7 +49,10 @@ fun CommonScaffold(
     onClickVoltar: () -> Unit = {},
     onClickRightIcon: () -> Unit = {},
     onRefresh: () -> Unit = {},
-    /** Conteúdo do menu lateral (drawer à direita). Recebe um `fechar` para colapsar após seleção. */
+    /**
+     * Conteúdo do menu lateral (drawer à **esquerda**; **permanente/sempre aberto** em tablet). Recebe um
+     * `fechar` para colapsar após seleção — no-op no modo permanente (não fecha).
+     */
     drawerContent: (@Composable (fechar: () -> Unit) -> Unit)? = null,
     content: @Composable () -> Unit,
 ) {
@@ -74,42 +79,64 @@ fun CommonScaffold(
         return
     }
 
+    // Tablet: menu lateral PERMANENTE (sempre aberto), à esquerda. O botão de menu vira inócuo (já aberto).
+    if (LocalConfiguration.current.screenWidthDp >= LARGURA_MINIMA_TABLET_DP) {
+        PermanentNavigationDrawer(
+            drawerContent = { drawerContent {} },
+        ) {
+            ScaffoldConteudo(
+                modifier = modifier,
+                isMainTopAppBar = isMainTopAppBar,
+                userNameTopAppBar = userNameTopAppBar,
+                titleTopAppBar = titleTopAppBar,
+                isShowBottomAppBar = isShowBottomAppBar,
+                isShowRightIcon = isShowRightIcon,
+                hasRefresh = hasRefresh,
+                isRefreshing = isRefreshing,
+                rightIcon = rightIcon,
+                inicioAtivo = inicioAtivo,
+                onClickInicio = onClickInicio,
+                onClickEmbarque = onClickEmbarque,
+                onClickMenu = {},
+                onClickVoltar = onClickVoltar,
+                onClickRightIcon = onClickRightIcon,
+                onRefresh = onRefresh,
+                mostrarMenuNaBarra = false,
+                content = content,
+            )
+        }
+        return
+    }
+
+    // Celular: menu lateral MODAL, abrindo da ESQUERDA (padrão do ModalNavigationDrawer). O botão/gesto
+    // abre; a seleção fecha.
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     val abrirDrawer: () -> Unit = { scope.launch { drawerState.open() } }
 
-    // Drawer à direita: envolve tudo em RTL e reflete o conteúdo de volta a LTR.
-    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
-        ModalNavigationDrawer(
-            drawerState = drawerState,
-            drawerContent = {
-                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-                    drawerContent { scope.launch { drawerState.close() } }
-                }
-            },
-        ) {
-            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-                ScaffoldConteudo(
-                    modifier = modifier,
-                    isMainTopAppBar = isMainTopAppBar,
-                    userNameTopAppBar = userNameTopAppBar,
-                    titleTopAppBar = titleTopAppBar,
-                    isShowBottomAppBar = isShowBottomAppBar,
-                    isShowRightIcon = isShowRightIcon,
-                    hasRefresh = hasRefresh,
-                    isRefreshing = isRefreshing,
-                    rightIcon = rightIcon,
-                    inicioAtivo = inicioAtivo,
-                    onClickInicio = onClickInicio,
-                    onClickEmbarque = onClickEmbarque,
-                    onClickMenu = abrirDrawer,
-                    onClickVoltar = onClickVoltar,
-                    onClickRightIcon = onClickRightIcon,
-                    onRefresh = onRefresh,
-                    content = content,
-                )
-            }
-        }
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = { drawerContent { scope.launch { drawerState.close() } } },
+    ) {
+        ScaffoldConteudo(
+            modifier = modifier,
+            isMainTopAppBar = isMainTopAppBar,
+            userNameTopAppBar = userNameTopAppBar,
+            titleTopAppBar = titleTopAppBar,
+            isShowBottomAppBar = isShowBottomAppBar,
+            isShowRightIcon = isShowRightIcon,
+            hasRefresh = hasRefresh,
+            isRefreshing = isRefreshing,
+            rightIcon = rightIcon,
+            inicioAtivo = inicioAtivo,
+            onClickInicio = onClickInicio,
+            onClickEmbarque = onClickEmbarque,
+            onClickMenu = abrirDrawer,
+            onClickVoltar = onClickVoltar,
+            onClickRightIcon = onClickRightIcon,
+            onRefresh = onRefresh,
+            content = content,
+        )
     }
 }
 
@@ -132,6 +159,7 @@ private fun ScaffoldConteudo(
     onClickVoltar: () -> Unit,
     onClickRightIcon: () -> Unit,
     onRefresh: () -> Unit,
+    mostrarMenuNaBarra: Boolean = true,
     content: @Composable () -> Unit,
 ) {
     val pullToRefreshState = rememberPullToRefreshState()
@@ -157,6 +185,7 @@ private fun ScaffoldConteudo(
                 onClickInicio = onClickInicio,
                 onClickEmbarque = onClickEmbarque,
                 onClickMenu = onClickMenu,
+                mostrarMenu = mostrarMenuNaBarra,
             )
         },
         // FAB de embarque protruso, ancorado ao centro sobre a barra (só onde a barra aparece).

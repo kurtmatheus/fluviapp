@@ -37,12 +37,12 @@ import dev.matheus.fluviapp.R
  * `FabPosition.Center` (que por padrão o coloca *acima* da barra); este offset o empurra para baixo até
  * atravessar a borda superior. Ajustável — é o único valor "de pixel" da composição.
  */
-val EMBARQUE_FAB_STRADDLE = 34.dp
+val EMBARQUE_FAB_STRADDLE = 55.dp
 
 /**
  * Bottom bar (ADR-0012 Fase 5): três lugares — Início · **Embarque** · Menu. O embarque é a ação de
  * rotina da doca, promovida ao centro como **FAB protruso** (renderizado à parte, no slot
- * `floatingActionButton` do Scaffold via [FabEmbarque]); aqui a barra reserva o lugar central só com o
+ * `floatingActionButton` do Scaffold via [FabEmbsuarque]); aqui a barra reserva o lugar central só com o
  * rótulo, sob o FAB. A barra é `secondary` (HeaderNavy nos dois temas); a seleção usa pílula Material 3
  * (ícone/label tingidos de acento), aposentando o retângulo a 12%. A barra não navega sozinha: dispara
  * os callbacks que o NavHost pluga na rota de embarque.
@@ -54,6 +54,9 @@ fun FluviBottomAppBar(
     onClickInicio: () -> Unit,
     onClickEmbarque: () -> Unit,
     onClickMenu: () -> Unit,
+    // No tablet o menu lateral é permanente (sempre aberto), então o botão Menu da barra é dispensável —
+    // sobra só a navegação de páginas (Início · Embarque).
+    mostrarMenu: Boolean = true,
 ) {
     BottomAppBar(
         modifier = modifier,
@@ -73,12 +76,14 @@ fun FluviBottomAppBar(
             )
             // Lugar central: só o rótulo, sob o FAB protruso (que o Scaffold desenha por cima).
             RotuloEmbarqueCentro(onClick = onClickEmbarque)
-            ItemBottomAppBar(
-                onClick = onClickMenu,
-                icone = Icons.Default.Menu,
-                titulo = R.string.btn_menu,
-                ativo = false,
-            )
+            if (mostrarMenu) {
+                ItemBottomAppBar(
+                    onClick = onClickMenu,
+                    icone = Icons.Default.Menu,
+                    titulo = R.string.btn_menu,
+                    ativo = false,
+                )
+            }
         }
     }
 }
