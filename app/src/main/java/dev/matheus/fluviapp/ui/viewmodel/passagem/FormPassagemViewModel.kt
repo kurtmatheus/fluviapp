@@ -27,9 +27,10 @@ import dev.matheus.fluviapp.ui.states.passagem.FormVeiculoUiState
 import dev.matheus.fluviapp.ui.viewmodel.helpers.passagem.FormPassageiroHelper
 import dev.matheus.fluviapp.ui.viewmodel.helpers.passagem.FormPassagemHelper
 import dev.matheus.fluviapp.ui.viewmodel.helpers.passagem.FormVeiculoHelper
+import dev.matheus.fluviapp.ui.viewmodel.helpers.passagem.validacao.ErrosVeiculo
 import dev.matheus.fluviapp.ui.viewmodel.helpers.passagem.validacao.ValidacaoFormPassageiroHelper
 import dev.matheus.fluviapp.ui.viewmodel.helpers.passagem.validacao.ValidacaoFormPassagemHelper
-import dev.matheus.fluviapp.ui.viewmodel.helpers.passagem.validacao.ValidacaoFormVeiculoHelper
+import dev.matheus.fluviapp.ui.viewmodel.helpers.passagem.validacao.validarVeiculo
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -38,6 +39,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -78,7 +80,6 @@ class FormPassagemViewModel @Inject constructor(
     private lateinit var formVeiculoHelper: FormVeiculoHelper
     private lateinit var validacaoFormPassagemHelper: ValidacaoFormPassagemHelper
     private lateinit var validacaoFormPassageiroHelper: ValidacaoFormPassageiroHelper
-    private lateinit var validacaoFormVeiculoHelper: ValidacaoFormVeiculoHelper
 
     init {
         viewModelScope.launch {
@@ -156,9 +157,6 @@ class FormPassagemViewModel @Inject constructor(
             uiState = _uiStatePassageiro,
             uiStatePassagem = _uiStatePassagem
         )
-        validacaoFormVeiculoHelper = ValidacaoFormVeiculoHelper(
-            uiState = _uiStateVeiculo
-        )
     }
 
     private suspend fun preencherViagem() {
@@ -231,12 +229,27 @@ class FormPassagemViewModel @Inject constructor(
     fun validarFormularios(): Boolean {
         val formPassagemvalido = validacaoFormPassagemHelper.isFormularioPassagemValido()
         val formPassageiroVeiculoValido = if (_uiStatePassagem.value.isVeiculoChecked) {
-            validacaoFormVeiculoHelper.isFormularioVeiculoValido()
+            // Validação PURA do veículo (molde ADR-0006): calcula os erros e o VM os aplica ao estado.
+            aplicarErrosVeiculo(validarVeiculo(_uiStateVeiculo.value))
         } else {
             validacaoFormPassageiroHelper.isFormularioPassageiroValido()
         }
 
         return formPassagemvalido && formPassageiroVeiculoValido
+    }
+
+    /** Aplica os erros da validação pura do veículo no estado e devolve se ficou válido. */
+    private fun aplicarErrosVeiculo(erros: ErrosVeiculo): Boolean {
+        _uiStateVeiculo.update {
+            it.copy(
+                isDocumentoResponsavelRetiradaError = erros.documentoResponsavel,
+                isTipoVeiculoError = erros.tipoVeiculo,
+                isModeloVeiculoError = erros.modeloVeiculo,
+                isPlacaVeiculoError = erros.placaVeiculo,
+                isCilindradaError = erros.cilindrada,
+            )
+        }
+        return erros.valido
     }
 
     private fun limparStates() {
