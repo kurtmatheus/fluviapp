@@ -33,66 +33,6 @@ class FormPassageiroHelper(
     private fun atualizaCampos() {
         uiState.update { state ->
             state.copy(
-                onAcomodacaoChange = {
-                    atualizarAcomodacao(it)
-                },
-                onTipoPassagemChange = {
-                    atualizarTipoPassagem(it)
-                },
-                onTipoGratuidadeChange = {
-                    atualizarTipoGratuidade(it)
-                },
-                onNomePassageiro1Change = {
-                    atualizarNomePassageiro1(it)
-                },
-                onTipoDocumentoPassageiro1Change = {
-                    atualizarTipoDocumentoPassageiro1(it)
-                },
-                onClickLimparDocumentoPassageiro1 = {
-                    limparDocumentoPassageiro1()
-                },
-                onDocumentoPassageiro1Change = { documento ->
-                    atualizaDocumentoPassageiro1(documento.extrairLetrasOuNumeros())
-                },
-                onDataNascimentoPassageiro1Change = {
-                    atualizarDataNascimentoPassageiro1(it)
-                },
-                onCheckPassageiro2 = {
-                    checkPassageiro2()
-                },
-                onNomePassageiro2Change = {
-                    atualizarNomePassageiro2(it)
-                },
-                onTipoDocumentoPassageiro2Change = {
-                    atualizarTipoDocumentoPassageiro2(it)
-                },
-                onClickLimparDocumentoPassageiro2 = {
-                    limparDocumentoPassageiro2()
-                },
-                onDocumentoPassageiro2Change = { documento ->
-                    atualizaDocumentoPassageiro2(documento.extrairLetrasOuNumeros())
-                },
-                onDataNascimentoPassageiro2Change = {
-                    atualizarDataNascimentoPassageiro2(it)
-                },
-                onCheckPassageiro3 = {
-                    checkPassageiro3()
-                },
-                onNomePassageiro3Change = {
-                    atualizarNomePassageiro3(it)
-                },
-                onTipoDocumentoPassageiro3Change = {
-                    atualizarTipoDocumentoPassageiro3(it)
-                },
-                onClickLimparDocumentoPassageiro3 = {
-                    limparDocumentoPassageiro3()
-                },
-                onDocumentoPassageiro3Change = { documento ->
-                    atualizaDocumentoPassageiro3(documento.extrairLetrasOuNumeros())
-                },
-                onDataNascimentoPassageiro3Change = {
-                    atualizarDataNascimentoPassageiro3(it)
-                },
                 listaNomePassageiro = passagemRepository.getListaNome(),
             )
         }
@@ -109,7 +49,7 @@ class FormPassageiroHelper(
         }
     }
 
-    private fun atualizarAcomodacao(acomodacao: String) {
+    internal fun atualizarAcomodacao(acomodacao: String) {
         uiState.update { state ->
             state.copy(
                 acomodacao = acomodacao,
@@ -118,7 +58,7 @@ class FormPassageiroHelper(
         }
     }
 
-    private fun atualizarTipoPassagem(tipo: String) {
+    internal fun atualizarTipoPassagem(tipo: String) {
         uiState.update {
             it.copy(
                 tipoPassagem = tipo,
@@ -151,7 +91,7 @@ class FormPassageiroHelper(
         }
     }
 
-    private fun atualizarTipoGratuidade(tipo: String) {
+    internal fun atualizarTipoGratuidade(tipo: String) {
         uiState.update {
             it.copy(
                 tipoGratuidade = tipo,
@@ -160,7 +100,7 @@ class FormPassageiroHelper(
         }
     }
 
-    private fun atualizarTipoDocumentoPassageiro1(tipoDocumento: String) {
+    internal fun atualizarTipoDocumentoPassageiro1(tipoDocumento: String) {
         uiState.update {
             it.copy(
                 tipoDocumentoPassageiro1 = tipoDocumento,
@@ -170,7 +110,7 @@ class FormPassageiroHelper(
         }
     }
 
-    private fun limparDocumentoPassageiro1() {
+    internal fun limparDocumentoPassageiro1() {
         uiState.update {
             it.copy(
                 tipoDocumentoPassageiro1 = "",
@@ -180,9 +120,9 @@ class FormPassageiroHelper(
         }
     }
 
-    private fun atualizaDocumentoPassageiro1(documento: String) {
+    internal fun atualizaDocumentoPassageiro1(documento: String) {
         uiState.update { uiState ->
-            verificaTipoDocumento(documento, uiState.tipoDocumentoPassageiro1, uiState) { state, documento ->
+            verificaTipoDocumento(documento.extrairLetrasOuNumeros(), uiState.tipoDocumentoPassageiro1, uiState) { state, documento ->
                 state.copy(
                     documentoPassageiro1 = documento,
                     isDocumentoPassageiro1Error = false
@@ -191,7 +131,7 @@ class FormPassageiroHelper(
         }
     }
 
-    private fun atualizarNomePassageiro1(nome: String) {
+    internal fun atualizarNomePassageiro1(nome: String) {
         uiState.update {
             it.copy(
                 nomePassageiro1 = nome,
@@ -200,7 +140,7 @@ class FormPassageiroHelper(
         }
     }
 
-    private fun atualizarDataNascimentoPassageiro1(dataNascimento: String) {
+    internal fun atualizarDataNascimentoPassageiro1(dataNascimento: String) {
         uiState.update {
             it.copy(
                 dataNascimentoPassageiro1 = dataNascimento,
@@ -209,7 +149,7 @@ class FormPassageiroHelper(
         }
     }
 
-    private fun checkPassageiro2() {
+    internal fun checkPassageiro2() {
         uiState.update {
             it.copy(
                 isPassageiro2Checked = !it.isPassageiro2Checked
@@ -217,7 +157,7 @@ class FormPassageiroHelper(
         }
     }
 
-    private fun atualizarTipoDocumentoPassageiro2(tipoDocumento: String) {
+    internal fun atualizarTipoDocumentoPassageiro2(tipoDocumento: String) {
         uiState.update {
             it.copy(
                 tipoDocumentoPassageiro2 = tipoDocumento,
@@ -227,7 +167,7 @@ class FormPassageiroHelper(
         }
     }
 
-    private fun limparDocumentoPassageiro2() {
+    internal fun limparDocumentoPassageiro2() {
         uiState.update {
             it.copy(
                 tipoDocumentoPassageiro2 = "",
@@ -237,9 +177,9 @@ class FormPassageiroHelper(
         }
     }
 
-    private fun atualizaDocumentoPassageiro2(documento: String) {
+    internal fun atualizaDocumentoPassageiro2(documento: String) {
         uiState.update { uiState ->
-            verificaTipoDocumento(documento, uiState.tipoDocumentoPassageiro2, uiState) { state, documento ->
+            verificaTipoDocumento(documento.extrairLetrasOuNumeros(), uiState.tipoDocumentoPassageiro2, uiState) { state, documento ->
                 state.copy(
                     documentoPassageiro2 = documento,
                     isDocumentoPassageiro2Error = false
@@ -248,7 +188,7 @@ class FormPassageiroHelper(
         }
     }
 
-    private fun atualizarNomePassageiro2(nome: String) {
+    internal fun atualizarNomePassageiro2(nome: String) {
         uiState.update {
             it.copy(
                 nomePassageiro2 = nome,
@@ -257,7 +197,7 @@ class FormPassageiroHelper(
         }
     }
 
-    private fun atualizarDataNascimentoPassageiro2(dataNascimento: String) {
+    internal fun atualizarDataNascimentoPassageiro2(dataNascimento: String) {
         uiState.update {
             it.copy(
                 dataNascimentoPassageiro2 = dataNascimento,
@@ -266,7 +206,7 @@ class FormPassageiroHelper(
         }
     }
 
-    private fun checkPassageiro3() {
+    internal fun checkPassageiro3() {
         uiState.update {
             it.copy(
                 isPassageiro3Checked = !it.isPassageiro3Checked
@@ -274,7 +214,7 @@ class FormPassageiroHelper(
         }
     }
 
-    private fun atualizarTipoDocumentoPassageiro3(tipoDocumento: String) {
+    internal fun atualizarTipoDocumentoPassageiro3(tipoDocumento: String) {
         uiState.update {
             it.copy(
                 tipoDocumentoPassageiro3 = tipoDocumento,
@@ -284,7 +224,7 @@ class FormPassageiroHelper(
         }
     }
 
-    private fun limparDocumentoPassageiro3() {
+    internal fun limparDocumentoPassageiro3() {
         uiState.update {
             it.copy(
                 tipoDocumentoPassageiro3 = "",
@@ -294,9 +234,9 @@ class FormPassageiroHelper(
         }
     }
 
-    private fun atualizaDocumentoPassageiro3(documento: String) {
+    internal fun atualizaDocumentoPassageiro3(documento: String) {
         uiState.update { uiState ->
-            verificaTipoDocumento(documento, uiState.tipoDocumentoPassageiro3, uiState) { state, documento ->
+            verificaTipoDocumento(documento.extrairLetrasOuNumeros(), uiState.tipoDocumentoPassageiro3, uiState) { state, documento ->
                 state.copy(
                     documentoPassageiro3 = documento,
                     isDocumentoPassageiro3Error = false
@@ -305,7 +245,7 @@ class FormPassageiroHelper(
         }
     }
 
-    private fun atualizarNomePassageiro3(nome: String) {
+    internal fun atualizarNomePassageiro3(nome: String) {
         uiState.update {
             it.copy(
                 nomePassageiro3 = nome,
@@ -314,7 +254,7 @@ class FormPassageiroHelper(
         }
     }
 
-    private fun atualizarDataNascimentoPassageiro3(dataNascimento: String) {
+    internal fun atualizarDataNascimentoPassageiro3(dataNascimento: String) {
         uiState.update {
             it.copy(
                 dataNascimentoPassageiro3 = dataNascimento,

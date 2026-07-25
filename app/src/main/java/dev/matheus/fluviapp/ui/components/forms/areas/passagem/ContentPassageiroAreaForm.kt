@@ -44,13 +44,33 @@ fun ContentPassageiroAreaForm(
     modifier: Modifier,
     statePassagem: FormPassagemUiState,
     statePassageiro: FormPassageiroUiState,
+    onAcomodacaoChange: (String) -> Unit = {},
+    onTipoPassagemChange: (String) -> Unit = {},
+    onTipoGratuidadeChange: (String) -> Unit = {},
+    onNomePassageiro1Change: (String) -> Unit = {},
+    onTipoDocumentoPassageiro1Change: (String) -> Unit = {},
+    onClickLimparDocumentoPassageiro1: () -> Unit = {},
+    onDocumentoPassageiro1Change: (String) -> Unit = {},
+    onDataNascimentoPassageiro1Change: (String) -> Unit = {},
+    onCheckPassageiro2: (Boolean) -> Unit = {},
+    onNomePassageiro2Change: (String) -> Unit = {},
+    onTipoDocumentoPassageiro2Change: (String) -> Unit = {},
+    onClickLimparDocumentoPassageiro2: () -> Unit = {},
+    onDocumentoPassageiro2Change: (String) -> Unit = {},
+    onDataNascimentoPassageiro2Change: (String) -> Unit = {},
+    onCheckPassageiro3: (Boolean) -> Unit = {},
+    onNomePassageiro3Change: (String) -> Unit = {},
+    onTipoDocumentoPassageiro3Change: (String) -> Unit = {},
+    onClickLimparDocumentoPassageiro3: () -> Unit = {},
+    onDocumentoPassageiro3Change: (String) -> Unit = {},
+    onDataNascimentoPassageiro3Change: (String) -> Unit = {},
     focusManager: FocusManager = LocalFocusManager.current,
 ) {
     DropDownFormField(
         modifier = modifier.fillMaxWidth(),
         listaItens = statePassageiro.listaAcomodacao.mapDescricao(),
         value = statePassageiro.acomodacao,
-        onValueChange = statePassageiro.onAcomodacaoChange,
+        onValueChange = onAcomodacaoChange,
         label = R.string.label_acomodacao,
         isError = statePassageiro.isAcomodacaoError
     )
@@ -63,7 +83,7 @@ fun ContentPassageiroAreaForm(
             },
             label = R.string.label_tipo_passagem,
             value = statePassageiro.tipoPassagem,
-            onValueChange = statePassageiro.onTipoPassagemChange,
+            onValueChange = onTipoPassagemChange,
             isError = statePassageiro.isTipoPassagemError
         )
 
@@ -73,7 +93,7 @@ fun ContentPassageiroAreaForm(
                 listaItens = statePassageiro.listaTipoGratuidade.mapDescricao(),
                 label = R.string.label_tipo_gratuidade,
                 value = statePassageiro.tipoGratuidade,
-                onValueChange = statePassageiro.onTipoGratuidadeChange,
+                onValueChange = onTipoGratuidadeChange,
                 isError = statePassageiro.isTipoGratuidadeError
             )
         }
@@ -84,21 +104,21 @@ fun ContentPassageiroAreaForm(
             listaTipoDocumentos = statePassagem.listaTipoDocumento.mapDescricao(),
             labelTipoDocumento = R.string.label_documento,
             valueTipoDocumento = statePassageiro.tipoDocumentoPassageiro1,
-            onValueChangeTipoDocumento = statePassageiro.onTipoDocumentoPassageiro1Change,
+            onValueChangeTipoDocumento = onTipoDocumentoPassageiro1Change,
             isErrorTipoDocumento = statePassageiro.isTipoDocumentoPassageiro1Error,
-            onClickLimparDocumento = statePassageiro.onClickLimparDocumentoPassageiro1,
+            onClickLimparDocumento = onClickLimparDocumentoPassageiro1,
             listaNome = statePassageiro.listaNomePassageiro,
             labelDocumento = R.string.label_numero_documento,
             valueDocumento = statePassageiro.documentoPassageiro1,
-            onValueChangeDocumento = statePassageiro.onDocumentoPassageiro1Change,
+            onValueChangeDocumento = onDocumentoPassageiro1Change,
             readOnlyDocumento = statePassageiro.isDocumentoPassageiro1Disabled,
             isErrorDocumento = statePassageiro.isDocumentoPassageiro1Error,
             valueNomePassageiro = statePassageiro.nomePassageiro1,
-            onValueChangeNomePassageiro = statePassageiro.onNomePassageiro1Change,
+            onValueChangeNomePassageiro = onNomePassageiro1Change,
             labelNomePassageiro = R.string.label_nome_passageiro,
             isErrorNomePassageiro = statePassageiro.isNomePassageiro1Error,
             valueDataNascimento = statePassageiro.dataNascimentoPassageiro1,
-            onValueChangeDataNascimento = statePassageiro.onDataNascimentoPassageiro1Change,
+            onValueChangeDataNascimento = onDataNascimentoPassageiro1Change,
             isErrorDataNascimento = statePassageiro.isDataNascimentoPassageiro1Error,
             textoErroData = statePassageiro.textDataNascimentoError
         )
@@ -108,7 +128,7 @@ fun ContentPassageiroAreaForm(
                 modifier = modifier,
                 label = R.string.label_checkbox_passageiro2,
                 checked = statePassageiro.isPassageiro2Checked,
-                onCheck = statePassageiro.onCheckPassageiro2
+                onCheck = onCheckPassageiro2
             )
         }
 
@@ -119,21 +139,21 @@ fun ContentPassageiroAreaForm(
                 listaTipoDocumentos = statePassagem.listaTipoDocumento.mapDescricao(),
                 labelTipoDocumento = R.string.label_documento,
                 valueTipoDocumento = statePassageiro.tipoDocumentoPassageiro2,
-                onValueChangeTipoDocumento = statePassageiro.onTipoDocumentoPassageiro2Change,
+                onValueChangeTipoDocumento = onTipoDocumentoPassageiro2Change,
                 isErrorTipoDocumento = statePassageiro.isTipoDocumentoPassageiro2Error,
-                onClickLimparDocumento = statePassageiro.onClickLimparDocumentoPassageiro2,
+                onClickLimparDocumento = onClickLimparDocumentoPassageiro2,
                 listaNome = statePassageiro.listaNomePassageiro,
                 labelDocumento = R.string.label_numero_documento,
                 valueDocumento = statePassageiro.documentoPassageiro2,
-                onValueChangeDocumento = statePassageiro.onDocumentoPassageiro2Change,
+                onValueChangeDocumento = onDocumentoPassageiro2Change,
                 readOnlyDocumento = statePassageiro.isDocumentoPassageiro2Disabled,
                 isErrorDocumento = statePassageiro.isDocumentoPassageiro2Error,
                 valueNomePassageiro = statePassageiro.nomePassageiro2,
-                onValueChangeNomePassageiro = statePassageiro.onNomePassageiro2Change,
+                onValueChangeNomePassageiro = onNomePassageiro2Change,
                 labelNomePassageiro = R.string.label_nome_passageiro,
                 isErrorNomePassageiro = statePassageiro.isNomePassageiro2Error,
                 valueDataNascimento = statePassageiro.dataNascimentoPassageiro2,
-                onValueChangeDataNascimento = statePassageiro.onDataNascimentoPassageiro2Change,
+                onValueChangeDataNascimento = onDataNascimentoPassageiro2Change,
                 isErrorDataNascimento = statePassageiro.isDataNascimentoPassageiro2Error,
                 textoErroData = R.string.error_camp_obrig
             )
@@ -142,7 +162,7 @@ fun ContentPassageiroAreaForm(
                 modifier = modifier,
                 label = R.string.label_checkbox_passageiro3,
                 checked = statePassageiro.isPassageiro3Checked,
-                onCheck = statePassageiro.onCheckPassageiro3
+                onCheck = onCheckPassageiro3
             )
         }
 
@@ -153,21 +173,21 @@ fun ContentPassageiroAreaForm(
                 listaTipoDocumentos = statePassagem.listaTipoDocumento.mapDescricao(),
                 labelTipoDocumento = R.string.label_documento,
                 valueTipoDocumento = statePassageiro.tipoDocumentoPassageiro3,
-                onValueChangeTipoDocumento = statePassageiro.onTipoDocumentoPassageiro3Change,
+                onValueChangeTipoDocumento = onTipoDocumentoPassageiro3Change,
                 isErrorTipoDocumento = statePassageiro.isTipoDocumentoPassageiro3Error,
-                onClickLimparDocumento = statePassageiro.onClickLimparDocumentoPassageiro3,
+                onClickLimparDocumento = onClickLimparDocumentoPassageiro3,
                 listaNome = statePassageiro.listaNomePassageiro,
                 labelDocumento = R.string.label_numero_documento,
                 valueDocumento = statePassageiro.documentoPassageiro3,
-                onValueChangeDocumento = statePassageiro.onDocumentoPassageiro3Change,
+                onValueChangeDocumento = onDocumentoPassageiro3Change,
                 readOnlyDocumento = statePassageiro.isDocumentoPassageiro3Disabled,
                 isErrorDocumento = statePassageiro.isDocumentoPassageiro3Error,
                 valueNomePassageiro = statePassageiro.nomePassageiro3,
-                onValueChangeNomePassageiro = statePassageiro.onNomePassageiro3Change,
+                onValueChangeNomePassageiro = onNomePassageiro3Change,
                 labelNomePassageiro = R.string.label_nome_passageiro,
                 isErrorNomePassageiro = statePassageiro.isNomePassageiro3Error,
                 valueDataNascimento = statePassageiro.dataNascimentoPassageiro3,
-                onValueChangeDataNascimento = statePassageiro.onDataNascimentoPassageiro3Change,
+                onValueChangeDataNascimento = onDataNascimentoPassageiro3Change,
                 isErrorDataNascimento = statePassageiro.isDataNascimentoPassageiro3Error,
                 textoErroData = R.string.error_camp_obrig
             )

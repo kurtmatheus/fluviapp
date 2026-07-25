@@ -311,6 +311,29 @@ class FormPassagemViewModel @Inject constructor(
     fun onCorVeiculoChange(valor: String) = formVeiculoHelper.atualizaCorVeiculo(valor)
     fun onCilindradaChange(valor: String) = formVeiculoHelper.atualizarCilindrada(valor)
 
+    // Eventos do sub-form de passageiro (molde ADR-0006, §1b): o VM os expõe; delegam ao helper.
+    // onCheckPassageiroN ignora o Boolean do checkbox (o helper faz toggle) — preserva o comportamento.
+    fun onAcomodacaoChange(valor: String) = formPassageiroHelper.atualizarAcomodacao(valor)
+    fun onTipoPassagemChange(valor: String) = formPassageiroHelper.atualizarTipoPassagem(valor)
+    fun onTipoGratuidadeChange(valor: String) = formPassageiroHelper.atualizarTipoGratuidade(valor)
+    fun onNomePassageiro1Change(valor: String) = formPassageiroHelper.atualizarNomePassageiro1(valor)
+    fun onTipoDocumentoPassageiro1Change(valor: String) = formPassageiroHelper.atualizarTipoDocumentoPassageiro1(valor)
+    fun onClickLimparDocumentoPassageiro1() = formPassageiroHelper.limparDocumentoPassageiro1()
+    fun onDocumentoPassageiro1Change(valor: String) = formPassageiroHelper.atualizaDocumentoPassageiro1(valor)
+    fun onDataNascimentoPassageiro1Change(valor: String) = formPassageiroHelper.atualizarDataNascimentoPassageiro1(valor)
+    fun onCheckPassageiro2(checked: Boolean) = formPassageiroHelper.checkPassageiro2()
+    fun onNomePassageiro2Change(valor: String) = formPassageiroHelper.atualizarNomePassageiro2(valor)
+    fun onTipoDocumentoPassageiro2Change(valor: String) = formPassageiroHelper.atualizarTipoDocumentoPassageiro2(valor)
+    fun onClickLimparDocumentoPassageiro2() = formPassageiroHelper.limparDocumentoPassageiro2()
+    fun onDocumentoPassageiro2Change(valor: String) = formPassageiroHelper.atualizaDocumentoPassageiro2(valor)
+    fun onDataNascimentoPassageiro2Change(valor: String) = formPassageiroHelper.atualizarDataNascimentoPassageiro2(valor)
+    fun onCheckPassageiro3(checked: Boolean) = formPassageiroHelper.checkPassageiro3()
+    fun onNomePassageiro3Change(valor: String) = formPassageiroHelper.atualizarNomePassageiro3(valor)
+    fun onTipoDocumentoPassageiro3Change(valor: String) = formPassageiroHelper.atualizarTipoDocumentoPassageiro3(valor)
+    fun onClickLimparDocumentoPassageiro3() = formPassageiroHelper.limparDocumentoPassageiro3()
+    fun onDocumentoPassageiro3Change(valor: String) = formPassageiroHelper.atualizaDocumentoPassageiro3(valor)
+    fun onDataNascimentoPassageiro3Change(valor: String) = formPassageiroHelper.atualizarDataNascimentoPassageiro3(valor)
+
     private fun limparStates() {
         formPassagemHelper.limparState()
         formPassageiroHelper.limparState()
