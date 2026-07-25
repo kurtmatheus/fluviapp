@@ -13,6 +13,7 @@ import dev.matheus.fluviapp.model.passagem.descontoDerivado
 import dev.matheus.fluviapp.model.screendata.DadosPassagem
 import dev.matheus.fluviapp.services.repository.cadastro.passagem.AgenteRepository
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.EmpresaRepository
+import dev.matheus.fluviapp.services.repository.cadastro.viagem.NavioRepository
 import dev.matheus.fluviapp.util.Mapper
 import java.math.BigDecimal
 import javax.inject.Inject
@@ -21,6 +22,7 @@ import javax.inject.Singleton
 @Singleton
 class PassagemDadosPassagemMapper @Inject constructor(
     private val empresaRepository: EmpresaRepository,
+    private val navioRepository: NavioRepository,
     private val agenteRepository: AgenteRepository,
 ) : Mapper<Passagem, DadosPassagem> {
     override suspend fun map(entry: Passagem): DadosPassagem {
@@ -28,6 +30,11 @@ class PassagemDadosPassagemMapper @Inject constructor(
         // onde obterPorNome estourava. cnpj/endereço/telefones seguem vivos (nunca foram snapshot).
         // Sem ida à Viagem: idViagem usa o viagemId congelado na Passagem (dropou ViagemRepository).
         val empresa = empresaRepository.obterPorId(entry.empresaId)
+
+        // Navio resolvido por id (ADR-0008), espelhando a empresa: usa o navioId congelado na Passagem,
+        // rename-safe e órfão detectável (obterPorId → null → nome vazio). Fecha a dívida do §9 do doc de
+        // domínio (o nome vinha do snapshot entry.navio, que renomear a frota não atualizava).
+        val navio = navioRepository.obterPorId(entry.navioId)
 
         // Flip da capability (ADR-0002/0003): deriva do agente que vendeu a passagem.
         // Best-effort — o agente é texto livre no form; casa por agência + nome no cadastro.
@@ -71,7 +78,7 @@ class PassagemDadosPassagemMapper @Inject constructor(
             empresaEndereco = empresa?.endereco.orEmpty(),
             empresaTelefone1 = empresa?.telefone1.orEmpty(),
             empresaTelefone2 = empresa?.telefone2.orEmpty(),
-            navio = entry.navio,
+            navio = navio?.descricaoNome.orEmpty(),
             dataViagem = entry.dataViagem,
             horaViagem = entry.horaViagem,
             origem = entry.origem,

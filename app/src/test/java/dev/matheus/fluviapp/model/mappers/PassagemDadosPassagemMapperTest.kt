@@ -3,9 +3,11 @@ package dev.matheus.fluviapp.model.mappers
 import dev.matheus.fluviapp.extensions.formataParaMoedaBrasileira
 import dev.matheus.fluviapp.fakes.FakeAgenteRepository
 import dev.matheus.fluviapp.fakes.FakeEmpresaRepository
+import dev.matheus.fluviapp.fakes.FakeNavioRepository
 import dev.matheus.fluviapp.model.passagem.Passagem
 import dev.matheus.fluviapp.model.passagem.TipoPassagem
 import dev.matheus.fluviapp.model.viagem.Empresa
+import dev.matheus.fluviapp.model.viagem.Navio
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -31,15 +33,26 @@ class PassagemDadosPassagemMapperTest {
         telefone2 = "9999-0002",
     )
 
+    private fun navio(id: String, nome: String) = Navio(
+        id = id,
+        descricaoNome = nome,
+        capacidadeVeiculo = 0,
+        capacidadeSuite2 = 0,
+        capacidadeSuite3 = 0,
+        capacidadeCamarote = 0,
+        empresaId = "empresa-1",
+    )
+
     private fun passagem() = Passagem(
         id = "passagem-1",
         numero = "2444",
         viagemId = "viagem-abc",
         empresaId = "empresa-1",
-        // snapshot por valor defasado de propósito — NÃO deve ser usado p/ resolver a empresa.
+        navioId = "navio-1",
+        // snapshots por valor defasados de propósito — NÃO devem ser usados p/ resolver empresa/navio.
         empresa = "NOME ANTIGO",
+        navio = "F/B ANTIGO",
         codigoViagem = "PN-IC-001",
-        navio = "F/B Modelo",
         origem = "Porto Norte",
         destino = "Ilha Central",
         dataViagem = "10/06/2024",
@@ -48,8 +61,9 @@ class PassagemDadosPassagemMapperTest {
         status = "A_EMITIR",
     )
 
-    private fun mapper(empresas: List<Empresa>) = PassagemDadosPassagemMapper(
+    private fun mapper(empresas: List<Empresa>, navios: List<Navio> = emptyList()) = PassagemDadosPassagemMapper(
         empresaRepository = FakeEmpresaRepository().apply { this.empresas = empresas },
+        navioRepository = FakeNavioRepository().apply { this.navios = navios },
         agenteRepository = FakeAgenteRepository(),
     )
 
@@ -78,6 +92,24 @@ class PassagemDadosPassagemMapperTest {
         // resto da passagem segue mapeado normalmente.
         assertEquals("2444", dados.numero)
         assertEquals("viagem-abc", dados.idViagem)
+    }
+
+    @Test
+    fun `resolve navio pelo id e ignora o nome defasado do snapshot`() = runTest {
+        val navios = listOf(navio("navio-1", "F/B NOVO"))
+
+        val dados = mapper(emptyList(), navios).map(passagem())
+
+        // nome vem do cadastro vivo (por id), não do snapshot "F/B ANTIGO" — rename-safe (ADR-0008).
+        assertEquals("F/B NOVO", dados.navio)
+    }
+
+    @Test
+    fun `navio removido deixa o campo vazio sem estourar`() = runTest {
+        // repo de navios vazio: obterPorId(navioId) -> null → nome vazio (órfão detectável).
+        val dados = mapper(emptyList()).map(passagem())
+
+        assertEquals("", dados.navio)
     }
 
     // --- Preço tabelado (ADR-0013): derivado da tarifaBase congelada ---
