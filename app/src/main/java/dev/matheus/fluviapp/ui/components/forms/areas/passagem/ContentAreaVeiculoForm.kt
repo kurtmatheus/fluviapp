@@ -40,13 +40,22 @@ fun ContentAreaVeiculoForm(
     modifier: Modifier,
     statePassagem: FormPassagemUiState,
     stateVeiculo: FormVeiculoUiState,
+    onNomeResponsavelRetiradaChange: (String) -> Unit = {},
+    onTipoDocumentoResponsavelRetiradaChange: (String) -> Unit = {},
+    onClickLimparTipoDocumentoResponsavelRetirada: () -> Unit = {},
+    onDocumentoResponsavelRetiradaChange: (String) -> Unit = {},
+    onTipoVeiculoChange: (String) -> Unit = {},
+    onModeloVeiculoChange: (String) -> Unit = {},
+    onPlacaVeiculoChange: (String) -> Unit = {},
+    onCorVeiculoChange: (String) -> Unit = {},
+    onCilindradaChange: (String) -> Unit = {},
     focusManager: FocusManager = LocalFocusManager.current
 ) {
     FilterDropDownForm(
         modifier = modifier.fillMaxWidth(),
         listaItens = stateVeiculo.listaNomeResponsavelRetirada.filter { it.startsWith(stateVeiculo.nomeResponsavelRetirada) },
         value = stateVeiculo.nomeResponsavelRetirada,
-        onValueChange = stateVeiculo.onNomeResponsavelRetiradaChange,
+        onValueChange = onNomeResponsavelRetiradaChange,
         label = R.string.label_nome_responsavel,
         isError = stateVeiculo.isNomeResponsavelRetiradaError
     )
@@ -63,12 +72,12 @@ fun ContentAreaVeiculoForm(
             label = R.string.label_documento_responsavel,
             modifier = modifier,
             value = stateVeiculo.tipoDocumentoResponsavelRetirada,
-            onValueChange = stateVeiculo.onTipoDocumentoResponsavelRetiradaChange,
+            onValueChange = onTipoDocumentoResponsavelRetiradaChange,
             isError = stateVeiculo.isTipoDocumentoResponsavelRetiradaError,
             focusManager = focusManager
         )
 
-        IconButton(onClick = stateVeiculo.onClickLimparTipoDocumentoResponsavelRetirada) {
+        IconButton(onClick = onClickLimparTipoDocumentoResponsavelRetirada) {
             Icon(
                 imageVector = Icons.Filled.Clear,
                 contentDescription = stringResource(id = R.string.description_limpar),
@@ -83,7 +92,7 @@ fun ContentAreaVeiculoForm(
         value = stateVeiculo.documentoResponsavelRetirada,
         readOnly = stateVeiculo.isDocumentoResponsavelRetiradaReadOnly,
         isError = stateVeiculo.isDocumentoResponsavelRetiradaError,
-        onValueChange = stateVeiculo.onDocumentoResponsavelRetiradaChange,
+        onValueChange = onDocumentoResponsavelRetiradaChange,
         visualTransformation = visualTransformation(stateVeiculo.tipoDocumentoResponsavelRetirada),
         keyboardOptions = KeyboardOptions(
             capitalization = KeyboardCapitalization.Characters,
@@ -103,7 +112,7 @@ fun ContentAreaVeiculoForm(
         label = R.string.label_tipo_veiculo,
         modifier = modifier.fillMaxWidth(),
         value = stateVeiculo.tipoVeiculo,
-        onValueChange = stateVeiculo.onTipoVeiculoChange,
+        onValueChange = onTipoVeiculoChange,
         isError = stateVeiculo.isTipoVeiculoError,
         focusManager = focusManager
     )
@@ -113,7 +122,7 @@ fun ContentAreaVeiculoForm(
         FormTextFieldBrownNoIcon(
             modifier = modifier.fillMaxWidth(),
             value = stateVeiculo.cilindrada,
-            onValueChange = stateVeiculo.onCilindradaChange,
+            onValueChange = onCilindradaChange,
             label = R.string.label_cilindrada,
             isError = stateVeiculo.isCilindradaError,
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next, keyboardType = KeyboardType.Number),
@@ -123,7 +132,7 @@ fun ContentAreaVeiculoForm(
     FormTextFieldBrownNoIcon(
         modifier = modifier.fillMaxWidth(),
         value = stateVeiculo.modeloVeiculo,
-        onValueChange = stateVeiculo.onModeloVeiculoChange,
+        onValueChange = onModeloVeiculoChange,
         label = R.string.label_modelo_veiculo,
         keyboardOptions = KeyboardOptions(
             imeAction = ImeAction.Next,
@@ -135,7 +144,7 @@ fun ContentAreaVeiculoForm(
     FormTextFieldBrownNoIcon(
         modifier = modifier.fillMaxWidth(),
         value = stateVeiculo.corVeiculo,
-        onValueChange = stateVeiculo.onCorVeiculoChange,
+        onValueChange = onCorVeiculoChange,
         label = R.string.label_cor_veículo,
         keyboardOptions = KeyboardOptions(
             imeAction = ImeAction.Next,
@@ -147,7 +156,7 @@ fun ContentAreaVeiculoForm(
     FormTextFieldBrownNoIcon(
         modifier = modifier.fillMaxWidth(),
         value = stateVeiculo.placaVeiculo,
-        onValueChange = stateVeiculo.onPlacaVeiculoChange,
+        onValueChange = onPlacaVeiculoChange,
         label = R.string.label_placa_veículo,
         keyboardOptions = KeyboardOptions(
             imeAction = ImeAction.Next,

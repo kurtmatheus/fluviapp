@@ -29,33 +29,6 @@ class FormVeiculoHelper(
     private fun atualizaCampos() {
         uiState.update { stateVeiculo ->
             stateVeiculo.copy(
-                onNomeResponsavelRetiradaChange = {
-                    atualizarNomeResponsavelRetirada(it)
-                },
-                onTipoDocumentoResponsavelRetiradaChange = {
-                    atualizarTipoDocumentoResponsavelRetirada(it)
-                },
-                onClickLimparTipoDocumentoResponsavelRetirada = {
-                    limparCamposDocumento()
-                },
-                onDocumentoResponsavelRetiradaChange = { documento ->
-                    atualizarDocumentoResponsavelRetirada(documento.extrairLetrasOuNumeros())
-                },
-                onTipoVeiculoChange = {
-                    atualizarTipoVeiculo(it)
-                },
-                onModeloVeiculoChange = {
-                    atualizarModeloVeiculo(it)
-                },
-                onPlacaVeiculoChange = {
-                    atualizarPlacaVeiculo(it)
-                },
-                onCorVeiculoChange = {
-                    atualizaCorVeiculo(it)
-                },
-                onCilindradaChange = {
-                    atualizarCilindrada(it)
-                },
                 listaNomeResponsavelRetirada = passagemRepository.getListaNome(),
             )
         }
@@ -68,7 +41,7 @@ class FormVeiculoHelper(
         }
     }
 
-    private fun atualizarNomeResponsavelRetirada(nome: String) {
+    internal fun atualizarNomeResponsavelRetirada(nome: String) {
         uiState.update {
             it.copy(
                 nomeResponsavelRetirada = nome,
@@ -77,7 +50,7 @@ class FormVeiculoHelper(
         }
     }
 
-    private fun atualizarTipoDocumentoResponsavelRetirada(tipoDocumento: String) {
+    internal fun atualizarTipoDocumentoResponsavelRetirada(tipoDocumento: String) {
         uiState.update {
             it.copy(
                 tipoDocumentoResponsavelRetirada = tipoDocumento,
@@ -87,10 +60,10 @@ class FormVeiculoHelper(
         }
     }
 
-    private fun atualizarDocumentoResponsavelRetirada(documento: String) {
+    internal fun atualizarDocumentoResponsavelRetirada(documento: String) {
         uiState.update { uiState ->
             verificaTipoDocumento(
-                documento,
+                documento.extrairLetrasOuNumeros(),
                 uiState.tipoDocumentoResponsavelRetirada,
                 uiState
             ) { state, documento ->
@@ -131,7 +104,7 @@ class FormVeiculoHelper(
         }
     }
 
-    private fun limparCamposDocumento() {
+    internal fun limparCamposDocumento() {
         uiState.update {
             it.copy(
                 tipoDocumentoResponsavelRetirada = "",
@@ -141,7 +114,7 @@ class FormVeiculoHelper(
         }
     }
 
-    private fun atualizarTipoVeiculo(tipo: String) {
+    internal fun atualizarTipoVeiculo(tipo: String) {
         uiState.update {
             it.copy(
                 tipoVeiculo = tipo,
@@ -150,7 +123,7 @@ class FormVeiculoHelper(
         }
     }
 
-    private fun atualizarModeloVeiculo(modelo: String) {
+    internal fun atualizarModeloVeiculo(modelo: String) {
         uiState.update {
             it.copy(
                 modeloVeiculo = modelo,
@@ -159,7 +132,7 @@ class FormVeiculoHelper(
         }
     }
 
-    private fun atualizarPlacaVeiculo(placa: String) {
+    internal fun atualizarPlacaVeiculo(placa: String) {
         uiState.update {
             it.copy(
                 placaVeiculo = placa,
@@ -168,7 +141,7 @@ class FormVeiculoHelper(
         }
     }
 
-    private fun atualizaCorVeiculo(cor: String) {
+    internal fun atualizaCorVeiculo(cor: String) {
         uiState.update {
             it.copy(
                 corVeiculo = cor,
@@ -177,7 +150,7 @@ class FormVeiculoHelper(
         }
     }
 
-    private fun atualizarCilindrada(valor: String) {
+    internal fun atualizarCilindrada(valor: String) {
         uiState.update {
             it.copy(
                 // Filtro de dígito: guarda contra qualquer caractere acidental não-numérico (ADR-0013).

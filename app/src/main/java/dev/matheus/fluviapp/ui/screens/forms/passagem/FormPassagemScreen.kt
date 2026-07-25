@@ -50,6 +50,16 @@ fun FormPassagemScreen(
     statePassagem: FormPassagemUiState,
     statePassageiro: FormPassageiroUiState,
     stateVeiculo: FormVeiculoUiState,
+    // Eventos do sub-form de veículo (molde ADR-0006, §1b) — threadados até o ContentAreaVeiculoForm.
+    onNomeResponsavelRetiradaChange: (String) -> Unit = {},
+    onTipoDocumentoResponsavelRetiradaChange: (String) -> Unit = {},
+    onClickLimparTipoDocumentoResponsavelRetirada: () -> Unit = {},
+    onDocumentoResponsavelRetiradaChange: (String) -> Unit = {},
+    onTipoVeiculoChange: (String) -> Unit = {},
+    onModeloVeiculoChange: (String) -> Unit = {},
+    onPlacaVeiculoChange: (String) -> Unit = {},
+    onCorVeiculoChange: (String) -> Unit = {},
+    onCilindradaChange: (String) -> Unit = {},
     focusManager: FocusManager = LocalFocusManager.current,
     // Nonce: incrementado a cada "Avançar" com validação inválida → rola até o 1º erro (mais acima).
     scrollParaErro: Int = 0,
@@ -154,7 +164,16 @@ fun FormPassagemScreen(
                         ContentAreaVeiculoForm(
                             modifier = it,
                             statePassagem = statePassagem,
-                            stateVeiculo = stateVeiculo
+                            stateVeiculo = stateVeiculo,
+                            onNomeResponsavelRetiradaChange = onNomeResponsavelRetiradaChange,
+                            onTipoDocumentoResponsavelRetiradaChange = onTipoDocumentoResponsavelRetiradaChange,
+                            onClickLimparTipoDocumentoResponsavelRetirada = onClickLimparTipoDocumentoResponsavelRetirada,
+                            onDocumentoResponsavelRetiradaChange = onDocumentoResponsavelRetiradaChange,
+                            onTipoVeiculoChange = onTipoVeiculoChange,
+                            onModeloVeiculoChange = onModeloVeiculoChange,
+                            onPlacaVeiculoChange = onPlacaVeiculoChange,
+                            onCorVeiculoChange = onCorVeiculoChange,
+                            onCilindradaChange = onCilindradaChange,
                         )
                     }
                 } else {

@@ -2,42 +2,36 @@ package dev.matheus.fluviapp.ui.states.passagem
 
 import dev.matheus.fluviapp.model.cadastro.constantes.Constante
 
+/**
+ * Estado puro do sub-form de veículo (molde ADR-0006): só dados + flags + listas. Os eventos são métodos
+ * do FormPassagemViewModel (delegam aos `atualizar…` do FormVeiculoHelper), threadados pelas telas.
+ */
 data class FormVeiculoUiState(
     val tipoDocumentoResponsavelRetirada: String = "",
-    val onTipoDocumentoResponsavelRetiradaChange: (String) -> Unit = {},
     val isTipoDocumentoResponsavelRetiradaError: Boolean = false,
-    val onClickLimparTipoDocumentoResponsavelRetirada: () -> Unit = {},
 
     val listaNomeResponsavelRetirada: List<String> = emptyList(),
     val documentoResponsavelRetirada: String = "",
-    val onDocumentoResponsavelRetiradaChange: (String) -> Unit = {},
     val isDocumentoResponsavelRetiradaError: Boolean = false,
     val isDocumentoResponsavelRetiradaReadOnly: Boolean = true,
 
     val nomeResponsavelRetirada: String = "",
-    val onNomeResponsavelRetiradaChange: (String) -> Unit = {},
     val isNomeResponsavelRetiradaError: Boolean = false,
 
     val tipoVeiculo: String = "",
     val listaTipoVeiculo: List<Constante> = emptyList(),
-    val onTipoVeiculoChange: (String) -> Unit = {},
     val isTipoVeiculoError: Boolean = false,
 
     val modeloVeiculo: String = "",
-    val onModeloVeiculoChange: (String) -> Unit = {},
     val isModeloVeiculoError: Boolean = false,
 
     val placaVeiculo: String = "",
-    val onPlacaVeiculoChange: (String) -> Unit = {},
     val isPlacaVeiculoError: Boolean = false,
 
     val corVeiculo: String = "",
-    val onCorVeiculoChange: (String) -> Unit = {},
     val isCorVeiculoError: Boolean = false,
 
-    // Cilindrada da moto (ADR-0013) — só relevante quando tipoVeiculo = MOTO. Numérico, com filtro de
-    // dígito no handler (descarta caractere acidental). Alimenta a regra tarifaMotoBase na emissão.
+    // Cilindrada da moto (ADR-0013) — só relevante quando tipoVeiculo = MOTO; alimenta a tarifaMotoBase.
     val cilindrada: String = "",
-    val onCilindradaChange: (String) -> Unit = {},
     val isCilindradaError: Boolean = false,
 )

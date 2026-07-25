@@ -300,6 +300,17 @@ class FormPassagemViewModel @Inject constructor(
         return erros.valido
     }
 
+    // Eventos do sub-form de veículo (molde ADR-0006, §1b): o VM os expõe; delegam aos métodos do helper.
+    fun onNomeResponsavelRetiradaChange(valor: String) = formVeiculoHelper.atualizarNomeResponsavelRetirada(valor)
+    fun onTipoDocumentoResponsavelRetiradaChange(valor: String) = formVeiculoHelper.atualizarTipoDocumentoResponsavelRetirada(valor)
+    fun onClickLimparTipoDocumentoResponsavelRetirada() = formVeiculoHelper.limparCamposDocumento()
+    fun onDocumentoResponsavelRetiradaChange(valor: String) = formVeiculoHelper.atualizarDocumentoResponsavelRetirada(valor)
+    fun onTipoVeiculoChange(valor: String) = formVeiculoHelper.atualizarTipoVeiculo(valor)
+    fun onModeloVeiculoChange(valor: String) = formVeiculoHelper.atualizarModeloVeiculo(valor)
+    fun onPlacaVeiculoChange(valor: String) = formVeiculoHelper.atualizarPlacaVeiculo(valor)
+    fun onCorVeiculoChange(valor: String) = formVeiculoHelper.atualizaCorVeiculo(valor)
+    fun onCilindradaChange(valor: String) = formVeiculoHelper.atualizarCilindrada(valor)
+
     private fun limparStates() {
         formPassagemHelper.limparState()
         formPassageiroHelper.limparState()
