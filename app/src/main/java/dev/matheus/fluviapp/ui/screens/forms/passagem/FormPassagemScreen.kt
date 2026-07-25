@@ -81,6 +81,20 @@ fun FormPassagemScreen(
     onClickLimparDocumentoPassageiro3: () -> Unit = {},
     onDocumentoPassageiro3Change: (String) -> Unit = {},
     onDataNascimentoPassageiro3Change: (String) -> Unit = {},
+    // Eventos dos dados da passagem (molde ADR-0006, §1b) — top-level e área de pagamento.
+    onCheckVeiculo: (Boolean) -> Unit = {},
+    onDataViagemChange: (String) -> Unit = {},
+    onHoraViagemChange: (String) -> Unit = {},
+    onCheckPix: (Boolean) -> Unit = {},
+    onCheckDinheiro: (Boolean) -> Unit = {},
+    onCheckDebito: (Boolean) -> Unit = {},
+    onCheckCredito: (Boolean) -> Unit = {},
+    onValorPagoChange: (String) -> Unit = {},
+    onValorPixChange: (String) -> Unit = {},
+    onValorDinheiroChange: (String) -> Unit = {},
+    onValorDebitoChange: (String) -> Unit = {},
+    onValorCreditoChange: (String) -> Unit = {},
+    onObservacaoChange: (String, Boolean) -> Unit = { _, _ -> },
     focusManager: FocusManager = LocalFocusManager.current,
     // Nonce: incrementado a cada "Avançar" com validação inválida → rola até o 1º erro (mais acima).
     scrollParaErro: Int = 0,
@@ -151,7 +165,7 @@ fun FormPassagemScreen(
                         .padding(10.dp, 0.dp)
                         .bringIntoViewRequester(ancoraData),
                     value = statePassagem.dataViagem,
-                    onValueChange = statePassagem.onDataViagemChange,
+                    onValueChange = onDataViagemChange,
                     label = R.string.label_data_viagem,
                     isError = statePassagem.isDataViagemError,
                     textoErro = statePassagem.textDataViagemError,
@@ -166,7 +180,7 @@ fun FormPassagemScreen(
                     focusManager = focusManager,
                     label = R.string.label_hora_viagem,
                     value = statePassagem.horaViagem,
-                    onValueChange = statePassagem.onHoraViagemChange,
+                    onValueChange = onHoraViagemChange,
                     isError = statePassagem.isHoraViagemError,
                 )
 
@@ -174,7 +188,7 @@ fun FormPassagemScreen(
                     modifier = modifier,
                     label = R.string.label_checkbox_veiculo,
                     checked = statePassagem.isVeiculoChecked,
-                    onCheck = statePassagem.onCheckVeiculo
+                    onCheck = onCheckVeiculo
                 )
 
                 if (statePassagem.isVeiculoChecked) {
@@ -250,6 +264,16 @@ fun FormPassagemScreen(
                         state = statePassagem,
                         statePassageiro = statePassageiro,
                         stateVeiculo = stateVeiculo,
+                        onCheckPix = onCheckPix,
+                        onCheckDinheiro = onCheckDinheiro,
+                        onCheckDebito = onCheckDebito,
+                        onCheckCredito = onCheckCredito,
+                        onValorPagoChange = onValorPagoChange,
+                        onValorPixChange = onValorPixChange,
+                        onValorDinheiroChange = onValorDinheiroChange,
+                        onValorDebitoChange = onValorDebitoChange,
+                        onValorCreditoChange = onValorCreditoChange,
+                        onObservacaoChange = onObservacaoChange,
                         focusManager = focusManager
                     )
                 }

@@ -14,7 +14,11 @@ import dev.matheus.fluviapp.ui.states.passagem.FormPassagemUiState
 @Composable
 fun ContentAgenciaAreaPassagemForm(
     modifier: Modifier,
-    state: FormPassagemUiState
+    state: FormPassagemUiState,
+    // Área de agência ainda não plugada na tela (rework do agente, §6 do estudo); callbacks por parâmetro
+    // no molde ADR-0006 (§1b) — quando a área voltar, a tela threada viewModel::onAgenciaChange/onAgenteChange.
+    onAgenciaChange: (String) -> Unit = {},
+    onAgenteChange: (String) -> Unit = {},
 ) {
     FilterDropDownForm(
         modifier = modifier.fillMaxWidth(),
@@ -22,7 +26,7 @@ fun ContentAgenciaAreaPassagemForm(
         label = R.string.label_agencia,
         value = state.agencia,
         isError = state.isAgenciaError,
-        onValueChange = state.onAgenciaChange,
+        onValueChange = onAgenciaChange,
         keyboardType = KeyboardType.Text
     )
 
@@ -34,7 +38,7 @@ fun ContentAgenciaAreaPassagemForm(
         readOnly = state.isAgenteDisabled,
         enabled = !state.agencia.isBlank(),
         isError = state.isAgenteError,
-        onValueChange = state.onAgenteChange,
+        onValueChange = onAgenteChange,
         keyboardType = KeyboardType.Text
     )
 }

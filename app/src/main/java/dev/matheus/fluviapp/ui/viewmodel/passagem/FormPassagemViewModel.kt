@@ -334,6 +334,30 @@ class FormPassagemViewModel @Inject constructor(
     fun onDocumentoPassageiro3Change(valor: String) = formPassageiroHelper.atualizaDocumentoPassageiro3(valor)
     fun onDataNascimentoPassageiro3Change(valor: String) = formPassageiroHelper.atualizarDataNascimentoPassageiro3(valor)
 
+    // Eventos dos dados da passagem (molde ADR-0006, §1b): o VM os expõe; delegam ao helper.
+    // onCheck* ignoram o Boolean do checkbox (o helper faz toggle) — preserva o comportamento.
+    fun onCheckVeiculo(checked: Boolean) = formPassagemHelper.checkVeiculo()
+    fun onDataViagemChange(valor: String) = formPassagemHelper.atualizarDataViagem(valor)
+    fun onHoraViagemChange(valor: String) = formPassagemHelper.atualizarHoraViagem(valor)
+    fun onCheckPix(checked: Boolean) = formPassagemHelper.checkPix()
+    fun onCheckDinheiro(checked: Boolean) = formPassagemHelper.checkDinheiro()
+    fun onCheckDebito(checked: Boolean) = formPassagemHelper.checkDebito()
+    fun onCheckCredito(checked: Boolean) = formPassagemHelper.checkCredito()
+    fun onValorPagoChange(valor: String) = formPassagemHelper.atualizarValorPago(valor)
+    fun onValorPixChange(valor: String) = formPassagemHelper.atualizarValorPix(valor)
+    fun onValorDinheiroChange(valor: String) = formPassagemHelper.atualizarValorDinheiro(valor)
+    fun onValorDebitoChange(valor: String) = formPassagemHelper.atualizarValorDebito(valor)
+    fun onValorCreditoChange(valor: String) = formPassagemHelper.atualizarValorCredito(valor)
+    fun onObservacaoChange(obs: String, ehGravacao: Boolean) = formPassagemHelper.atualizaObservacao(obs, ehGravacao)
+
+    // Eventos da área de agência: API pronta, porém a UI (área de agência) segue comentada até a rework
+    // do agente (§6 do estudo). atualizarListaAgente ainda usa runBlocking — dívida a resolver nessa rework.
+    fun onAgenciaChange(valor: String) {
+        formPassagemHelper.atualizarListaAgente(valor)
+        formPassagemHelper.atualizarAgencia(valor)
+    }
+    fun onAgenteChange(valor: String) = formPassagemHelper.atualizarAgente(valor)
+
     private fun limparStates() {
         formPassagemHelper.limparState()
         formPassageiroHelper.limparState()

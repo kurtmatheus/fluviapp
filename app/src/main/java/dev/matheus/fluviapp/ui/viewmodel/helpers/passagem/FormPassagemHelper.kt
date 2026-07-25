@@ -36,67 +36,7 @@ class FormPassagemHelper(
     private val viagemDadosViagemMapper: ViagemDadosViagemMapper,
 ) {
 
-    init {
-        atualizaCampos()
-    }
-
     lateinit var viagem: Viagem
-
-    private fun atualizaCampos() {
-        uiStatePassagem.update { statePassagem ->
-            statePassagem.copy(
-                onCheckVeiculo = {
-                    checkVeiculo()
-                },
-                onHoraViagemChange = {
-                    atualizarHoraViagem(it)
-                },
-                onDataViagemChange = {
-                    atualizarDataViagem(it)
-                },
-                onAgenciaChange = {
-                    atualizarListaAgente(it)
-                    atualizarAgencia(it)
-                },
-                onAgenteChange = {
-                    atualizarAgente(it)
-                },
-                onCheckPix = {
-                    checkPix()
-                },
-                onCheckDinheiro = {
-                    checkDinheiro()
-                },
-                onCheckDebito = {
-                    checkDebito()
-                },
-                onCheckCredito = {
-                    checkCredito()
-                },
-                onValorPagoChange = {
-                    atualizarValorPago(it)
-                },
-                onValorPixChange = {
-                    atualizarValorPix(it)
-                },
-                onValorDinheiroChange = {
-                    atualizarValorDinheiro(it)
-                },
-                onValorDebitoChange = {
-                    atualizarValorDebito(it)
-                },
-                onValorCreditoChange = {
-                    atualizarValorCredito(it)
-                },
-                onDescontoChange = {
-                    atualizarDesconto(it)
-                },
-                onObservacaoChange = { obs, ehFalado ->
-                    atualizaObservacao(obs, ehFalado)
-                },
-            )
-        }
-    }
 
     /** Carga suspensa das listas (molde ADR-0006): sem `runBlocking` na thread principal no init. */
     suspend fun carregarListas() {
@@ -112,7 +52,7 @@ class FormPassagemHelper(
         }
     }
 
-    private fun atualizarListaAgente(agenciaDescricao: String) {
+    internal fun atualizarListaAgente(agenciaDescricao: String) {
         uiStatePassagem.update { state ->
             state.copy(
                 listaAgente = runBlocking { agenteRepository.obterAgentesPorAgencia(agenciaDescricao) }
@@ -225,7 +165,7 @@ class FormPassagemHelper(
         }
     }
 
-    private fun atualizarDataViagem(data: String) {
+    internal fun atualizarDataViagem(data: String) {
         uiStatePassagem.update {
             it.copy(
                 dataViagem = data,
@@ -234,7 +174,7 @@ class FormPassagemHelper(
         }
     }
 
-    private fun atualizarHoraViagem(hora: String) {
+    internal fun atualizarHoraViagem(hora: String) {
         uiStatePassagem.update {
             it.copy(
                 horaViagem = hora,
@@ -243,7 +183,7 @@ class FormPassagemHelper(
         }
     }
 
-    private fun atualizarAgencia(agencia: String) {
+    internal fun atualizarAgencia(agencia: String) {
         uiStatePassagem.update {
             it.copy(
                 agencia = agencia,
@@ -254,7 +194,7 @@ class FormPassagemHelper(
         }
     }
 
-    private fun atualizarAgente(agente: String) {
+    internal fun atualizarAgente(agente: String) {
         uiStatePassagem.update {
             it.copy(
                 agente = agente,
@@ -263,7 +203,7 @@ class FormPassagemHelper(
         }
     }
 
-    private fun checkPix() {
+    internal fun checkPix() {
         uiStatePassagem.update {
             it.copy(
                 isPixChecked = !it.isPixChecked,
@@ -272,7 +212,7 @@ class FormPassagemHelper(
         }
     }
 
-    private fun checkDinheiro() {
+    internal fun checkDinheiro() {
         uiStatePassagem.update {
             it.copy(
                 isDinheiroChecked = !it.isDinheiroChecked,
@@ -281,7 +221,7 @@ class FormPassagemHelper(
         }
     }
 
-    private fun checkDebito() {
+    internal fun checkDebito() {
         uiStatePassagem.update {
             it.copy(
                 isDebitoChecked = !it.isDebitoChecked,
@@ -290,7 +230,7 @@ class FormPassagemHelper(
         }
     }
 
-    private fun checkCredito() {
+    internal fun checkCredito() {
         uiStatePassagem.update {
             it.copy(
                 isCreditoChecked = !it.isCreditoChecked,
@@ -299,7 +239,7 @@ class FormPassagemHelper(
         }
     }
 
-    private fun atualizarValorPago(valor: String) {
+    internal fun atualizarValorPago(valor: String) {
         uiStatePassagem.update {
             it.copy(
                 valorPago = valor,
@@ -308,7 +248,7 @@ class FormPassagemHelper(
         }
     }
 
-    private fun atualizarValorPix(valor: String) {
+    internal fun atualizarValorPix(valor: String) {
         uiStatePassagem.update {
             it.copy(
                 valorPix = valor,
@@ -317,7 +257,7 @@ class FormPassagemHelper(
         }
     }
 
-    private fun atualizarValorDinheiro(valor: String) {
+    internal fun atualizarValorDinheiro(valor: String) {
         uiStatePassagem.update {
             it.copy(
                 valorDinheiro = valor,
@@ -326,7 +266,7 @@ class FormPassagemHelper(
         }
     }
 
-    private fun atualizarValorDebito(valor: String) {
+    internal fun atualizarValorDebito(valor: String) {
         uiStatePassagem.update {
             it.copy(
                 valorDebito = valor,
@@ -335,7 +275,7 @@ class FormPassagemHelper(
         }
     }
 
-    private fun atualizarValorCredito(valor: String) {
+    internal fun atualizarValorCredito(valor: String) {
         uiStatePassagem.update {
             it.copy(
                 valorCredito = valor,
@@ -344,15 +284,7 @@ class FormPassagemHelper(
         }
     }
 
-    private fun atualizarDesconto(desconto: String) {
-        uiStatePassagem.update {
-            it.copy(
-                desconto = desconto
-            )
-        }
-    }
-
-    private fun atualizaObservacao(obs: String, ehGravacao: Boolean) {
+    internal fun atualizaObservacao(obs: String, ehGravacao: Boolean) {
         uiStatePassagem.update {
             when {
                 COMANDOS_VOZ.contains(obs) -> {

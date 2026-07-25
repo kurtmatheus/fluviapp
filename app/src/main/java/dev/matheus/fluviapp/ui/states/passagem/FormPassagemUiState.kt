@@ -11,7 +11,6 @@ data class FormPassagemUiState(
     val titleForm: Int = R.string.subtitle_nova_passagem,
 
     val isVeiculoChecked: Boolean = false,
-    val onCheckVeiculo: (Boolean) -> Unit = {},
 
     val listaTipoDocumento: List<Constante> = emptyList(),
 
@@ -28,64 +27,49 @@ data class FormPassagemUiState(
     val tarifasViagem: Map<String, Double> = emptyMap(),
 
     val horaViagem: String = "",
-    val onHoraViagemChange: (String) -> Unit = {},
     val isHoraViagemError: Boolean = false,
 
     val dataViagem: String = LocalDate.now().formatarDataBarrasBr(),
-    val onDataViagemChange: (String) -> Unit = {},
     val isDataViagemError: Boolean = false,
     val textDataViagemError: Int = 0,
 
     val listaAgencia: List<String> = emptyList(),
     val agencia: String = "",
-    val onAgenciaChange: (String) -> Unit = {},
     val isAgenciaError: Boolean = false,
 
     val listaAgente: List<Agente> = emptyList(),
     val agente: String = "",
-    val onAgenteChange: (String) -> Unit = {},
     val isAgenteError: Boolean = false,
     val isAgenteDisabled: Boolean = true,
 
     val listaFormaPagamento: List<Constante> = emptyList(),
     val isPixChecked: Boolean = false,
-    val onCheckPix: (Boolean) -> Unit = {},
     val isDinheiroChecked: Boolean = false,
-    val onCheckDinheiro: (Boolean) -> Unit = {},
     val isDebitoChecked: Boolean = false,
-    val onCheckDebito: (Boolean) -> Unit = {},
     val isCreditoChecked: Boolean = false,
-    val onCheckCredito: (Boolean) -> Unit = {},
     val isFormaPagamentoError: Boolean = false,
 
     val valorPago: String = "",
-    val onValorPagoChange: (String) -> Unit = {},
     val isValorPagoError: Boolean = false,
     val isValorPagoEnabled: Boolean = true,
 
     val valorPix: String = "",
-    val onValorPixChange: (String) -> Unit = {},
     val isValorPixError: Boolean = false,
 
     val valorDinheiro: String = "",
-    val onValorDinheiroChange: (String) -> Unit = {},
     val isValorDinheiroError: Boolean = false,
 
     val valorDebito: String = "",
-    val onValorDebitoChange: (String) -> Unit = {},
     val isValorDebitoError: Boolean = false,
 
     val valorCredito: String = "",
-    val onValorCreditoChange: (String) -> Unit = {},
     val isValorCreditoError: Boolean = false,
 
     val desconto: String = "",
-    val onDescontoChange: (String) -> Unit = {},
     val isDescontoError: Boolean = false,
     val isDescontoEnabled: Boolean = true,
 
     val observacao: String = "",
-    val onObservacaoChange: (String, Boolean) -> Unit = { _, _ -> },
 
     val listaSituacaoPassagem: List<Constante> = emptyList(),
     val listaCategoriaPassagem: List<Constante> = emptyList(),

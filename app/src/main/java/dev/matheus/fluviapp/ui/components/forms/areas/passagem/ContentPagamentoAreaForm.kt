@@ -72,6 +72,16 @@ fun ContentPagamentoAreaForm(
     state: FormPassagemUiState,
     statePassageiro: FormPassageiroUiState,
     stateVeiculo: FormVeiculoUiState = FormVeiculoUiState(),
+    onCheckPix: (Boolean) -> Unit = {},
+    onCheckDinheiro: (Boolean) -> Unit = {},
+    onCheckDebito: (Boolean) -> Unit = {},
+    onCheckCredito: (Boolean) -> Unit = {},
+    onValorPagoChange: (String) -> Unit = {},
+    onValorPixChange: (String) -> Unit = {},
+    onValorDinheiroChange: (String) -> Unit = {},
+    onValorDebitoChange: (String) -> Unit = {},
+    onValorCreditoChange: (String) -> Unit = {},
+    onObservacaoChange: (String, Boolean) -> Unit = { _, _ -> },
     focusManager: FocusManager = LocalFocusManager.current,
 ) {
 
@@ -97,14 +107,21 @@ fun ContentPagamentoAreaForm(
     }
 
     if (state.isFormaPagamentoEnabled && !statePassageiro.isGratuidade) {
-        AreaFormaPagamento(state, modifier)
+        AreaFormaPagamento(
+            state = state,
+            modifier = modifier,
+            onCheckPix = onCheckPix,
+            onCheckDinheiro = onCheckDinheiro,
+            onCheckDebito = onCheckDebito,
+            onCheckCredito = onCheckCredito,
+        )
 
         FieldFormaPagamento(
             modifier = modifier.fillMaxWidth(),
             focusManager = focusManager,
             label = R.string.label_valor_pix,
             value = state.valorPix,
-            onValueChange = state.onValorPixChange,
+            onValueChange = onValorPixChange,
             isError = state.isValorPixError,
             isChecked = state.isPixChecked
         )
@@ -114,7 +131,7 @@ fun ContentPagamentoAreaForm(
             focusManager = focusManager,
             label = R.string.label_valor_dinheiro,
             value = state.valorDinheiro,
-            onValueChange = state.onValorDinheiroChange,
+            onValueChange = onValorDinheiroChange,
             isError = state.isValorDinheiroError,
             isChecked = state.isDinheiroChecked
         )
@@ -124,7 +141,7 @@ fun ContentPagamentoAreaForm(
             focusManager = focusManager,
             label = R.string.label_valor_debito,
             value = state.valorDebito,
-            onValueChange = state.onValorDebitoChange,
+            onValueChange = onValorDebitoChange,
             isError = state.isValorDebitoError,
             isChecked = state.isDebitoChecked
         )
@@ -134,7 +151,7 @@ fun ContentPagamentoAreaForm(
             focusManager = focusManager,
             label = R.string.label_valor_credito,
             value = state.valorCredito,
-            onValueChange = state.onValorCreditoChange,
+            onValueChange = onValorCreditoChange,
             isError = state.isValorCreditoError,
             isChecked = state.isCreditoChecked
         )
@@ -144,7 +161,7 @@ fun ContentPagamentoAreaForm(
             modifier = modifier.fillMaxWidth(),
             value = state.valorPago,
             label = R.string.label_valor_pago,
-            onValueChange = state.onValorPagoChange,
+            onValueChange = onValorPagoChange,
             isError = state.isValorPagoError,
             enabled = state.isValorPagoEnabled,
             leadingIcon = {
@@ -171,7 +188,7 @@ fun ContentPagamentoAreaForm(
             .heightIn(200.dp),
         value = state.observacao,
         label = R.string.label_obs,
-        onValueChange = { state.onObservacaoChange(it, false) },
+        onValueChange = { onObservacaoChange(it, false) },
         keyboardOptions = KeyboardOptions(
             imeAction = ImeAction.Next,
             capitalization = KeyboardCapitalization.Characters
@@ -179,7 +196,7 @@ fun ContentPagamentoAreaForm(
         focusManager = focusManager,
         trailingIcon = {
             IconMicrofone(
-                onValueChange = state.onObservacaoChange
+                onValueChange = onObservacaoChange
             )
         }
     )
@@ -294,6 +311,10 @@ fun IconMicrofone(
 private fun AreaFormaPagamento(
     state: FormPassagemUiState,
     modifier: Modifier,
+    onCheckPix: (Boolean) -> Unit = {},
+    onCheckDinheiro: (Boolean) -> Unit = {},
+    onCheckDebito: (Boolean) -> Unit = {},
+    onCheckCredito: (Boolean) -> Unit = {},
 ) {
     Row {
         state.listaFormaPagamento.forEach {
@@ -303,7 +324,7 @@ private fun AreaFormaPagamento(
                         modifier = modifier,
                         label = R.string.label_pix,
                         checked = state.isPixChecked,
-                        onCheck = state.onCheckPix,
+                        onCheck = onCheckPix,
                         isError = state.isFormaPagamentoError
                     )
                 }
@@ -313,7 +334,7 @@ private fun AreaFormaPagamento(
                         modifier = modifier,
                         label = R.string.label_dinheiro,
                         checked = state.isDinheiroChecked,
-                        onCheck = state.onCheckDinheiro,
+                        onCheck = onCheckDinheiro,
                         isError = state.isFormaPagamentoError
                     )
                 }
@@ -323,7 +344,7 @@ private fun AreaFormaPagamento(
                         modifier = modifier,
                         label = R.string.label_debito,
                         checked = state.isDebitoChecked,
-                        onCheck = state.onCheckDebito,
+                        onCheck = onCheckDebito,
                         isError = state.isFormaPagamentoError
                     )
                 }
@@ -333,7 +354,7 @@ private fun AreaFormaPagamento(
                         modifier = modifier,
                         label = R.string.label_credito,
                         checked = state.isCreditoChecked,
-                        onCheck = state.onCheckCredito,
+                        onCheck = onCheckCredito,
                         isError = state.isFormaPagamentoError
                     )
                 }
