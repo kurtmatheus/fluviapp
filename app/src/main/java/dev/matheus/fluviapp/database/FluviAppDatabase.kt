@@ -38,7 +38,7 @@ import dev.matheus.fluviapp.model.viagem.Viagem
         PassagemDigital::class,
         RascunhoPassagemEntity::class
     ],
-    version = 17,
+    version = 18,
     exportSchema = false
 )
 abstract class FluviAppDatabase : RoomDatabase() {

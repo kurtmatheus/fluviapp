@@ -306,6 +306,30 @@ val MIGRATION_16_17 = object : Migration(16, 17) {
     }
 }
 
+/**
+ * v17 → v18: remove `Agente.podeSelecionarFormaPagamento` — desfaz exatamente a MIGRATION_1_2. A
+ * capability era competência da proposta antiga (o app emitia o bilhete de check-in); hoje ele emite a
+ * passagem e o check-in é o QR (ADR-0015 §4a, supera o ADR-0002). Repete o trade-off SQL×NoSQL da 1→2 na
+ * direção inversa: no Firestore basta parar de escrever o campo, no Room tipado a saída custa esta
+ * recriação de tabela (SQLite não garante DROP COLUMN no minSdk 26 — mesmo padrão da 16→17).
+ */
+val MIGRATION_17_18 = object : Migration(17, 18) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `Agente_novo` (" +
+                "`id` TEXT NOT NULL, `descricaoNome` TEXT NOT NULL, `agencia` TEXT NOT NULL, " +
+                "`lotacao` TEXT NOT NULL, PRIMARY KEY(`id`))"
+        )
+        db.execSQL(
+            "INSERT INTO `Agente_novo` (`id`, `descricaoNome`, `agencia`, `lotacao`) " +
+                "SELECT `id`, `descricaoNome`, `agencia`, `lotacao` FROM `Agente`"
+        )
+        db.execSQL("DROP TABLE `Agente`")
+        db.execSQL("ALTER TABLE `Agente_novo` RENAME TO `Agente`")
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_Agente_id` ON `Agente` (`id`)")
+    }
+}
+
 @Module
 @InstallIn(SingletonComponent::class)
 class DatabaseModule {
@@ -321,6 +345,7 @@ class DatabaseModule {
             MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7,
             MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12,
             MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17,
+            MIGRATION_17_18,
         ).build()
     }
 

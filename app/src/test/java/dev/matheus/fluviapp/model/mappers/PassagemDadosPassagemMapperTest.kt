@@ -1,7 +1,6 @@
 package dev.matheus.fluviapp.model.mappers
 
 import dev.matheus.fluviapp.extensions.formataParaMoedaBrasileira
-import dev.matheus.fluviapp.fakes.FakeAgenteRepository
 import dev.matheus.fluviapp.fakes.FakeEmpresaRepository
 import dev.matheus.fluviapp.fakes.FakeNavioRepository
 import dev.matheus.fluviapp.model.passagem.Passagem
@@ -64,7 +63,6 @@ class PassagemDadosPassagemMapperTest {
     private fun mapper(empresas: List<Empresa>, navios: List<Navio> = emptyList()) = PassagemDadosPassagemMapper(
         empresaRepository = FakeEmpresaRepository().apply { this.empresas = empresas },
         navioRepository = FakeNavioRepository().apply { this.navios = navios },
-        agenteRepository = FakeAgenteRepository(),
     )
 
     @Test

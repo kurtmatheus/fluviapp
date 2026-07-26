@@ -11,7 +11,6 @@ import dev.matheus.fluviapp.model.passagem.StatusPassagem
 import dev.matheus.fluviapp.model.passagem.TipoPassagem
 import dev.matheus.fluviapp.model.passagem.descontoDerivado
 import dev.matheus.fluviapp.model.screendata.DadosPassagem
-import dev.matheus.fluviapp.services.repository.cadastro.passagem.AgenteRepository
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.EmpresaRepository
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.NavioRepository
 import dev.matheus.fluviapp.util.Mapper
@@ -23,7 +22,6 @@ import javax.inject.Singleton
 class PassagemDadosPassagemMapper @Inject constructor(
     private val empresaRepository: EmpresaRepository,
     private val navioRepository: NavioRepository,
-    private val agenteRepository: AgenteRepository,
 ) : Mapper<Passagem, DadosPassagem> {
     override suspend fun map(entry: Passagem): DadosPassagem {
         // Empresa resolvida por id (ADR-0008): rename-safe e órfão detectável (obterPorId → null),
@@ -35,16 +33,6 @@ class PassagemDadosPassagemMapper @Inject constructor(
         // rename-safe e órfão detectável (obterPorId → null → nome vazio). Fecha a dívida do §9 do doc de
         // domínio (o nome vinha do snapshot entry.navio, que renomear a frota não atualizava).
         val navio = navioRepository.obterPorId(entry.navioId)
-
-        // Flip da capability (ADR-0002/0003): deriva do agente que vendeu a passagem.
-        // Best-effort — o agente é texto livre no form; casa por agência + nome no cadastro.
-        val podeSelecionarFormaPagamento = if (entry.agencia.isNotBlank()) {
-            agenteRepository.obterAgentesPorAgencia(entry.agencia)
-                .firstOrNull { it.descricaoNome == entry.agente }
-                ?.podeSelecionarFormaPagamento ?: false
-        } else {
-            false
-        }
 
         val valorPix = entry.valorPix.converterParaBigDecimal()
         val valorDinheiro = entry.valorDinheiro.converterParaBigDecimal()
@@ -83,7 +71,6 @@ class PassagemDadosPassagemMapper @Inject constructor(
             destino = entry.destino,
             agencia = entry.agencia,
             agente = entry.agente,
-            podeSelecionarFormaPagamento = podeSelecionarFormaPagamento,
             tarifa = precos.tarifa.formataParaMoedaBrasileira(),
             valorTotal = precos.total.formataParaMoedaBrasileira(),
             valorPix = valorPix.getValorFormatadoOrEmpty(),

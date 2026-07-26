@@ -287,41 +287,41 @@ private fun SecaoGeral(modifier: Modifier, state: DetalhesPassagemState) {
             valor = state.dadosPassagem.valorAPagar
         )
 
-        if (state.dadosPassagem.isFormaPagamentoEnabled) {
-            Column(
-                modifier = modifier.padding(5.dp, 0.dp)
-            ) {
-                if (state.dadosPassagem.valorPix.isNotEmpty()) {
-                    CommonRowDetalhamento(
-                        modifier = modifier,
-                        label = R.string.label_valor_pix,
-                        valor = state.dadosPassagem.valorPix,
-                    )
-                }
+        // Breakdown por forma de pagamento: cada linha aparece se tiver valor. Não há mais gate de
+        // capability (ADR-0015 §4a) — antes o `if (isFormaPagamentoEnabled)` escondia o bloco inteiro.
+        Column(
+            modifier = modifier.padding(5.dp, 0.dp)
+        ) {
+            if (state.dadosPassagem.valorPix.isNotEmpty()) {
+                CommonRowDetalhamento(
+                    modifier = modifier,
+                    label = R.string.label_valor_pix,
+                    valor = state.dadosPassagem.valorPix,
+                )
+            }
 
-                if (state.dadosPassagem.valorDinheiro.isNotEmpty()) {
-                    CommonRowDetalhamento(
-                        modifier = modifier,
-                        label = R.string.label_valor_dinheiro,
-                        valor = state.dadosPassagem.valorDinheiro,
-                    )
-                }
+            if (state.dadosPassagem.valorDinheiro.isNotEmpty()) {
+                CommonRowDetalhamento(
+                    modifier = modifier,
+                    label = R.string.label_valor_dinheiro,
+                    valor = state.dadosPassagem.valorDinheiro,
+                )
+            }
 
-                if (state.dadosPassagem.valorDebito.isNotEmpty()) {
-                    CommonRowDetalhamento(
-                        modifier = modifier,
-                        label = R.string.label_valor_debito,
-                        valor = state.dadosPassagem.valorDebito,
-                    )
-                }
+            if (state.dadosPassagem.valorDebito.isNotEmpty()) {
+                CommonRowDetalhamento(
+                    modifier = modifier,
+                    label = R.string.label_valor_debito,
+                    valor = state.dadosPassagem.valorDebito,
+                )
+            }
 
-                if (state.dadosPassagem.valorCredito.isNotEmpty()) {
-                    CommonRowDetalhamento(
-                        modifier = modifier,
-                        label = R.string.label_valor_credito,
-                        valor = state.dadosPassagem.valorCredito,
-                    )
-                }
+            if (state.dadosPassagem.valorCredito.isNotEmpty()) {
+                CommonRowDetalhamento(
+                    modifier = modifier,
+                    label = R.string.label_valor_credito,
+                    valor = state.dadosPassagem.valorCredito,
+                )
             }
         }
 

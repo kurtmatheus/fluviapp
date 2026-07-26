@@ -12,7 +12,6 @@ data class DocumentoBruto(
 ) {
     fun texto(chave: String): String = dados[chave] as? String ?: ""
     fun inteiro(chave: String): Int = (dados[chave] as? Number)?.toInt() ?: 0
-    fun booleano(chave: String): Boolean = dados[chave] as? Boolean ?: false
 
     /**
      * Mapa aninhado chave(String)→valor(Double) — a forma que o Firestore devolve um `map` de números

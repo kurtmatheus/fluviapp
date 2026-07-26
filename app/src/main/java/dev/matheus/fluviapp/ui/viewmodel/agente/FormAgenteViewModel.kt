@@ -95,8 +95,8 @@ class FormAgenteViewModel @Inject constructor(
         viewModelScope.launch {
             val s = _uiState.value
             try {
-                // Edição: parte do agente persistido (preserva id e podeSelecionarFormaPagamento) e
-                // aplica os campos do form. Criação: novo agente com id vazio (auto-id).
+                // Edição: parte do agente persistido (preserva o id) e aplica os campos do form.
+                // Criação: novo agente com id vazio (auto-id).
                 val base = if (idAgente.isNotBlank()) agenteRepository.obterPorId(idAgente) else null
                 val agente = (base ?: Agente(id = "", descricaoNome = "", agencia = "", lotacao = "")).copy(
                     descricaoNome = s.agente,

@@ -64,9 +64,9 @@ class FormAgenteViewModelTest {
     }
 
     @Test
-    fun `editar atualiza campos e preserva podeSelecionarFormaPagamento`() = runTest(mainRule.dispatcher) {
+    fun `editar atualiza campos e preserva o id do agente persistido`() = runTest(mainRule.dispatcher) {
         val fake = FakeAgenteRepository().apply {
-            agentes = listOf(Agente("a1", "Ana", "MATRIZ", "PORTO NORTE", podeSelecionarFormaPagamento = true))
+            agentes = listOf(Agente("a1", "Ana", "MATRIZ", "PORTO NORTE"))
         }
         val vm = FormAgenteViewModel(fake, constanteFake(), SavedStateHandle(mapOf("idAgente" to "a1")))
         advanceUntilIdle()
@@ -79,6 +79,7 @@ class FormAgenteViewModelTest {
         val salvo = fake.salvos.first()
         assertEquals("a1", salvo.id)
         assertEquals("Ana Maria", salvo.descricaoNome)
-        assertTrue(salvo.podeSelecionarFormaPagamento)
+        // Campos carregados e não mexidos voltam como estavam (o form parte do persistido).
+        assertEquals("MATRIZ", salvo.agencia)
     }
 }

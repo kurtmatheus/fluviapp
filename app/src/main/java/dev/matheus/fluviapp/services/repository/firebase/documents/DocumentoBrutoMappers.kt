@@ -41,7 +41,6 @@ fun DocumentoBruto.toAgenteDocumento() = AgenteDocumento(
     nome = texto("nome"),
     agencia = texto("agencia"),
     lotacao = texto("lotacao"),
-    podeSelecionarFormaPagamento = booleano("podeSelecionarFormaPagamento"),
 )
 
 fun DocumentoBruto.toConstanteDocumento() = ConstanteDocumento(
