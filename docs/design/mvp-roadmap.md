@@ -65,10 +65,9 @@ analista em 2026-07-26) — ele manda; as fases abaixo são o resumo:
   `Agente` à parte. Passa a ser **atributo do usuário** (`Usuario`/`Agente` ganha `agencia` + `lotacao`).
   Migração Room + espelho Firestore + form de cadastro do membro da Equipe. Consolida "agente = usuário
   logado" (o `funcionarioId`/uid já é a âncora — ADR-0010/0008).
-- **P2.0 — Aposentar `podeSelecionarFormaPagamento` + o `valorPago` avulso.** Deleção (ADR-0015 §4a; supera o
-  ADR-0002): a capability é resíduo da proposta antiga (bilhete de check-in) — o app hoje emite a passagem e
-  o check-in é o QR; o "valor pago" avulso era o par dela. Inclui migração Room (drop de coluna). Não depende
-  de nada, pode ir primeiro.
+- **P2.0 — Aposentar `podeSelecionarFormaPagamento` + o `valorPago` avulso. ✅ FEITO** (ADR-0015 §4a; supera o
+  ADR-0002): a capability era resíduo da proposta antiga (bilhete de check-in) — o app hoje emite a passagem e
+  o check-in é o QR; o "valor pago" avulso era o par dela. Duas migrações Room (17→18 e 18→19).
 - **P2.3 — Agência transversal à emissão.** A emissão **deriva a agência do usuário logado** (não digita
   agente/agência à mão; a área comentada do form é aposentada). Remove a dívida do `runBlocking` de
   `atualizarListaAgente` e as validações órfãs de agência/agente.

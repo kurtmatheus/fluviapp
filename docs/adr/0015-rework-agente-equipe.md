@@ -228,10 +228,11 @@ logado em vez de digitados.
 
 ## Plano de migração (faseado, aditivo)
 
-- **P2.0 — Aposentar `podeSelecionarFormaPagamento` + o `valorPago` avulso.** Deleção (§4a), **não depende de
-  nenhuma outra fase** — pode ir primeiro. Libera o `PassagemDadosPassagemMapper` do `AgenteRepository`;
-  inclui migração Room (drop de `valorPago`), o campo/evento/validação do form e as somas. Atenção à
-  gratuidade (deixa de exibir o campo `0` desabilitado).
+- **P2.0 — Aposentar `podeSelecionarFormaPagamento` + o `valorPago` avulso. ✅ FEITO** (§4a) — em dois
+  commits: a capability (leitura, cadastro e `MIGRATION_17_18`) e o `valorPago` (form, somas e
+  `MIGRATION_18_19`). O `PassagemDadosPassagemMapper` perdeu o `AgenteRepository`; a gratuidade deixou de
+  exibir o campo `0` desabilitado; `FormPassageiroHelper` deixou de depender do state da passagem (a
+  visibilidade da área virou estado derivado de `isGratuidade`, não sincronização imperativa).
 - **P2.1 — Vocabulário: "Equipe" + cargos novos.** Menu "Agentes" → "Equipe" (`SecaoMenu.AGENTE` → `EQUIPE`)
   **e** `COLABORADOR_MASTER` → `SUPERVISOR`, `OPERADOR` → `AGENTE` (§4.2) — juntos, para não conviverem dois
   `AGENTE`. Toca `firestore.rules` + `firestore-tests` + defaults de autocadastro no mesmo commit; seed
