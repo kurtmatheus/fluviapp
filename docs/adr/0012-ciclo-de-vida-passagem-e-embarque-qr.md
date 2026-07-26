@@ -176,6 +176,16 @@ espelhando as decisões que o ADR-0010 já tomou para o cargo. Ciclo alvo (decid
 
 ## Alternativas futuras
 
+- **Módulo de check-in com o status `CHECADA` (pré-embarque)** — direção do analista (2026-07-26). Hoje a
+  FSM é `A_EMITIR → EMITIDA → EMBARCADA` e o QR faz o embarque direto. A evolução prevista insere o
+  **check-in** como etapa própria: a passagem confirmada é *checada* (pré-embarque) e só então se emite o
+  **bilhete de embarque** — ou seja, o bilhete deixa de ser sinônimo da passagem e passa a ser o artefato
+  *pós-confirmação*. Duas consequências já conhecidas:
+  - A FSM ganha um estado entre a emissão e o embarque: `EMITIDA → CHECADA → EMBARCADA`, com as mesmas
+    garantias (sem pulo, sem retrocesso) tanto no Kotlin quanto nas regras (ADR-0011).
+  - **É o que reacende a impressão física.** O `ImpressaoPassagem` fica **dormente** até lá (ver ADR-0015):
+    é ele que imprimirá o bilhete de embarque. Por isso o rótulo `"Operador"` do bilhete **não** foi
+    renomeado no rework de vocabulário — quando o módulo voltar, o texto do bilhete se decide junto.
 - **`CANCELADA`/`EXPIRADA` (no-show)** como estados, com auditoria em vez de delete físico.
 - **Validação offline** por token assinado + sync posterior.
 - **Número de poltrona/assento** (hoje só `acomodacao`, sem assento numerado).

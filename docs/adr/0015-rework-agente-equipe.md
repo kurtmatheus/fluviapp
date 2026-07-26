@@ -168,6 +168,11 @@ O enum `Usuario.Cargo` passa a ser:
 `firestore.rules`). Com `GESTOR` virando cargo concreto, um `ehGestor(cargo)` que responde `true` também
 para `ADM` recriaria a mesma ambiguidade que o rename está desfazendo; nomear pelo **escopo** (§4.1) resolve.
 
+**Como alguém vira `SUPERVISOR`:** pela **gestão**, não pelo form. O cadastro (in-app ou autocadastro)
+sempre nasce `AGENTE` — o menor privilégio — e a promoção é operação de console/backend, coerente com a
+regra anti-escalonamento do ADR-0011 (o cliente nunca escreve o próprio cargo). Por isso o form de membro
+**não tem seletor de cargo**.
+
 O nome **"Agente" volta — como cargo, não como entidade.** Só é possível porque a entidade `Agente` morre
 (§7): o token deixa de ser ambíguo e passa a nomear o **papel** de quem emite, casando com a tese do ADR
 ("o agente é o usuário"). Fecha o vocabulário: a **Equipe** é formada por membros com cargo, e o cargo de
@@ -247,9 +252,11 @@ logado em vez de digitados.
 - **P2.1 — Vocabulário: "Equipe" + cargos novos. ✅ FEITO** (§4.2). Menu "Agentes" → "Equipe"
   (`SecaoMenu.AGENTE` → `EQUIPE`), `DIRETOR` → `GESTOR`, `COLABORADOR_MASTER` → `SUPERVISOR`,
   `OPERADOR` → `AGENTE`, e `ehGestor` → `ehCargoPlataforma` — tudo num commit só, com `firestore.rules`,
-  a suíte de emulador (34 casos verdes) e os defaults de autocadastro. **Não** renomeou o CRUD do `Agente`
-  (telas/strings "Novo Agente"…): aquela entidade morre inteira em P2.5, renomeá-la agora seria trabalho
-  jogado fora.
+  a suíte de emulador (34 casos verdes) e os defaults de autocadastro.
+  **Regra de tradução do vocabulário na UI** (decisão do analista): o *coletivo* é **Equipe** (menu, título
+  da seção, pesquisa); o *indivíduo* continua **Agente** — "a equipe é formada por agentes". Os
+  identificadores de código do CRUD (`FormAgenteScreen`, rotas, chaves de string) **não** foram renomeados:
+  a entidade morre inteira em P2.5.
 - **P2.2 — `Usuario` ganha `agencia` + `lotacao`.** Migração Room + espelho Firestore + form de cadastro do
   membro (molde ADR-0006). Capacidades organizacionais; permissão segue no cargo.
 - **P2.3 — Emissão deriva do logado.** Congela agência (do usuário) na Passagem; remove
@@ -342,6 +349,12 @@ Fechamento dos cinco pontos que estavam abertos:
 - **`DIRETOR` → `GESTOR`** — "gestor do sistema" é a terminologia correta para o cargo de plataforma, e
   desambigua do diretor *de uma agência* (que é `SUPERVISOR`). Arrasta o predicado: `ehGestor` →
   `ehCargoPlataforma` (§4.2).
+- **Na UI, "Equipe" é o coletivo e "Agente" é o indivíduo** — "a equipe é formada por agentes".
+- **`SUPERVISOR` é concedido pela gestão** (console/backend), nunca pelo form — o cadastro nasce `AGENTE`.
+- **`ImpressaoPassagem` fica dormente** — é impressão **física** e volta com o **módulo de check-in**
+  (novo status `CHECADA`, pré-embarque, tornando o bilhete de embarque um artefato *pós-passagem
+  confirmada*). Por isso o rótulo `"Operador"` do bilhete **não** foi renomeado aqui; a direção está
+  registrada nas *Alternativas futuras* do [ADR-0012](0012-ciclo-de-vida-passagem-e-embarque-qr.md).
 
 ## Pontos abertos
 

@@ -36,7 +36,7 @@
     <string name="btn_cadastrar_mais_passagens">Adicionar Passagem</string>
     <string name="btn_menu_operacoes">Operações</string>
     <string name="btn_novo_agente">Novo Agente</string>
-    <string name="btn_pesquisar_agente">Pesquisar Agente</string>
+    <string name="btn_pesquisar_agente">Pesquisar Equipe</string>
 
     <!-- Titles Top App Bar -->
     <string name="title_top_passagem">Passagens</string>
@@ -58,7 +58,7 @@
     <string name="subtitle_balanco">Contagem de Passagem</string>
     <string name="subtitle_cadastrar_novo_agente">Cadastrar Novo(a) Agente</string>
     <string name="subtitle_editar_agente">Editar Agente</string>
-    <string name="subtitle_pesquisar_agentes">Pesquisar Agente</string>
+    <string name="subtitle_pesquisar_agentes">Pesquisar Equipe</string>
 
     <!-- Labels -->
     <string name="label_info_redes">Redes</string>
