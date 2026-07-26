@@ -56,11 +56,12 @@ O maior pilar. É a rework de identidade/multi-agência que o §6 do estudo do f
 [ADR-0015](../adr/0015-rework-agente-equipe.md) está **aceito em direção** (todos os pontos fechados com o
 analista em 2026-07-26) — ele manda; as fases abaixo são o resumo:
 
-- **P2.1 — Vocabulário: "Equipe" + cargos novos.** Menu "Agentes" → "Equipe" (`SecaoMenu.AGENTE` → `EQUIPE`)
-  **e** o rename dos cargos: `COLABORADOR_MASTER` → `SUPERVISOR` (master **da agência**),
-  `OPERADOR` → `AGENTE` (ADR-0015 §4.2). Juntos, para não conviverem dois `AGENTE`. Não é só cosmético: o
-  cargo é String persistida — toca `firestore.rules` + `firestore-tests` + defaults de autocadastro no mesmo
-  commit, com seed regenerado e re-login (fail-closed).
+- **P2.1 — Vocabulário: "Equipe" + cargos novos. ✅ FEITO** (ADR-0015 §4.2). Menu "Agentes" → "Equipe"
+  (`SecaoMenu.AGENTE` → `EQUIPE`) **e** o rename dos cargos: `DIRETOR` → `GESTOR` (gestor **do sistema**),
+  `COLABORADOR_MASTER` → `SUPERVISOR` (master **da agência**), `OPERADOR` → `AGENTE`; `ehGestor` →
+  `ehCargoPlataforma`. Não foi cosmético: o cargo é String persistida — `firestore.rules`, a suíte de
+  emulador (34 verdes) e os defaults de autocadastro foram no mesmo commit. Perfis já gravados com o cargo
+  antigo caem em fail-closed até serem corrigidos no console (usuários não são semeados).
 - **P2.2 — Agência e lotação como capacidades do usuário (migração).** Hoje agência é texto livre + entidade
   `Agente` à parte. Passa a ser **atributo do usuário** (`Usuario`/`Agente` ganha `agencia` + `lotacao`).
   Migração Room + espelho Firestore + form de cadastro do membro da Equipe. Consolida "agente = usuário
@@ -76,7 +77,7 @@ analista em 2026-07-26) — ele manda; as fases abaixo são o resumo:
   `FluviWordmark`/tema (identidade do app × identidade da agência emissora).
 - **P2.5 — Aposentar `Agente`.** Remoção completa da entidade/DAO/repos/form/telas/testes (ADR-0015 §7),
   depois de P2.3. Diff quase todo deleção.
-- **P2.6 — Escopo por agência na listagem.** Terceiro eixo em `PermissoesUsuario`: `ADM`/`DIRETOR` são cargos
+- **P2.6 — Escopo por agência na listagem.** Terceiro eixo em `PermissoesUsuario`: `ADM`/`GESTOR` são cargos
   **FluviApp** (atravessam agências); `SUPERVISOR`/`AGENTE` são de agência. Filtro por agência do
   logado nas consultas de passagem — **por UI**, sem regra Firestore no MVP. A Contagem fica fora do filtro
   (é cross-agência por definição).

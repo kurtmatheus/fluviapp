@@ -74,7 +74,7 @@ fun NavGraphBuilder.mainScreenNavComposable(
                 DadosBotoesMenus(R.string.btn_pesquisar_viagens, R.drawable.ic_lupa_75, onNavegaParaFormularioPesquisaViagem),
             )
 
-            SecaoMenu.AGENTE -> listOf(
+            SecaoMenu.EQUIPE -> listOf(
                 DadosBotoesMenus(R.string.btn_novo_agente, R.drawable.ic_add_75, onNavegaParaFormularioNovoAgente),
                 DadosBotoesMenus(R.string.btn_pesquisar_agente, R.drawable.ic_lupa_75, onNavegaParaFormularioPesquisaAgente),
             )

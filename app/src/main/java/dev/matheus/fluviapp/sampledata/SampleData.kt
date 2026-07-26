@@ -270,24 +270,25 @@ val userAdminSample = Usuario(
     cargo = "ADM"
 )
 
-val userGerenteSample = Usuario(
+val userGestorSample = Usuario(
     id = "2",
-    email = "gerente@fluviapp.com.br",
-    nome = "Gerente",
-    cargo = "DIRETOR"
+    email = "gestor@fluviapp.com.br",
+    nome = "Gestor",
+    cargo = "GESTOR"
 )
 
-val userColabSample = Usuario(
+val userAgenteSample = Usuario(
     id = "3",
-    email = "operador@fluviapp.com.br",
-    nome = "Operador",
-    cargo = "Diretor"
+    email = "agente@fluviapp.com.br",
+    nome = "Agente",
+    // Era "Diretor" (minúsculo): não casava com nenhum Cargo, então o sample nascia fail-closed.
+    cargo = "AGENTE"
 )
 
 val listaUserSample = listOf(
     userAdminSample,
-    userGerenteSample,
-    userColabSample
+    userGestorSample,
+    userAgenteSample
 )
 
 val listaDadosBalancoPassagems = listOf(

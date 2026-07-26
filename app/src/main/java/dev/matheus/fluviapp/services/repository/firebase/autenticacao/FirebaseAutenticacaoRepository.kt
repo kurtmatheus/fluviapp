@@ -98,7 +98,7 @@ class FirebaseAutenticacaoRepository @Inject constructor(
     private companion object {
         private const val TAG = "FirebaseAuthRepo"
         // Menor privilégio p/ auto-cadastro (mesmo default do cadastro por e-mail/senha).
-        const val CARGO_PADRAO_AUTOCADASTRO = "OPERADOR"
+        const val CARGO_PADRAO_AUTOCADASTRO = "AGENTE"
     }
 }
 

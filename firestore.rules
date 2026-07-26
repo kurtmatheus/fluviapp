@@ -18,15 +18,17 @@ service cloud.firestore {
     }
 
     function cargoConhecido() {
-      return cargo() in ['ADM', 'DIRETOR', 'COLABORADOR_MASTER', 'OPERADOR'];
+      return cargo() in ['ADM', 'GESTOR', 'SUPERVISOR', 'AGENTE'];
     }
 
-    function ehGestor() {
-      return cargo() in ['ADM', 'DIRETOR'];
+    // Cargos de PLATAFORMA (FluviApp), por oposição aos de agência (SUPERVISOR/AGENTE) — ADR-0015 §4.1/§4.2.
+    // Espelha PermissoesUsuario.ehCargoPlataforma.
+    function ehCargoPlataforma() {
+      return cargo() in ['ADM', 'GESTOR'];
     }
 
     function podeEditarQualquerPassagem() {
-      return ehGestor() || cargo() == 'COLABORADOR_MASTER';
+      return ehCargoPlataforma() || cargo() == 'SUPERVISOR';
     }
 
     function ehDonoPassagem() {
@@ -80,7 +82,7 @@ service cloud.firestore {
       // Provisionamento: só o próprio dono, e sempre no menor privilégio (nunca nasce ADM pelo cliente).
       allow create: if autenticado()
                     && request.auth.uid == uid
-                    && request.resource.data.cargo == 'OPERADOR';
+                    && request.resource.data.cargo == 'AGENTE';
       // Edita o próprio perfil, mas NUNCA o cargo (promoção é operação de console/backend).
       allow update: if autenticado()
                     && request.auth.uid == uid
@@ -88,26 +90,26 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // --- Catálogos / master data: leitura p/ todo autenticado (venda precisa ler), escrita só gestor ---
+    // --- Catálogos / master data: leitura p/ todo autenticado (venda lê), escrita só cargo de plataforma ---
     match /constants/{doc} {
       allow read: if autenticado();
-      allow write: if autenticado() && ehGestor();
+      allow write: if autenticado() && ehCargoPlataforma();
     }
     match /empresas/{doc} {
       allow read: if autenticado();
-      allow write: if autenticado() && ehGestor();
+      allow write: if autenticado() && ehCargoPlataforma();
     }
     match /navios/{doc} {
       allow read: if autenticado();
-      allow write: if autenticado() && ehGestor();
+      allow write: if autenticado() && ehCargoPlataforma();
     }
     match /agents/{doc} {
       allow read: if autenticado();
-      allow write: if autenticado() && ehGestor();
+      allow write: if autenticado() && ehCargoPlataforma();
     }
     match /viagens/{doc} {
       allow read: if autenticado();
-      allow write: if autenticado() && ehGestor();
+      allow write: if autenticado() && ehCargoPlataforma();
     }
 
     // --- Passagens: create sem forjar dono; update/delete por posse ou editar-qualquer ---
@@ -132,7 +134,7 @@ service cloud.firestore {
       // Editar: o funcionarioId é sempre imutável (não reatribui dono) e o status só percorre arestas
       // legais da FSM (ADR-0012), nunca retrocede nem pula. Dois eixos de autorização:
       //  - confirmação de embarque (EMITIDA→EMBARCADA, carimbada): QUALQUER cargo conhecido (eixo novo);
-      //  - qualquer outra edição (inclui emitir A_EMITIR→EMITIDA): gestor/Colab (qualquer) ou o dono.
+      //  - qualquer outra edição (inclui emitir A_EMITIR→EMITIDA): plataforma/Supervisor ou o dono.
       allow update: if autenticado()
                     && id != 'contador'
                     && request.resource.data.funcionarioId == resource.data.funcionarioId

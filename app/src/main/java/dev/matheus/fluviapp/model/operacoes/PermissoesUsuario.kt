@@ -2,8 +2,8 @@ package dev.matheus.fluviapp.model.operacoes
 
 import dev.matheus.fluviapp.model.operacoes.Usuario.Cargo
 import dev.matheus.fluviapp.model.operacoes.Usuario.Cargo.ADM
-import dev.matheus.fluviapp.model.operacoes.Usuario.Cargo.COLABORADOR_MASTER
-import dev.matheus.fluviapp.model.operacoes.Usuario.Cargo.DIRETOR
+import dev.matheus.fluviapp.model.operacoes.Usuario.Cargo.GESTOR
+import dev.matheus.fluviapp.model.operacoes.Usuario.Cargo.SUPERVISOR
 import dev.matheus.fluviapp.model.screendata.SecaoMenu
 
 /**
@@ -19,16 +19,20 @@ import dev.matheus.fluviapp.model.screendata.SecaoMenu
  */
 object PermissoesUsuario {
 
-    /** Gestor = ADM ou DIRETOR (acesso total às seções operacionais). */
-    fun ehGestor(cargo: String?): Boolean = ehGestor(Cargo.de(cargo))
+    /**
+     * Cargo **de plataforma** (FluviApp) = [ADM] ou [GESTOR]: acesso total às seções operacionais e, quando
+     * o escopo por agência entrar (ADR-0015 §4.1), o que atravessa todas as agências. Nomeado pelo *escopo*
+     * e não "ehGestor" porque `GESTOR` virou um cargo concreto — o predicado vale para os dois.
+     */
+    fun ehCargoPlataforma(cargo: String?): Boolean = ehCargoPlataforma(Cargo.de(cargo))
 
-    private fun ehGestor(cargo: Cargo?): Boolean = cargo == ADM || cargo == DIRETOR
+    private fun ehCargoPlataforma(cargo: Cargo?): Boolean = cargo == ADM || cargo == GESTOR
 
     // --- Eixo seção (menu) ---
 
     fun podeAcessar(secao: SecaoMenu, cargo: String?): Boolean = when (secao) {
         SecaoMenu.PASSAGEM -> true
-        SecaoMenu.VIAGEM, SecaoMenu.AGENTE, SecaoMenu.EMPRESA, SecaoMenu.NAVIO -> ehGestor(cargo)
+        SecaoMenu.VIAGEM, SecaoMenu.EQUIPE, SecaoMenu.EMPRESA, SecaoMenu.NAVIO -> ehCargoPlataforma(cargo)
     }
 
     fun secoesVisiveis(cargo: String?): List<SecaoMenu> =
@@ -39,10 +43,10 @@ object PermissoesUsuario {
     /** Os quatro cargos conhecidos podem criar passagem; cargo desconhecido, não. */
     fun podeCriarPassagem(cargo: String?): Boolean = Cargo.de(cargo) != null
 
-    /** Editar/deletar passagem de QUALQUER usuário: gestor ou Colaborador Master. */
+    /** Editar/deletar passagem de QUALQUER usuário: gestor ou Supervisor (o master da agência). */
     fun podeEditarQualquerPassagem(cargo: String?): Boolean {
         val c = Cargo.de(cargo)
-        return ehGestor(c) || c == COLABORADOR_MASTER
+        return ehCargoPlataforma(c) || c == SUPERVISOR
     }
 
     /** Editar uma passagem específica: se for o dono, ou se puder editar qualquer uma. */

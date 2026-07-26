@@ -41,7 +41,7 @@
     <!-- Titles Top App Bar -->
     <string name="title_top_passagem">Passagens</string>
     <string name="title_top_viagem">Viagens</string>
-    <string name="title_top_agente">Agentes</string>
+    <string name="title_top_agente">Equipe</string>
 
     <!-- Subtitles Common Area -->
     <string name="subtitle_viagens_disponiveis">Viagens Disponíveis</string>
@@ -167,7 +167,7 @@
     <string name="label_grupo_tarifa_veiculo">Veículo (moto é calculada pela cilindrada)</string>
     <string name="label_valor_pago">Valor Pago</string>
     <string name="label_menu_viagens">Viagens</string>
-    <string name="label_menu_agentes">Agentes</string>
+    <string name="label_menu_equipe">Equipe</string>
     <string name="label_lotacao">Lotação</string>
     <string name="label_tema_escuro">Tema escuro</string>
     <string name="label_menu_empresa">Empresas</string>

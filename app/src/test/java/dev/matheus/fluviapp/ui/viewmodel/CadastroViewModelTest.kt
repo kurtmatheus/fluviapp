@@ -52,7 +52,7 @@ class CadastroViewModelTest {
 
         assertTrue(vm.uiState.value.cadastrado)
         assertFalse(vm.uiState.value.cadastrando)
-        assertEquals("OPERADOR", fake.perfilCriado?.third)
+        assertEquals("AGENTE", fake.perfilCriado?.third)
         assertEquals("ana@teste.com", fake.perfilCriado?.first)
         assertEquals(1, fake.saiuVezes)
     }

@@ -3,10 +3,15 @@
 **Status:** Aceita (direção). Fase 1 (política + correção de comportamento) e Fase 2 (posse por
 identidade) implementadas; Fase 3 (regras Firestore por cargo) fica para ADR futuro.
 
-> **Estendido pelo [ADR-0015](0015-rework-agente-equipe.md)** (ainda sem código): (a) **terceiro eixo —
-> escopo**: `ADM`/`DIRETOR` são cargos de **plataforma** (atravessam agências), os demais são de **agência**,
-> e "todas as passagens" passa a significar "todas da **minha agência**" para o master de agência (§4.1);
-> (b) **rename dos cargos**: `COLABORADOR_MASTER` → `SUPERVISOR`, `OPERADOR` → `AGENTE` (§4.2).
+> **Estendido pelo [ADR-0015](0015-rework-agente-equipe.md):**
+> - **Vocabulário — já implementado (P2.1).** Os cargos deste ADR foram renomeados: `DIRETOR` → **`GESTOR`**,
+>   `COLABORADOR_MASTER` → **`SUPERVISOR`**, `OPERADOR` → **`AGENTE`**; e o predicado `ehGestor` virou
+>   **`ehCargoPlataforma`** (`GESTOR` virou cargo concreto, então o predicado passou a se chamar pelo
+>   *escopo*). Sem alias: valor antigo → fail-closed. **O texto abaixo preserva os nomes da época** — leia-o
+>   como registro histórico da decisão, não como o vocabulário atual.
+> - **Terceiro eixo — escopo (ainda sem código).** `ADM`/`GESTOR` são cargos de **plataforma** (atravessam
+>   agências), `SUPERVISOR`/`AGENTE` são de **agência**; "todas as passagens" passa a significar "todas da
+>   **minha agência**" para o `SUPERVISOR` (ADR-0015 §4.1, fase P2.6).
 
 > Formaliza o [estudo de autorização](../design/autorizacao-por-cargo.md). Conversa com o
 > [ADR-0005](0005-autenticacao-sessao-firebase-datastore.md) (sessão Firebase + DataStore guarda

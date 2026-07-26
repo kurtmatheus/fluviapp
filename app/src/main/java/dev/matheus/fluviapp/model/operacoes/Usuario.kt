@@ -13,11 +13,20 @@ data class Usuario(
     val cargo: String,
     val ultimoUsuarioLogado: Boolean = false
 ) {
+    /**
+     * Cargos em dois escopos (ADR-0015 §4.1/§4.2):
+     *  - **Plataforma (FluviApp)**: [ADM] e [GESTOR] — gestores do sistema, atravessam todas as agências.
+     *  - **Agência**: [SUPERVISOR] (o master *da agência*; cargos executivos de agência entram aqui) e
+     *    [AGENTE] (quem vende). Gerem informação dentro da própria agência.
+     *
+     * `AGENTE` é **cargo**, não entidade: o `Agente` como entidade paralela é aposentado (ADR-0015 §7),
+     * o que libera o nome para o papel de quem emite — "o agente é o usuário".
+     */
     enum class Cargo {
         ADM,
-        DIRETOR,
-        COLABORADOR_MASTER,
-        OPERADOR;
+        GESTOR,
+        SUPERVISOR,
+        AGENTE;
 
         companion object {
             /** Converte o cargo persistido (String) no enum canônico; null se desconhecido. */
@@ -28,8 +37,4 @@ data class Usuario(
     companion object {
         const val GERAL = "Geral"
     }
-}
-
-fun Usuario.Cargo.obterDescricaoFormatada(): String {
-    return this.name.replace("_", " ")
 }

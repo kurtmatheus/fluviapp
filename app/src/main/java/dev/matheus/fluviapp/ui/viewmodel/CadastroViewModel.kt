@@ -59,6 +59,6 @@ class CadastroViewModel @Inject constructor(
     }
 
     companion object {
-        private const val CARGO_PADRAO = "OPERADOR"
+        private const val CARGO_PADRAO = "AGENTE"
     }
 }

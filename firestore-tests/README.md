@@ -27,12 +27,12 @@ roda o Jest contra ele e derruba tudo ao final). Não precisa de credenciais: us
 
 ## O que é coberto (matriz ADR-0010/0011)
 
-- **Anti-escalonamento** (`users/{uid}`): cria só o próprio perfil e só como `OPERADOR`; não altera
-  o próprio cargo; não deleta perfil.
-- **Catálogos** (`navios` como representante): todo autenticado lê; só gestor (ADM/DIRETOR) escreve;
-  Colaborador Master **não** escreve catálogo.
-- **Passagens**: não dá para forjar dono na emissão (`funcionarioId == uid`); operador só edita/deleta
-  as próprias; Colaborador Master e gestor editam qualquer; o `funcionarioId` é imutável no update.
+- **Anti-escalonamento** (`users/{uid}`): cria só o próprio perfil e só como `AGENTE` (o menor
+  privilégio); não altera o próprio cargo; não deleta perfil.
+- **Catálogos** (`navios` como representante): todo autenticado lê; só **cargo de plataforma**
+  (`ADM`/`GESTOR`) escreve; `SUPERVISOR` **não** escreve catálogo.
+- **Passagens**: não dá para forjar dono na emissão (`funcionarioId == uid`); `AGENTE` só edita/deleta
+  as próprias; `SUPERVISOR` e plataforma editam qualquer; o `funcionarioId` é imutável no update.
 - **Contador** (`passagens/contador`): incremento monotônico (não retrocede) e sem delete.
 - **Ciclo de vida da passagem** (ADR-0012 Fase 4): a FSM imposta no `update` — só arestas legais
   (`A_EMITIR→EMITIDA`/`EMITIDA→EMBARCADA`), sem retrocesso nem pulo; confirmação de embarque por

@@ -1,7 +1,7 @@
 # ADR-0015: Agente é o usuário — Equipe, agência/lotação como capacidades, agência transversal à emissão
 
-**Status:** **Aceita (direção)** — todos os pontos fechados com o analista (ver *Decisões resolvidas*, 1ª e
-2ª rodada). Claude rascunhou. Nenhum código ainda. É o **Pilar 2** do
+**Status:** **Aceita** — todos os pontos fechados com o analista (ver *Decisões resolvidas*). **Em
+implementação:** P2.0 e P2.1 feitos; P2.2 em diante pendentes. É o **Pilar 2** do
 [`mvp-roadmap.md`](../design/mvp-roadmap.md) e responde o §6 do
 [estudo do form de passagem](../design/form-passagem-validacao-exibicao.md).
 
@@ -75,7 +75,7 @@ Consequências:
 - **Aposenta o campo manual** agente/agência: `ContentAgenciaAreaPassagemForm` sai de vez; os eventos
   `onAgenciaChange`/`onAgenteChange` e o `runBlocking` de `atualizarListaAgente` morrem.
 - **Isolamento multi-tenant:** cada agência só vê/mexe nas **próprias passagens**; nenhuma interfere nas da
-  outra. O emissor não escolhe agência — é a dele. **Exceção: os cargos de plataforma** (`ADM`/`DIRETOR`)
+  outra. O emissor não escolhe agência — é a dele. **Exceção: os cargos de plataforma** (`ADM`/`GESTOR`)
   atravessam agências — ver §4.1.
 - **Isolamento por UI no MVP** (decisão do analista): o filtro por agência vive na consulta/listagem, no mesmo
   espírito do ADR-0010 ("segurança por UI"). **Sem** regra Firestore por agência agora — fica como débito
@@ -132,12 +132,12 @@ importante:
   coluna) e regeneração pelo seed. As somas perdem uma parcela que, no fluxo atual, é sempre `0` ou nula —
   então o **balanço financeiro** (ADR-0014) não muda de resultado.
 
-### 4.1 Escopo por cargo: ADM/DIRETOR são cargos **FluviApp**; os demais são **por agência**
+### 4.1 Escopo por cargo: ADM/GESTOR são cargos **FluviApp**; os demais são **por agência**
 
 O isolamento do §3 não é uniforme — depende do cargo:
 
-- **`ADM` e `DIRETOR` são cargos da plataforma (FluviApp), não de uma agência.** São *masters*: detêm todas
-  as permissões e enxergam **todas as agências**. É o predicado que `PermissoesUsuario.ehGestor` já isola.
+- **`ADM` e `GESTOR` são cargos da plataforma (FluviApp), não de uma agência.** São *masters*: detêm todas
+  as permissões e enxergam **todas as agências**. É o predicado que `PermissoesUsuario.ehCargoPlataforma` isola.
 - **`SUPERVISOR` e `AGENTE` (ex-`COLABORADOR_MASTER`/`OPERADOR` — §4.2) são cargos de agência.** Controle e
   gestão da informação acontecem **dentro da própria agência**.
 
@@ -147,12 +147,12 @@ plataforma × agência. Na prática a posse ganha um grau intermediário:
 > minha passagem → passagens **da minha agência** → todas as agências
 
 Consequência afiada, a implementar em P2.6: `podeVerTodasPassagens`/`podeEditarQualquerPassagem` hoje
-respondem `true` para o `COLABORADOR_MASTER`/`SUPERVISOR`. Com o escopo, "**todas**" passa a significar
-"**todas da minha agência**" para ele, e "todas mesmo" só para `ehGestor`. A política ganha algo como
-`podeVerTodasAgencias(cargo) = ehGestor(cargo)`, e as consultas de passagem filtram por agência quando ele é
+respondem `true` para o `SUPERVISOR`. Com o escopo, "**todas**" passa a significar
+"**todas da minha agência**" para ele, e "todas mesmo" só para os cargos de plataforma. A política ganha algo como
+`podeVerTodasAgencias(cargo) = ehCargoPlataforma(cargo)`, e as consultas de passagem filtram por agência quando ele é
 `false`.
 
-### 4.2 Os cargos são renomeados: `SUPERVISOR` e `AGENTE`
+### 4.2 Os cargos são renomeados: `GESTOR`, `SUPERVISOR` e `AGENTE`
 
 A armadilha de nome do `COLABORADOR_MASTER` ("master" que não é master de plataforma) se resolve renomeando.
 O enum `Usuario.Cargo` passa a ser:
@@ -160,9 +160,13 @@ O enum `Usuario.Cargo` passa a ser:
 | Antes | Depois | Escopo | Papel |
 |---|---|---|---|
 | `ADM` | `ADM` | **Plataforma (FluviApp)** | master: todas as permissões, todas as agências |
-| `DIRETOR` | `DIRETOR` | **Plataforma (FluviApp)** | idem |
-| `COLABORADOR_MASTER` | **`SUPERVISOR`** | Agência | o **master da agência**; **cargos executivos de agência entram aqui automaticamente** (o diretor *de uma agência* é `SUPERVISOR`, não `DIRETOR` — `DIRETOR` é da FluviApp) |
+| `DIRETOR` | **`GESTOR`** | **Plataforma (FluviApp)** | idem — "gestor do sistema" é a terminologia correta; `DIRETOR` confundia com o diretor *de uma agência* |
+| `COLABORADOR_MASTER` | **`SUPERVISOR`** | Agência | o **master da agência**; **cargos executivos de agência entram aqui automaticamente** (o diretor *de uma agência* é `SUPERVISOR`, não `GESTOR`) |
 | `OPERADOR` | **`AGENTE`** | Agência | quem vende: operador = agente |
+
+**O predicado acompanha:** `PermissoesUsuario.ehGestor` vira **`ehCargoPlataforma`** (e o mesmo em
+`firestore.rules`). Com `GESTOR` virando cargo concreto, um `ehGestor(cargo)` que responde `true` também
+para `ADM` recriaria a mesma ambiguidade que o rename está desfazendo; nomear pelo **escopo** (§4.1) resolve.
 
 O nome **"Agente" volta — como cargo, não como entidade.** Só é possível porque a entidade `Agente` morre
 (§7): o token deixa de ser ambíguo e passa a nomear o **papel** de quem emite, casando com a tese do ADR
@@ -175,15 +179,22 @@ significados diferentes (seção × cargo). Por isso os dois renames vão na **m
 
 **Superfície do rename** — o cargo é **String persistida**, então não é só o enum:
 `Usuario.Cargo`/`PermissoesUsuario`, `firestore.rules` (a lista literal de `cargoConhecido()`, o
-`ehGestor()`, o `podeEditarQualquerPassagem()` e o cargo default do autocadastro em `users/{uid}`),
+`ehCargoPlataforma()`, o `podeEditarQualquerPassagem()` e o cargo default do autocadastro em `users/{uid}`),
 a suíte `firestore-tests/rules.test.js`, `CARGO_PADRAO`/`CARGO_PADRAO_AUTOCADASTRO`
-(`CadastroViewModel:62`, `FirebaseAutenticacaoRepository:101`), o seed e os testes.
+(`CadastroViewModel`, `FirebaseAutenticacaoRepository`) e os testes.
 
 > **Fail-closed morde na virada.** `Cargo.de` devolve `null` para valor desconhecido e a política nega tudo
 > (ADR-0010). Um usuário com `cargo: "OPERADOR"` gravado em `users/{uid}` ou em cache na sessão (DataStore)
-> vira **sem permissão** depois do rename — e as regras do servidor também passam a negá-lo. Como é portfólio
-> (regenera pelo seed, não se faz backfill), a saída é **seed + re-login**; e `rules` + app + suíte de
-> emulador têm de ir no **mesmo commit**, senão o servidor nega o app inteiro.
+> vira **sem permissão** depois do rename — e as regras do servidor também passam a negá-lo. `rules` + app +
+> suíte de emulador têm de ir no **mesmo commit**, senão o servidor nega o app inteiro.
+>
+> **Correção do que este ADR dizia antes:** a saída **não** é "regenerar pelo seed". O `SeedFirestore`
+> **não semeia usuários** por decisão explícita — quem popula `users/{uid}` é o cadastro in-app. E a regra
+> anti-escalonamento impede o próprio usuário de corrigir o cargo. Logo, para um perfil já gravado com o
+> vocabulário antigo há duas saídas: **editar o cargo no console** (operação de backend, como a promoção
+> sempre foi) ou **recadastrar** o usuário, que nasce `AGENTE`. Sem alias de compatibilidade —
+> `PermissoesUsuarioTest` tem um lock explícito de que `DIRETOR`/`COLABORADOR_MASTER`/`OPERADOR` **não**
+> resolvem.
 
 ### 5. Identidade visual por agência
 
@@ -233,10 +244,12 @@ logado em vez de digitados.
   `MIGRATION_18_19`). O `PassagemDadosPassagemMapper` perdeu o `AgenteRepository`; a gratuidade deixou de
   exibir o campo `0` desabilitado; `FormPassageiroHelper` deixou de depender do state da passagem (a
   visibilidade da área virou estado derivado de `isGratuidade`, não sincronização imperativa).
-- **P2.1 — Vocabulário: "Equipe" + cargos novos.** Menu "Agentes" → "Equipe" (`SecaoMenu.AGENTE` → `EQUIPE`)
-  **e** `COLABORADOR_MASTER` → `SUPERVISOR`, `OPERADOR` → `AGENTE` (§4.2) — juntos, para não conviverem dois
-  `AGENTE`. Toca `firestore.rules` + `firestore-tests` + defaults de autocadastro no mesmo commit; seed
-  regenerado e re-login.
+- **P2.1 — Vocabulário: "Equipe" + cargos novos. ✅ FEITO** (§4.2). Menu "Agentes" → "Equipe"
+  (`SecaoMenu.AGENTE` → `EQUIPE`), `DIRETOR` → `GESTOR`, `COLABORADOR_MASTER` → `SUPERVISOR`,
+  `OPERADOR` → `AGENTE`, e `ehGestor` → `ehCargoPlataforma` — tudo num commit só, com `firestore.rules`,
+  a suíte de emulador (34 casos verdes) e os defaults de autocadastro. **Não** renomeou o CRUD do `Agente`
+  (telas/strings "Novo Agente"…): aquela entidade morre inteira em P2.5, renomeá-la agora seria trabalho
+  jogado fora.
 - **P2.2 — `Usuario` ganha `agencia` + `lotacao`.** Migração Room + espelho Firestore + form de cadastro do
   membro (molde ADR-0006). Capacidades organizacionais; permissão segue no cargo.
 - **P2.3 — Emissão deriva do logado.** Congela agência (do usuário) na Passagem; remove
@@ -248,7 +261,7 @@ logado em vez de digitados.
   rotas/destinos, `FakeAgenteRepository` e testes; migração Room que dropa a tabela; seed sem agentes.
   Só depois de P2.3 (a última leitura viva morre lá).
 - **P2.6 — Escopo por agência na listagem.** Novo eixo em `PermissoesUsuario` (`podeVerTodasAgencias =
-  ehGestor`) + filtro por agência do logado nas consultas de passagem quando ele for `false` — isolamento por
+  ehCargoPlataforma`) + filtro por agência do logado nas consultas de passagem quando ele for `false` — isolamento por
   UI (§3, §4.1). Contagem de Passagem fica **fora** desse filtro por definição (§6).
 
 ## Consequências
@@ -260,7 +273,7 @@ logado em vez de digitados.
   mostrar o breakdown de pagamento que hoje esconde.
 - **ADR-0010 ganha um terceiro eixo** — escopo (plataforma × agência), com "todas as passagens" passando a
   significar "todas da minha agência" para o `SUPERVISOR` (§4.1). É mudança de comportamento, não só adição.
-- **Vocabulário fechado** — plataforma (`ADM`/`DIRETOR`) × agência (`SUPERVISOR`/`AGENTE`); "Agente" volta
+- **Vocabulário fechado** — plataforma (`ADM`/`GESTOR`) × agência (`SUPERVISOR`/`AGENTE`); "Agente" volta
   como **cargo** porque a entidade homônima morre. Cargo é String persistida: o rename é *breaking* para
   sessões e documentos existentes (fail-closed), resolvido por seed + re-login (§4.2).
 - **Emissão mais simples** — sem campo de agência/agente; menos superfície, sem `runBlocking`.
@@ -326,6 +339,9 @@ Fechamento dos cinco pontos que estavam abertos:
 - **`COLABORADOR_MASTER` → `SUPERVISOR`** — o master **da agência**; cargos executivos de agência entram aí
   automaticamente (§4.2).
 - **`OPERADOR` → `AGENTE`** — operador *é* o agente; o token fica livre porque a entidade `Agente` morre.
+- **`DIRETOR` → `GESTOR`** — "gestor do sistema" é a terminologia correta para o cargo de plataforma, e
+  desambigua do diretor *de uma agência* (que é `SUPERVISOR`). Arrasta o predicado: `ehGestor` →
+  `ehCargoPlataforma` (§4.2).
 
 ## Pontos abertos
 
