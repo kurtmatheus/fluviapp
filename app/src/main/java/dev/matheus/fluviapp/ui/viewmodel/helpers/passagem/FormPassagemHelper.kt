@@ -407,11 +407,6 @@ class FormPassagemHelper(
         // Status canônico (ADR-0012): grava o .name do tipo de domínio; formatação fica na exibição.
         val situacaoPassagem = StatusPassagem.A_EMITIR.name
 
-        // Desconto discricionário informado pelo operador (ADR-0013): guardado cru, sem acúmulo ANTAC. Para
-        // bilhetes com tarifaBase o mapper DERIVA o desconto (resíduo abaixo da devida); este valor serve de
-        // fallback (veículo / bilhete sem tarifa tabelada).
-        val desconto = statePassagem.desconto.toDoubleOrNull()
-
         var passagemExistente: Passagem? = null
 
         if (idPassagem.isTextoNaoNulo()) {
@@ -446,7 +441,6 @@ class FormPassagemHelper(
             valorDinheiro = statePassagem.valorDinheiro.toDoubleOrNull(),
             valorDebito = statePassagem.valorDebito.toDoubleOrNull(),
             valorCredito = statePassagem.valorCredito.toDoubleOrNull(),
-            desconto = desconto,
             tarifaBase = tarifaBase,
             observacao = statePassagem.observacao,
             tipoPassagem = statePassageiro.tipoPassagem,
@@ -522,7 +516,6 @@ class FormPassagemHelper(
                 valorDebito = passagem.valorDebito.preencherCampo(),
                 isCreditoChecked = passagem.valorCredito.preencherCampo().isNotEmpty(),
                 valorCredito = passagem.valorCredito.preencherCampo(),
-                desconto = passagem.desconto.preencherCampo(),
                 observacao = passagem.observacao.orEmpty(),
                 titleForm = R.string.subtitle_editar_passagem,
                 isEditing = true
@@ -540,7 +533,6 @@ class FormPassagemHelper(
                 valorDinheiro = "",
                 valorDebito = "",
                 valorCredito = "",
-                desconto = "",
                 observacao = "",
             )
         }

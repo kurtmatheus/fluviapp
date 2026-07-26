@@ -32,7 +32,6 @@ data class Passagem(
     val valorDinheiro: Double? = null,
     val valorDebito: Double? = null,
     val valorCredito: Double? = null,
-    val desconto: Double? = null,
     // Tarifa da inteira congelada na emissão (ADR-0013): a célula da tabela da Viagem para a acomodação
     // escolhida. É a base de que a tarifa devida (meia = metade, gratuidade = 0) e o desconto derivam.
     // Aditivo; null cobre bilhetes anteriores e o veículo (tarifa por classe é Fase 3).

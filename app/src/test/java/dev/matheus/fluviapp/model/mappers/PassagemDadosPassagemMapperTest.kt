@@ -150,13 +150,13 @@ class PassagemDadosPassagemMapperTest {
     }
 
     @Test
-    fun `sem tarifaBase degrada para o valor cobrado mais o desconto persistido`() = runTest {
+    fun `sem tarifaBase degrada para o valor cobrado sem desconto`() = runTest {
         val dados = mapper(emptyList()).map(
-            passagem().copy(tarifaBase = null, valorPago = 100.0, desconto = 10.0),
+            passagem().copy(tarifaBase = null, valorPago = 100.0),
         )
 
-        assertEquals(moeda("110.00"), dados.valorTotal)  // cobrado + desconto legado
-        assertEquals(moeda("10.00"), dados.desconto)
+        assertEquals(moeda("100.00"), dados.valorTotal)  // degrada para o cobrado
+        assertEquals(moeda("0.00"), dados.desconto)      // desconto removido da persistência
         assertEquals(moeda("100.00"), dados.valorAPagar)
     }
 }

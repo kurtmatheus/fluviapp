@@ -21,7 +21,6 @@ data class PassagemDocumento(
     val valorDinheiro: Double? = null,
     val valorDebito: Double? = null,
     val valorCredito: Double? = null,
-    val desconto: Double? = null,
     // Tarifa da inteira congelada na emissão (ADR-0013), top-level e schemaless; null cobre docs antigos.
     val tarifaBase: Double? = null,
     val observacao: String? = null,
@@ -60,7 +59,6 @@ fun PassagemDocumento.toPassagem(id: String): Passagem {
         valorDinheiro = valorDinheiro,
         valorDebito = valorDebito,
         valorCredito = valorCredito,
-        desconto = desconto,
         tarifaBase = tarifaBase,
         observacao = observacao,
         tipoPassagem = tipoPassagem,

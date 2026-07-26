@@ -55,17 +55,15 @@ class PassagemDadosPassagemMapper @Inject constructor(
 
         // Preço tabelado (ADR-0013): da tarifa da inteira congelada (tarifaBase) deriva a tarifa devida
         // por categoria (meia = metade, gratuidade = 0) e o desconto (resíduo abaixo da devida — só a
-        // redução discricionária, sem embaralhar a meia). Sem tarifaBase (bilhete anterior / veículo, cuja
-        // tarifa por classe é Fase 3) degrada para o valor cobrado + o desconto persistido.
+        // redução discricionária, sem embaralhar a meia). Sem tarifaBase (não deve ocorrer com a emissão
+        // fail-closed) degrada para o valor cobrado, sem desconto (o desconto foi removido da persistência).
         val precos = if (entry.tarifaBase != null) {
             val tarifaBase = entry.tarifaBase.converterParaBigDecimal()
             val tarifaDevida = TipoPassagem.de(entry.tipoPassagem)?.tarifaDevida(tarifaBase) ?: tarifaBase
             val descontoDado = descontoDerivado(tarifaDevida, valorCobrado)
             Precos(tarifaBase, tarifaDevida, descontoDado, tarifaDevida - descontoDado)
         } else {
-            val descontoLegado = entry.desconto.converterParaBigDecimal()
-            val total = valorCobrado + descontoLegado
-            Precos(total, total, descontoLegado, valorCobrado)
+            Precos(valorCobrado, valorCobrado, BigDecimal.ZERO, valorCobrado)
         }
 
         return DadosPassagem(

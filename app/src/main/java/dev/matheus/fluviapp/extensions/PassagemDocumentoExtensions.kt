@@ -29,7 +29,6 @@ fun Passagem.toPassagemDocumento(): PassagemDocumento {
         valorDinheiro = valorDinheiro,
         valorDebito = valorDebito,
         valorCredito = valorCredito,
-        desconto = desconto,
         tarifaBase = tarifaBase,
         observacao = observacao,
         tipoPassagem = tipoPassagem,

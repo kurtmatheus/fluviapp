@@ -244,6 +244,68 @@ val MIGRATION_15_16 = object : Migration(15, 16) {
     }
 }
 
+/**
+ * v16 → v17: remove `Passagem.desconto`. O desconto deixou de ser digitado e persistido (ADR-0013: é
+ * DERIVADO da tarifaBase — resíduo abaixo da tarifa devida); não há bilhete legado que dependa do
+ * fallback (decisão do analista). SQLite não garante DROP COLUMN no minSdk 26, então recria a tabela
+ * (padrão da 4→5/6→7/8→9), copiando as demais colunas. Passagem no Room é cache do Firestore (verdade),
+ * então recriar é seguro (re-sincroniza).
+ */
+val MIGRATION_16_17 = object : Migration(16, 17) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `Passagem_novo` (" +
+                "`id` TEXT NOT NULL, `numero` TEXT NOT NULL, `viagemId` TEXT NOT NULL, " +
+                "`navioId` TEXT NOT NULL, `empresaId` TEXT NOT NULL, `codigoViagem` TEXT NOT NULL, " +
+                "`empresa` TEXT NOT NULL, `navio` TEXT NOT NULL, `origem` TEXT NOT NULL, " +
+                "`destino` TEXT NOT NULL, `dataViagem` TEXT NOT NULL, `horaViagem` TEXT NOT NULL, " +
+                "`agencia` TEXT NOT NULL, `agente` TEXT NOT NULL, `valorPago` REAL, `valorPix` REAL, " +
+                "`valorDinheiro` REAL, `valorDebito` REAL, `valorCredito` REAL, `tarifaBase` REAL, " +
+                "`observacao` TEXT, `tipoPassagem` TEXT, `gratuidade` TEXT, `acomodacao` TEXT, " +
+                "`nomePassageiro1` TEXT, `documentoPassageiro1` TEXT, `numeroDocumentoPassageiro1` TEXT, " +
+                "`dataNascimentoPassageiro1` TEXT, `nomePassageiro2` TEXT, `documentoPassageiro2` TEXT, " +
+                "`numeroDocumentoPassageiro2` TEXT, `dataNascimentoPassageiro2` TEXT, " +
+                "`nomePassageiro3` TEXT, `tipoDocumentoPassageiro3` TEXT, " +
+                "`numeroDocumentoPassageiro3` TEXT, `dataNascimentoPassageiro3` TEXT, " +
+                "`nomeResponsavelRetirada` TEXT, `documentoResponsavelRetirada` TEXT, " +
+                "`numeroDocumentoResponsavelRetirada` TEXT, `tipoVeiculo` TEXT, `modeloVeiculo` TEXT, " +
+                "`placaVeiculo` TEXT, `corVeiculo` TEXT, `cilindrada` TEXT, " +
+                "`funcionarioResponsavel` TEXT NOT NULL, `funcionarioId` TEXT NOT NULL, " +
+                "`status` TEXT NOT NULL, `embarcadaPorId` TEXT NOT NULL, `embarcadaPor` TEXT NOT NULL, " +
+                "`embarcadaEm` TEXT NOT NULL, PRIMARY KEY(`id`))"
+        )
+        db.execSQL(
+            "INSERT INTO `Passagem_novo` (" +
+                "`id`, `numero`, `viagemId`, `navioId`, `empresaId`, `codigoViagem`, `empresa`, `navio`, " +
+                "`origem`, `destino`, `dataViagem`, `horaViagem`, `agencia`, `agente`, `valorPago`, " +
+                "`valorPix`, `valorDinheiro`, `valorDebito`, `valorCredito`, `tarifaBase`, `observacao`, " +
+                "`tipoPassagem`, `gratuidade`, `acomodacao`, `nomePassageiro1`, `documentoPassageiro1`, " +
+                "`numeroDocumentoPassageiro1`, `dataNascimentoPassageiro1`, `nomePassageiro2`, " +
+                "`documentoPassageiro2`, `numeroDocumentoPassageiro2`, `dataNascimentoPassageiro2`, " +
+                "`nomePassageiro3`, `tipoDocumentoPassageiro3`, `numeroDocumentoPassageiro3`, " +
+                "`dataNascimentoPassageiro3`, `nomeResponsavelRetirada`, `documentoResponsavelRetirada`, " +
+                "`numeroDocumentoResponsavelRetirada`, `tipoVeiculo`, `modeloVeiculo`, `placaVeiculo`, " +
+                "`corVeiculo`, `cilindrada`, `funcionarioResponsavel`, `funcionarioId`, `status`, " +
+                "`embarcadaPorId`, `embarcadaPor`, `embarcadaEm`) " +
+                "SELECT `id`, `numero`, `viagemId`, `navioId`, `empresaId`, `codigoViagem`, `empresa`, " +
+                "`navio`, `origem`, `destino`, `dataViagem`, `horaViagem`, `agencia`, `agente`, " +
+                "`valorPago`, `valorPix`, `valorDinheiro`, `valorDebito`, `valorCredito`, `tarifaBase`, " +
+                "`observacao`, `tipoPassagem`, `gratuidade`, `acomodacao`, `nomePassageiro1`, " +
+                "`documentoPassageiro1`, `numeroDocumentoPassageiro1`, `dataNascimentoPassageiro1`, " +
+                "`nomePassageiro2`, `documentoPassageiro2`, `numeroDocumentoPassageiro2`, " +
+                "`dataNascimentoPassageiro2`, `nomePassageiro3`, `tipoDocumentoPassageiro3`, " +
+                "`numeroDocumentoPassageiro3`, `dataNascimentoPassageiro3`, `nomeResponsavelRetirada`, " +
+                "`documentoResponsavelRetirada`, `numeroDocumentoResponsavelRetirada`, `tipoVeiculo`, " +
+                "`modeloVeiculo`, `placaVeiculo`, `corVeiculo`, `cilindrada`, `funcionarioResponsavel`, " +
+                "`funcionarioId`, `status`, `embarcadaPorId`, `embarcadaPor`, `embarcadaEm` " +
+                "FROM `Passagem`"
+        )
+        db.execSQL("DROP TABLE `Passagem`")
+        db.execSQL("ALTER TABLE `Passagem_novo` RENAME TO `Passagem`")
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_Passagem_id` ON `Passagem` (`id`)")
+    }
+}
+
 @Module
 @InstallIn(SingletonComponent::class)
 class DatabaseModule {
@@ -258,7 +320,7 @@ class DatabaseModule {
         ).addMigrations(
             MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7,
             MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12,
-            MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16,
+            MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17,
         ).build()
     }
 

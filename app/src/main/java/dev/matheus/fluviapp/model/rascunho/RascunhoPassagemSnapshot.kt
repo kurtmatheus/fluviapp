@@ -21,7 +21,6 @@ data class RascunhoPassagemSnapshot(
     val valorDebito: String = "",
     val isCreditoChecked: Boolean = false,
     val valorCredito: String = "",
-    val desconto: String = "",
     val observacao: String = "",
     val viagemId: String = "",
     val navioId: String = "",

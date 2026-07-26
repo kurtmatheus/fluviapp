@@ -74,7 +74,6 @@ class FormPassageiroHelper(
             uiStatePassagem.update {
                 it.copy(
                     valorPago = "0",
-                    desconto = "0",
                     isValorPagoError = false,
                     isValorPagoEnabled = false
                 )
