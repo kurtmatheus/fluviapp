@@ -119,9 +119,11 @@ ponto onde se **valida** e se promove aquilo a perfil.
 edita os membros da **própria agência** (lotação; a agência dele é implícita). É a primeira exceção ao
 "só o dono escreve o próprio perfil" do ADR-0011 — entra como regra nova, com casos no emulador.
 
-**Google Sign-In é a outra porta do autocadastro.** `autenticarComGoogle` auto-provisiona `users/{uid}` com
-o cargo padrão quando o doc não existe — desabilitar o autocadastro por e-mail e deixar essa porta aberta
-manteria o problema. Ou o login Google passa a exigir pré-cadastro também, ou sai junto.
+**Google Sign-In sai** (decisão do analista). Era a outra porta do autocadastro: `autenticarComGoogle`
+auto-provisiona `users/{uid}` com o cargo padrão quando o doc não existe — fechar o cadastro por e-mail e
+deixar essa aberta não fecharia nada. Some inteiro em P2.2c, junto com o autocadastro: o acesso passa a ser
+**e-mail + senha de quem foi pré-cadastrado**, e ponto. (Junto saem o botão, o fluxo de credencial e a
+dependência de Google Sign-In.)
 
 ### 2.2 A lista da Equipe é recortada pelo cargo
 
@@ -334,8 +336,8 @@ logado em vez de digitados.
     nos dois recortes (§2.1) e a lista recortada por cargo (§2.2). Regras novas no ADR-0011 (escrita de
     convite; edição de perfil alheio por plataforma/supervisor) + casos no emulador.
   - **P2.2c — primeiro acesso.** Detecção no login, tela de criar/confirmar senha, nascimento do
-    `users/{uid}` a partir do convite, e **desabilitar o autocadastro** (e-mail/senha **e** o
-    auto-provisionamento do Google — §2.1).
+    `users/{uid}` a partir do convite, **desabilitar o autocadastro** e **remover o Google Sign-In** — que
+    é a outra porta do mesmo provisionamento automático (§2.1).
 - **P2.3 — Emissão deriva do logado.** Congela agência (do usuário) na Passagem; remove
   `ContentAgenciaAreaPassagemForm` + eventos/`runBlocking`, e com ele as validações órfãs de
   `agencia`/`agente` (`ValidacaoDadosPassagem:57-58` exige campos que a UI não mostra).
@@ -446,13 +448,19 @@ Fechamento dos cinco pontos que estavam abertos:
 - **ADM/GESTOR editam perfil alheio**; o **SUPERVISOR** edita os da própria agência.
 - **A lista da Equipe é recortada por cargo** (§2.2): supervisor filtra só por lotação (agência implícita);
   ADM/GESTOR filtram por agência também.
+- **Conta no Firebase Auth é obrigatória para o agente** — não é ordem impossível, é **validação**: a conta
+  nasce no primeiro acesso, e só nasce para quem tem pré-cadastro.
+- **Google Sign-In sai** — some junto com o autocadastro (P2.2c); acesso passa a ser só e-mail + senha.
+- **Cargo na tela de edição fica com o PO/analista** — decisão adiada; até lá, pré-cadastro nasce `AGENTE`
+  e promoção segue no console.
 
 ## Pontos abertos
 
-- **Login Google** — sai junto com o autocadastro ou passa a exigir pré-cadastro? (§2.1: hoje ele
-  auto-provisiona perfil, então é a outra porta do mesmo problema.)
-- **A tela de edição do ADM/GESTOR mexe no cargo?** A promoção a `SUPERVISOR` sairia do console e viraria
-  tela — coerente com "cargo é fornecido pela gestão", mas é a mudança mais sensível na regra.
+- **A tela de edição do ADM/GESTOR mexe no cargo?** — **reservado ao PO/analista**, decisão dele, ainda não
+  tomada. Até lá o código segue o caminho conservador: o pré-cadastro nasce **`AGENTE`** e a promoção a
+  `SUPERVISOR` continua sendo operação de **console**, com a regra anti-escalonamento intacta. Quando a
+  decisão vier, o que muda é (a) um campo de cargo na tela do ADM/GESTOR e (b) a regra que hoje congela o
+  cargo no update.
 
 Duas coisas que este ADR só encosta, para depois: promover agência de enum a coleção cadastrável (quando
 houver cadastro de agência) e mover o `groupBy` da contagem de `navioId` p/ `viagemId` (quando o
