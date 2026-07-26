@@ -114,11 +114,23 @@ mapper e sua dependência `agenteRepository` (`PassagemDadosPassagemMapper:39-47
 `FormPassagemUiState`, a coluna em `Agente`/`AgenteDocumento`/`DocumentoBrutoMappers`, os `SampleData` e os
 testes. O **[ADR-0002](0002-capability-forma-pagamento.md) fica superado** por este ponto.
 
-> **Atenção ao remover — ramo morto na validação.** `ValidacaoDadosPassagem:60` usa a **negação**
-> (`!isFormaPagamentoEnabled && !isGratuidade && valorPago.isBlank()`) para exigir o **valor pago avulso**
-> quando não havia seleção de forma de pagamento. Com a flag constante `true` esse ramo já é inalcançável;
-> apagá-lo elimina de vez a exigência do `valorPago` avulso. Confirmar se esse campo ainda tem uso no processo
-> novo ou se sai junto.
+**O "valor pago" avulso sai junto** (decisão do analista): não faz mais sentido no processo novo. Ele é o par
+da capability — existia para o caso "não escolhe forma de pagamento, informa só o total". Detalhe de execução
+importante:
+
+- A **validação** dele (`ValidacaoDadosPassagem:60`, ramo `!isFormaPagamentoEnabled && !isGratuidade`) é
+  **inalcançável**: quando o `else` roda é porque há gratuidade, e a condição pede `!isGratuidade`. Deleção
+  sem efeito.
+- O **campo**, esse, é alcançável — pela **gratuidade**: `ContentPagamentoAreaForm:157` renderiza o "valor
+  pago" no `else` de `if (enabled && !isGratuidade)`, com `"0"` e `isValorPagoEnabled = false`
+  (`FormPassageiroHelper:87-89`). Ou seja: hoje o bilhete gratuito exibe um campo desabilitado escrito `0`.
+  Removê-lo faz a área de pagamento **não renderizar nada** na gratuidade — que é o correto (gratuidade não
+  paga), mas é **mudança visível**, não deleção invisível.
+- É campo **persistido**: `Passagem.valorPago: Double?` (Room + `PassagemDocumento` no Firestore), o
+  `RascunhoPassagemSnapshot`, o state/evento do form e as duas somas que o incluem
+  (`PassagemExtensions.obterValorTotalAPagar`, `valorCobrado` no mapper). Sai com migração Room (drop de
+  coluna) e regeneração pelo seed. As somas perdem uma parcela que, no fluxo atual, é sempre `0` ou nula —
+  então o **balanço financeiro** (ADR-0014) não muda de resultado.
 
 ### 4.1 Escopo por cargo: ADM/DIRETOR são cargos **FluviApp**; os demais são **por agência**
 
@@ -126,8 +138,8 @@ O isolamento do §3 não é uniforme — depende do cargo:
 
 - **`ADM` e `DIRETOR` são cargos da plataforma (FluviApp), não de uma agência.** São *masters*: detêm todas
   as permissões e enxergam **todas as agências**. É o predicado que `PermissoesUsuario.ehGestor` já isola.
-- **`COLABORADOR_MASTER` e `OPERADOR` são cargos de agência.** Controle e gestão da informação acontecem
-  **dentro da própria agência**.
+- **`SUPERVISOR` e `AGENTE` (ex-`COLABORADOR_MASTER`/`OPERADOR` — §4.2) são cargos de agência.** Controle e
+  gestão da informação acontecem **dentro da própria agência**.
 
 Isso acrescenta um **terceiro eixo** ao ADR-0010, que hoje tem dois (seção × ação-com-posse): o **escopo** —
 plataforma × agência. Na prática a posse ganha um grau intermediário:
@@ -135,13 +147,43 @@ plataforma × agência. Na prática a posse ganha um grau intermediário:
 > minha passagem → passagens **da minha agência** → todas as agências
 
 Consequência afiada, a implementar em P2.6: `podeVerTodasPassagens`/`podeEditarQualquerPassagem` hoje
-respondem `true` para `COLABORADOR_MASTER`. Com o escopo, "**todas**" passa a significar "**todas da minha
-agência**" para ele, e "todas mesmo" só para `ehGestor`. A política ganha algo como
+respondem `true` para o `COLABORADOR_MASTER`/`SUPERVISOR`. Com o escopo, "**todas**" passa a significar
+"**todas da minha agência**" para ele, e "todas mesmo" só para `ehGestor`. A política ganha algo como
 `podeVerTodasAgencias(cargo) = ehGestor(cargo)`, e as consultas de passagem filtram por agência quando ele é
 `false`.
 
-> **Armadilha de nome:** `COLABORADOR_MASTER` tem "master" no nome mas **não** é master de plataforma — é
-> master *dentro da agência*. Vale renomear ou documentar bem na hora de codar.
+### 4.2 Os cargos são renomeados: `SUPERVISOR` e `AGENTE`
+
+A armadilha de nome do `COLABORADOR_MASTER` ("master" que não é master de plataforma) se resolve renomeando.
+O enum `Usuario.Cargo` passa a ser:
+
+| Antes | Depois | Escopo | Papel |
+|---|---|---|---|
+| `ADM` | `ADM` | **Plataforma (FluviApp)** | master: todas as permissões, todas as agências |
+| `DIRETOR` | `DIRETOR` | **Plataforma (FluviApp)** | idem |
+| `COLABORADOR_MASTER` | **`SUPERVISOR`** | Agência | o **master da agência**; **cargos executivos de agência entram aqui automaticamente** (o diretor *de uma agência* é `SUPERVISOR`, não `DIRETOR` — `DIRETOR` é da FluviApp) |
+| `OPERADOR` | **`AGENTE`** | Agência | quem vende: operador = agente |
+
+O nome **"Agente" volta — como cargo, não como entidade.** Só é possível porque a entidade `Agente` morre
+(§7): o token deixa de ser ambíguo e passa a nomear o **papel** de quem emite, casando com a tese do ADR
+("o agente é o usuário"). Fecha o vocabulário: a **Equipe** é formada por membros com cargo, e o cargo de
+quem vende chama-se **Agente**.
+
+**Ordem importa — colisão de nome.** Existe `SecaoMenu.AGENTE` (a seção de menu), que P2.1 renomeia para
+`EQUIPE`. O rename do cargo tem de vir **junto ou depois** disso, senão convivem dois `AGENTE` com
+significados diferentes (seção × cargo). Por isso os dois renames vão na **mesma fase (P2.1)**.
+
+**Superfície do rename** — o cargo é **String persistida**, então não é só o enum:
+`Usuario.Cargo`/`PermissoesUsuario`, `firestore.rules` (a lista literal de `cargoConhecido()`, o
+`ehGestor()`, o `podeEditarQualquerPassagem()` e o cargo default do autocadastro em `users/{uid}`),
+a suíte `firestore-tests/rules.test.js`, `CARGO_PADRAO`/`CARGO_PADRAO_AUTOCADASTRO`
+(`CadastroViewModel:62`, `FirebaseAutenticacaoRepository:101`), o seed e os testes.
+
+> **Fail-closed morde na virada.** `Cargo.de` devolve `null` para valor desconhecido e a política nega tudo
+> (ADR-0010). Um usuário com `cargo: "OPERADOR"` gravado em `users/{uid}` ou em cache na sessão (DataStore)
+> vira **sem permissão** depois do rename — e as regras do servidor também passam a negá-lo. Como é portfólio
+> (regenera pelo seed, não se faz backfill), a saída é **seed + re-login**; e `rules` + app + suíte de
+> emulador têm de ir no **mesmo commit**, senão o servidor nega o app inteiro.
 
 ### 5. Identidade visual por agência
 
@@ -186,10 +228,14 @@ logado em vez de digitados.
 
 ## Plano de migração (faseado, aditivo)
 
-- **P2.0 — Aposentar `podeSelecionarFormaPagamento`.** Deleção pura (§4a), **não depende de nenhuma outra
-  fase** — pode ir primeiro, junto com o P2.1. Já libera o `PassagemDadosPassagemMapper` do
-  `AgenteRepository`.
-- **P2.1 — Rótulo "Equipe".** Menu "Agentes" → "Equipe"; strings/títulos. Cosmético, sem migração.
+- **P2.0 — Aposentar `podeSelecionarFormaPagamento` + o `valorPago` avulso.** Deleção (§4a), **não depende de
+  nenhuma outra fase** — pode ir primeiro. Libera o `PassagemDadosPassagemMapper` do `AgenteRepository`;
+  inclui migração Room (drop de `valorPago`), o campo/evento/validação do form e as somas. Atenção à
+  gratuidade (deixa de exibir o campo `0` desabilitado).
+- **P2.1 — Vocabulário: "Equipe" + cargos novos.** Menu "Agentes" → "Equipe" (`SecaoMenu.AGENTE` → `EQUIPE`)
+  **e** `COLABORADOR_MASTER` → `SUPERVISOR`, `OPERADOR` → `AGENTE` (§4.2) — juntos, para não conviverem dois
+  `AGENTE`. Toca `firestore.rules` + `firestore-tests` + defaults de autocadastro no mesmo commit; seed
+  regenerado e re-login.
 - **P2.2 — `Usuario` ganha `agencia` + `lotacao`.** Migração Room + espelho Firestore + form de cadastro do
   membro (molde ADR-0006). Capacidades organizacionais; permissão segue no cargo.
 - **P2.3 — Emissão deriva do logado.** Congela agência (do usuário) na Passagem; remove
@@ -212,8 +258,10 @@ logado em vez de digitados.
 - **Menos código, não mais** — a capability desaparece em vez de mudar de casa; o detalhamento passa a
   mostrar o breakdown de pagamento que hoje esconde.
 - **ADR-0010 ganha um terceiro eixo** — escopo (plataforma × agência), com "todas as passagens" passando a
-  significar "todas da minha agência" para `COLABORADOR_MASTER` (§4.1). É mudança de comportamento, não só
-  adição.
+  significar "todas da minha agência" para o `SUPERVISOR` (§4.1). É mudança de comportamento, não só adição.
+- **Vocabulário fechado** — plataforma (`ADM`/`DIRETOR`) × agência (`SUPERVISOR`/`AGENTE`); "Agente" volta
+  como **cargo** porque a entidade homônima morre. Cargo é String persistida: o rename é *breaking* para
+  sessões e documentos existentes (fail-closed), resolvido por seed + re-login (§4.2).
 - **Emissão mais simples** — sem campo de agência/agente; menos superfície, sem `runBlocking`.
 - **Multi-tenant** — isolamento por agência nas passagens; ocupação de embarcação compartilhada.
 - **Branding por agência** — o bilhete carrega a marca da agência emissora.
@@ -271,15 +319,15 @@ Fechamento dos cinco pontos que estavam abertos:
 4. **`Agente` removido de vez** — sem período dormente; remoção completa em P2.5 (§7).
 5. **Contagem cross-agência já no MVP, recortada por viagem** — a agência não é eixo da contagem (§6).
 
+## Decisões resolvidas na conversa (analista, 2026-07-26) — 3ª rodada
+
+- **O "valor pago" avulso sai junto** com a capability (P2.0) — não faz mais sentido no processo novo (§4a).
+- **`COLABORADOR_MASTER` → `SUPERVISOR`** — o master **da agência**; cargos executivos de agência entram aí
+  automaticamente (§4.2).
+- **`OPERADOR` → `AGENTE`** — operador *é* o agente; o token fica livre porque a entidade `Agente` morre.
+
 ## Pontos abertos
 
-O ADR está fechado em direção. Sobrou **uma** pergunta de implementação, levantada ao mapear a remoção da
-capability:
-
-- **O "valor pago" avulso ainda existe no processo novo?** Ele só é exigido no ramo `!isFormaPagamentoEnabled`
-  (`ValidacaoDadosPassagem:60`), inalcançável hoje. Apagar a flag apaga a exigência; se o campo em si também
-  não faz mais sentido, ele sai junto em P2.0.
-
-E duas coisas que este ADR só encosta, para depois: promover agência de enum a coleção cadastrável (quando
+Nenhum. Duas coisas que este ADR só encosta, para depois: promover agência de enum a coleção cadastrável (quando
 houver cadastro de agência) e mover o `groupBy` da contagem de `navioId` p/ `viagemId` (quando o
 Viagem→Trecho der data à viagem).

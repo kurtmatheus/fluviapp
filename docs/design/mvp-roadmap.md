@@ -56,15 +56,19 @@ O maior pilar. É a rework de identidade/multi-agência que o §6 do estudo do f
 [ADR-0015](../adr/0015-rework-agente-equipe.md) está **aceito em direção** (todos os pontos fechados com o
 analista em 2026-07-26) — ele manda; as fases abaixo são o resumo:
 
-- **P2.1 — Rótulo "Equipe".** Menu "Agentes" → "Equipe"; strings/títulos. Cosmético, sem migração. *Cheap,
-  pode ir primeiro para destravar o vocabulário.*
+- **P2.1 — Vocabulário: "Equipe" + cargos novos.** Menu "Agentes" → "Equipe" (`SecaoMenu.AGENTE` → `EQUIPE`)
+  **e** o rename dos cargos: `COLABORADOR_MASTER` → `SUPERVISOR` (master **da agência**),
+  `OPERADOR` → `AGENTE` (ADR-0015 §4.2). Juntos, para não conviverem dois `AGENTE`. Não é só cosmético: o
+  cargo é String persistida — toca `firestore.rules` + `firestore-tests` + defaults de autocadastro no mesmo
+  commit, com seed regenerado e re-login (fail-closed).
 - **P2.2 — Agência e lotação como capacidades do usuário (migração).** Hoje agência é texto livre + entidade
   `Agente` à parte. Passa a ser **atributo do usuário** (`Usuario`/`Agente` ganha `agencia` + `lotacao`).
   Migração Room + espelho Firestore + form de cadastro do membro da Equipe. Consolida "agente = usuário
   logado" (o `funcionarioId`/uid já é a âncora — ADR-0010/0008).
-- **P2.0 — Aposentar `podeSelecionarFormaPagamento`.** Deleção pura (ADR-0015 §4a; supera o ADR-0002): a
-  capability é resíduo da proposta antiga (bilhete de check-in) — o app hoje emite a passagem e o check-in é
-  o QR. Não depende de nada, pode ir primeiro.
+- **P2.0 — Aposentar `podeSelecionarFormaPagamento` + o `valorPago` avulso.** Deleção (ADR-0015 §4a; supera o
+  ADR-0002): a capability é resíduo da proposta antiga (bilhete de check-in) — o app hoje emite a passagem e
+  o check-in é o QR; o "valor pago" avulso era o par dela. Inclui migração Room (drop de coluna). Não depende
+  de nada, pode ir primeiro.
 - **P2.3 — Agência transversal à emissão.** A emissão **deriva a agência do usuário logado** (não digita
   agente/agência à mão; a área comentada do form é aposentada). Remove a dívida do `runBlocking` de
   `atualizarListaAgente` e as validações órfãs de agência/agente.
@@ -74,7 +78,7 @@ analista em 2026-07-26) — ele manda; as fases abaixo são o resumo:
 - **P2.5 — Aposentar `Agente`.** Remoção completa da entidade/DAO/repos/form/telas/testes (ADR-0015 §7),
   depois de P2.3. Diff quase todo deleção.
 - **P2.6 — Escopo por agência na listagem.** Terceiro eixo em `PermissoesUsuario`: `ADM`/`DIRETOR` são cargos
-  **FluviApp** (atravessam agências); `COLABORADOR_MASTER`/`OPERADOR` são de agência. Filtro por agência do
+  **FluviApp** (atravessam agências); `SUPERVISOR`/`AGENTE` são de agência. Filtro por agência do
   logado nas consultas de passagem — **por UI**, sem regra Firestore no MVP. A Contagem fica fora do filtro
   (é cross-agência por definição).
 

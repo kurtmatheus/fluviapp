@@ -4,6 +4,12 @@
 suíte de emulador verde (`firestore-tests/`, 24 casos); deploy em produção é passo de operação (ver
 Deploy). Fecha a **Fase 3** prevista no [ADR-0010](0010-autorizacao-por-cargo.md).
 
+> **A ajustar quando o [ADR-0015](0015-rework-agente-equipe.md) for codado:** o rename dos cargos
+> (`COLABORADOR_MASTER` → `SUPERVISOR`, `OPERADOR` → `AGENTE`) toca a lista literal de `cargoConhecido()`, o
+> `podeEditarQualquerPassagem()` e o cargo default do autocadastro — `rules` + app + suíte de emulador têm de
+> ir no **mesmo commit** (fail-closed nega o app inteiro se saírem dessincronizados). O isolamento por
+> agência **não** entra nas regras no MVP (fica por UI) — é o débito de servidor registrado no ADR-0015 §3.
+
 > Conversa com o [ADR-0010](0010-autorizacao-por-cargo.md) (política de cargo, dois eixos), o
 > [ADR-0005](0005-autenticacao-sessao-firebase-datastore.md) (`users/{uid}` com `cargo`) e o
 > [ADR-0008](0008-relacionamentos-por-identidade.md) / Fase 2 (o `funcionarioId` na Passagem, que

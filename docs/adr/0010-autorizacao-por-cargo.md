@@ -3,6 +3,11 @@
 **Status:** Aceita (direção). Fase 1 (política + correção de comportamento) e Fase 2 (posse por
 identidade) implementadas; Fase 3 (regras Firestore por cargo) fica para ADR futuro.
 
+> **Estendido pelo [ADR-0015](0015-rework-agente-equipe.md)** (ainda sem código): (a) **terceiro eixo —
+> escopo**: `ADM`/`DIRETOR` são cargos de **plataforma** (atravessam agências), os demais são de **agência**,
+> e "todas as passagens" passa a significar "todas da **minha agência**" para o master de agência (§4.1);
+> (b) **rename dos cargos**: `COLABORADOR_MASTER` → `SUPERVISOR`, `OPERADOR` → `AGENTE` (§4.2).
+
 > Formaliza o [estudo de autorização](../design/autorizacao-por-cargo.md). Conversa com o
 > [ADR-0005](0005-autenticacao-sessao-firebase-datastore.md) (sessão Firebase + DataStore guarda
 > nome/cargo), o [ADR-0008](0008-relacionamentos-por-identidade.md) (relacionar por id, não por
