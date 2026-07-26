@@ -47,8 +47,9 @@ fun validarPassageiro(state: FormPassageiroUiState, dataViagem: String): ErrosPa
 
     return ErrosPassageiro(
         acomodacao = state.acomodacao.isBlank(),
-        tipoPassagem = state.tipoPassagem.isBlank(),
-        tipoGratuidade = state.isGratuidade && state.tipoGratuidade.isBlank(),
+        // Tipo tarifário só existe na REDE (ADR-0013): fora dela não se exige tipo nem gratuidade (inteira).
+        tipoPassagem = state.ehAcomodacaoRede && state.tipoPassagem.isBlank(),
+        tipoGratuidade = state.ehAcomodacaoRede && state.isGratuidade && state.tipoGratuidade.isBlank(),
         // doc do titular: número exigido quando um tipo de documento foi escolhido.
         documentoP1 = state.tipoDocumentoPassageiro1.isNotBlank() && state.documentoPassageiro1.isBlank(),
         nomeP1 = state.nomePassageiro1.isBlank(),

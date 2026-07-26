@@ -25,7 +25,6 @@ import dev.matheus.fluviapp.R
 import dev.matheus.fluviapp.extensions.keyboardType
 import dev.matheus.fluviapp.extensions.visualTransformation
 import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.GRATUIDADE
-import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.MEIA
 import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.REDE
 import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.SUITE
 import dev.matheus.fluviapp.model.mapDescricao
@@ -76,26 +75,28 @@ fun ContentPassageiroAreaForm(
     )
 
     if (statePassageiro.acomodacao.isNotBlank()) {
-        DropDownFormField(
-            modifier = modifier,
-            listaItens = statePassageiro.listaTipoPassagem.mapDescricao().filter {
-                if (!statePassageiro.ehAcomodacaoRede) it != MEIA.name else true
-            },
-            label = R.string.label_tipo_passagem,
-            value = statePassageiro.tipoPassagem,
-            onValueChange = onTipoPassagemChange,
-            isError = statePassageiro.isTipoPassagemError
-        )
-
-        if (statePassageiro.isGratuidade) {
+        // Tipo tarifário (inteira/meia/gratuidade) só existe na REDE (ADR-0013); fora dela é sempre inteira,
+        // então nem se exibe nem se valida o tipo/gratuidade.
+        if (statePassageiro.ehAcomodacaoRede) {
             DropDownFormField(
                 modifier = modifier,
-                listaItens = statePassageiro.listaTipoGratuidade.mapDescricao(),
-                label = R.string.label_tipo_gratuidade,
-                value = statePassageiro.tipoGratuidade,
-                onValueChange = onTipoGratuidadeChange,
-                isError = statePassageiro.isTipoGratuidadeError
+                listaItens = statePassageiro.listaTipoPassagem.mapDescricao(),
+                label = R.string.label_tipo_passagem,
+                value = statePassageiro.tipoPassagem,
+                onValueChange = onTipoPassagemChange,
+                isError = statePassageiro.isTipoPassagemError
             )
+
+            if (statePassageiro.isGratuidade) {
+                DropDownFormField(
+                    modifier = modifier,
+                    listaItens = statePassageiro.listaTipoGratuidade.mapDescricao(),
+                    label = R.string.label_tipo_gratuidade,
+                    value = statePassageiro.tipoGratuidade,
+                    onValueChange = onTipoGratuidadeChange,
+                    isError = statePassageiro.isTipoGratuidadeError
+                )
+            }
         }
 
         PassageirosFormField(

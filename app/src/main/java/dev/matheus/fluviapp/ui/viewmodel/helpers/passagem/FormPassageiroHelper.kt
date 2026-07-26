@@ -8,6 +8,7 @@ import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Categoria.TIPO_P
 import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.CNPJ
 import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.CPF
 import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.PASSAPORTE
+import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.REDE
 import dev.matheus.fluviapp.model.passagem.Passagem
 import dev.matheus.fluviapp.services.repository.cadastro.ConstanteRepository
 import dev.matheus.fluviapp.services.repository.firebase.PassagemFirestoreRepository
@@ -53,8 +54,18 @@ class FormPassageiroHelper(
         uiState.update { state ->
             state.copy(
                 acomodacao = acomodacao,
-                isAcomodacaoError = false
+                isAcomodacaoError = false,
+                // Tipo tarifário só na REDE (ADR-0013): ao sair da rede, limpa tipo/gratuidade — senão fica
+                // valor obsoleto que precificaria errado (ex.: suíte herdando GRATUIDADE de uma rede anterior).
+                tipoPassagem = if (acomodacao == REDE.name) state.tipoPassagem else "",
+                tipoGratuidade = if (acomodacao == REDE.name) state.tipoGratuidade else "",
+                isTipoPassagemError = false,
+                isTipoGratuidadeError = false,
             )
+        }
+        // Fora da rede é inteira (paga): reabilita os campos de pagamento (ramo não-gratuidade).
+        if (acomodacao != REDE.name) {
+            formatarCamposValores("")
         }
     }
 

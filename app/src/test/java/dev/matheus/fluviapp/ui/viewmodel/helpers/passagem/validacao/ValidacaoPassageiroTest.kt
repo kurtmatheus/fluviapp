@@ -31,11 +31,27 @@ class ValidacaoPassageiroTest {
     fun `obrigatorios em branco invalidam com msg de obrigatorio na data`() {
         val e = validarPassageiro(FormPassageiroUiState(), dataViagem)
         assertTrue(e.acomodacao)
-        assertTrue(e.tipoPassagem)
+        // Tipo tarifário só é exigido na REDE (ADR-0013); acomodação em branco não é rede.
+        assertFalse(e.tipoPassagem)
         assertTrue(e.nomeP1)
         assertTrue(e.dataNascimentoP1)
         assertEquals(R.string.error_camp_obrig, e.textDataNascimentoP1)
         assertFalse(e.valido)
+    }
+
+    @Test
+    fun `rede exige tipo tarifario`() {
+        val e = validarPassageiro(p1Valido().copy(tipoPassagem = ""), dataViagem)
+        assertTrue(e.tipoPassagem)
+        assertFalse(e.valido)
+    }
+
+    @Test
+    fun `fora da rede nao exige tipo tarifario nem gratuidade`() {
+        val e = validarPassageiro(p1Valido().copy(acomodacao = "SUITE", tipoPassagem = ""), dataViagem)
+        assertFalse(e.tipoPassagem)
+        assertFalse(e.tipoGratuidade)
+        assertTrue(e.valido)
     }
 
     @Test
