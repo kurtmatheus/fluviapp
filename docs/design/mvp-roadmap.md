@@ -41,9 +41,9 @@ As fatias do `balanco-passagens-mapper.md §7`, **excluindo a fatia 4** (módulo
 - **P1.2 — Contagem: suíte por bilhete + `associateBy`. ✅ FEITO (commit d118021).** 1 suíte por bilhete
   (`temPassageiro3`→3p, senão 2p; solo conta); `contador` extraído p/ função pura `contarOcupacaoNavio` +
   `associateBy` no lookup; +4 testes por caso. Breakdown segue no ramo REDE (coerente com P1.1).
-- **P1.3 — Renomear módulo → "Contagem de Passagem" + visibilidade por cargo.** Nome no menu/títulos;
-  **OPERADOR vê só a própria contagem** (`funcionarioId == uid`), gestores veem a geral (filtro na query/
-  mapper; novo eixo ADR-0010). *Depende de P1.2 estável.*
+- **P1.3 — Renomear módulo → "Contagem de Passagem".** Só o nome no menu/títulos. **SEM filtro por cargo**
+  (revisão 2026-07-26): o operador **vê** a contagem geral — precisa dos números da viagem para orientação.
+  O filtro por cargo fica **só no Faturamento**. *Baixo risco (strings).*
 - **P1.4 — Threading (opcional p/ MVP).** Avaliar/refatorar o `runBlocking` N+1 de `obterTodasPorDataStatus`
   (tela de pesquisa) → `suspend`/`await`+cache. *Dívida de perf; pode ficar pós-MVP se apertar.*
 

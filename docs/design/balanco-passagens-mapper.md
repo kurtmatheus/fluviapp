@@ -182,9 +182,9 @@ Independentes das decisões de domínio do §4 (essas mudam números, precisam d
 - **Faturamento vira módulo separado** (opção de menu própria) com a ação **"gerar balanço financeiro"** — é
   para lá que o [ADR-0014](../adr/0014-balanco-financeiro-da-travessia.md) migra. Ocupação e dinheiro deixam
   de compartilhar tela.
-- **Visibilidade por cargo:** o **OPERADOR vê só a contagem PRÓPRIA** (as passagens que ele emitiu —
-  `funcionarioId == uid`); **cargos acima** (ADM, DIRETOR, COLABORADOR_MASTER) veem a **contagem GERAL**.
-  Novo eixo de autorização (ADR-0010) — filtro na query/mapper por `funcionarioId` quando o cargo é OPERADOR.
+- **Visibilidade por cargo: NÃO na contagem** (revisão 2026-07-26). O **OPERADOR vê a contagem GERAL** —
+  precisa conhecer os números da viagem para fins de orientação. O **filtro por cargo fica só no Faturamento**
+  (dinheiro), onde faz sentido restringir. A contagem é informação operacional, aberta a todos os cargos.
 
 **Q1 — Suíte (§4.1) DECIDIDO:** a unidade é a **suíte (o bilhete)**, não a pessoa. Só há suítes de **2 ou 3
 pessoas**; só o **titular é obrigatório** (p2/p3 opcionais). Regra correta:

@@ -5,7 +5,7 @@
     <!-- Buttons -->
     <string name="btn_visualizar_viagem">Visualizar Viagem\n</string>
     <string name="btn_pesquisar_passagens">Pesquisar Passagem</string>
-    <string name="btn_balanco_vendas">Balanço de Vendas</string>
+    <string name="btn_balanco_vendas">Contagem de Passagem</string>
     <string name="btn_pesquisar_viagens">Pesquisar Viagens</string>
     <string name="btn_entrar">Entrar</string>
     <string name="btn_icon_voltar">Voltar</string>
@@ -55,7 +55,7 @@
     <string name="subtitle_detalhes_viagem">Detalhes da Viagem</string>
     <string name="subtitle_resultados">Resultados</string>
     <string name="subtitle_detalhes_passagem">Detalhes da Passagem</string>
-    <string name="subtitle_balanco">Balanço de Passagens</string>
+    <string name="subtitle_balanco">Contagem de Passagem</string>
     <string name="subtitle_cadastrar_novo_agente">Cadastrar Novo(a) Agente</string>
     <string name="subtitle_editar_agente">Editar Agente</string>
     <string name="subtitle_pesquisar_agentes">Pesquisar Agente</string>
