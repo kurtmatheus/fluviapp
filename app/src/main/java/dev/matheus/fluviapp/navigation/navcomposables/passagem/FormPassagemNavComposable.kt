@@ -88,12 +88,14 @@ fun NavGraphBuilder.formPassagemNavComposable(
                 if (viewModel.validarFormularios()) {
                     viewModel.formPassagemHelper.atualizarIsSaving()
                     coroutineScope.launch {
-                        viewModel.salvarPassagem(context)?.let {
-                            onNavegaParaDetalhesPassagem(it)
-                        } ?: context.toastMessage(
-                            context.getString(R.string.error_salvar_pass)
-                        )
+                        val id = viewModel.salvarPassagem(context)
                         viewModel.formPassagemHelper.atualizarIsSaving()
+                        when {
+                            id != null -> onNavegaParaDetalhesPassagem(id)
+                            // Bloqueio de emissão (fail-closed): banner persistente na tela + rola até ele.
+                            viewModel.uiStatePassagem.value.emissaoBloqueadaMsg != 0 -> scrollParaErro++
+                            else -> context.toastMessage(context.getString(R.string.error_salvar_pass))
+                        }
                     }
                 } else {
                     scrollParaErro++ // rola até o 1º campo inválido (mais acima)

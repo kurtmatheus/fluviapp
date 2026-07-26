@@ -314,6 +314,39 @@ class FormPassagemHelper(
         }
     }
 
+    /**
+     * Bloqueio de emissão fail-closed (ADR-0013): em vez do toast transiente, marca um banner persistente
+     * com a causa e DESTACA o campo responsável (a chave sem tarifa). SemTarifa → acomodação (passageiro)
+     * ou tipoVeiculo/cilindrada (veículo/moto); a tela rola até o banner.
+     */
+    internal fun bloquearEmissaoSemTarifa() {
+        val statePassagem = uiStatePassagem.value
+        if (statePassagem.isVeiculoChecked) {
+            val veiculo = uiStateVeiculo.value
+            if (veiculo.tipoVeiculo == MOTO.name && veiculo.cilindrada.isBlank()) {
+                uiStateVeiculo.update { it.copy(isCilindradaError = true) }
+            } else {
+                uiStateVeiculo.update { it.copy(isTipoVeiculoError = true) }
+            }
+        } else {
+            uiStatePassageiro.update { it.copy(isAcomodacaoError = true) }
+        }
+        uiStatePassagem.update {
+            it.copy(emissaoBloqueadaMsg = R.string.error_emissao_sem_tarifa, emissaoBloqueadaArg = "")
+        }
+    }
+
+    internal fun bloquearEmissaoCotaGratuidade(categoria: String) {
+        uiStatePassageiro.update { it.copy(isTipoGratuidadeError = true) }
+        uiStatePassagem.update {
+            it.copy(emissaoBloqueadaMsg = R.string.error_emissao_cota_gratuidade, emissaoBloqueadaArg = categoria)
+        }
+    }
+
+    internal fun limparBloqueioEmissao() {
+        uiStatePassagem.update { it.copy(emissaoBloqueadaMsg = 0, emissaoBloqueadaArg = "") }
+    }
+
     fun atualizarIsSaving() {
         uiStatePassagem.update {
             it.copy(

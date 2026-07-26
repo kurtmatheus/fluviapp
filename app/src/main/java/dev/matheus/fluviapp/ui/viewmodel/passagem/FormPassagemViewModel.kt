@@ -192,17 +192,15 @@ class FormPassagemViewModel @Inject constructor(
 
     suspend fun salvarPassagem(context: Context): String? {
         // Guardas de emissão (ADR-0013 §2b), fail-closed: bloqueia sem tarifa tabelada ou com a cota de
-        // gratuidade da viagem já atingida. Mensagem via toast; não salva.
+        // gratuidade da viagem já atingida. Sinaliza por banner persistente + destaque no campo (não toast).
         when (val emissao = formPassagemHelper.validarEmissao(idPassagem)) {
             ResultadoEmissao.SemTarifa -> {
-                context.toastMessage(context.resources.getString(R.string.error_emissao_sem_tarifa))
+                formPassagemHelper.bloquearEmissaoSemTarifa()
                 return null
             }
 
             is ResultadoEmissao.CotaGratuidadeAtingida -> {
-                context.toastMessage(
-                    context.resources.getString(R.string.error_emissao_cota_gratuidade, emissao.categoria)
-                )
+                formPassagemHelper.bloquearEmissaoCotaGratuidade(emissao.categoria)
                 return null
             }
 
@@ -227,6 +225,9 @@ class FormPassagemViewModel @Inject constructor(
     }
 
     fun validarFormularios(): Boolean {
+        // Limpa um bloqueio de emissão anterior (o banner é resultado de UMA tentativa de avançar; assim
+        // um bloqueio velho não sequestra a rolagem quando a validação de campo falha).
+        formPassagemHelper.limparBloqueioEmissao()
         // Validação PURA dos dados da passagem (molde ADR-0006, fatia 3).
         val formPassagemvalido = aplicarErrosDadosPassagem(
             validarDadosPassagem(_uiStatePassagem.value, _uiStatePassageiro.value.isGratuidade)

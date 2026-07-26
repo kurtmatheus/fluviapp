@@ -67,6 +67,11 @@ data class FormPassagemUiState(
 
     val observacao: String = "",
 
+    // Bloqueio de emissão fail-closed (ADR-0013): res id da causa (0 = sem bloqueio) + arg opcional
+    // (categoria da gratuidade). Vira banner persistente na tela; substitui o toast transiente.
+    val emissaoBloqueadaMsg: Int = 0,
+    val emissaoBloqueadaArg: String = "",
+
     val listaSituacaoPassagem: List<Constante> = emptyList(),
     val listaCategoriaPassagem: List<Constante> = emptyList(),
 

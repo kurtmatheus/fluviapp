@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.padding
@@ -11,15 +12,20 @@ import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
@@ -115,6 +121,7 @@ fun FormPassagemScreen(
         val ancoraHora = remember { BringIntoViewRequester() }
         val ancoraAreaPassageiro = remember { BringIntoViewRequester() }
         val ancoraPagamento = remember { BringIntoViewRequester() }
+        val ancoraBloqueio = remember { BringIntoViewRequester() }
 
         // Ao falhar a validação (nonce muda), rola até a primeira âncora com erro — a mais acima.
         LaunchedEffect(scrollParaErro) {
@@ -141,6 +148,8 @@ fun FormPassagemScreen(
                     isValorDinheiroError || isValorDebitoError || isValorCreditoError
             }
             when {
+                // Bloqueio de emissão (fail-closed) tem prioridade: rola até o banner com a causa.
+                statePassagem.emissaoBloqueadaMsg != 0 -> ancoraBloqueio.bringIntoView()
                 statePassagem.isDataViagemError -> ancoraData.bringIntoView()
                 statePassagem.isHoraViagemError -> ancoraHora.bringIntoView()
                 erroPassageiroOuVeiculo -> ancoraAreaPassageiro.bringIntoView()
@@ -278,6 +287,17 @@ fun FormPassagemScreen(
                     )
                 }
 
+                if (statePassagem.emissaoBloqueadaMsg != 0) {
+                    AvisoBloqueioEmissao(
+                        modifier = modifier.bringIntoViewRequester(ancoraBloqueio),
+                        texto = if (statePassagem.emissaoBloqueadaArg.isBlank()) {
+                            stringResource(statePassagem.emissaoBloqueadaMsg)
+                        } else {
+                            stringResource(statePassagem.emissaoBloqueadaMsg, statePassagem.emissaoBloqueadaArg)
+                        }
+                    )
+                }
+
                 Column(
                     modifier = modifier
                         .fillMaxWidth()
@@ -309,6 +329,38 @@ fun FormPassagemScreen(
                     TextSubTitleBrownItalic(text = stringResource(id = R.string.msg_carreg_info))
                 }
             }
+        }
+    }
+}
+
+/** Banner persistente do bloqueio de emissão fail-closed (ADR-0013): aponta a causa; substitui o toast. */
+@Composable
+private fun AvisoBloqueioEmissao(
+    modifier: Modifier,
+    texto: String,
+) {
+    Surface(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(10.dp, 0.dp),
+        color = MaterialTheme.colorScheme.errorContainer,
+        shape = RoundedCornerShape(8.dp),
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Icon(
+                imageVector = Icons.Filled.Warning,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onErrorContainer,
+            )
+            Text(
+                text = texto,
+                color = MaterialTheme.colorScheme.onErrorContainer,
+                style = MaterialTheme.typography.bodyMedium,
+            )
         }
     }
 }
