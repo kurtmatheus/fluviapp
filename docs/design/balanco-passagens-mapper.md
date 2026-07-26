@@ -173,4 +173,53 @@ Independentes das decisões de domínio do §4 (essas mudam números, precisam d
    e se ele entra no mesmo movimento ou vira fatia própria.
 5. **Escopo:** corrigir a contagem (§4) é o próximo passo, ou primeiro só a limpeza mecânica (§5) que não
    mexe em números, deixando a semântica para quando o balanço financeiro (ADR-0014) for desenhado junto?
+
+## 7. Decisões do analista (2026-07-26) — o que vira direção
+
+**Renomeação/reposicionamento do módulo (resposta à Q5):**
+- Este módulo é **Contagem de Passagem** (ocupação), não "balanço". Corrigir a semântica no nome (menu,
+  títulos, classes onde couber sem quebrar).
+- **Faturamento vira módulo separado** (opção de menu própria) com a ação **"gerar balanço financeiro"** — é
+  para lá que o [ADR-0014](../adr/0014-balanco-financeiro-da-travessia.md) migra. Ocupação e dinheiro deixam
+  de compartilhar tela.
+- **Visibilidade por cargo:** o **OPERADOR vê só a contagem PRÓPRIA** (as passagens que ele emitiu —
+  `funcionarioId == uid`); **cargos acima** (ADM, DIRETOR, COLABORADOR_MASTER) veem a **contagem GERAL**.
+  Novo eixo de autorização (ADR-0010) — filtro na query/mapper por `funcionarioId` quando o cargo é OPERADOR.
+
+**Q1 — Suíte (§4.1) DECIDIDO:** a unidade é a **suíte (o bilhete)**, não a pessoa. Só há suítes de **2 ou 3
+pessoas**; só o **titular é obrigatório** (p2/p3 opcionais). Regra correta:
+- cada bilhete de suíte → `preenchidasSuitesGeral += 1` (uma suíte ocupada, mesmo com só o titular);
+- `temPassageiro3` (3 nomeados; p3 ⇒ p2) → bucket **3 pessoas**; senão → bucket **2 pessoas**.
+Conserta o double-count do trio (era 2) e a suíte-solo invisível (era 0); `Geral = suites2 + suites3`, casando
+com a capacidade.
+
+**Q2 — Tipo de passagem (§4.2) DECIDIDO + vira achado de FORM:** o **tipo tarifário (inteira/meia/gratuidade)
+só existe para REDE**. Para acomodação ≠ REDE **não há preenchimento nem validação** de tipo de passagem —
+o form precisa de um **fallback de UX**: esconder o dropdown de tipo de passagem (e não validá-lo) quando a
+acomodação não é rede. Consequência para a contagem: o breakdown inteira/meia/gratuidade é **rede-only por
+natureza** (não há tipo em suíte/camarote) — mantém-se onde está, não se move para fora do ramo REDE.
+> ⚠️ **Tensão a reconciliar com o [ADR-0013](../adr/0013-tabela-de-tarifa-e-tipo-tarifario.md):** lá a
+> gratuidade é categoria **de passageiro** (idoso/PcD/criança/passe federal), transversal à acomodação, com
+> cota por viagem. Aqui a gratuidade fica **restrita à rede**. Ou o negócio confirma "gratuidade só na rede"
+> (e o ADR-0013 se ajusta), ou o tipo tarifário volta a valer para suíte/camarote. **Pergunta aberta.**
+
+**Q3 — Contagem de todas as acomodações DECIDIDO:** a **ocupação conta todas as acomodações** (rede, suíte,
+camarote, veículo), com contagem **por bilhete/unidade** uniforme (resolve §4.3 — some a divergência de eixo:
+suíte deixa de contar "pessoas extras" e passa a contar suítes, como rede/camarote contam unidades).
+
+**Q4 — Threading:** a intenção é **reaproveitar `obterTodasPorDataStatus`**, mas **verificar se é a melhor
+alternativa** antes — o método hoje faz `runBlocking { dao.salvar }` por doc no `addOnSuccessListener`
+(N+1 bloqueante). Avaliar trocar por `suspend`/`.await()` + cache em lote (como o balanço já faz com
+`obterTodasPorData`). Fatia própria, não bloqueia as demais.
+
+**Fatiamento resultante (proposta, cada fatia = 1 turno verde):**
+1. **FORM** — fallback do tipo de passagem só-rede (não exibe/valida `tipoPassagem` quando acomodação ≠ REDE).
+2. **Contagem — suíte** (Q1): 1 por bilhete, bucket por `temPassageiro3`; + `associateBy` no lookup de navio
+   (§5, mecânico). Teste por caso (solo/dupla/trio).
+3. **Rename** módulo → *Contagem de Passagem* + **visibilidade por cargo** (operador próprio / gestores geral).
+4. **Faturamento** módulo separado (menu) — migra o ADR-0014 para lá.
+5. **Threading** (Q4) — avaliar/refatorar `obterTodasPorDataStatus`.
+
+A ordem-fonte da confusão (Viagem × Trecho) está em [viagem-vs-trecho.md](viagem-vs-trecho.md) — rework maior,
+à parte.
 ```
