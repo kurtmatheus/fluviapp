@@ -198,10 +198,11 @@ só existe para REDE**. Para acomodação ≠ REDE **não há preenchimento nem 
 o form precisa de um **fallback de UX**: esconder o dropdown de tipo de passagem (e não validá-lo) quando a
 acomodação não é rede. Consequência para a contagem: o breakdown inteira/meia/gratuidade é **rede-only por
 natureza** (não há tipo em suíte/camarote) — mantém-se onde está, não se move para fora do ramo REDE.
-> ⚠️ **Tensão a reconciliar com o [ADR-0013](../adr/0013-tabela-de-tarifa-e-tipo-tarifario.md):** lá a
-> gratuidade é categoria **de passageiro** (idoso/PcD/criança/passe federal), transversal à acomodação, com
-> cota por viagem. Aqui a gratuidade fica **restrita à rede**. Ou o negócio confirma "gratuidade só na rede"
-> (e o ADR-0013 se ajusta), ou o tipo tarifário volta a valer para suíte/camarote. **Pergunta aberta.**
+> ✅ **RESOLVIDO (2026-07-26): gratuidade só na rede.** O analista confirmou que o tipo tarifário
+> (meia/gratuidade) existe **apenas na acomodação REDE**; suíte/camarote/veículo são sempre `INTEIRA`. O
+> [ADR-0013](../adr/0013-tabela-de-tarifa-e-tipo-tarifario.md) foi ajustado (§4 + §8 + Decisões resolvidas).
+> Consequência: o breakdown inteira/meia/gratuidade da contagem é rede-only **por natureza** (não há tipo em
+> suíte/camarote), e a **fatia 1** (form) esconde/não-valida o tipo tarifário quando a acomodação não é rede.
 
 **Q3 — Contagem de todas as acomodações DECIDIDO:** a **ocupação conta todas as acomodações** (rede, suíte,
 camarote, veículo), com contagem **por bilhete/unidade** uniforme (resolve §4.3 — some a divergência de eixo:

@@ -117,9 +117,12 @@ Cada categoria sabe derivar sua **tarifa devida** a partir da `tarifaBase` (a in
 | `MEIA` | `tarifaBase.divide(2, scale = 2, RoundingMode.UP)` |
 | `GRATUIDADE` (qualquer subtipo) | `BigDecimal.ZERO` |
 
-**Meia e gratuidade valem só para o passageiro.** O veículo é sempre **inteira da sua classe** — não tem
-meia nem gratuidade (idoso/PcD/criança/passe federal são categorias *de pessoa*). O `TipoPassagem`
-qualifica a linha do passageiro; a linha do veículo é sempre `INTEIRA` da tabela de veículo.
+**Meia e gratuidade valem só para o passageiro EM REDE** (revisão 2026-07-26). O veículo é sempre
+**inteira da sua classe** — não tem meia nem gratuidade (idoso/PcD/criança/passe federal são categorias
+*de pessoa*). E o passageiro de **suíte/camarote é sempre `INTEIRA`**: o **tipo tarifário existe apenas na
+acomodação `REDE`** — em suíte/camarote **não há preenchimento nem validação** de tipo tarifário (o form
+esconde o campo quando a acomodação não é rede; fallback de UX). O `TipoPassagem` qualifica só a linha do
+passageiro de rede; suíte/camarote/veículo são sempre `INTEIRA` da célula.
 
 ### 5. Desconto é o resíduo abaixo da devida — e é discriminado
 
@@ -157,8 +160,9 @@ ou lucros"). **Nesta rodada só se preparam/persistem os campos** que essas soma
 ### 8. Cota de gratuidade — máx. 2 por categoria, por viagem (validação por contagem)
 
 Cada **viagem** concede no máximo **2 gratuidades por categoria** (2 `IDOSO`, 2 `PCD`, 2 `CRIANCA_ATE_5`,
-2 `PASSE_FEDERAL`) — cota de assento livre da travessia (decisão da revisão). A guarda é uma **validação
-por contagem, firestore-driven**: antes de emitir uma passagem com gratuidade, **conta as gratuidades já
+2 `PASSE_FEDERAL`) — cota de assento livre da travessia (decisão da revisão). Como a gratuidade existe
+**só na acomodação `REDE`** (§4, revisão 2026-07-26), a cota conta apenas passagens de rede. A guarda é uma
+**validação por contagem, firestore-driven**: antes de emitir uma passagem com gratuidade, **conta as gratuidades já
 emitidas para aquela `viagemId` + categoria**; ao atingir 2, **bloqueia** a emissão (fail-closed). A
 contagem lê a fonte da verdade (Firestore, ADR-0009/design firestore-driven), não só o espelho local — a
 gratuidade pode ter sido emitida em outro device.
@@ -259,6 +263,11 @@ gratuidade pode ter sido emitida em outro device.
 - **`CORTESIA` aposentado** — não vira `TipoGratuidade`; os quatro subtipos são as gratuidades legais.
 - **Criança é até 5 anos, inclusive** — subtipo `CRIANCA_ATE_5`, faixa **0–5** (o 5 conta; a proposta
   inicial "0 a 6" foi corrigida).
+- **Tipo tarifário só na REDE (revisão 2026-07-26)** — meia e gratuidade existem **apenas** na acomodação
+  `REDE`; suíte/camarote/veículo são sempre `INTEIRA`. Em não-rede **não há preenchimento nem validação** de
+  tipo tarifário (fallback de UX no form). Reconcilia a tensão levantada no estudo da contagem
+  (`docs/design/balanco-passagens-mapper.md` §7): a gratuidade fica restrita à rede; o breakdown
+  inteira/meia/gratuidade da contagem é, por consequência, rede-only por natureza.
 - **Cota de gratuidade: máx. 2 por categoria, POR VIAGEM** — validação por contagem firestore-driven,
   bloqueia a emissão ao atingir 2 (§8; paridade de servidor parcial, ressalva de concorrência).
 - **Célula ausente = fail-closed** — viagem sem tarifa para a acomodação/classe bloqueia a emissão.
