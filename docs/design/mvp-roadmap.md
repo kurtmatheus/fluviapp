@@ -38,9 +38,9 @@ As fatias do `balanco-passagens-mapper.md §7`, **excluindo a fatia 4** (módulo
   gratuidade na rede (+2 testes); `ContentPassageiroAreaForm` só exibe os dropdowns na rede (filtro de MEIA
   removido); `atualizarAcomodacao` limpa tipo/gratuidade ao sair da rede + reabilita pagamento. Fora da rede
   = inteira (vazio → mapper/preview tratam como INTEIRA).
-- **P1.2 — Contagem: suíte por bilhete + `associateBy`.** 1 suíte por bilhete (`temPassageiro3`→bucket 3p,
-  senão 2p; solo conta); lookup de navio por mapa. Extrair o `contador` para função pura + testes por caso
-  (solo/dupla/trio, rede/camarote/veículo). *Muda números — coberto por teste.*
+- **P1.2 — Contagem: suíte por bilhete + `associateBy`. ✅ FEITO (commit d118021).** 1 suíte por bilhete
+  (`temPassageiro3`→3p, senão 2p; solo conta); `contador` extraído p/ função pura `contarOcupacaoNavio` +
+  `associateBy` no lookup; +4 testes por caso. Breakdown segue no ramo REDE (coerente com P1.1).
 - **P1.3 — Renomear módulo → "Contagem de Passagem" + visibilidade por cargo.** Nome no menu/títulos;
   **OPERADOR vê só a própria contagem** (`funcionarioId == uid`), gestores veem a geral (filtro na query/
   mapper; novo eixo ADR-0010). *Depende de P1.2 estável.*
