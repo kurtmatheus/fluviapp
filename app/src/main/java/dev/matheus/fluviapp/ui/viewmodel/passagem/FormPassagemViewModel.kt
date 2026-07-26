@@ -141,7 +141,6 @@ class FormPassagemViewModel @Inject constructor(
         )
         formPassageiroHelper = FormPassageiroHelper(
             uiState = _uiStatePassageiro,
-            uiStatePassagem = _uiStatePassagem,
             constanteRepository = constanteRepository,
             passagemRepository = passagemRepository
         )
@@ -255,7 +254,6 @@ class FormPassagemViewModel @Inject constructor(
                 isAgenciaError = erros.agencia,
                 isAgenteError = erros.agente,
                 isFormaPagamentoError = erros.formaPagamento,
-                isValorPagoError = erros.valorPago,
                 isValorPixError = erros.valorPix,
                 isValorDinheiroError = erros.valorDinheiro,
                 isValorDebitoError = erros.valorDebito,
@@ -344,7 +342,6 @@ class FormPassagemViewModel @Inject constructor(
     fun onCheckDinheiro(checked: Boolean) = formPassagemHelper.checkDinheiro()
     fun onCheckDebito(checked: Boolean) = formPassagemHelper.checkDebito()
     fun onCheckCredito(checked: Boolean) = formPassagemHelper.checkCredito()
-    fun onValorPagoChange(valor: String) = formPassagemHelper.atualizarValorPago(valor)
     fun onValorPixChange(valor: String) = formPassagemHelper.atualizarValorPix(valor)
     fun onValorDinheiroChange(valor: String) = formPassagemHelper.atualizarValorDinheiro(valor)
     fun onValorDebitoChange(valor: String) = formPassagemHelper.atualizarValorDebito(valor)

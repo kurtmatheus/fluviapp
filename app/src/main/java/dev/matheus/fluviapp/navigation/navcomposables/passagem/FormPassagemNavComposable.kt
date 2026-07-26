@@ -76,7 +76,6 @@ fun NavGraphBuilder.formPassagemNavComposable(
             onCheckDinheiro = viewModel::onCheckDinheiro,
             onCheckDebito = viewModel::onCheckDebito,
             onCheckCredito = viewModel::onCheckCredito,
-            onValorPagoChange = viewModel::onValorPagoChange,
             onValorPixChange = viewModel::onValorPixChange,
             onValorDinheiroChange = viewModel::onValorDinheiroChange,
             onValorDebitoChange = viewModel::onValorDebitoChange,

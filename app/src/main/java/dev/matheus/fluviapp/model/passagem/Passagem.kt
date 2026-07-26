@@ -27,7 +27,6 @@ data class Passagem(
     val horaViagem: String,
     val agencia: String = "",
     val agente: String = "",
-    val valorPago: Double? = null,
     val valorPix: Double? = null,
     val valorDinheiro: Double? = null,
     val valorDebito: Double? = null,

@@ -22,7 +22,6 @@ data class ErrosDadosPassagem(
     val agencia: Boolean = false,
     val agente: Boolean = false,
     val formaPagamento: Boolean = false,
-    val valorPago: Boolean = false,
     val valorPix: Boolean = false,
     val valorDinheiro: Boolean = false,
     val valorDebito: Boolean = false,
@@ -30,7 +29,7 @@ data class ErrosDadosPassagem(
 ) {
     val valido: Boolean
         get() = !dataViagem && !horaViagem && !formaPagamento &&
-            !valorPago && !valorPix && !valorDinheiro && !valorDebito && !valorCredito
+            !valorPix && !valorDinheiro && !valorDebito && !valorCredito
 }
 
 fun validarDadosPassagem(state: FormPassagemUiState, isGratuidade: Boolean): ErrosDadosPassagem {
@@ -44,9 +43,9 @@ fun validarDadosPassagem(state: FormPassagemUiState, isGratuidade: Boolean): Err
         else -> false to 0
     }
 
-    // Com seleção de forma de pagamento habilitada (padrão), pelo menos uma forma é exigida — salvo
-    // gratuidade (isenta).
-    val semFormaPagamento = state.isFormaPagamentoEnabled && !isGratuidade &&
+    // Pelo menos uma forma de pagamento é exigida — salvo gratuidade (isenta). Não há mais o gate de
+    // capability (ADR-0015 §4a): todo emissor escolhe a forma, então a regra é só sobre a gratuidade.
+    val semFormaPagamento = !isGratuidade &&
         !state.isPixChecked && !state.isDinheiroChecked &&
         !state.isDebitoChecked && !state.isCreditoChecked
 
@@ -57,10 +56,9 @@ fun validarDadosPassagem(state: FormPassagemUiState, isGratuidade: Boolean): Err
         agencia = state.agencia.isBlank(),
         agente = state.agente.isBlank(),
         formaPagamento = semFormaPagamento,
-        valorPago = !state.isFormaPagamentoEnabled && !isGratuidade && state.valorPago.isBlank(),
-        valorPix = state.isFormaPagamentoEnabled && state.isPixChecked && state.valorPix.isBlank(),
-        valorDinheiro = state.isFormaPagamentoEnabled && state.isDinheiroChecked && state.valorDinheiro.isBlank(),
-        valorDebito = state.isFormaPagamentoEnabled && state.isDebitoChecked && state.valorDebito.isBlank(),
-        valorCredito = state.isFormaPagamentoEnabled && state.isCreditoChecked && state.valorCredito.isBlank(),
+        valorPix = state.isPixChecked && state.valorPix.isBlank(),
+        valorDinheiro = state.isDinheiroChecked && state.valorDinheiro.isBlank(),
+        valorDebito = state.isDebitoChecked && state.valorDebito.isBlank(),
+        valorCredito = state.isCreditoChecked && state.valorCredito.isBlank(),
     )
 }

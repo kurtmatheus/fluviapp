@@ -13,7 +13,6 @@ import dev.matheus.fluviapp.model.passagem.Passagem
 import dev.matheus.fluviapp.services.repository.cadastro.ConstanteRepository
 import dev.matheus.fluviapp.services.repository.firebase.PassagemFirestoreRepository
 import dev.matheus.fluviapp.ui.states.passagem.FormPassageiroUiState
-import dev.matheus.fluviapp.ui.states.passagem.FormPassagemUiState
 import dev.matheus.fluviapp.ui.viewmodel.passagem.TAMANHO_CNPJ
 import dev.matheus.fluviapp.ui.viewmodel.passagem.TAMANHO_CPF
 import dev.matheus.fluviapp.ui.viewmodel.passagem.TAMANHO_PASS
@@ -22,7 +21,6 @@ import kotlinx.coroutines.flow.update
 
 class FormPassageiroHelper(
     private val uiState: MutableStateFlow<FormPassageiroUiState>,
-    private val uiStatePassagem: MutableStateFlow<FormPassagemUiState>,
     private val constanteRepository: ConstanteRepository,
     private val passagemRepository: PassagemFirestoreRepository
 ) {
@@ -63,10 +61,6 @@ class FormPassageiroHelper(
                 isTipoGratuidadeError = false,
             )
         }
-        // Fora da rede é inteira (paga): reabilita os campos de pagamento (ramo não-gratuidade).
-        if (acomodacao != REDE.name) {
-            formatarCamposValores("")
-        }
     }
 
     internal fun atualizarTipoPassagem(tipo: String) {
@@ -75,27 +69,6 @@ class FormPassageiroHelper(
                 tipoPassagem = tipo,
                 isTipoPassagemError = false
             )
-        }
-
-        formatarCamposValores(tipo)
-    }
-
-    private fun formatarCamposValores(tipo: String) {
-        if (tipo == GRATUIDADE.name) {
-            uiStatePassagem.update {
-                it.copy(
-                    valorPago = "0",
-                    isValorPagoError = false,
-                    isValorPagoEnabled = false
-                )
-            }
-        } else {
-            uiStatePassagem.update {
-                it.copy(
-                    isValorPagoError = false,
-                    isValorPagoEnabled = true
-                )
-            }
         }
     }
 
@@ -329,8 +302,6 @@ class FormPassageiroHelper(
                 dataNascimentoPassageiro3 = passagem.dataNascimentoPassageiro3.orEmpty(),
             )
         }
-
-        passagem.tipoPassagem?.let { formatarCamposValores(it) }
     }
 
     fun limparState() {

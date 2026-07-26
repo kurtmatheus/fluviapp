@@ -1,6 +1,5 @@
 package dev.matheus.fluviapp.ui.states.passagem
 
-import androidx.room.Ignore
 import dev.matheus.fluviapp.R
 import dev.matheus.fluviapp.extensions.formatarDataBarrasBr
 import dev.matheus.fluviapp.model.cadastro.constantes.Constante
@@ -49,10 +48,6 @@ data class FormPassagemUiState(
     val isCreditoChecked: Boolean = false,
     val isFormaPagamentoError: Boolean = false,
 
-    val valorPago: String = "",
-    val isValorPagoError: Boolean = false,
-    val isValorPagoEnabled: Boolean = true,
-
     val valorPix: String = "",
     val isValorPixError: Boolean = false,
 
@@ -78,7 +73,4 @@ data class FormPassagemUiState(
     val isSaving: Boolean = false,
     val isLoading: Boolean = false,
     val isEditing: Boolean = false
-) {
-    @Ignore
-    val isFormaPagamentoEnabled = true
-}
+)

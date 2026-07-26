@@ -76,7 +76,6 @@ fun ContentPagamentoAreaForm(
     onCheckDinheiro: (Boolean) -> Unit = {},
     onCheckDebito: (Boolean) -> Unit = {},
     onCheckCredito: (Boolean) -> Unit = {},
-    onValorPagoChange: (String) -> Unit = {},
     onValorPixChange: (String) -> Unit = {},
     onValorDinheiroChange: (String) -> Unit = {},
     onValorDebitoChange: (String) -> Unit = {},
@@ -106,7 +105,9 @@ fun ContentPagamentoAreaForm(
         )
     }
 
-    if (state.isFormaPagamentoEnabled && !statePassageiro.isGratuidade) {
+    // Gratuidade não paga: a área de pagamento simplesmente não aparece. Não há mais o gate de capability
+    // nem o campo "valor pago" avulso que ficava no lugar dela (ADR-0015 §4a).
+    if (!statePassageiro.isGratuidade) {
         AreaFormaPagamento(
             state = state,
             modifier = modifier,
@@ -154,28 +155,6 @@ fun ContentPagamentoAreaForm(
             onValueChange = onValorCreditoChange,
             isError = state.isValorCreditoError,
             isChecked = state.isCreditoChecked
-        )
-
-    } else {
-        FormTextFieldBrownLeadingIcon(
-            modifier = modifier.fillMaxWidth(),
-            value = state.valorPago,
-            label = R.string.label_valor_pago,
-            onValueChange = onValorPagoChange,
-            isError = state.isValorPagoError,
-            enabled = state.isValorPagoEnabled,
-            leadingIcon = {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_cifrao_24),
-                    contentDescription = stringResource(id = R.string.description_valor),
-                    tint = if (state.isValorPagoError) Color.Red else MaterialTheme.colorScheme.onBackground
-                )
-            },
-            focusManager = focusManager,
-            keyboardOptions = KeyboardOptions(
-                imeAction = ImeAction.Next,
-                keyboardType = KeyboardType.Decimal
-            )
         )
     }
 
@@ -469,8 +448,6 @@ private fun ContentViagemAreaFormAgenciaFluviGratuidadePreview() {
             state = FormPassagemUiState(
                 agencia = MATRIZ.name,
                 agente = "Agente Modelo",
-                valorPago = "0",
-                isValorPagoEnabled = false,
             ),
             statePassageiro = FormPassageiroUiState(
                 acomodacao = REDE.name,

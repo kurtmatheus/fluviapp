@@ -239,15 +239,6 @@ class FormPassagemHelper(
         }
     }
 
-    internal fun atualizarValorPago(valor: String) {
-        uiStatePassagem.update {
-            it.copy(
-                valorPago = valor,
-                isValorPagoError = false
-            )
-        }
-    }
-
     internal fun atualizarValorPix(valor: String) {
         uiStatePassagem.update {
             it.copy(
@@ -469,7 +460,6 @@ class FormPassagemHelper(
             horaViagem = statePassagem.horaViagem,
             agencia = statePassagem.agencia,
             agente = statePassagem.agente,
-            valorPago = statePassagem.valorPago.toDoubleOrNull(),
             valorPix = statePassagem.valorPix.toDoubleOrNull(),
             valorDinheiro = statePassagem.valorDinheiro.toDoubleOrNull(),
             valorDebito = statePassagem.valorDebito.toDoubleOrNull(),
@@ -540,7 +530,6 @@ class FormPassagemHelper(
                 dataViagem = passagem.dataViagem,
                 horaViagem = passagem.horaViagem,
                 isAgenteDisabled = false,
-                valorPago = passagem.valorPago.preencherCampo(),
                 isPixChecked = passagem.valorPix.preencherCampo().isNotEmpty(),
                 valorPix = passagem.valorPix.preencherCampo(),
                 isDinheiroChecked = passagem.valorDinheiro.preencherCampo().isNotEmpty(),
@@ -561,7 +550,6 @@ class FormPassagemHelper(
             it.copy(
                 agencia = "",
                 agente = "",
-                valorPago = "",
                 valorPix = "",
                 valorDinheiro = "",
                 valorDebito = "",

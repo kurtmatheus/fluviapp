@@ -117,7 +117,7 @@ class PassagemDadosPassagemMapperTest {
     @Test
     fun `inteira deriva a devida da tarifaBase e o desconto do residuo abaixo dela`() = runTest {
         val dados = mapper(emptyList()).map(
-            passagem().copy(tarifaBase = 300.0, tipoPassagem = TipoPassagem.INTEIRA.name, valorPago = 280.0),
+            passagem().copy(tarifaBase = 300.0, tipoPassagem = TipoPassagem.INTEIRA.name, valorDinheiro = 280.0),
         )
 
         assertEquals(moeda("300.00"), dados.tarifa)      // base da célula
@@ -150,7 +150,7 @@ class PassagemDadosPassagemMapperTest {
     @Test
     fun `sem tarifaBase degrada para o valor cobrado sem desconto`() = runTest {
         val dados = mapper(emptyList()).map(
-            passagem().copy(tarifaBase = null, valorPago = 100.0),
+            passagem().copy(tarifaBase = null, valorDinheiro = 100.0),
         )
 
         assertEquals(moeda("100.00"), dados.valorTotal)  // degrada para o cobrado

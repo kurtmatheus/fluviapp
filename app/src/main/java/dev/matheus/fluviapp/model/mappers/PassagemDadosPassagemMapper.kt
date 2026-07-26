@@ -38,8 +38,9 @@ class PassagemDadosPassagemMapper @Inject constructor(
         val valorDinheiro = entry.valorDinheiro.converterParaBigDecimal()
         val valorDebito = entry.valorDebito.converterParaBigDecimal()
         val valorCredito = entry.valorCredito.converterParaBigDecimal()
-        val valorPagoAvulso = entry.valorPago.converterParaBigDecimal()
-        val valorCobrado = valorPagoAvulso + valorPix + valorDinheiro + valorDebito + valorCredito
+        // Cobrado = soma das formas de pagamento. O "valor pago" avulso saiu (ADR-0015 §4a): era a
+        // parcela de quando não se escolhia forma de pagamento, cenário que não existe mais.
+        val valorCobrado = valorPix + valorDinheiro + valorDebito + valorCredito
 
         // Preço tabelado (ADR-0013): da tarifa da inteira congelada (tarifaBase) deriva a tarifa devida
         // por categoria (meia = metade, gratuidade = 0) e o desconto (resíduo abaixo da devida — só a

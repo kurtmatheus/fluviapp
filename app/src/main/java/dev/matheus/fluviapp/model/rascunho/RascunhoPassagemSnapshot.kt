@@ -12,7 +12,6 @@ data class RascunhoPassagemSnapshot(
     val agencia: String = "",
     val agente: String = "",
     val isVeiculoChecked: Boolean = false,
-    val valorPago: String = "",
     val isPixChecked: Boolean = false,
     val valorPix: String = "",
     val isDinheiroChecked: Boolean = false,

@@ -24,7 +24,6 @@ fun Passagem.toPassagemDocumento(): PassagemDocumento {
         horaViagem = horaViagem,
         agencia = agencia,
         agente = agente,
-        valorPago = valorPago,
         valorPix = valorPix,
         valorDinheiro = valorDinheiro,
         valorDebito = valorDebito,

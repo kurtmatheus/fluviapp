@@ -95,7 +95,6 @@ fun FormPassagemScreen(
     onCheckDinheiro: (Boolean) -> Unit = {},
     onCheckDebito: (Boolean) -> Unit = {},
     onCheckCredito: (Boolean) -> Unit = {},
-    onValorPagoChange: (String) -> Unit = {},
     onValorPixChange: (String) -> Unit = {},
     onValorDinheiroChange: (String) -> Unit = {},
     onValorDebitoChange: (String) -> Unit = {},
@@ -144,7 +143,7 @@ fun FormPassagemScreen(
                 }
             }
             val erroPagamento = with(statePassagem) {
-                isFormaPagamentoError || isValorPagoError || isValorPixError ||
+                isFormaPagamentoError || isValorPixError ||
                     isValorDinheiroError || isValorDebitoError || isValorCreditoError
             }
             when {
@@ -277,7 +276,6 @@ fun FormPassagemScreen(
                         onCheckDinheiro = onCheckDinheiro,
                         onCheckDebito = onCheckDebito,
                         onCheckCredito = onCheckCredito,
-                        onValorPagoChange = onValorPagoChange,
                         onValorPixChange = onValorPixChange,
                         onValorDinheiroChange = onValorDinheiroChange,
                         onValorDebitoChange = onValorDebitoChange,
