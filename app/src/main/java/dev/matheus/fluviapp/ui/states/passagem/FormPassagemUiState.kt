@@ -65,9 +65,9 @@ data class FormPassagemUiState(
     val valorCredito: String = "",
     val isValorCreditoError: Boolean = false,
 
+    // Desconto não é mais digitado (ADR-0013: é derivado). Persiste só como fallback do bilhete sem
+    // tarifaBase (legado) e p/ gratuidade (="0"); sem flags de UI — o campo manual foi removido.
     val desconto: String = "",
-    val isDescontoError: Boolean = false,
-    val isDescontoEnabled: Boolean = true,
 
     val observacao: String = "",
 
