@@ -106,4 +106,46 @@ class BalancoPassagensMapperTest {
         assertNull(balanco.find { it.navio == "F/B Sumido" })
         assertTrue(balanco.all { it.navio == "F/B Um" })
     }
+
+    // --- Contagem pura por caso (contarOcupacaoNavio): suíte por bilhete, trio→3p, solo conta (§7) ---
+
+    @Test
+    fun `suite solo conta uma suite no bucket de 2 pessoas`() {
+        val solo = passagem("s", navioId = "navio-1", navioSnapshot = "x", acomodacao = "SUITE", tipoPassagem = "")
+        val dados = contarOcupacaoNavio(navio("navio-1", "F/B Um"), listOf(solo))
+        assertEquals("1", dados.preenchidasSuitesGeral)
+        assertEquals("1", dados.preenchidasSuites2Pessoas)
+        assertEquals("0", dados.preenchidasSuites3Pessoas)
+    }
+
+    @Test
+    fun `suite dupla conta uma suite no bucket de 2 pessoas`() {
+        val dupla = passagem("s", navioId = "navio-1", navioSnapshot = "x", acomodacao = "SUITE", tipoPassagem = "")
+            .copy(nomePassageiro2 = "Acomp 2")
+        val dados = contarOcupacaoNavio(navio("navio-1", "F/B Um"), listOf(dupla))
+        assertEquals("1", dados.preenchidasSuitesGeral)
+        assertEquals("1", dados.preenchidasSuites2Pessoas)
+        assertEquals("0", dados.preenchidasSuites3Pessoas)
+    }
+
+    @Test
+    fun `suite trio conta uma suite no bucket de 3 pessoas`() {
+        val trio = passagem("s", navioId = "navio-1", navioSnapshot = "x", acomodacao = "SUITE", tipoPassagem = "")
+            .copy(nomePassageiro2 = "Acomp 2", nomePassageiro3 = "Acomp 3")
+        val dados = contarOcupacaoNavio(navio("navio-1", "F/B Um"), listOf(trio))
+        assertEquals("1", dados.preenchidasSuitesGeral)
+        assertEquals("0", dados.preenchidasSuites2Pessoas)
+        assertEquals("1", dados.preenchidasSuites3Pessoas)
+    }
+
+    @Test
+    fun `camarote e veiculo contam por bilhete`() {
+        val camarote = passagem("c", navioId = "navio-1", navioSnapshot = "x", acomodacao = "CAMAROTE", tipoPassagem = "")
+        val carro = passagem("v", navioId = "navio-1", navioSnapshot = "x", acomodacao = "", tipoPassagem = "")
+            .copy(placaVeiculo = "ABC1D23", tipoVeiculo = "CARRO")
+        val dados = contarOcupacaoNavio(navio("navio-1", "F/B Um"), listOf(camarote, carro))
+        assertEquals("1", dados.preenchidosCamarotes)
+        assertEquals("1", dados.preenchidosVeiculo)
+        assertEquals("1", dados.totalCarros)
+    }
 }
