@@ -92,28 +92,45 @@ ADR-0010). Como a gestão cadastra **antes** de existir conta, não existe uid p
 momento. Logo o cadastro da gestão grava em outro lugar, chaveado pelo **e-mail**, e o primeiro acesso é o
 ponto onde se **valida** e se promove aquilo a perfil.
 
-**Desenho (proposta do Claude, aberta a veto):** separar *convite* de *perfil*.
+**Desenho (do analista) — a conta já nasce no pré-cadastro, com senha padrão. Sem coleção nova.**
 
-- A gestão escreve um **pré-cadastro** numa coleção própria, com o **e-mail como id do documento** —
-  `membrosConvidados/{email}` = `{ nome, email, cargo, agencia, lotacao }`. Não precisa de uid.
-- **Primeiro acesso** (a funcionalidade nova no login): a pessoa informa o e-mail; havendo pré-cadastro e
-  não havendo conta, o app abre **"criar senha + confirmar"**, cria a credencial no Auth e só então nasce o
-  `users/{uid}` **com os dados do pré-cadastro**, que é consumido. Depois disso ela **loga de novo** com
-  e-mail e senha — o passo de confirmação que você descreveu.
-- **`users/{uid}` continua sendo criado pelo próprio dono** — a regra self-create do ADR-0011 permanece
-  intacta. O que muda é que o conteúdo deixa de ser escolhido pelo cliente: a regra passa a exigir que cargo,
-  agência e lotação **casem com o pré-cadastro** (`get(membrosConvidados/$(request.auth.token.email))`).
-  O anti-escalonamento fica **mais forte**, não mais fraco: hoje o autocadastro dá `AGENTE` a qualquer um;
-  depois, só existe quem a gestão convidou, com o cargo que ela definiu.
-- O e-mail como id funciona porque o token do Auth carrega `request.auth.token.email` — dá para autorizar o
-  convidado a ler/consumir **o próprio** convite sem query (regras não fazem query, só `get` por caminho).
+O pré-cadastro acontece em **duas frentes**: o registro do agente **no app** (ganhando o **e-mail**) e a
+**conta no Firebase Auth com uma senha padrão**. Ou seja: quando a pessoa chega, a credencial já existe — o
+que não existe ainda é o **perfil** (`users/{uid}`).
 
-> **Variante possível, se preferir uma coleção só:** o cliente *consegue* criar a conta do outro na hora do
-> cadastro, inicializando uma **segunda instância de `FirebaseApp`** (o `createUserWithEmailAndPassword` da
-> instância padrão trocaria o usuário logado; numa instância secundária, não). Aí a gestão já obtém o uid e
-> escreve direto em `users/{uid}`, sem coleção de convite. O custo é ter de inventar uma senha temporária
-> para essa conta — e aí o "primeiro acesso" deixa de ser *criar* senha e vira *redefinir* (link de e-mail),
-> que é diferente do fluxo que você descreveu. Por isso o desenho acima é o default.
+Daí o **primeiro acesso é uma dedução, não um convite**:
+
+> autenticou (com a senha padrão) **e** existe registro em **agentes** **e** **não** existe `users/{uid}`
+> → **é primeiro acesso**
+
+O **e-mail é a chave** que liga as duas frentes: é ele que casa a conta do Auth com o registro do agente.
+Não é preciso `membrosConvidados` nem nada equivalente — a informação já está distribuída entre o cadastro de
+agentes e o Auth, e o par "existe lá / não existe aqui" é a validação.
+
+Fluxo do primeiro acesso:
+
+1. A pessoa entra com **e-mail + senha padrão**. A autenticação passa (a conta existe desde o pré-cadastro).
+2. O app detecta a condição acima e abre a tela de **criar senha + confirmar**.
+3. A senha nova é aplicada **no próprio Auth** (`updatePassword` no usuário já autenticado — não é criação de
+   conta, é troca).
+4. Nasce o `users/{uid}` a partir do registro do agente. **A regra self-create do ADR-0011 continua
+   intacta**: nesse momento a pessoa *já está autenticada como ela mesma*, então `request.auth.uid == uid`
+   vale — não precisa de exceção no servidor para o perfil nascer.
+5. Ela **loga de novo** com a senha nova — o passo de confirmação de login/senha.
+
+**O que isso simplifica em relação à minha proposta anterior:** nenhuma coleção nova, nenhuma regra nova para
+o nascimento do perfil, e o "primeiro acesso" deixa de depender de um estado extra (convite pendente) —
+passa a ser derivado de dois fatos que já existem.
+
+**O preço, registrado:** a senha padrão é um **segredo compartilhado**. Entre o pré-cadastro e o primeiro
+acesso, quem souber a senha padrão e um e-mail pré-cadastrado entra como aquela pessoa. A janela fecha no
+primeiro acesso (a senha é trocada), e para um app de portfólio isso é aceitável — mas se algum dia importar,
+o caminho é senha padrão **derivada por pessoa** (algo que só ela saiba) em vez de constante única.
+
+> **Nota de execução:** criar a conta no Auth *pelo próprio app* exige uma **segunda instância de
+> `FirebaseApp`** — `createUserWithEmailAndPassword` na instância padrão trocaria o usuário logado (o
+> supervisor cadastrante seria deslogado). Se a criação da conta ficar no **console do Firebase** por ora
+> (como o cadastro de agências), esse detalhe não existe. Assumo console até você dizer o contrário.
 
 **Edição de perfil alheio** (decisão do analista): **ADM/GESTOR editam qualquer perfil**; o **SUPERVISOR**
 edita os membros da **própria agência** (lotação; a agência dele é implícita). É a primeira exceção ao
@@ -297,6 +314,14 @@ de todas as agências que venderam nela. Isso vale **já no MVP**, não espera o
 
 ### 7. `Agente` é removido de vez — sem período dormente
 
+> ⚠️ **EM REVISÃO desde o desenho do §2.1.** Se o pré-cadastro vive no **cadastro de agentes** (é ele uma das
+> duas frentes de validação do primeiro acesso), então a entidade **não morre**: ela deixa de ser "quem
+> vende" e passa a ser o **registro do membro antes da autenticação** — a etapa anterior do mesmo ciclo de
+> vida, não uma identidade rival. O que fica em pé desta seção é o diagnóstico original (não pode haver
+> **duas fontes vivas** da mesma verdade); o que muda é a conclusão de que a saída era apagar. Ver *Pontos
+> abertos* — a pergunta que decide é **quem é a fonte de agência/lotação depois do primeiro acesso**. O
+> texto abaixo é o registro da decisão anterior.
+
 Nada de entidade zumbi: quando as capacidades estiverem no `Usuario` (P2.2) e a emissão derivar do logado
 (P2.3), o `Agente` **sai inteiro** — entidade, DAO, repositórios, documento, form, telas, navegação, fakes e
 testes (~40 arquivos citam `Agente` hoje). O que sustenta a remoção sem transição:
@@ -332,12 +357,13 @@ logado em vez de digitados.
   - **P2.2a — modelo.** `Usuario` ganha `agencia` (default `AUTONOMO`) + `lotacao`; o enum `Agencia` sai de
     dentro do `Agente` (que morre em P2.5); espelho `UsuarioDocumento` + migração Room. Não depende das
     decisões de tela — é a base de tudo.
-  - **P2.2b — cadastro pela gestão.** Coleção de pré-cadastro (`membrosConvidados/{email}`), form da Equipe
-    nos dois recortes (§2.1) e a lista recortada por cargo (§2.2). Regras novas no ADR-0011 (escrita de
-    convite; edição de perfil alheio por plataforma/supervisor) + casos no emulador.
-  - **P2.2c — primeiro acesso.** Detecção no login, tela de criar/confirmar senha, nascimento do
-    `users/{uid}` a partir do convite, **desabilitar o autocadastro** e **remover o Google Sign-In** — que
-    é a outra porta do mesmo provisionamento automático (§2.1).
+  - **P2.2b — cadastro pela gestão.** O registro de agente ganha **e-mail** (é a chave que liga ao Auth);
+    form nos dois recortes (§2.1: ADM/GESTOR com dropdown de agência, SUPERVISOR com a agência implícita) e
+    a lista recortada por cargo (§2.2). Sem coleção nova — reusa o cadastro de agentes.
+  - **P2.2c — primeiro acesso.** Detecção pela dedução do §2.1 (autenticado com senha padrão + existe em
+    agentes + não existe `users/{uid}`), tela de criar/confirmar senha, `updatePassword` no Auth,
+    nascimento do `users/{uid}`, **desabilitar o autocadastro** e **remover o Google Sign-In** — que é a
+    outra porta do mesmo provisionamento automático (§2.1).
 - **P2.3 — Emissão deriva do logado.** Congela agência (do usuário) na Passagem; remove
   `ContentAgenciaAreaPassagemForm` + eventos/`runBlocking`, e com ele as validações órfãs de
   `agencia`/`agente` (`ValidacaoDadosPassagem:57-58` exige campos que a UI não mostra).
@@ -448,14 +474,31 @@ Fechamento dos cinco pontos que estavam abertos:
 - **ADM/GESTOR editam perfil alheio**; o **SUPERVISOR** edita os da própria agência.
 - **A lista da Equipe é recortada por cargo** (§2.2): supervisor filtra só por lotação (agência implícita);
   ADM/GESTOR filtram por agência também.
-- **Conta no Firebase Auth é obrigatória para o agente** — não é ordem impossível, é **validação**: a conta
-  nasce no primeiro acesso, e só nasce para quem tem pré-cadastro.
+- **Conta no Firebase Auth é obrigatória para o agente** — não é ordem impossível, é **validação**.
+- **A conta nasce no pré-cadastro, com senha padrão** — e não no primeiro acesso. O pré-cadastro tem duas
+  frentes: o registro do agente no app (com **e-mail**) e a conta no Auth.
+- **Primeiro acesso é deduzido, não convidado**: autenticou com a senha padrão **+** existe em `agentes`
+  **+** não existe `users/{uid}` → primeiro acesso; abre criar/confirmar senha, aplica no Auth
+  (`updatePassword`), nasce o perfil, e a pessoa loga de novo.
+- **Sem estrutura nova** (`membrosConvidados` descartado) — o **e-mail** é a chave entre as duas frentes.
 - **Google Sign-In sai** — some junto com o autocadastro (P2.2c); acesso passa a ser só e-mail + senha.
 - **Cargo na tela de edição fica com o PO/analista** — decisão adiada; até lá, pré-cadastro nasce `AGENTE`
   e promoção segue no console.
 
 ## Pontos abertos
 
+- **Quem é a fonte de agência/lotação depois do primeiro acesso?** É o ponto que decide o destino do `Agente`
+  (§7). Com o desenho do §2.1, a pessoa passa a ter **dois documentos**: o registro em `agentes`
+  (pré-cadastro, criado pela gestão) e o `users/{uid}` (perfil, nascido no primeiro acesso). Ambos com
+  agência e lotação. Três saídas coerentes:
+  1. **`agentes` é a fonte; `users/{uid}` é cache** — a gestão sempre edita o registro do agente, e o login
+     re-hidrata o perfil. Uma escrita só, sem divergência possível; o custo é que mudança de agência só vale
+     no próximo login. Reaproveita o CRUD que já existe na Equipe.
+  2. **O pré-cadastro é consumido** — o registro em `agentes` é apagado no primeiro acesso e a gestão passa a
+     editar o perfil. Volta a valer o §7 (o cadastro de agentes existe só como estágio), mas exige a regra
+     nova de "editar perfil alheio".
+  3. **As duas cópias vivem e a gestão escreve nas duas** — pior das três: é literalmente a duplicação de
+     verdade que este ADR abriu para fechar.
 - **A tela de edição do ADM/GESTOR mexe no cargo?** — **reservado ao PO/analista**, decisão dele, ainda não
   tomada. Até lá o código segue o caminho conservador: o pré-cadastro nasce **`AGENTE`** e a promoção a
   `SUPERVISOR` continua sendo operação de **console**, com a regra anti-escalonamento intacta. Quando a
