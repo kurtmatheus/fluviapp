@@ -43,6 +43,45 @@ usuário**, derivada na emissão.
 
 ## Decisão
 
+> ## ⚠️ REVISÃO ESTRUTURAL (analista, 2026-07-26): dois contextos — **sistema** × **negócio**
+>
+> A tese original deste ADR era "**o agente é o usuário**", e a saída para a duplicação era **apagar** o
+> `Agente`. A revisão do analista rejeita as duas coisas e acerta o alvo: os dois documentos **vivem**, porque
+> **respondem perguntas diferentes**. Não era duplicação — era **falta de contexto**.
+>
+> | | Contexto **SISTEMA** | Contexto **NEGÓCIO** |
+> |---|---|---|
+> | Entidade | **`Usuario`** (`users/{uid}`) | **`Funcionario`** (o ex-`Agente`) |
+> | Responde | *quem acessa o app e o que pode nele* | *quem é a pessoa na operação* |
+> | Campo-chave | **`papel`**: `ADM` / `GESTOR` / `OPERADOR` | **`cargo`**: `SUPERVISOR` / `AGENTE` / … |
+> | Também carrega | identidade de acesso (uid, e-mail, nome) | agência, lotação, e-mail |
+> | Escala para | nada — é fechado por natureza | **check-in, embarque, gestor de navio…** |
+>
+> **`OPERADOR` é o coringa e o elo.** Todo `Usuario` que não é `ADM`/`GESTOR` é `OPERADOR` — e é justamente o
+> `OPERADOR` que corresponde a um `Funcionario`. "O que compete no sistema" se valida pelo **papel**; o que a
+> pessoa faz **na operação** se valida pelo **cargo** do funcionário. `ADM`/`GESTOR` são papéis puros de
+> sistema: não precisam de registro de funcionário para existir.
+>
+> **Por que isto é melhor do que apagar uma das pontas:** o cargo de negócio é **aberto por natureza** — hoje
+> supervisor e agente, amanhã quem faz check-in, quem valida embarque, quem responde por um navio. Enfiar
+> isso no papel de sistema faria a matriz de autorização do app crescer a cada função nova da operação, o que
+> é exatamente o acoplamento que o ADR-0010 evitou ao tipar o cargo. Separado, cada eixo cresce no seu ritmo:
+> o sistema tem três papéis e tende a ficar em três; o negócio cresce à vontade sem tocar em regra de acesso.
+>
+> **O que esta revisão supersede** (o texto abaixo fica como registro do raciocínio anterior):
+>
+> - **§1** — "Agente = Usuário" **cai**. São entidades de contextos distintos, ligadas pelo e-mail e pelo
+>   papel `OPERADOR`. O `Agente` é **renomeado para `Funcionario`**, não aposentado.
+> - **§2** — agência e lotação são capacidades **do funcionário** (negócio), não do usuário. Rever o que
+>   P2.2a colocou em `Usuario` (ver *Pontos abertos*).
+> - **§4.1/§4.2** — o enum `Usuario.Cargo` **se divide**: `ADM`/`GESTOR`/`OPERADOR` viram `Usuario.papel`;
+>   `SUPERVISOR`/`AGENTE` viram `Funcionario.cargo`. `OPERADOR` **volta** — com significado novo (papel de
+>   sistema, não função de venda). `SUPERVISOR` sai do eixo de sistema.
+> - **§7** — o `Agente` **não é removido**; muda de nome e de papel. O diagnóstico que sobrevive é o
+>   estreito: não pode haver **duas fontes vivas da mesma verdade** — e não há, porque agora cada verdade
+>   mora num contexto só.
+> - **P2.5** (aposentar `Agente`) deixa de ser deleção e passa a ser **renomeação para `Funcionario`**.
+
 **O agente é o usuário; o módulo "Agentes" vira "Equipe"; agência e lotação são capacidades do usuário; a
 agência é transversal à emissão (sempre a do logado) e governa a identidade visual.**
 
@@ -481,24 +520,37 @@ Fechamento dos cinco pontos que estavam abertos:
   **+** não existe `users/{uid}` → primeiro acesso; abre criar/confirmar senha, aplica no Auth
   (`updatePassword`), nasce o perfil, e a pessoa loga de novo.
 - **Sem estrutura nova** (`membrosConvidados` descartado) — o **e-mail** é a chave entre as duas frentes.
+- **REVISÃO ESTRUTURAL: sistema × negócio** (ver o bloco no início da *Decisão*). `Usuario` guarda o **papel**
+  (`ADM`/`GESTOR`/`OPERADOR`, sendo `OPERADOR` o coringa e o elo); o ex-`Agente` vira **`Funcionario`** com
+  **cargo** de negócio (`SUPERVISOR`/`AGENTE`, escalável para check-in, embarque, gestor de navio…). As duas
+  entidades vivem porque respondem perguntas diferentes — supersede §1, §2, §4.1/§4.2 e §7.
 - **Google Sign-In sai** — some junto com o autocadastro (P2.2c); acesso passa a ser só e-mail + senha.
 - **Cargo na tela de edição fica com o PO/analista** — decisão adiada; até lá, pré-cadastro nasce `AGENTE`
   e promoção segue no console.
 
 ## Pontos abertos
 
-- **Quem é a fonte de agência/lotação depois do primeiro acesso?** É o ponto que decide o destino do `Agente`
-  (§7). Com o desenho do §2.1, a pessoa passa a ter **dois documentos**: o registro em `agentes`
-  (pré-cadastro, criado pela gestão) e o `users/{uid}` (perfil, nascido no primeiro acesso). Ambos com
-  agência e lotação. Três saídas coerentes:
-  1. **`agentes` é a fonte; `users/{uid}` é cache** — a gestão sempre edita o registro do agente, e o login
-     re-hidrata o perfil. Uma escrita só, sem divergência possível; o custo é que mudança de agência só vale
-     no próximo login. Reaproveita o CRUD que já existe na Equipe.
-  2. **O pré-cadastro é consumido** — o registro em `agentes` é apagado no primeiro acesso e a gestão passa a
-     editar o perfil. Volta a valer o §7 (o cadastro de agentes existe só como estágio), mas exige a regra
-     nova de "editar perfil alheio".
-  3. **As duas cópias vivem e a gestão escreve nas duas** — pior das três: é literalmente a duplicação de
-     verdade que este ADR abriu para fechar.
+Da **revisão estrutural** (sistema × negócio), três coisas que ela abre e o analista decide:
+
+- **`Usuario.agencia`/`lotacao` (feitos em P2.2a) saem?** Pela revisão, agência e lotação são **negócio** →
+  moram no `Funcionario`. A emissão (P2.3) resolve a agência pelo funcionário do logado (elo = e-mail), sem
+  precisar de cópia no perfil. Manter cópia no `Usuario` só se for **cache explícito** de login — e cache
+  tem custo: uma alocação nova só vale no próximo login. Minha leitura: **reverter** o par de campos de
+  `Usuario` e deixá-los só no `Funcionario`; a alternativa é assumir o cache por escrito.
+- **`PermissoesUsuario` se divide em duas políticas?** A revisão diz "o que compete no **sistema** se valida
+  pelo papel"; as competências da **operação** escalam no cargo do funcionário. Proposta de corte:
+  acesso a seções e CRUD no app → **papel**; editar/deletar *qualquer* passagem, confirmar embarque e as
+  funções que virão (check-in, gestor de navio) → **cargo do funcionário**. Isso muda
+  `podeEditarQualquerPassagem`, que hoje mistura os dois eixos (`ehCargoPlataforma() || SUPERVISOR`) e
+  passaria a receber **duas** entradas.
+- **Como o servidor enxerga o cargo de negócio?** As regras resolvem o papel com
+  `get(users/$(request.auth.uid))`. Para impor cargo de funcionário, elas precisam alcançar o documento do
+  funcionário por um caminho conhecido — ou o **e-mail é o id** do doc (`get(funcionarios/$(request.auth.token.email))`),
+  ou `users/{uid}` guarda o `funcionarioId`. Decidir isso agora evita descobrir depois que a regra não é
+  escrevível.
+- **Colisão de nome a resolver:** `Passagem.funcionarioId` hoje é o **uid do usuário** (ADR-0010). Com
+  `Funcionario` virando entidade de negócio, esse campo passa a ler como "id do Funcionario" e vai enganar
+  quem chegar depois.
 - **A tela de edição do ADM/GESTOR mexe no cargo?** — **reservado ao PO/analista**, decisão dele, ainda não
   tomada. Até lá o código segue o caminho conservador: o pré-cadastro nasce **`AGENTE`** e a promoção a
   `SUPERVISOR` continua sendo operação de **console**, com a regra anti-escalonamento intacta. Quando a
