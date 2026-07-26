@@ -50,10 +50,11 @@ As fatias do `balanco-passagens-mapper.md §7`, **excluindo a fatia 4** (módulo
 **Pré-requisito de dado:** o SEED não popula tarifas; para a contagem/emissão funcionar numa viagem, a tarifa
 precisa estar cadastrada (viagem criada manual). Decidir se o MVP **semeia tarifas** ou mantém manual.
 
-## Pilar 2 — Rework de Agente → Equipe (precisa de ADR próprio)
+## Pilar 2 — Rework de Agente → Equipe ([ADR-0015](../adr/0015-rework-agente-equipe.md))
 
-O maior pilar. É a rework de identidade/multi-agência que o §6 do estudo do form já apontava. **Semear um
-ADR** (ex.: ADR-0015) antes de codar. Fases propostas:
+O maior pilar. É a rework de identidade/multi-agência que o §6 do estudo do form já apontava. O
+[ADR-0015](../adr/0015-rework-agente-equipe.md) está **aceito em direção** (todos os pontos fechados com o
+analista em 2026-07-26) — ele manda; as fases abaixo são o resumo:
 
 - **P2.1 — Rótulo "Equipe".** Menu "Agentes" → "Equipe"; strings/títulos. Cosmético, sem migração. *Cheap,
   pode ir primeiro para destravar o vocabulário.*
@@ -61,13 +62,21 @@ ADR** (ex.: ADR-0015) antes de codar. Fases propostas:
   `Agente` à parte. Passa a ser **atributo do usuário** (`Usuario`/`Agente` ganha `agencia` + `lotacao`).
   Migração Room + espelho Firestore + form de cadastro do membro da Equipe. Consolida "agente = usuário
   logado" (o `funcionarioId`/uid já é a âncora — ADR-0010/0008).
+- **P2.0 — Aposentar `podeSelecionarFormaPagamento`.** Deleção pura (ADR-0015 §4a; supera o ADR-0002): a
+  capability é resíduo da proposta antiga (bilhete de check-in) — o app hoje emite a passagem e o check-in é
+  o QR. Não depende de nada, pode ir primeiro.
 - **P2.3 — Agência transversal à emissão.** A emissão **deriva a agência do usuário logado** (não digita
-  agente/agência à mão; a área comentada do form é aposentada ou vira read-only). A capability
-  `podeSelecionarFormaPagamento` migra do casamento-por-nome (frágil) para o perfil do usuário. Remove a
-  dívida do `runBlocking` de `atualizarListaAgente`.
+  agente/agência à mão; a área comentada do form é aposentada). Remove a dívida do `runBlocking` de
+  `atualizarListaAgente` e as validações órfãs de agência/agente.
 - **P2.4 — Identidade visual por agência.** O bilhete/impressão usa o **logo da agência** emissora
   (`logo1/logo2.png` já no repo) — o branding por agência que motivou re-adicioná-los. Casa com o
   `FluviWordmark`/tema (identidade do app × identidade da agência emissora).
+- **P2.5 — Aposentar `Agente`.** Remoção completa da entidade/DAO/repos/form/telas/testes (ADR-0015 §7),
+  depois de P2.3. Diff quase todo deleção.
+- **P2.6 — Escopo por agência na listagem.** Terceiro eixo em `PermissoesUsuario`: `ADM`/`DIRETOR` são cargos
+  **FluviApp** (atravessam agências); `COLABORADOR_MASTER`/`OPERADOR` são de agência. Filtro por agência do
+  logado nas consultas de passagem — **por UI**, sem regra Firestore no MVP. A Contagem fica fora do filtro
+  (é cross-agência por definição).
 
 **Dependência:** P2.3/P2.4 dependem de P2.2 (a agência precisa existir como capacidade do usuário antes de
 ser transversal/visual). P2.1 é independente.
@@ -101,14 +110,9 @@ build estável). P2.1 (rótulo Equipe) pode ir junto com o P1 por ser barato.
 **Pilar 1:** MVP **semeia tarifas** (para a contagem ter dado) ou mantém viagem/tarifa manual? P1.4
 (threading) entra no MVP ou fica pós-MVP?
 
-**Pilar 2 (ADR-0015):**
-- **"Lotação"** — é o posto/base do usuário (ex.: terminal onde opera)? Um usuário tem **uma** agência e
-  **uma** lotação, ou várias?
-- A agência do bilhete passa a ser **sempre** a do usuário logado (sem override), ou um gestor pode emitir
-  por outra agência?
-- A capability `podeSelecionarFormaPagamento` vira atributo do usuário/cargo (ADR-0010) ou da agência?
-- Identidade visual: cada agência tem seu logo cadastrado (onde? Firestore + Storage?), ou é um conjunto
-  fixo mapeado por agência?
+**Pilar 2:** nada aberto — todas as perguntas que estavam aqui (lotação, override de agência, capability,
+logo por agência, isolamento, destino do `Agente`, recorte da contagem) foram respondidas pelo analista e
+estão registradas no [ADR-0015](../adr/0015-rework-agente-equipe.md) (*Decisões resolvidas*, 1ª e 2ª rodada).
 
 **Pilar 3:**
 - Provedor de CI (GitHub Actions?) e onde ficam os secrets (keystore, service account)?

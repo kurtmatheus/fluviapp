@@ -1,6 +1,11 @@
 # ADR-0002: Capability explícita no lugar de regra por identidade para forma de pagamento
 
-**Status:** Aceita
+**Status:** **Superada** pelo [ADR-0015](0015-rework-agente-equipe.md) §4a — a capability
+`podeSelecionarFormaPagamento` é **removida**, não substituída. Motivo: ela expressa uma competência da
+proposta antiga do app (emitir o **bilhete de check-in**, quando agências terceiras tinham faturamento fixo).
+O app mudou de ponto no processo — emite a **passagem**, antes do bilhete — e o check-in virou o **QR code**
+[ADR-0012](0012-ciclo-de-vida-passagem-e-embarque-qr.md)). Quem emite cobra, logo escolhe a forma de
+pagamento. O registro abaixo fica como histórico da decisão original (Aceita à época).
 
 **Contexto**
 A habilitação da seção de forma de pagamento na passagem era decidida por um casamento de
