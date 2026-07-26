@@ -34,8 +34,10 @@ O MVP tem **três pilares** (na ordem proposta pelo analista):
 As fatias do `balanco-passagens-mapper.md §7`, **excluindo a fatia 4** (módulo Faturamento) — que é o
 "por enquanto sem faturamento". Ordem:
 
-- **P1.1 — FORM: tipo tarifário só-rede.** Esconder/não-validar `tipoPassagem` (e o subtipo de gratuidade)
-  quando `acomodacao != REDE`. Fecha o ADR-0013 na UI. *Baixo risco; testável no VM (validação pura).*
+- **P1.1 — FORM: tipo tarifário só-rede. ✅ FEITO (commit 4e62067).** `ValidacaoPassageiro` só exige tipo/
+  gratuidade na rede (+2 testes); `ContentPassageiroAreaForm` só exibe os dropdowns na rede (filtro de MEIA
+  removido); `atualizarAcomodacao` limpa tipo/gratuidade ao sair da rede + reabilita pagamento. Fora da rede
+  = inteira (vazio → mapper/preview tratam como INTEIRA).
 - **P1.2 — Contagem: suíte por bilhete + `associateBy`.** 1 suíte por bilhete (`temPassageiro3`→bucket 3p,
   senão 2p; solo conta); lookup de navio por mapa. Extrair o `contador` para função pura + testes por caso
   (solo/dupla/trio, rede/camarote/veículo). *Muda números — coberto por teste.*
