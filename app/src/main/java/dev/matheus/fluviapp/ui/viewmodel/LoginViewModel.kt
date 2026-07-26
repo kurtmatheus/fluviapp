@@ -138,6 +138,8 @@ class LoginViewModel @Inject constructor(
                                 email = perfil.email,
                                 nome = perfil.nome,
                                 cargo = perfil.cargo,
+                                agencia = perfil.agencia,
+                                lotacao = perfil.lotacao,
                             )
                         )
                         logarUsuario(usuarioRepository.salvarUsuarioAutenticado(perfil.email))

@@ -48,7 +48,7 @@ import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.MEIA
 import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.MOTO
 import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.PIX
 import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.REDE
-import dev.matheus.fluviapp.model.cadastro.passagem.Agente.Agencia.MATRIZ
+import dev.matheus.fluviapp.model.operacoes.Agencia.MATRIZ
 import dev.matheus.fluviapp.model.passagem.TipoPassagem
 import dev.matheus.fluviapp.model.passagem.tarifaMotoBase
 import dev.matheus.fluviapp.sampledata.listaFormaPagamentoSample

@@ -7,6 +7,7 @@ import com.google.firebase.auth.FirebaseAuthInvalidUserException
 import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.firestore.FirebaseFirestore
+import dev.matheus.fluviapp.model.operacoes.Agencia
 import dev.matheus.fluviapp.services.repository.firebase.documents.UsuarioDocumento
 import dev.matheus.fluviapp.services.repository.operacoes.UsuarioRepository
 import kotlinx.coroutines.tasks.await
@@ -82,7 +83,15 @@ class FirebaseAutenticacaoRepository @Inject constructor(
         val user = firebaseAuth.currentUser ?: return null
         val doc = firestore.collection(UsuarioRepository.COLLECTION_USERS).document(user.uid)
             .get().await().toObject(UsuarioDocumento::class.java) ?: return null
-        return PerfilAutenticado(id = user.uid, email = doc.email, nome = doc.nome, cargo = doc.cargo)
+        return PerfilAutenticado(
+            id = user.uid,
+            email = doc.email,
+            nome = doc.nome,
+            cargo = doc.cargo,
+            // Mesma normalização da fronteira do documento: sem agência → AUTONOMO (ADR-0015 §2).
+            agencia = Agencia.deOuPadrao(doc.agencia).name,
+            lotacao = doc.lotacao,
+        )
     }
 
     override suspend fun criarPerfil(email: String, nome: String, cargo: String) {

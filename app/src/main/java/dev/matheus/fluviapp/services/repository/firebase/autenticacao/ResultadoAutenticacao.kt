@@ -27,4 +27,7 @@ data class PerfilAutenticado(
     val email: String,
     val nome: String,
     val cargo: String,
+    /** Capacidades organizacionais do membro (ADR-0015 §2) — viajam junto p/ semear a sessão. */
+    val agencia: String = "",
+    val lotacao: String = "",
 )

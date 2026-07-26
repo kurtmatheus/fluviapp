@@ -14,9 +14,8 @@ data class Agente(
     val agencia: String,
     var lotacao: String,
 ) : IObjetoSimplificado {
-    enum class Agencia {
-        MATRIZ,
-    }
+    // `Agencia` saiu daqui para `model/operacoes/Agencia.kt` (ADR-0015 §2): virou capacidade do Usuario e
+    // não pode morrer junto com esta entidade, que é aposentada em P2.5.
 
     enum class Lotacao {
         PORTO_NORTE,

@@ -16,7 +16,8 @@ import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.DEBITO
 import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.DINHEIRO
 import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.PIX
 import dev.matheus.fluviapp.model.cadastro.passagem.Agente
-import dev.matheus.fluviapp.model.cadastro.passagem.Agente.Agencia.MATRIZ
+import dev.matheus.fluviapp.model.operacoes.Agencia.AUTONOMO
+import dev.matheus.fluviapp.model.operacoes.Agencia.MATRIZ
 import dev.matheus.fluviapp.model.cadastro.passagem.Agente.Lotacao.ILHA_CENTRAL
 import dev.matheus.fluviapp.model.cadastro.passagem.Agente.Lotacao.PORTO_NORTE
 import dev.matheus.fluviapp.model.cadastro.passagem.Agente.Lotacao.PORTO_SUL
@@ -282,7 +283,19 @@ val userAgenteSample = Usuario(
     email = "agente@fluviapp.com.br",
     nome = "Agente",
     // Era "Diretor" (minúsculo): não casava com nenhum Cargo, então o sample nascia fail-closed.
-    cargo = "AGENTE"
+    cargo = "AGENTE",
+    // Membro alocado: cargo de agência tem agência e lotação (ADR-0015 §2).
+    agencia = MATRIZ.name,
+    lotacao = "Porto Norte",
+)
+
+/** Recém-provisionado e ainda não alocado: cai na agência coringa (ADR-0015 §2.1). */
+val userAutonomoSample = Usuario(
+    id = "4",
+    email = "autonomo@fluviapp.com.br",
+    nome = "Sem Agencia",
+    cargo = "AGENTE",
+    agencia = AUTONOMO.name,
 )
 
 val listaUserSample = listOf(

@@ -55,8 +55,10 @@ cargo + agência + lotação), no molde de cadastro (ADR-0006).
 ### 2. Agência e lotação como capacidades do usuário
 
 `Usuario` ganha:
-- **`agencia`** — por ora o valor do **conjunto fixo** (`Agente.Agencia`; evolui p/ coleção cadastrável
-  depois — §Decisões). Relação por valor estável agora, por id quando virar coleção (ADR-0008).
+- **`agencia`** — por ora o valor do **conjunto fixo** (o enum `Agencia`, que sai de dentro do `Agente` para
+  não morrer com ele em P2.5; evolui p/ coleção cadastrável depois — §Decisões). Relação por valor estável
+  agora, por id quando virar coleção (ADR-0008). **Default `AUTONOMO`** — a *agência coringa* de quem não
+  está vinculado a nenhuma. Não é estado inválido: é o padrão de quem ainda não foi alocado.
 - **`lotacao`** — o **município** do membro. (Embarque/desembarque **não** são lotação: são competências do
   **Trecho** — origem/destino da rota — e serão integrados no rework Viagem→Trecho.)
 
@@ -64,9 +66,75 @@ A lotação é **dado de perfil, não de bilhete**: **não** entra no snapshot d
 emissor" no bilhete). Quem é congelado na emissão continua sendo o **emissor** (`funcionarioId`, ADR-0010) e
 a **agência** (§3) — a lotação se alcança pelo perfil do emissor quando alguém precisar dela.
 
-Migração Room + espelho Firestore (ADR-0003) + form de cadastro do membro. São **capacidades
-organizacionais** — dizem *onde* o membro atua, não *o que* ele pode fazer; permissão continua sendo do cargo
-(§4). A capability `podeSelecionarFormaPagamento` **não migra**: é removida (§4a).
+Migração Room + espelho Firestore (ADR-0003). São **capacidades organizacionais** — dizem *onde* o membro
+atua, não *o que* ele pode fazer; permissão continua sendo do cargo (§4). A capability
+`podeSelecionarFormaPagamento` **não migra**: é removida (§4a).
+
+### 2.1 Provisionamento: o membro é cadastrado pela gestão; o autocadastro sai
+
+Decisão do analista: **o autocadastro é desabilitado.** Ele existia como vitrine de portfólio (estrutura de
+login completa), não como necessidade do negócio — numa operação real ninguém se auto-inscreve na equipe de
+uma agência. Quem cadastra é **ADM/GESTOR** ou **SUPERVISOR**, com formulários diferentes:
+
+| Quem cadastra | Agência do novo membro | Lotação |
+|---|---|---|
+| **ADM / GESTOR** | **dropdown** (agências do conjunto fixo; cadastro de agência segue no console por ora) | campo do form |
+| **SUPERVISOR** | **implícita** — a dele, auto-escrita, sem seletor | campo do form |
+
+O cadastro grava o **e-mail** do membro. É ele que amarra o pré-cadastro à pessoa depois.
+
+**A restrição que molda o desenho — é questão de validação, não de ordem impossível** (correção do
+analista). **Conta no Firebase Auth continua obrigatória para o agente**; ela só nasce mais tarde, no
+primeiro acesso. O que a ordem impede é uma coisa só: o perfil é `users/{uid}`, com o id **sendo** o uid do
+Auth (`criarPerfil` escreve em `document(currentUser.uid)`, `perfilAutenticado` lê de lá, as regras
+resolvem o cargo com `get(users/$(request.auth.uid))`, e a emissão congela `funcionarioId = uid` —
+ADR-0010). Como a gestão cadastra **antes** de existir conta, não existe uid para usar de id naquele
+momento. Logo o cadastro da gestão grava em outro lugar, chaveado pelo **e-mail**, e o primeiro acesso é o
+ponto onde se **valida** e se promove aquilo a perfil.
+
+**Desenho (proposta do Claude, aberta a veto):** separar *convite* de *perfil*.
+
+- A gestão escreve um **pré-cadastro** numa coleção própria, com o **e-mail como id do documento** —
+  `membrosConvidados/{email}` = `{ nome, email, cargo, agencia, lotacao }`. Não precisa de uid.
+- **Primeiro acesso** (a funcionalidade nova no login): a pessoa informa o e-mail; havendo pré-cadastro e
+  não havendo conta, o app abre **"criar senha + confirmar"**, cria a credencial no Auth e só então nasce o
+  `users/{uid}` **com os dados do pré-cadastro**, que é consumido. Depois disso ela **loga de novo** com
+  e-mail e senha — o passo de confirmação que você descreveu.
+- **`users/{uid}` continua sendo criado pelo próprio dono** — a regra self-create do ADR-0011 permanece
+  intacta. O que muda é que o conteúdo deixa de ser escolhido pelo cliente: a regra passa a exigir que cargo,
+  agência e lotação **casem com o pré-cadastro** (`get(membrosConvidados/$(request.auth.token.email))`).
+  O anti-escalonamento fica **mais forte**, não mais fraco: hoje o autocadastro dá `AGENTE` a qualquer um;
+  depois, só existe quem a gestão convidou, com o cargo que ela definiu.
+- O e-mail como id funciona porque o token do Auth carrega `request.auth.token.email` — dá para autorizar o
+  convidado a ler/consumir **o próprio** convite sem query (regras não fazem query, só `get` por caminho).
+
+> **Variante possível, se preferir uma coleção só:** o cliente *consegue* criar a conta do outro na hora do
+> cadastro, inicializando uma **segunda instância de `FirebaseApp`** (o `createUserWithEmailAndPassword` da
+> instância padrão trocaria o usuário logado; numa instância secundária, não). Aí a gestão já obtém o uid e
+> escreve direto em `users/{uid}`, sem coleção de convite. O custo é ter de inventar uma senha temporária
+> para essa conta — e aí o "primeiro acesso" deixa de ser *criar* senha e vira *redefinir* (link de e-mail),
+> que é diferente do fluxo que você descreveu. Por isso o desenho acima é o default.
+
+**Edição de perfil alheio** (decisão do analista): **ADM/GESTOR editam qualquer perfil**; o **SUPERVISOR**
+edita os membros da **própria agência** (lotação; a agência dele é implícita). É a primeira exceção ao
+"só o dono escreve o próprio perfil" do ADR-0011 — entra como regra nova, com casos no emulador.
+
+**Google Sign-In é a outra porta do autocadastro.** `autenticarComGoogle` auto-provisiona `users/{uid}` com
+o cargo padrão quando o doc não existe — desabilitar o autocadastro por e-mail e deixar essa porta aberta
+manteria o problema. Ou o login Google passa a exigir pré-cadastro também, ou sai junto.
+
+### 2.2 A lista da Equipe é recortada pelo cargo
+
+Mesma tela, dois recortes (decisão do analista):
+
+- **SUPERVISOR**: vê os agentes que trabalham para ele — a **agência é implícita** (a dele) e por isso
+  **não** é filtro; o filtro disponível é **lotação**.
+- **ADM/GESTOR**: veem a mesma lista, agora com **filtro por agência também** (é cargo administrativo,
+  atravessa agências — §4.1), e com o **supervisor editável**.
+
+Isto é a **antecipação do escopo por agência** (§4.1, fase P2.6) na primeira tela que precisa dele: a Equipe
+já nasce isolada por agência para o supervisor, enquanto a listagem de passagens só ganha esse recorte
+depois.
 
 ### 3. Agência transversal à emissão — sempre a do logado
 
@@ -257,8 +325,17 @@ logado em vez de digitados.
   da seção, pesquisa); o *indivíduo* continua **Agente** — "a equipe é formada por agentes". Os
   identificadores de código do CRUD (`FormAgenteScreen`, rotas, chaves de string) **não** foram renomeados:
   a entidade morre inteira em P2.5.
-- **P2.2 — `Usuario` ganha `agencia` + `lotacao`.** Migração Room + espelho Firestore + form de cadastro do
-  membro (molde ADR-0006). Capacidades organizacionais; permissão segue no cargo.
+- **P2.2 — `Usuario` ganha `agencia` + `lotacao`.** Cresceu de "duas colunas" para uma mudança de
+  **provisionamento de identidade** (§2.1), então vai em três passos:
+  - **P2.2a — modelo.** `Usuario` ganha `agencia` (default `AUTONOMO`) + `lotacao`; o enum `Agencia` sai de
+    dentro do `Agente` (que morre em P2.5); espelho `UsuarioDocumento` + migração Room. Não depende das
+    decisões de tela — é a base de tudo.
+  - **P2.2b — cadastro pela gestão.** Coleção de pré-cadastro (`membrosConvidados/{email}`), form da Equipe
+    nos dois recortes (§2.1) e a lista recortada por cargo (§2.2). Regras novas no ADR-0011 (escrita de
+    convite; edição de perfil alheio por plataforma/supervisor) + casos no emulador.
+  - **P2.2c — primeiro acesso.** Detecção no login, tela de criar/confirmar senha, nascimento do
+    `users/{uid}` a partir do convite, e **desabilitar o autocadastro** (e-mail/senha **e** o
+    auto-provisionamento do Google — §2.1).
 - **P2.3 — Emissão deriva do logado.** Congela agência (do usuário) na Passagem; remove
   `ContentAgenciaAreaPassagemForm` + eventos/`runBlocking`, e com ele as validações órfãs de
   `agencia`/`agente` (`ValidacaoDadosPassagem:57-58` exige campos que a UI não mostra).
@@ -356,8 +433,27 @@ Fechamento dos cinco pontos que estavam abertos:
   confirmada*). Por isso o rótulo `"Operador"` do bilhete **não** foi renomeado aqui; a direção está
   registrada nas *Alternativas futuras* do [ADR-0012](0012-ciclo-de-vida-passagem-e-embarque-qr.md).
 
+## Decisões resolvidas na conversa (analista, 2026-07-26) — 4ª rodada (provisionamento)
+
+- **Autocadastro é desabilitado** — era vitrine de portfólio (estrutura de login), não necessidade do
+  negócio. Quem cadastra membro é **ADM/GESTOR/SUPERVISOR** (§2.1).
+- **Agência não é escolha do membro**: para ADM/GESTOR é **dropdown**; para SUPERVISOR é **implícita** (a
+  dele). Cadastro de *agência* segue no console por ora.
+- **Sem agência → `AUTONOMO`**, agência coringa (default, não erro).
+- **O cadastro grava o e-mail** — é a chave que liga o pré-cadastro à pessoa no primeiro acesso.
+- **Primeiro acesso** vira funcionalidade do login: detecta, pede **criar senha + confirmar**, e a pessoa
+  **loga de novo** para confirmar login/senha.
+- **ADM/GESTOR editam perfil alheio**; o **SUPERVISOR** edita os da própria agência.
+- **A lista da Equipe é recortada por cargo** (§2.2): supervisor filtra só por lotação (agência implícita);
+  ADM/GESTOR filtram por agência também.
+
 ## Pontos abertos
 
-Nenhum. Duas coisas que este ADR só encosta, para depois: promover agência de enum a coleção cadastrável (quando
+- **Login Google** — sai junto com o autocadastro ou passa a exigir pré-cadastro? (§2.1: hoje ele
+  auto-provisiona perfil, então é a outra porta do mesmo problema.)
+- **A tela de edição do ADM/GESTOR mexe no cargo?** A promoção a `SUPERVISOR` sairia do console e viraria
+  tela — coerente com "cargo é fornecido pela gestão", mas é a mudança mais sensível na regra.
+
+Duas coisas que este ADR só encosta, para depois: promover agência de enum a coleção cadastrável (quando
 houver cadastro de agência) e mover o `groupBy` da contagem de `navioId` p/ `viagemId` (quando o
 Viagem→Trecho der data à viagem).

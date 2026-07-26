@@ -11,6 +11,13 @@ data class Usuario(
     val email: String,
     val nome: String,
     val cargo: String,
+    /**
+     * Capacidades **organizacionais** (ADR-0015 §2) — onde o membro atua, não o que ele pode fazer.
+     * [agencia] é o `name` de [Agencia] (default `AUTONOMO`, a coringa de quem não foi alocado);
+     * [lotacao] é o **município**, vindo do catálogo `Constante` (categoria `MUNICIPIO`).
+     */
+    val agencia: String = Agencia.AUTONOMO.name,
+    val lotacao: String = "",
     val ultimoUsuarioLogado: Boolean = false
 ) {
     /**
