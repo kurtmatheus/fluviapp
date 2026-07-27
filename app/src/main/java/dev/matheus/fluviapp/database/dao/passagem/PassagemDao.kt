@@ -14,6 +14,10 @@ interface PassagemDao {
     @Insert(onConflict = REPLACE)
     suspend fun salvar(passagem: Passagem)
 
+    /** Gravação em lote — uma transação para o resultado inteiro da consulta, não uma por bilhete. */
+    @Insert(onConflict = REPLACE)
+    suspend fun salvarTodas(passagens: List<Passagem>)
+
     @Query("SELECT * FROM Passagem WHERE id = :id")
     fun obterPorId(id: String): Flow<Passagem>
 

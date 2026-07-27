@@ -1,12 +1,12 @@
-package dev.matheus.fluviapp.ui.viewmodel.helpers.faturamento
+package dev.matheus.fluviapp.ui.viewmodel.helpers.contagem
 
-import dev.matheus.fluviapp.model.screendata.DadosBalancoPassagem
-import dev.matheus.fluviapp.ui.states.faturamento.BalancoState
+import dev.matheus.fluviapp.model.screendata.DadosContagemPassagem
+import dev.matheus.fluviapp.ui.states.contagem.ContagemPassagemUiState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 
-class BalancoHelper(
-    private val uiState: MutableStateFlow<BalancoState>,
+class ContagemPassagemHelper(
+    private val uiState: MutableStateFlow<ContagemPassagemUiState>,
 ) {
 
     init {
@@ -32,10 +32,10 @@ class BalancoHelper(
         }
     }
 
-    fun atualizarDadosBalanco(dados: List<DadosBalancoPassagem>) {
+    fun atualizarDadosContagem(dados: List<DadosContagemPassagem>) {
         uiState.update {
             it.copy(
-                listaDadosBalancoPassagens = dados,
+                listaDadosContagemPassagens = dados,
                 jaFoiGerado = true
             )
         }

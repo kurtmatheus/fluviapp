@@ -1,4 +1,4 @@
-package dev.matheus.fluviapp.ui.screens.faturamento
+package dev.matheus.fluviapp.ui.screens.contagem
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -17,25 +17,25 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import dev.matheus.fluviapp.R
-import dev.matheus.fluviapp.sampledata.listaDadosBalancoPassagems
-import dev.matheus.fluviapp.ui.components.cards.BalancoNavioCard
+import dev.matheus.fluviapp.sampledata.listaDadosContagemPassagems
+import dev.matheus.fluviapp.ui.components.cards.ContagemNavioCard
 import dev.matheus.fluviapp.ui.components.contents.CommonTopRow
 import dev.matheus.fluviapp.ui.components.forms.buttons.CommonIconButton
 import dev.matheus.fluviapp.ui.components.forms.fields.FormFieldCalendario
 import dev.matheus.fluviapp.ui.components.texts.TextRegularBrownItalic
 import dev.matheus.fluviapp.ui.screens.forms.CommonScreenNoBottom
-import dev.matheus.fluviapp.ui.states.faturamento.BalancoState
+import dev.matheus.fluviapp.ui.states.contagem.ContagemPassagemUiState
 
 @Composable
-fun BalancoScreen(
-    state: BalancoState,
+fun ContagemPassagemScreen(
+    state: ContagemPassagemUiState,
     focusManager: FocusManager = LocalFocusManager.current,
     onClickVoltar: () -> Unit = {},
     onClickPesquisar: (String) -> Unit = {},
 ) {
     CommonScreenNoBottom(
         titleTopAppBar = R.string.title_top_passagem,
-        titleTopContent = R.string.subtitle_balanco,
+        titleTopContent = R.string.subtitle_contagem_passagem,
         isShowRightIcon = false,
         hasRefresh = false,
         isRefreshing = false,
@@ -76,7 +76,7 @@ fun BalancoScreen(
                 color = MaterialTheme.colorScheme.onBackground
             )
 
-            if (!state.isProcessing && state.listaDadosBalancoPassagens.isEmpty()) {
+            if (!state.isProcessing && state.listaDadosContagemPassagens.isEmpty()) {
                 if (state.jaFoiGerado) {
                     TextRegularBrownItalic(
                         modifier = modifier.padding(20.dp),
@@ -88,10 +88,10 @@ fun BalancoScreen(
                     modifier = modifier.padding(top = 20.dp, start = 10.dp, end = 10.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    items(state.listaDadosBalancoPassagens) { dados ->
-                        BalancoNavioCard(
+                    items(state.listaDadosContagemPassagens) { dados ->
+                        ContagemNavioCard(
                             modifier = modifier,
-                            dadosBalancoPassagem = dados
+                            dadosContagemPassagem = dados
                         )
                     }
                 }
@@ -103,19 +103,19 @@ fun BalancoScreen(
 
 @Preview
 @Composable
-private fun ListaRelatoriosScreenPreview() {
-    BalancoScreen(
-        state = BalancoState(
-            listaDadosBalancoPassagens = listaDadosBalancoPassagems
+private fun ContagemPassagemScreenPreview() {
+    ContagemPassagemScreen(
+        state = ContagemPassagemUiState(
+            listaDadosContagemPassagens = listaDadosContagemPassagems
         )
     )
 }
 
 @Preview
 @Composable
-private fun ListaRelatoriosScreenComErroPreview() {
-    BalancoScreen(
-        state = BalancoState(
+private fun ContagemPassagemScreenComErroPreview() {
+    ContagemPassagemScreen(
+        state = ContagemPassagemUiState(
             isDataViagemError = true
         )
     )
@@ -123,9 +123,9 @@ private fun ListaRelatoriosScreenComErroPreview() {
 
 @Preview
 @Composable
-private fun ListaRelatoriosScreenProcessandoPreview() {
-    BalancoScreen(
-        state = BalancoState(
+private fun ContagemPassagemScreenProcessandoPreview() {
+    ContagemPassagemScreen(
+        state = ContagemPassagemUiState(
             isDataViagemError = true,
             isProcessing = true
         )

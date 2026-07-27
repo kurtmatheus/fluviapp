@@ -1,11 +1,11 @@
-package dev.matheus.fluviapp.ui.states.faturamento
+package dev.matheus.fluviapp.ui.states.contagem
 
 import dev.matheus.fluviapp.extensions.formatarDataBarrasBr
-import dev.matheus.fluviapp.model.screendata.DadosBalancoPassagem
+import dev.matheus.fluviapp.model.screendata.DadosContagemPassagem
 import java.time.LocalDate
 
-data class BalancoState(
-    val listaDadosBalancoPassagens: List<DadosBalancoPassagem> = emptyList(),
+data class ContagemPassagemUiState(
+    val listaDadosContagemPassagens: List<DadosContagemPassagem> = emptyList(),
 
     val dataViagem: String = LocalDate.now().formatarDataBarrasBr(),
     val onDataViagemChange: (String) -> Unit = {},

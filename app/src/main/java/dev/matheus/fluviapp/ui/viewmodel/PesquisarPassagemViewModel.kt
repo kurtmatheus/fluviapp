@@ -115,22 +115,18 @@ class PesquisarPassagemViewModel @Inject constructor(
                 }
             }
 
-            // try só na chamada de rede (equivalente ao antigo addOnFailureListener). Erros de
-            // mapeamento NÃO entram aqui — surgem com o próprio stack, não mascarados de "Falha no Processo".
-            val snapshot = try {
+            // try só na chamada de rede (equivalente ao antigo addOnFailureListener). O repositório já
+            // devolve o modelo mapeado e espelhado no Room — o VM não remapeia o snapshot de novo.
+            val passagens = try {
                 passagemRepository.obterTodasPorDataStatus(
                     data = pesquisarPassagemUiState.data,
                     status = pesquisarPassagemUiState.situacao,
                     nomeFuncionario = usuarioValidado,
                     agencia = agenciaDoEscopo,
-                ).await()
+                )
             } catch (e: Exception) {
                 Log.e(TAG, "obterTodasPorDataStatus: Exception: ${e.message}")
                 throw RuntimeException("Falha no Processo: ${e.message}")
-            }
-
-            val passagens = snapshot.documents.mapNotNull { document ->
-                document.toObject<PassagemDocumento>()?.toPassagem(document.id)
             }.sortedBy { it.numero.toIntOrNull() ?: 0 }
 
             var listaPassagemFiltered = filtrarPor(pesquisarPassagemUiState.filtrarTodos, passagens) { true }

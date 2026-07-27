@@ -21,7 +21,7 @@ import dev.matheus.fluviapp.model.operacoes.Funcionario.Lotacao.ILHA_CENTRAL
 import dev.matheus.fluviapp.model.operacoes.Funcionario.Lotacao.PORTO_NORTE
 import dev.matheus.fluviapp.model.operacoes.Funcionario.Lotacao.PORTO_SUL
 import dev.matheus.fluviapp.model.operacoes.Usuario
-import dev.matheus.fluviapp.model.screendata.DadosBalancoPassagem
+import dev.matheus.fluviapp.model.screendata.DadosContagemPassagem
 import dev.matheus.fluviapp.model.screendata.DadosBotoesMenus
 import dev.matheus.fluviapp.model.screendata.DadosImpressora
 import dev.matheus.fluviapp.model.screendata.DadosPassagem
@@ -77,7 +77,7 @@ val listaBotoesMenuPassagensSample = listOf(
         icon = R.drawable.ic_lupa_75
     ),
     DadosBotoesMenus(
-        title = R.string.btn_balanco_vendas,
+        title = R.string.btn_contagem_passagem,
         icon = R.drawable.ic_relatorio_75
     )
 )
@@ -319,11 +319,11 @@ val listaUserSample = listOf(
     userOperadorSample
 )
 
-val listaDadosBalancoPassagems = listOf(
-    DadosBalancoPassagem(
+val listaDadosContagemPassagems = listOf(
+    DadosContagemPassagem(
         navio = "F/B Modelo"
     ),
-    DadosBalancoPassagem(
+    DadosContagemPassagem(
         navio = "F/B Modelo II"
     )
 )

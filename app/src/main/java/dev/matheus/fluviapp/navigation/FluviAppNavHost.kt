@@ -5,7 +5,7 @@ import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
-import dev.matheus.fluviapp.extensions.navegaParaBalancos
+import dev.matheus.fluviapp.extensions.navegaParaContagemPassagem
 import dev.matheus.fluviapp.extensions.navegaParaEmbarque
 import dev.matheus.fluviapp.extensions.navegaParaDetalhesPassagem
 import dev.matheus.fluviapp.extensions.navegaParaDetalhesViagem
@@ -36,7 +36,7 @@ import dev.matheus.fluviapp.navigation.navcomposables.navio.resultSearchNavioNav
 import dev.matheus.fluviapp.navigation.graphs.pesquisarPassagemGraph
 import dev.matheus.fluviapp.navigation.graphs.pesquisarViagemGraph
 import dev.matheus.fluviapp.navigation.graphs.splashGraph
-import dev.matheus.fluviapp.navigation.navcomposables.faturamento.balancoNavComposable
+import dev.matheus.fluviapp.navigation.navcomposables.contagem.contagemPassagemNavComposable
 import dev.matheus.fluviapp.navigation.navcomposables.funcionario.formFuncionarioNavComposable
 import dev.matheus.fluviapp.navigation.navcomposables.funcionario.resultSearchFuncionarioNavComposable
 import dev.matheus.fluviapp.navigation.navcomposables.passagem.formPassagemNavComposable
@@ -102,8 +102,8 @@ fun FluviAppNavHost(
             onNavegaParaEmbarque = {
                 navController.navegaParaEmbarque()
             },
-            onNavegaParaRelatorios = {
-                navController.navegaParaBalancos()
+            onNavegaParaContagemPassagem = {
+                navController.navegaParaContagemPassagem()
             },
             onNavegaParaFormularioNovoFuncionario = {
                 navController.navegaParaFormularioFuncionario()
@@ -187,7 +187,7 @@ fun FluviAppNavHost(
             }
         )
 
-        balancoNavComposable(
+        contagemPassagemNavComposable(
             navController = navController,
             onClickVoltar = {
                 navController.navigateUp()

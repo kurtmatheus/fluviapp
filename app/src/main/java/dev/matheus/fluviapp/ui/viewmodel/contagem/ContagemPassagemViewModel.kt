@@ -1,13 +1,13 @@
-package dev.matheus.fluviapp.ui.viewmodel.faturamento
+package dev.matheus.fluviapp.ui.viewmodel.contagem
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import dev.matheus.fluviapp.model.mappers.BalancoPassagensMapper
+import dev.matheus.fluviapp.model.mappers.ContagemPassagensMapper
 import dev.matheus.fluviapp.services.repository.firebase.PassagemFirestoreRepository
 import dev.matheus.fluviapp.services.repository.firebase.documents.PassagemDocumento
 import dev.matheus.fluviapp.services.repository.firebase.documents.toPassagem
-import dev.matheus.fluviapp.ui.states.faturamento.BalancoState
-import dev.matheus.fluviapp.ui.viewmodel.helpers.faturamento.BalancoHelper
+import dev.matheus.fluviapp.ui.states.contagem.ContagemPassagemUiState
+import dev.matheus.fluviapp.ui.viewmodel.helpers.contagem.ContagemPassagemHelper
 import com.google.firebase.firestore.toObject
 import kotlinx.coroutines.tasks.await
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -18,16 +18,16 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class BalancoViewModel @Inject constructor(
+class ContagemPassagemViewModel @Inject constructor(
     private val passagemRepository: PassagemFirestoreRepository,
-    private val balancoPassagensMapper: BalancoPassagensMapper
+    private val contagemPassagensMapper: ContagemPassagensMapper
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(BalancoState())
-    val uiState: StateFlow<BalancoState>
+    private val _uiState = MutableStateFlow(ContagemPassagemUiState())
+    val uiState: StateFlow<ContagemPassagemUiState>
         get() = _uiState.asStateFlow()
 
-    lateinit var helper: BalancoHelper
+    lateinit var helper: ContagemPassagemHelper
 
     init {
         viewModelScope.launch {
@@ -36,7 +36,7 @@ class BalancoViewModel @Inject constructor(
     }
 
     private fun inicializarHelper() {
-        helper = BalancoHelper(
+        helper = ContagemPassagemHelper(
             uiState = _uiState
         )
     }
@@ -47,7 +47,7 @@ class BalancoViewModel @Inject constructor(
             val listaPassagemNova = snapshot.documents.mapNotNull { document ->
                 document.toObject<PassagemDocumento>()?.toPassagem(document.id)
             }
-            helper.atualizarDadosBalanco(balancoPassagensMapper.map(listaPassagemNova))
+            helper.atualizarDadosContagem(contagemPassagensMapper.map(listaPassagemNova))
             helper.atualizarProcessamento()
         }
     }

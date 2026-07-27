@@ -179,12 +179,12 @@ class PassagemFirestoreRepository @Inject constructor(
      * Continua sendo isolamento **por UI/cliente** (§3, débito registrado): um cliente adulterado ainda
      * consegue ler passagens de outra agência, porque as regras do servidor não recortam por agência.
      */
-    fun obterTodasPorDataStatus(
+    suspend fun obterTodasPorDataStatus(
         data: String,
         status: String,
         nomeFuncionario: String,
         agencia: String = "",
-    ): Task<QuerySnapshot> {
+    ): List<Passagem> {
         // Canoniza o filtro (ADR-0012): o dropdown traz o rótulo ("A EMITIR"), mas o status é gravado
         // pelo .name do tipo ("A_EMITIR"). Sem isso a query não casaria com o armazenamento canônico.
         val statusCanonico = StatusPassagem.de(status)?.name ?: status
@@ -197,15 +197,14 @@ class PassagemFirestoreRepository @Inject constructor(
         if (agencia.isNotBlank()) query = query.whereEqualTo(FIELD_AGENCIA, agencia)
         if (nomeFuncionario != Usuario.GERAL) query = query.whereEqualTo(FIELD_NOME_FUNC, nomeFuncionario)
 
-        return query
-            .get()
-            .addOnSuccessListener { snapshot ->
-                snapshot.documents.mapNotNull { document ->
-                    document.toObject<PassagemDocumento>()?.toPassagem(document.id)
-                }.forEach {
-                    runBlocking { dao.salvar(it) }
-                }
-            }
+        val passagens = query.get().await().documents.mapNotNull { document ->
+            document.toObject<PassagemDocumento>()?.toPassagem(document.id)
+        }
+        // Espelha no Room (ADR-0003) em UMA transação. Antes era um `runBlocking { dao.salvar(it) }`
+        // por documento dentro do listener de sucesso: N bloqueios de thread por consulta, e a
+        // travessia acontecia duas vezes (aqui e no ViewModel, que remapeava o mesmo snapshot).
+        dao.salvarTodas(passagens)
+        return passagens
     }
 
     /**

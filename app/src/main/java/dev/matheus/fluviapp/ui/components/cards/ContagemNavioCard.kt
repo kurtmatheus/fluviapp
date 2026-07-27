@@ -13,16 +13,16 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import dev.matheus.fluviapp.R
-import dev.matheus.fluviapp.model.screendata.DadosBalancoPassagem
-import dev.matheus.fluviapp.sampledata.listaDadosBalancoPassagems
+import dev.matheus.fluviapp.model.screendata.DadosContagemPassagem
+import dev.matheus.fluviapp.sampledata.listaDadosContagemPassagems
 import dev.matheus.fluviapp.ui.components.contents.CommonRowDetalhamento
 import dev.matheus.fluviapp.ui.components.texts.TextTitleWhiteItalic
 import dev.matheus.fluviapp.ui.theme.FluviAppTheme
 
 @Composable
-fun BalancoNavioCard(
+fun ContagemNavioCard(
     modifier: Modifier,
-    dadosBalancoPassagem: DadosBalancoPassagem,
+    dadosContagemPassagem: DadosContagemPassagem,
 ) {
     CommonExpandableCard(
         modifier = modifier,
@@ -37,7 +37,7 @@ fun BalancoNavioCard(
             )
 
             TextTitleWhiteItalic(
-                text = dadosBalancoPassagem.navio
+                text = dadosContagemPassagem.navio
             )
 
             Icon(
@@ -52,7 +52,7 @@ fun BalancoNavioCard(
             CommonRowDetalhamento(
                 modifier = modifier.padding(20.dp, 10.dp),
                 label = R.string.label_info_redes,
-                valor = dadosBalancoPassagem.preenchidasRedes
+                valor = dadosContagemPassagem.preenchidasRedes
             )
 
             Column(
@@ -61,24 +61,24 @@ fun BalancoNavioCard(
                 CommonRowDetalhamento(
                     modifier = modifier,
                     label = R.string.label_total_inteiras,
-                    valor = dadosBalancoPassagem.preenchidasInteiras
+                    valor = dadosContagemPassagem.preenchidasInteiras
                 )
                 CommonRowDetalhamento(
                     modifier = modifier,
                     label = R.string.label_total_meias,
-                    valor = dadosBalancoPassagem.preenchidasMeias
+                    valor = dadosContagemPassagem.preenchidasMeias
                 )
                 CommonRowDetalhamento(
                     modifier = modifier,
                     label = R.string.label_total_gratuidade,
-                    valor = dadosBalancoPassagem.preenchidasGratuidades
+                    valor = dadosContagemPassagem.preenchidasGratuidades
                 )
             }
 
             CommonRowDetalhamento(
                 modifier = modifier.padding(20.dp, 10.dp),
                 label = R.string.label_veiculo_preview,
-                valor = "${dadosBalancoPassagem.preenchidosVeiculo}/${dadosBalancoPassagem.capacidadeVeiculos}"
+                valor = "${dadosContagemPassagem.preenchidosVeiculo}/${dadosContagemPassagem.capacidadeVeiculos}"
             )
 
             Column(
@@ -87,29 +87,29 @@ fun BalancoNavioCard(
                 CommonRowDetalhamento(
                     modifier = modifier,
                     label = R.string.label_carros,
-                    valor = dadosBalancoPassagem.totalCarros
+                    valor = dadosContagemPassagem.totalCarros
                 )
                 CommonRowDetalhamento(
                     modifier = modifier,
                     label = R.string.label_motos,
-                    valor = dadosBalancoPassagem.totalMotos
+                    valor = dadosContagemPassagem.totalMotos
                 )
                 CommonRowDetalhamento(
                     modifier = modifier,
                     label = R.string.label_caminhoes,
-                    valor = dadosBalancoPassagem.totalCaminhoes
+                    valor = dadosContagemPassagem.totalCaminhoes
                 )
                 CommonRowDetalhamento(
                     modifier = modifier,
                     label = R.string.label_carretas,
-                    valor = dadosBalancoPassagem.totalCarretas
+                    valor = dadosContagemPassagem.totalCarretas
                 )
             }
 
             CommonRowDetalhamento(
                 modifier = modifier.padding(20.dp, 10.dp),
                 label = R.string.label_info_suites,
-                valor = "${dadosBalancoPassagem.preenchidasSuitesGeral}/${dadosBalancoPassagem.capacidadeSuitesGeral}"
+                valor = "${dadosContagemPassagem.preenchidasSuitesGeral}/${dadosContagemPassagem.capacidadeSuitesGeral}"
             )
 
             Column(
@@ -118,19 +118,19 @@ fun BalancoNavioCard(
                 CommonRowDetalhamento(
                     modifier = modifier,
                     label = R.string.label_suites_2,
-                    valor = "${dadosBalancoPassagem.preenchidasSuites2Pessoas}/${dadosBalancoPassagem.capacidadeSuites2Pessoas}"
+                    valor = "${dadosContagemPassagem.preenchidasSuites2Pessoas}/${dadosContagemPassagem.capacidadeSuites2Pessoas}"
                 )
                 CommonRowDetalhamento(
                     modifier = modifier,
                     label = R.string.label_suites_3,
-                    valor = "${dadosBalancoPassagem.preenchidasSuites3Pessoas}/${dadosBalancoPassagem.capacidadeSuites3Pessoas}"
+                    valor = "${dadosContagemPassagem.preenchidasSuites3Pessoas}/${dadosContagemPassagem.capacidadeSuites3Pessoas}"
                 )
             }
 
             CommonRowDetalhamento(
                 modifier = modifier.padding(20.dp, 10.dp),
                 label = R.string.label_info_camarotes,
-                valor = "${dadosBalancoPassagem.preenchidosCamarotes}/${dadosBalancoPassagem.capacidadeCamarotes}"
+                valor = "${dadosContagemPassagem.preenchidosCamarotes}/${dadosContagemPassagem.capacidadeCamarotes}"
             )
 
         }
@@ -139,14 +139,14 @@ fun BalancoNavioCard(
 
 @Preview(showBackground = true)
 @Composable
-private fun BalancoNavioCardPreview() {
+private fun ContagemNavioCardPreview() {
     FluviAppTheme {
         Box(
             modifier = Modifier.padding(10.dp)
         ) {
-            BalancoNavioCard(
+            ContagemNavioCard(
                 modifier = Modifier,
-                dadosBalancoPassagem = listaDadosBalancoPassagems.first()
+                dadosContagemPassagem = listaDadosContagemPassagems.first()
             )
         }
     }

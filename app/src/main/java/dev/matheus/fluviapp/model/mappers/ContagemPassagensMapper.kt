@@ -11,7 +11,7 @@ import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.MOTO
 import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.REDE
 import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.SUITE
 import dev.matheus.fluviapp.model.passagem.Passagem
-import dev.matheus.fluviapp.model.screendata.DadosBalancoPassagem
+import dev.matheus.fluviapp.model.screendata.DadosContagemPassagem
 import dev.matheus.fluviapp.model.viagem.Navio
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.NavioRepository
 import dev.matheus.fluviapp.util.Mapper
@@ -19,11 +19,11 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class BalancoPassagensMapper @Inject constructor(
+class ContagemPassagensMapper @Inject constructor(
     private val navioRepository: NavioRepository
-) : Mapper<List<Passagem>, List<DadosBalancoPassagem>> {
+) : Mapper<List<Passagem>, List<DadosContagemPassagem>> {
 
-    override suspend fun map(entry: List<Passagem>): List<DadosBalancoPassagem> {
+    override suspend fun map(entry: List<Passagem>): List<DadosContagemPassagem> {
         // Agrega pelo navioId CONGELADO na Passagem (ADR-0008 Fase 2): sem ida à Viagem viva, então
         // rename/reatribuição posterior não altera balanços históricos. obterTodos uma vez (não N+1);
         // associateBy dá lookup O(1) por id (era firstOrNull O(navios) por grupo).
@@ -50,7 +50,7 @@ class BalancoPassagensMapper @Inject constructor(
 internal fun contarOcupacaoNavio(
     navio: Navio,
     listaPassagem: List<Passagem>,
-): DadosBalancoPassagem {
+): DadosContagemPassagem {
     var preenchidasRede = 0
     var preenchidasInteiras = 0
     var preenchidasMeias = 0
@@ -120,7 +120,7 @@ internal fun contarOcupacaoNavio(
         }
     }
 
-    return DadosBalancoPassagem(
+    return DadosContagemPassagem(
         navio = navio.descricaoNome,
         preenchidasRedes = preenchidasRede.toString(),
         preenchidasInteiras = preenchidasInteiras.toString(),

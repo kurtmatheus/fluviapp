@@ -18,7 +18,7 @@ import org.junit.Test
  * vem do repo por id, não do snapshot) e órfão detectável (navioId sem navio → grupo descartado).
  */
 @OptIn(ExperimentalCoroutinesApi::class)
-class BalancoPassagensMapperTest {
+class ContagemPassagensMapperTest {
 
     private fun navio(id: String, nome: String) = Navio(
         id = id,
@@ -54,7 +54,7 @@ class BalancoPassagensMapperTest {
         status = "A_EMITIR",
     )
 
-    private fun mapper(navios: List<Navio>) = BalancoPassagensMapper(
+    private fun mapper(navios: List<Navio>) = ContagemPassagensMapper(
         FakeNavioRepository().apply { this.navios = navios }
     )
 
@@ -67,13 +67,13 @@ class BalancoPassagensMapperTest {
             passagem("2", navioId = "navio-1", navioSnapshot = "F/B Nome Antigo"),
         )
 
-        val balanco = mapper(navios).map(passagens)
+        val contagem = mapper(navios).map(passagens)
 
-        assertEquals(1, balanco.size)
+        assertEquals(1, contagem.size)
         // nome vem do navio vivo (por id), não do snapshot defasado — rename-safe.
-        assertEquals("F/B Nome Novo", balanco.first().navio)
-        assertEquals("2", balanco.first().preenchidasRedes)
-        assertEquals("2", balanco.first().preenchidasInteiras)
+        assertEquals("F/B Nome Novo", contagem.first().navio)
+        assertEquals("2", contagem.first().preenchidasRedes)
+        assertEquals("2", contagem.first().preenchidasInteiras)
     }
 
     @Test
@@ -85,11 +85,11 @@ class BalancoPassagensMapperTest {
             passagem("3", navioId = "navio-2", navioSnapshot = "F/B Dois"),
         )
 
-        val balanco = mapper(navios).map(passagens)
+        val contagem = mapper(navios).map(passagens)
 
-        assertEquals(2, balanco.size)
-        assertEquals("1", balanco.first { it.navio == "F/B Um" }.preenchidasRedes)
-        assertEquals("2", balanco.first { it.navio == "F/B Dois" }.preenchidasRedes)
+        assertEquals(2, contagem.size)
+        assertEquals("1", contagem.first { it.navio == "F/B Um" }.preenchidasRedes)
+        assertEquals("2", contagem.first { it.navio == "F/B Dois" }.preenchidasRedes)
     }
 
     @Test
@@ -100,11 +100,11 @@ class BalancoPassagensMapperTest {
             passagem("2", navioId = "navio-removido", navioSnapshot = "F/B Sumido"),
         )
 
-        val balanco = mapper(navios).map(passagens)
+        val contagem = mapper(navios).map(passagens)
 
-        assertEquals(1, balanco.size)
-        assertNull(balanco.find { it.navio == "F/B Sumido" })
-        assertTrue(balanco.all { it.navio == "F/B Um" })
+        assertEquals(1, contagem.size)
+        assertNull(contagem.find { it.navio == "F/B Sumido" })
+        assertTrue(contagem.all { it.navio == "F/B Um" })
     }
 
     // --- Contagem pura por caso (contarOcupacaoNavio): suíte por bilhete, trio→3p, solo conta (§7) ---

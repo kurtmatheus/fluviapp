@@ -1,6 +1,6 @@
 package dev.matheus.fluviapp.model.screendata
 
-data class DadosBalancoPassagem(
+data class DadosContagemPassagem(
     val navio: String = "",
     val preenchidasRedes: String = "0",
     val preenchidasInteiras: String = "0",

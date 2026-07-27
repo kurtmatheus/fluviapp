@@ -1,4 +1,4 @@
-package dev.matheus.fluviapp.navigation.navcomposables.faturamento
+package dev.matheus.fluviapp.navigation.navcomposables.contagem
 
 import androidx.compose.runtime.collectAsState
 import androidx.navigation.NavController
@@ -6,21 +6,21 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import dev.matheus.fluviapp.extensions.sharedViewModel
 import dev.matheus.fluviapp.navigation.destinations.FluviAppNavComposableDestinations
-import dev.matheus.fluviapp.ui.screens.faturamento.BalancoScreen
-import dev.matheus.fluviapp.ui.viewmodel.faturamento.BalancoViewModel
+import dev.matheus.fluviapp.ui.screens.contagem.ContagemPassagemScreen
+import dev.matheus.fluviapp.ui.viewmodel.contagem.ContagemPassagemViewModel
 
-fun NavGraphBuilder.balancoNavComposable(
+fun NavGraphBuilder.contagemPassagemNavComposable(
     navController: NavController,
     onClickVoltar: () -> Unit,
 ) {
     composable(
-        route = FluviAppNavComposableDestinations.BalancoNavComposable.route
+        route = FluviAppNavComposableDestinations.ContagemPassagemNavComposable.route
     ) {
 
-        val viewModel = it.sharedViewModel<BalancoViewModel>(navController = navController)
+        val viewModel = it.sharedViewModel<ContagemPassagemViewModel>(navController = navController)
         val state = viewModel.uiState.collectAsState()
 
-        BalancoScreen(
+        ContagemPassagemScreen(
             state = state.value,
             onClickVoltar = onClickVoltar,
             onClickPesquisar = { data ->

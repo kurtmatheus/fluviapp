@@ -67,8 +67,8 @@ fun NavHostController.navegaParaDetalhesPassagem(idPassagem: String) {
     navegaDireto("${FluviAppNavComposableDestinations.DetalhesPassagemNavComposable.route}/$idPassagem")
 }
 
-fun NavHostController.navegaParaBalancos() {
-    navegaDireto(FluviAppNavComposableDestinations.BalancoNavComposable.route)
+fun NavHostController.navegaParaContagemPassagem() {
+    navegaDireto(FluviAppNavComposableDestinations.ContagemPassagemNavComposable.route)
 }
 
 fun NavHostController.navegaParaEmbarque() {

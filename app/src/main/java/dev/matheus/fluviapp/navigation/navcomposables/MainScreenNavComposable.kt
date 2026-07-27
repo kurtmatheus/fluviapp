@@ -29,7 +29,7 @@ fun NavGraphBuilder.mainScreenNavComposable(
     onNavegaParaFormularioNovaPassagemComViagem: (String) -> Unit,
     onNavegaParaFormularioPesquisaPassagem: () -> Unit,
     onNavegaParaEmbarque: () -> Unit,
-    onNavegaParaBalanco: () -> Unit,
+    onNavegaParaContagemPassagem: () -> Unit,
     onNavegaParaFormularioNovoFuncionario: () -> Unit,
     onNavegaParaFormularioPesquisaFuncionario: () -> Unit,
     onNavegaParaFormularioNovaEmpresa: () -> Unit,
@@ -66,7 +66,7 @@ fun NavGraphBuilder.mainScreenNavComposable(
         fun acoesDe(secao: SecaoMenu): List<DadosBotoesMenus> = when (secao) {
             SecaoMenu.PASSAGEM -> listOf(
                 DadosBotoesMenus(R.string.btn_pesquisar_passagens, R.drawable.ic_lupa_75, onNavegaParaFormularioPesquisaPassagem),
-                DadosBotoesMenus(R.string.btn_balanco_vendas, R.drawable.ic_relatorio_75, onNavegaParaBalanco),
+                DadosBotoesMenus(R.string.btn_contagem_passagem, R.drawable.ic_relatorio_75, onNavegaParaContagemPassagem),
             )
 
             SecaoMenu.VIAGEM -> listOf(
