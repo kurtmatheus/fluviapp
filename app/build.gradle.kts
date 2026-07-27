@@ -47,6 +47,13 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+    // Schema do Room exportado (app/schemas/<db>/<versao>.json): é a FONTE do DDL da MIGRATION_1_2 —
+    // com o histórico de migrações colapsado (ADR-0015 §9), o `createSql` gerado aqui é o que a migração
+    // executa. Sem isto, o DDL seria transcrito à mão e divergiria das entidades sem ninguém perceber.
+    ksp {
+        arg("room.schemaLocation", "$projectDir/schemas")
+    }
+
     testOptions {
         unitTests {
             // android.util.Log e afins viram no-op nos testes JVM (em vez de lançar "not mocked").
