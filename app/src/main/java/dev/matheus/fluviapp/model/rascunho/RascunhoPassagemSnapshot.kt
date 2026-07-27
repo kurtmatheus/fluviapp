@@ -9,8 +9,6 @@ data class RascunhoPassagemSnapshot(
     // passagem
     val dataViagem: String = "",
     val horaViagem: String = "",
-    val agencia: String = "",
-    val agente: String = "",
     val isVeiculoChecked: Boolean = false,
     val isPixChecked: Boolean = false,
     val valorPix: String = "",

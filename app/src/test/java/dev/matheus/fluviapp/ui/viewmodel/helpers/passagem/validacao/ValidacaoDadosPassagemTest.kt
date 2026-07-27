@@ -81,11 +81,6 @@ class ValidacaoDadosPassagemTest {
         assertFalse(e.valido)
     }
 
-    @Test
-    fun `agencia e agente em branco marcam erro mas nao invalidam`() {
-        val e = validarDadosPassagem(base().copy(agencia = "", agente = ""), isGratuidade = false)
-        assertTrue(e.agencia)
-        assertTrue(e.agente)
-        assertTrue(e.valido) // lock: não entram no veredito (pendente da rework do agente)
-    }
+    // O caso "agência e agente em branco" saiu com os campos (P2.3, ADR-0015 §3): eram validações de
+    // uma área que a tela não desenhava. A agência agora é derivada do emissor, não digitada.
 }

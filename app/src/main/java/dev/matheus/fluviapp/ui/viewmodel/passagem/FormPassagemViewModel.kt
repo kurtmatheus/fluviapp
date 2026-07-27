@@ -15,7 +15,6 @@ import dev.matheus.fluviapp.model.rascunho.montarRascunho
 import dev.matheus.fluviapp.navigation.navcomposables.passagem.EDIT_PASSAGEM_ARGUMENT
 import dev.matheus.fluviapp.navigation.navcomposables.passagem.FORM_PASSAGEM_ARGUMENT
 import dev.matheus.fluviapp.services.repository.cadastro.ConstanteRepository
-import dev.matheus.fluviapp.services.repository.operacoes.FuncionarioRepository
 import dev.matheus.fluviapp.services.repository.operacoes.SessaoUsuario
 import dev.matheus.fluviapp.services.repository.firebase.PassagemFirestoreRepository
 import dev.matheus.fluviapp.services.repository.firebase.ViagemFirestoreRepository
@@ -53,7 +52,6 @@ internal const val TAMANHO_PASS = 8
 class FormPassagemViewModel @Inject constructor(
     private val constanteRepository: ConstanteRepository,
     private val viagemRepository: ViagemFirestoreRepository,
-    private val funcionarioRepository: FuncionarioRepository,
     private val sessaoUsuario: SessaoUsuario,
     private val passagemRepository: PassagemFirestoreRepository,
     private val rascunhoStore: RascunhoStore,
@@ -135,7 +133,6 @@ class FormPassagemViewModel @Inject constructor(
             uiStateVeiculo = _uiStateVeiculo,
             constanteRepository = constanteRepository,
             viagemRepository = viagemRepository,
-            funcionarioRepository = funcionarioRepository,
             passagemRepository = passagemRepository,
             viagemDadosViagemMapper = viagemDadosViagemMapper,
         )
@@ -222,7 +219,8 @@ class FormPassagemViewModel @Inject constructor(
             val id = formPassagemHelper.salvarPassagem(
                 idPassagem = idPassagem,
                 funcionarioResponsavel = it.descricaoNome,
-                funcionarioId = it.id
+                funcionarioId = it.id,
+                agenciaEmissora = it.agencia,
             )
             // promoção volátil/cacheada -> sólida: descarta o rascunho (invariante snapshot ⇔ rascunho).
             rascunhoStore.remover()
@@ -261,8 +259,6 @@ class FormPassagemViewModel @Inject constructor(
                 isDataViagemError = erros.dataViagem,
                 textDataViagemError = erros.textDataViagem,
                 isHoraViagemError = erros.horaViagem,
-                isAgenciaError = erros.agencia,
-                isAgenteError = erros.agente,
                 isFormaPagamentoError = erros.formaPagamento,
                 isValorPixError = erros.valorPix,
                 isValorDinheiroError = erros.valorDinheiro,
@@ -358,13 +354,9 @@ class FormPassagemViewModel @Inject constructor(
     fun onValorCreditoChange(valor: String) = formPassagemHelper.atualizarValorCredito(valor)
     fun onObservacaoChange(obs: String, ehGravacao: Boolean) = formPassagemHelper.atualizaObservacao(obs, ehGravacao)
 
-    // Eventos da área de agência: API pronta, porém a UI (área de agência) segue comentada até a rework
-    // do agente (§6 do estudo). atualizarListaAgente ainda usa runBlocking — dívida a resolver nessa rework.
-    fun onAgenciaChange(valor: String) {
-        formPassagemHelper.atualizarListaAgente(valor)
-        formPassagemHelper.atualizarAgencia(valor)
-    }
-    fun onAgenteChange(valor: String) = formPassagemHelper.atualizarAgente(valor)
+    // Os eventos da área de agência saíram em P2.3 (ADR-0015 §3): a agência não é mais escolhida no
+    // form — é a do emissor, derivada na hora de salvar. Com eles foi embora o `runBlocking` que o
+    // `atualizarListaAgente` carregava, e a dívida do §6 do estudo do form fecha aqui.
 
     private fun limparStates() {
         formPassagemHelper.limparState()

@@ -15,7 +15,6 @@ import dev.matheus.fluviapp.model.passagem.StatusPassagem
 import dev.matheus.fluviapp.model.passagem.tarifaMotoBase
 import dev.matheus.fluviapp.model.viagem.Viagem
 import dev.matheus.fluviapp.services.repository.cadastro.ConstanteRepository
-import dev.matheus.fluviapp.services.repository.operacoes.FuncionarioRepository
 import dev.matheus.fluviapp.services.repository.firebase.PassagemFirestoreRepository
 import dev.matheus.fluviapp.services.repository.firebase.ViagemFirestoreRepository
 import dev.matheus.fluviapp.ui.states.passagem.FormPassageiroUiState
@@ -23,7 +22,6 @@ import dev.matheus.fluviapp.ui.states.passagem.FormPassagemUiState
 import dev.matheus.fluviapp.ui.states.passagem.FormVeiculoUiState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.runBlocking
 
 class FormPassagemHelper(
     private val uiStatePassagem: MutableStateFlow<FormPassagemUiState>,
@@ -31,31 +29,23 @@ class FormPassagemHelper(
     private val uiStateVeiculo: MutableStateFlow<FormVeiculoUiState>,
     private val constanteRepository: ConstanteRepository,
     private val viagemRepository: ViagemFirestoreRepository,
-    private val funcionarioRepository: FuncionarioRepository,
     private val passagemRepository: PassagemFirestoreRepository,
     private val viagemDadosViagemMapper: ViagemDadosViagemMapper,
 ) {
 
     lateinit var viagem: Viagem
 
-    /** Carga suspensa das listas (molde ADR-0006): sem `runBlocking` na thread principal no init. */
+    /**
+     * Carga suspensa das listas (molde ADR-0006). O último `runBlocking` deste arquivo saiu em P2.3 com
+     * a lista de agentes: ela existia para o dropdown da área de agência, que não existe mais.
+     */
     suspend fun carregarListas() {
         uiStatePassagem.update {
             it.copy(
                 listaTipoDocumento = constanteRepository.obterTodosPorCategoria(DOCUMENTO.name),
-                listaAgencia = funcionarioRepository.obterTodasAgencias(),
-                listaAgente = funcionarioRepository.obterTodosFuncionarios(),
                 listaFormaPagamento = constanteRepository.obterTodosPorCategoria(PAGAMENTO.name),
                 listaSituacaoPassagem = constanteRepository.obterTodosPorCategoria(STATUS_PASSAGEM.name),
                 listaCategoriaPassagem = constanteRepository.obterTodosPorCategoria(CATEGORIA_PASSAGEM.name),
-            )
-        }
-    }
-
-    internal fun atualizarListaAgente(agenciaDescricao: String) {
-        uiStatePassagem.update { state ->
-            state.copy(
-                listaAgente = runBlocking { funcionarioRepository.obterFuncionariosPorAgencia(agenciaDescricao) }
             )
         }
     }
@@ -179,26 +169,6 @@ class FormPassagemHelper(
             it.copy(
                 horaViagem = hora,
                 isHoraViagemError = false
-            )
-        }
-    }
-
-    internal fun atualizarAgencia(agencia: String) {
-        uiStatePassagem.update {
-            it.copy(
-                agencia = agencia,
-                agente = "",
-                isAgenciaError = false,
-                isAgenteDisabled = agencia.isBlank()
-            )
-        }
-    }
-
-    internal fun atualizarAgente(agente: String) {
-        uiStatePassagem.update {
-            it.copy(
-                agente = agente,
-                isAgenteError = false
             )
         }
     }
@@ -408,12 +378,14 @@ class FormPassagemHelper(
         idPassagem: String,
         funcionarioResponsavel: String,
         funcionarioId: String,
+        agenciaEmissora: String,
     ): String {
 
         val passagem = montarPassagem(
             idPassagem = idPassagem,
             funcionarioResponsavel = funcionarioResponsavel,
-            funcionarioId = funcionarioId
+            funcionarioId = funcionarioId,
+            agenciaEmissora = agenciaEmissora
         )
 
         return passagemRepository.salvar(idPassagem, passagem)
@@ -423,6 +395,7 @@ class FormPassagemHelper(
         idPassagem: String,
         funcionarioResponsavel: String,
         funcionarioId: String,
+        agenciaEmissora: String,
     ): Passagem {
         val statePassagem = uiStatePassagem.value
         val statePassageiro = uiStatePassageiro.value
@@ -458,8 +431,9 @@ class FormPassagemHelper(
             destino = statePassagem.destinoViagem,
             dataViagem = statePassagem.dataViagem,
             horaViagem = statePassagem.horaViagem,
-            agencia = statePassagem.agencia,
-            agente = statePassagem.agente,
+            // Agência DERIVADA do emissor (ADR-0015 §3), não digitada. Na edição preserva a que foi
+            // congelada: o bilhete é histórico, e reabri-lo por outra pessoa não muda quem vendeu.
+            agencia = passagemExistente?.agencia ?: agenciaEmissora,
             valorPix = statePassagem.valorPix.toDoubleOrNull(),
             valorDinheiro = statePassagem.valorDinheiro.toDoubleOrNull(),
             valorDebito = statePassagem.valorDebito.toDoubleOrNull(),
@@ -529,7 +503,6 @@ class FormPassagemHelper(
             state.copy(
                 dataViagem = passagem.dataViagem,
                 horaViagem = passagem.horaViagem,
-                isAgenteDisabled = false,
                 isPixChecked = passagem.valorPix.preencherCampo().isNotEmpty(),
                 valorPix = passagem.valorPix.preencherCampo(),
                 isDinheiroChecked = passagem.valorDinheiro.preencherCampo().isNotEmpty(),
@@ -548,8 +521,6 @@ class FormPassagemHelper(
     fun limparState() {
         uiStatePassagem.update {
             it.copy(
-                agencia = "",
-                agente = "",
                 valorPix = "",
                 valorDinheiro = "",
                 valorDebito = "",

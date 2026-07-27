@@ -256,17 +256,8 @@ private fun SecaoGeral(modifier: Modifier, state: DetalhesPassagemState) {
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
 
-//        CommonRowDetalhamento(
-//            modifier = modifier,
-//            label = R.string.label_agencia,
-//            dado = state.dadosPassagem.agencia,
-//        )
-//
-//        CommonRowDetalhamento(
-//            modifier = modifier,
-//            label = R.string.label_agente,
-//            dado = state.dadosPassagem.agente,
-//        )
+        // A agência do bilhete só volta ao detalhamento quando fizer parte do que a tela promete
+        // mostrar; o nome do emissor já aparece como "Operador" (funcionario). ADR-0015 §3.
 
         CommonRowDetalhamento(
             modifier = modifier,

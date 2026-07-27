@@ -71,7 +71,6 @@ class PassagemDadosPassagemMapper @Inject constructor(
             origem = entry.origem,
             destino = entry.destino,
             agencia = entry.agencia,
-            agente = entry.agente,
             tarifa = precos.tarifa.formataParaMoedaBrasileira(),
             valorTotal = precos.total.formataParaMoedaBrasileira(),
             valorPix = valorPix.getValorFormatadoOrEmpty(),

@@ -27,7 +27,6 @@ class PassagemDocumentoMapperTest {
         dataViagem = "10/06/2024",
         horaViagem = "12:00",
         agencia = "MATRIZ",
-        agente = "Agente Modelo",
         documentoPassageiro1 = "RG",
         numeroDocumentoPassageiro1 = "111",
         nomePassageiro1 = "Passageiro Um",
@@ -56,9 +55,9 @@ class PassagemDocumentoMapperTest {
         assertEquals("F/B Modelo", doc.viagem?.navio)
         assertEquals("RG", doc.passageiro1?.documento)
         assertEquals("ABC1D23", doc.veiculo?.placaVeiculo)
-        // agência/agente agora viajam para o Firestore (Path B do ADR-0002/0003).
+        // A agência viaja para o Firestore (Path B do ADR-0002/0003); o nome do emissor NÃO tem coluna
+        // própria desde P2.3 — quem o guarda é funcionarioResponsavel (ADR-0015 §3).
         assertEquals("MATRIZ", doc.agencia)
-        assertEquals("Agente Modelo", doc.agente)
         // Lock da assimetria do p3: o "documento" do doc vem de tipoDocumentoPassageiro3.
         assertEquals("CPF3", doc.passageiro3?.documento)
         // uid do dono viaja top-level para o Firestore (ADR-0010 Fase 2).
@@ -97,7 +96,6 @@ class PassagemDocumentoMapperTest {
         assertEquals(original.documentoPassageiro1, roundTrip.documentoPassageiro1)
         assertEquals(original.tipoDocumentoPassageiro3, roundTrip.tipoDocumentoPassageiro3)
         assertEquals(original.agencia, roundTrip.agencia)
-        assertEquals(original.agente, roundTrip.agente)
         assertEquals(original.placaVeiculo, roundTrip.placaVeiculo)
         assertEquals(original.status, roundTrip.status)
         assertEquals(original.funcionarioResponsavel, roundTrip.funcionarioResponsavel)

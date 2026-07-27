@@ -25,8 +25,13 @@ data class Passagem(
     val destino: String,
     val dataViagem: String,
     val horaViagem: String,
+    /**
+     * Agência emissora, congelada na emissão (ADR-0015 §3). **Derivada**, não digitada: é a agência do
+     * funcionário que emitiu. O campo `agente` que ficava aqui morreu em P2.3 — ele guardava o nome do
+     * emissor, que é exatamente o que [funcionarioResponsavel] já guarda; duas colunas para o mesmo
+     * fato só criam a chance de discordarem.
+     */
     val agencia: String = "",
-    val agente: String = "",
     val valorPix: Double? = null,
     val valorDinheiro: Double? = null,
     val valorDebito: Double? = null,

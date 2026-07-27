@@ -18,8 +18,6 @@ fun montarRascunho(
 ): RascunhoPassagemSnapshot = RascunhoPassagemSnapshot(
     dataViagem = passagem.dataViagem,
     horaViagem = passagem.horaViagem,
-    agencia = passagem.agencia,
-    agente = passagem.agente,
     isVeiculoChecked = passagem.isVeiculoChecked,
     isPixChecked = passagem.isPixChecked,
     valorPix = passagem.valorPix,
@@ -78,8 +76,6 @@ fun RascunhoPassagemSnapshot.aplicarEm(
     passagem = passagem.copy(
         dataViagem = dataViagem,
         horaViagem = horaViagem,
-        agencia = agencia,
-        agente = agente,
         isVeiculoChecked = isVeiculoChecked,
         isPixChecked = isPixChecked,
         valorPix = valorPix,

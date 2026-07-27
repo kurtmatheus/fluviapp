@@ -9,18 +9,16 @@ import java.time.LocalDate
  * Validação **pura** dos dados gerais da passagem (molde ADR-0006, fatia 3): `(state, isGratuidade) ->
  * ErrosDadosPassagem`, sem mutar estado. Substitui o `ValidacaoFormPassagemHelper` impuro.
  *
- * `agencia`/`agente` **marcam o campo** mas **não entram no veredito** — comportamento preservado da
- * versão anterior (lock de teste). A validação real deles virá com a **rework do agente/Equipe**
- * (agente = usuário, plataforma multi-agência — ver `docs/design/form-passagem-validacao-exibicao.md` §6),
- * não neste incremento.
+ * Os campos `agencia`/`agente` saíram em P2.3 (ADR-0015 §3). Eram **validações órfãs**: exigiam o
+ * preenchimento de uma área que a tela nem desenhava, e por isso marcavam o campo sem entrar no
+ * veredito — um erro que ninguém via, preso por um lock de teste. Agora a agência é derivada do emissor
+ * e o agente **é** o emissor; não sobrou o que o formulário validasse. Fecha o §6 do estudo do form.
  */
 data class ErrosDadosPassagem(
     val dataViagem: Boolean = false,
     /** @StringRes da mensagem do campo data (0 = sem erro). */
     val textDataViagem: Int = 0,
     val horaViagem: Boolean = false,
-    val agencia: Boolean = false,
-    val agente: Boolean = false,
     val formaPagamento: Boolean = false,
     val valorPix: Boolean = false,
     val valorDinheiro: Boolean = false,
@@ -53,8 +51,6 @@ fun validarDadosPassagem(state: FormPassagemUiState, isGratuidade: Boolean): Err
         dataViagem = dataErro,
         textDataViagem = textData,
         horaViagem = state.horaViagem.isBlank(),
-        agencia = state.agencia.isBlank(),
-        agente = state.agente.isBlank(),
         formaPagamento = semFormaPagamento,
         valorPix = state.isPixChecked && state.valorPix.isBlank(),
         valorDinheiro = state.isDinheiroChecked && state.valorDinheiro.isBlank(),

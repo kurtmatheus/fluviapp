@@ -18,7 +18,6 @@ data class DadosPassagem(
     val origem: String = "",
     val destino: String = "",
     val agencia: String = "",
-    val agente: String = "",
     val tarifa: String = "",
     val valorTotal: String = "",
     val valorPix: String = "",

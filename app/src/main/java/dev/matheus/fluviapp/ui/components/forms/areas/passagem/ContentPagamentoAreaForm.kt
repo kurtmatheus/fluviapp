@@ -425,8 +425,6 @@ private fun ContentViagemAreaFormAgenciaFluviPreview() {
         ContentPagamentoAreaForm(
             modifier = it,
             state = FormPassagemUiState(
-                agencia = MATRIZ.name,
-                agente = "Agente Modelo",
                 listaFormaPagamento = listaFormaPagamentoSample,
                 isPixChecked = true,
                 isDinheiroChecked = true
@@ -446,8 +444,6 @@ private fun ContentViagemAreaFormAgenciaFluviGratuidadePreview() {
         ContentPagamentoAreaForm(
             modifier = it,
             state = FormPassagemUiState(
-                agencia = MATRIZ.name,
-                agente = "Agente Modelo",
             ),
             statePassageiro = FormPassageiroUiState(
                 acomodacao = REDE.name,

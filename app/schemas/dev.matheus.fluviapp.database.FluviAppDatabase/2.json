@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 2,
-    "identityHash": "cb8a631bd08b2ce50738862d601762ed",
+    "identityHash": "9679dd71fd9eaff3041e4f4d105770d4",
     "entities": [
       {
         "tableName": "Usuario",
@@ -393,7 +393,7 @@
       },
       {
         "tableName": "Passagem",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `numero` TEXT NOT NULL, `viagemId` TEXT NOT NULL, `navioId` TEXT NOT NULL, `empresaId` TEXT NOT NULL, `codigoViagem` TEXT NOT NULL, `empresa` TEXT NOT NULL, `navio` TEXT NOT NULL, `origem` TEXT NOT NULL, `destino` TEXT NOT NULL, `dataViagem` TEXT NOT NULL, `horaViagem` TEXT NOT NULL, `agencia` TEXT NOT NULL, `agente` TEXT NOT NULL, `valorPix` REAL, `valorDinheiro` REAL, `valorDebito` REAL, `valorCredito` REAL, `tarifaBase` REAL, `observacao` TEXT, `tipoPassagem` TEXT, `gratuidade` TEXT, `acomodacao` TEXT, `nomePassageiro1` TEXT, `documentoPassageiro1` TEXT, `numeroDocumentoPassageiro1` TEXT, `dataNascimentoPassageiro1` TEXT, `nomePassageiro2` TEXT, `documentoPassageiro2` TEXT, `numeroDocumentoPassageiro2` TEXT, `dataNascimentoPassageiro2` TEXT, `nomePassageiro3` TEXT, `tipoDocumentoPassageiro3` TEXT, `numeroDocumentoPassageiro3` TEXT, `dataNascimentoPassageiro3` TEXT, `nomeResponsavelRetirada` TEXT, `documentoResponsavelRetirada` TEXT, `numeroDocumentoResponsavelRetirada` TEXT, `tipoVeiculo` TEXT, `modeloVeiculo` TEXT, `placaVeiculo` TEXT, `corVeiculo` TEXT, `cilindrada` TEXT, `funcionarioResponsavel` TEXT NOT NULL, `funcionarioId` TEXT NOT NULL, `status` TEXT NOT NULL, `embarcadaPorId` TEXT NOT NULL, `embarcadaPor` TEXT NOT NULL, `embarcadaEm` TEXT NOT NULL, PRIMARY KEY(`id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `numero` TEXT NOT NULL, `viagemId` TEXT NOT NULL, `navioId` TEXT NOT NULL, `empresaId` TEXT NOT NULL, `codigoViagem` TEXT NOT NULL, `empresa` TEXT NOT NULL, `navio` TEXT NOT NULL, `origem` TEXT NOT NULL, `destino` TEXT NOT NULL, `dataViagem` TEXT NOT NULL, `horaViagem` TEXT NOT NULL, `agencia` TEXT NOT NULL, `valorPix` REAL, `valorDinheiro` REAL, `valorDebito` REAL, `valorCredito` REAL, `tarifaBase` REAL, `observacao` TEXT, `tipoPassagem` TEXT, `gratuidade` TEXT, `acomodacao` TEXT, `nomePassageiro1` TEXT, `documentoPassageiro1` TEXT, `numeroDocumentoPassageiro1` TEXT, `dataNascimentoPassageiro1` TEXT, `nomePassageiro2` TEXT, `documentoPassageiro2` TEXT, `numeroDocumentoPassageiro2` TEXT, `dataNascimentoPassageiro2` TEXT, `nomePassageiro3` TEXT, `tipoDocumentoPassageiro3` TEXT, `numeroDocumentoPassageiro3` TEXT, `dataNascimentoPassageiro3` TEXT, `nomeResponsavelRetirada` TEXT, `documentoResponsavelRetirada` TEXT, `numeroDocumentoResponsavelRetirada` TEXT, `tipoVeiculo` TEXT, `modeloVeiculo` TEXT, `placaVeiculo` TEXT, `corVeiculo` TEXT, `cilindrada` TEXT, `funcionarioResponsavel` TEXT NOT NULL, `funcionarioId` TEXT NOT NULL, `status` TEXT NOT NULL, `embarcadaPorId` TEXT NOT NULL, `embarcadaPor` TEXT NOT NULL, `embarcadaEm` TEXT NOT NULL, PRIMARY KEY(`id`))",
         "fields": [
           {
             "fieldPath": "id",
@@ -470,12 +470,6 @@
           {
             "fieldPath": "agencia",
             "columnName": "agencia",
-            "affinity": "TEXT",
-            "notNull": true
-          },
-          {
-            "fieldPath": "agente",
-            "columnName": "agente",
             "affinity": "TEXT",
             "notNull": true
           },
@@ -817,7 +811,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'cb8a631bd08b2ce50738862d601762ed')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '9679dd71fd9eaff3041e4f4d105770d4')"
     ]
   }
 }

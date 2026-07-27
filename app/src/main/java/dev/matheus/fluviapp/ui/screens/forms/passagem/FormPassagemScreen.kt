@@ -253,15 +253,6 @@ fun FormPassagemScreen(
                     }
                 }
 
-//                CommonAreaForm(
-//                    modifier = modifier,
-//                    titleArea = R.string.form_area_title_agencia
-//                ) {
-//                    ContentAgenciaAreaPassagemForm(
-//                        modifier = it,
-//                        state = statePassagem
-//                    )
-//                }
 
                 CommonAreaForm(
                     modifier = modifier.bringIntoViewRequester(ancoraPagamento),

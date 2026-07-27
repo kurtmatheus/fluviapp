@@ -11,8 +11,6 @@ class RascunhoPassagemMapperTest {
     private val passagem = FormPassagemUiState(
         dataViagem = "10/06/2024",
         horaViagem = "12:00",
-        agencia = "MATRIZ",
-        agente = "Agente Modelo",
         isPixChecked = true,
         valorPix = "100",
         observacao = "obs",
@@ -72,7 +70,6 @@ class RascunhoPassagemMapperTest {
         assertEquals(passagem.viagemId, restaurado.passagem.viagemId)
         assertEquals(passagem.navioId, restaurado.passagem.navioId)
         assertEquals(passagem.empresaId, restaurado.passagem.empresaId)
-        assertEquals(passagem.agencia, restaurado.passagem.agencia)
         assertEquals(passagem.valorPix, restaurado.passagem.valorPix)
         assertEquals(passageiro.documentoPassageiro1, restaurado.passageiro.documentoPassageiro1)
         assertEquals(passageiro.tipoPassagem, restaurado.passageiro.tipoPassagem)

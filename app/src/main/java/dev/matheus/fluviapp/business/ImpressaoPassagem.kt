@@ -51,7 +51,6 @@ class ImpressaoPassagem {
         private const val EMITIDO_EM = "Emitido em"
         private const val LABEL_AGENCIA = "Agência"
 
-        private const val LABEL_AGENTE = "Agente"
         internal const val LABEL_ID = "Identificação do Bilhete"
         private const val LABEL_OPERADOR = "Operador"
         private const val LABEL_OBS = "Observação"
@@ -226,7 +225,6 @@ class ImpressaoPassagem {
                 append(String(TXT_ALIGN_LT))
                 if (!IS_VIA_CLIENTE) {
                     append(setLabelLineCampoAlignRight(LABEL_AGENCIA, dadosPassagem.agencia))
-                    append(setLabelLineCampoAlignRight(LABEL_AGENTE, dadosPassagem.agente))
                     append(setLabel(LABEL_OBS))
                     append(setCampo(dadosPassagem.observacao))
                 }

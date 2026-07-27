@@ -14,7 +14,6 @@ class RascunhoSerializacaoGsonTest {
         val original = RascunhoPassagemSnapshot(
             dataViagem = "10/06/2024",
             horaViagem = "12:00",
-            agencia = "MATRIZ",
             valorPix = "100",
             isPixChecked = true,
             nomePassageiro1 = "Passageiro Um",
