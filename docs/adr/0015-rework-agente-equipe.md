@@ -2,10 +2,10 @@
 
 **Status:** **Aceita** — todos os pontos fechados com o analista (ver *Decisões resolvidas*; o desenho
 vigente dos dois contextos está no **§8**; o regime de schema, no **§9**). **Em implementação:** P2.0, P2.1,
-P2.2a (parcialmente revertido pela revisão estrutural), P2.2a′-0 e **P2.2a′** feitos; P2.2b em diante
-pendentes. Falta ainda o rename **cosmético** dos identificadores do CRUD de UI (`FormAgenteScreen`,
-rotas, chaves de string) — o modelo e a camada de dados já são `Funcionario`. É o
-**Pilar 2** do
+P2.2a (parcialmente revertido pela revisão estrutural), P2.2a′-0, **P2.2a′** e o rename dos
+identificadores do CRUD de UI feitos; P2.2b em diante pendentes. **As strings visíveis não foram
+renomeadas**: na tela o coletivo é "Equipe" e o indivíduo é "Agente" (P2.1) — o código nomeia a entidade,
+a tela nomeia o que o usuário chama. É o **Pilar 2** do
 [`mvp-roadmap.md`](../design/mvp-roadmap.md) e responde o §6 do
 [estudo do form de passagem](../design/form-passagem-validacao-exibicao.md).
 
