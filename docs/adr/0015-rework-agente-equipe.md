@@ -2,7 +2,9 @@
 
 **Status:** **Aceita** — todos os pontos fechados com o analista (ver *Decisões resolvidas*; o desenho
 vigente dos dois contextos está no **§8**; o regime de schema, no **§9**). **Em implementação:** P2.0, P2.1,
-P2.2a (parcialmente revertido pela revisão estrutural) e P2.2a′-0 feitos; P2.2a′ em diante pendentes. É o
+P2.2a (parcialmente revertido pela revisão estrutural), P2.2a′-0 e **P2.2a′** feitos; P2.2b em diante
+pendentes. Falta ainda o rename **cosmético** dos identificadores do CRUD de UI (`FormAgenteScreen`,
+rotas, chaves de string) — o modelo e a camada de dados já são `Funcionario`. É o
 **Pilar 2** do
 [`mvp-roadmap.md`](../design/mvp-roadmap.md) e responde o §6 do
 [estudo do form de passagem](../design/form-passagem-validacao-exibicao.md).
@@ -558,7 +560,20 @@ banco no aparelho, e migrações aditivas nascem de novo — v3, v4… — a par
   - **P2.2a′-0 — colapsar o schema. ✅ FEITO** (§9): 19 migrações → um DDL gerado pelo Room, `version = 2`,
     `exportSchema = true`, fallback destrutivo no downgrade. É pré-requisito dos passos abaixo — sem ele,
     cada mudança de entidade escreveria uma migração que ninguém executaria.
-  - **P2.2a′ — dividir os dois contextos.** É o commit estrutural, e vai inteiro ou não vai:
+  - **P2.2a′ — dividir os dois contextos. ✅ FEITO.** Commit estrutural único: 51 arquivos, 224 testes JVM
+    e **46 casos de emulador** verdes (eram 34 — entraram os locks do vínculo imutável, do dono-por-
+    funcionário, do "plataforma sem funcionário não emite" e do cargo não-autoescalável). Três coisas que
+    o plano não previa e o código exigiu:
+    1. **`Agencia.deOuPadrao` morreu.** Ele existia para a coluna no `Usuario`; em `Funcionario.agencia`,
+       que é String **livre** (o seed tem "AGENCIA HORIZONTE" e outras fora do enum), um default na
+       leitura apagaria agência real. Volta em P2.2b, quando a agência virar seletor — e é lá que o
+       "conjunto fixo (enum)" deixa de ser só intenção.
+    2. **A sessão ganhou duas chaves novas** no DataStore (`papel_atual`, `cargo_funcionario_atual`) em
+       vez de reaproveitar `cargo_atual`: chave nova faz a sessão pré-divisão ser lida como *ausente*,
+       que é o fail-closed correto.
+    3. **O `funcionarioResponsavel` veio junto** (era P2.3): com o nome fora do `Usuario`, a emissão não
+       tinha de onde tirá-lo. O par congelado no bilhete passou a vir todo do funcionário de uma vez.
+    O texto abaixo é o escopo planejado, mantido como registro:
     `Agente` → **`Funcionario`** (entidade, DAO, repositórios, documento, coleção `agents` → `funcionarios`,
     form/telas do CRUD, fakes e testes) levando `agencia`/`lotacao` consigo e ganhando o **`cargo`**
     (`SUPERVISOR`/`AGENTE`); `Usuario.cargo` → **`papel`** (`ADM`/`GESTOR`/`OPERADOR`), `Usuario.nome` →
