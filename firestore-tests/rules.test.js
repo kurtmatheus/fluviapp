@@ -288,6 +288,21 @@ describe('passagens — emissão sem forjar dono', () => {
   });
 });
 
+// --- Isolamento por agência: por UI, NÃO pelo servidor (ADR-0015 §3, débito registrado) ---
+describe('passagens — o servidor NÃO isola por agência (lock do débito)', () => {
+  test('agente lê passagem de OUTRA agência → OK, e isso é o débito, não um bug', async () => {
+    // O recorte por agência da listagem (P2.6) vive na consulta do app. Um cliente adulterado ainda
+    // lê a passagem de outra agência — aceitável enquanto todas são do mesmo operador (§3). Este teste
+    // existe para que a promoção da regra ao servidor seja uma decisão, e não uma descoberta.
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'passagens', 'de-outra-agencia'), {
+        funcionarioId: F_OUTRA_AGENCIA, agencia: 'AGENCIA MARE', valor: 10,
+      });
+    });
+    await assertSucceeds(getDoc(doc(asAgenteA(), 'passagens', 'de-outra-agencia')));
+  });
+});
+
 describe('passagens — editar/deletar por posse', () => {
   test('agente edita a PRÓPRIA passagem → OK', async () => {
     await assertSucceeds(setDoc(doc(asAgenteB(), 'passagens', 'alheia'), { funcionarioId: F_B, valor: 20 }));

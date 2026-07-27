@@ -60,15 +60,23 @@ class PesquisarPassagemViewModel @Inject constructor(
     }
 
     private suspend fun inicializarHelpers() {
+        contexto = sessaoUsuario.atual()
         formPesquisarPassagemHelper = FormPesquisarPassagemHelper(
             uiState = _uiState,
             constanteRepository = constanteRepository,
-            funcionarioRepository = funcionarioRepository
+            funcionarioRepository = funcionarioRepository,
+            agenciaDoEscopo = agenciaDoEscopoDoContexto(),
         )
         validacaoFormPesquisarPassagemHelper = ValidacaoFormPesquisarPassagemHelper(
             uiState = _uiState
         )
-        contexto = sessaoUsuario.atual()
+    }
+
+    /** "" = sem recorte (plataforma). Sem vínculo, também "": lá a listagem já nem consulta (§4.1). */
+    private fun agenciaDoEscopoDoContexto(): String {
+        val contexto = contexto ?: return ""
+        val escopo = PermissoesUsuario.escopoDeAgencia(contexto.papel, contexto.agencia)
+        return (escopo as? PermissoesUsuario.EscopoAgencia.Apenas)?.agencia.orEmpty()
     }
 
     private fun inicializarPermissaoEspecial() {
@@ -91,13 +99,30 @@ class PesquisarPassagemViewModel @Inject constructor(
                     contexto.funcionario?.descricaoNome.orEmpty()
                 }
 
+            // Escopo por agência (ADR-0015 §4.1): "todas as passagens" do SUPERVISOR passa a significar
+            // "todas da MINHA agência" — plataforma atravessa, e quem não é plataforma nem tem vínculo
+            // não vê listagem nenhuma (fail-closed, sem ir à rede).
+            val agenciaDoEscopo = when (
+                val escopo = PermissoesUsuario.escopoDeAgencia(contexto.papel, contexto.agencia)
+            ) {
+                is PermissoesUsuario.EscopoAgencia.Todas -> ""
+                is PermissoesUsuario.EscopoAgencia.Apenas -> escopo.agencia
+                is PermissoesUsuario.EscopoAgencia.Nenhuma -> {
+                    _uiState.update { it.copy(listaResultadoPassagens = emptyList()) }
+                    formPesquisarPassagemHelper.atualizarProcessamento()
+                    onNavegaParaResultadosPesquisa()
+                    return
+                }
+            }
+
             // try só na chamada de rede (equivalente ao antigo addOnFailureListener). Erros de
             // mapeamento NÃO entram aqui — surgem com o próprio stack, não mascarados de "Falha no Processo".
             val snapshot = try {
                 passagemRepository.obterTodasPorDataStatus(
                     data = pesquisarPassagemUiState.data,
                     status = pesquisarPassagemUiState.situacao,
-                    nomeFuncionario = usuarioValidado
+                    nomeFuncionario = usuarioValidado,
+                    agencia = agenciaDoEscopo,
                 ).await()
             } catch (e: Exception) {
                 Log.e(TAG, "obterTodasPorDataStatus: Exception: ${e.message}")

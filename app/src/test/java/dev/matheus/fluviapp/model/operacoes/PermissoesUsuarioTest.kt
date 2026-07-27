@@ -168,6 +168,47 @@ class PermissoesUsuarioTest {
         assertFalse(PermissoesUsuario.podeCriarPassagem("GERENTE"))
     }
 
+    // --- Escopo de agência na listagem (§4.1/§6) ---
+
+    @Test
+    fun `plataforma atravessa agencias`() {
+        assertEquals(
+            PermissoesUsuario.EscopoAgencia.Todas,
+            PermissoesUsuario.escopoDeAgencia(adm, "MATRIZ"),
+        )
+        // Mesmo sem vínculo nenhum: o papel basta.
+        assertEquals(
+            PermissoesUsuario.EscopoAgencia.Todas,
+            PermissoesUsuario.escopoDeAgencia(gestor, null),
+        )
+    }
+
+    @Test
+    fun `quem nao e plataforma ve so a propria agencia`() {
+        assertEquals(
+            PermissoesUsuario.EscopoAgencia.Apenas("AGENCIA LITORAL"),
+            PermissoesUsuario.escopoDeAgencia(operador, "AGENCIA LITORAL"),
+        )
+    }
+
+    @Test
+    fun `sem plataforma e sem agencia nao ve nada — nao vira sem-filtro`() {
+        // O caso perigoso: se "sem agência" virasse String vazia tratada como "sem filtro", um perfil
+        // sem vínculo abriria a listagem inteira. O tipo separa os dois.
+        assertEquals(
+            PermissoesUsuario.EscopoAgencia.Nenhuma,
+            PermissoesUsuario.escopoDeAgencia(operador, null),
+        )
+        assertEquals(
+            PermissoesUsuario.EscopoAgencia.Nenhuma,
+            PermissoesUsuario.escopoDeAgencia(operador, "   "),
+        )
+        assertEquals(
+            PermissoesUsuario.EscopoAgencia.Nenhuma,
+            PermissoesUsuario.escopoDeAgencia(null, null),
+        )
+    }
+
     // --- Eixo ação: editar qualquer / ver todas (é aqui que os dois eixos se encontram) ---
 
     @Test

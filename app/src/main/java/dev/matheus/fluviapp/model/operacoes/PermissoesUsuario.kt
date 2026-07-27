@@ -71,10 +71,33 @@ object PermissoesUsuario {
     fun podeDeletarFuncionario(papel: String?): Boolean = ehPapelPlataforma(papel)
 
     /**
-     * Enxergar **todas as agências** (listagem da Equipe hoje; passagens em P2.6 — §4.1). O supervisor
-     * vê só a própria, e por isso a agência deixa de ser filtro para ele: sobra a lotação (§2.2).
+     * Enxergar **todas as agências** (listagem da Equipe e das passagens — §4.1). O supervisor vê só a
+     * própria, e por isso a agência deixa de ser filtro para ele: sobra a lotação (§2.2).
      */
     fun podeVerTodasAgencias(papel: String?): Boolean = ehPapelPlataforma(papel)
+
+    /**
+     * O **escopo de agência** de uma listagem (ADR-0015 §4.1/§6). Existe como tipo, e não como String
+     * vazia significando "sem filtro", porque os três casos são diferentes e o terceiro é o perigoso:
+     * "não filtra nada" e "não tem agência nenhuma" pareceriam iguais e abririam a listagem inteira
+     * para quem não deveria ver nada.
+     */
+    sealed interface EscopoAgencia {
+        /** Papel de plataforma: atravessa agências. */
+        data object Todas : EscopoAgencia
+
+        /** Cargo de agência: só a dele. */
+        data class Apenas(val agencia: String) : EscopoAgencia
+
+        /** Sem papel de plataforma e sem vínculo: não há agência a mostrar (fail-closed). */
+        data object Nenhuma : EscopoAgencia
+    }
+
+    fun escopoDeAgencia(papel: String?, agencia: String?): EscopoAgencia = when {
+        podeVerTodasAgencias(papel) -> EscopoAgencia.Todas
+        !agencia.isNullOrBlank() -> EscopoAgencia.Apenas(agencia)
+        else -> EscopoAgencia.Nenhuma
+    }
 
     // --- Eixo ação sobre a Passagem (com posse) ---
 

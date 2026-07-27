@@ -20,6 +20,7 @@ import dev.matheus.fluviapp.telemetry.RegistroSincronizacao
 import com.google.android.gms.tasks.Task
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.QuerySnapshot
 import com.google.firebase.firestore.toObject
 import dev.matheus.fluviapp.di.module.SyncScope
@@ -137,6 +138,11 @@ class PassagemFirestoreRepository @Inject constructor(
         }
     }
 
+    /**
+     * Consulta da **Contagem de Passagem** (ocupação). Sem recorte por agência, e isso é decisão, não
+     * esquecimento (ADR-0015 §6): a lotação do navio é um recurso finito e COMPARTILHADO — fatiar por
+     * agência daria a cada uma uma visão parcial do mesmo barco. Não acrescente filtro de agência aqui.
+     */
     fun obterTodasPorData(data: String): Task<QuerySnapshot> {
         return firestore.collection(COLLECTION_PASSAGENS)
             .whereEqualTo(FIELD_DATA_VIAGEM, data)
@@ -165,35 +171,41 @@ class PassagemFirestoreRepository @Inject constructor(
 
     suspend fun obterContagem() = contadorDao.obterContagem().first()
 
-    fun obterTodasPorDataStatus(data: String, status: String, nomeFuncionario: String): Task<QuerySnapshot> {
+    /**
+     * Consulta da listagem de passagens. [agencia] em branco = **sem recorte** (papel de plataforma,
+     * ADR-0015 §4.1); preenchida, a query só traz as da agência — o isolamento entra **na consulta**,
+     * não num filtro depois da leitura, para que nenhum caminho de UI o contorne.
+     *
+     * Continua sendo isolamento **por UI/cliente** (§3, débito registrado): um cliente adulterado ainda
+     * consegue ler passagens de outra agência, porque as regras do servidor não recortam por agência.
+     */
+    fun obterTodasPorDataStatus(
+        data: String,
+        status: String,
+        nomeFuncionario: String,
+        agencia: String = "",
+    ): Task<QuerySnapshot> {
         // Canoniza o filtro (ADR-0012): o dropdown traz o rótulo ("A EMITIR"), mas o status é gravado
         // pelo .name do tipo ("A_EMITIR"). Sem isso a query não casaria com o armazenamento canônico.
         val statusCanonico = StatusPassagem.de(status)?.name ?: status
-        val queryStatusData = firestore.collection(COLLECTION_PASSAGENS)
+
+        // Filtros de igualdade encadeados: cada um é opcional, e o `Usuario.GERAL` é o "todos" do
+        // dropdown de operador — não um nome de gente.
+        var query: Query = firestore.collection(COLLECTION_PASSAGENS)
             .whereEqualTo(FIELD_DATA_VIAGEM, data)
             .whereEqualTo(FIELD_STATUS, statusCanonico)
-        return if (nomeFuncionario != Usuario.GERAL) {
-            queryStatusData
-                .whereEqualTo(FIELD_NOME_FUNC, nomeFuncionario)
-                .get()
-                .addOnSuccessListener { snapshot ->
-                    snapshot.documents.mapNotNull { document ->
-                        document.toObject<PassagemDocumento>()?.toPassagem(document.id)
-                    }.forEach {
-                        runBlocking { dao.salvar(it) }
-                    }
-                }
-        } else {
-            queryStatusData
-                .get()
-                .addOnSuccessListener { snapshot ->
+        if (agencia.isNotBlank()) query = query.whereEqualTo(FIELD_AGENCIA, agencia)
+        if (nomeFuncionario != Usuario.GERAL) query = query.whereEqualTo(FIELD_NOME_FUNC, nomeFuncionario)
+
+        return query
+            .get()
+            .addOnSuccessListener { snapshot ->
                 snapshot.documents.mapNotNull { document ->
                     document.toObject<PassagemDocumento>()?.toPassagem(document.id)
                 }.forEach {
                     runBlocking { dao.salvar(it) }
                 }
             }
-        }
     }
 
     /**
@@ -277,6 +289,7 @@ class PassagemFirestoreRepository @Inject constructor(
         private const val FIELD_VIAGEM_ID = "viagemId"
         private const val FIELD_GRATUIDADE = "gratuidade"
         private const val FIELD_STATUS = "status"
+        private const val FIELD_AGENCIA = "agencia"
         private const val FIELD_NOME_FUNC = "funcionarioResponsavel"
         private const val FIELD_EMBARCADA_POR_ID = "embarcadaPorId"
         private const val FIELD_EMBARCADA_POR = "embarcadaPor"

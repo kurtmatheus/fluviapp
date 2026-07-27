@@ -11,7 +11,9 @@ import kotlinx.coroutines.runBlocking
 class FormPesquisarPassagemHelper(
     private val uiState: MutableStateFlow<PesquisarPassagemUiState>,
     private val constanteRepository: ConstanteRepository,
-    private val funcionarioRepository: FuncionarioRepository
+    private val funcionarioRepository: FuncionarioRepository,
+    /** Recorte da listagem (ADR-0015 §4.1): em branco = todas as agências. */
+    private val agenciaDoEscopo: String = "",
 ) {
 
     init {
@@ -40,7 +42,12 @@ class FormPesquisarPassagemHelper(
                     atualizarBarraPesquisa(it)
                 },
                 listaSituacaoPassagem = runBlocking { constanteRepository.obterTodosPorCategoria(STATUS_PASSAGEM.name) },
-                listaOperadores = runBlocking { funcionarioRepository.obterTodosFuncionarios().map { it.descricaoNome } }
+                // O dropdown de operador acompanha o escopo: o supervisor filtra pelos nomes da
+                // PRÓPRIA agência — oferecer nomes de fora seria oferecer uma busca que volta vazia.
+                listaOperadores = runBlocking {
+                    if (agenciaDoEscopo.isBlank()) funcionarioRepository.obterTodosFuncionarios()
+                    else funcionarioRepository.obterFuncionariosPorAgencia(agenciaDoEscopo)
+                }.map { it.descricaoNome }
             )
         }
     }
