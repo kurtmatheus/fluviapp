@@ -1,7 +1,8 @@
 # ADR-0015: Agente é o usuário — Equipe, agência/lotação como capacidades, agência transversal à emissão
 
-**Status:** **Aceita** — todos os pontos fechados com o analista (ver *Decisões resolvidas*). **Em
-implementação:** P2.0 e P2.1 feitos; P2.2 em diante pendentes. É o **Pilar 2** do
+**Status:** **Aceita** — todos os pontos fechados com o analista (ver *Decisões resolvidas*; o desenho
+vigente dos dois contextos está no **§8**). **Em implementação:** P2.0, P2.1 e P2.2a feitos (P2.2a
+parcialmente revertido pela revisão estrutural); P2.2a′ em diante pendentes. É o **Pilar 2** do
 [`mvp-roadmap.md`](../design/mvp-roadmap.md) e responde o §6 do
 [estudo do form de passagem](../design/form-passagem-validacao-exibicao.md).
 
@@ -81,6 +82,12 @@ usuário**, derivada na emissão.
 >   estreito: não pode haver **duas fontes vivas da mesma verdade** — e não há, porque agora cada verdade
 >   mora num contexto só.
 > - **P2.5** (aposentar `Agente`) deixa de ser deleção e passa a ser **renomeação para `Funcionario`**.
+>
+> **Os cinco pontos que esta revisão abriu estão fechados** (analista, 2026-07-27 — 5ª rodada, abaixo):
+> agência/lotação **saem do `Usuario`** e ficam no `Funcionario`; a política de permissão continua **uma só**,
+> misturando os dois eixos; o elo é **`Usuario.funcionarioId`, 1-1**; `Passagem.funcionarioId` passa a ser
+> **o `funcionarioId` do usuário logado** (o nome deixa de mentir); e a tela do ADM/GESTOR **edita o cargo,
+> nunca o papel**. O desenho consolidado está no **§8**.
 
 **O agente é o usuário; o módulo "Agentes" vira "Equipe"; agência e lotação são capacidades do usuário; a
 agência é transversal à emissão (sempre a do logado) e governa a identidade visual.**
@@ -92,6 +99,11 @@ capacidades migram para `Usuario`. O menu "Agentes" vira **"Equipe"** — gestã
 cargo + agência + lotação), no molde de cadastro (ADR-0006).
 
 ### 2. Agência e lotação como capacidades do usuário
+
+> ⚠️ **Superado pelo §8** (5ª rodada). Agência e lotação são capacidades do **`Funcionario`**, não do
+> `Usuario` — o `Funcionario` já as tem hoje (`Agente.agencia`/`Agente.lotacao`). O que P2.2a escreveu em
+> `Usuario` é revertido. O resto desta seção (o que é a agência, o que é a lotação, e o fato de a lotação
+> **não** entrar no bilhete) continua valendo — só muda de dono.
 
 `Usuario` ganha:
 - **`agencia`** — por ora o valor do **conjunto fixo** (o enum `Agencia`, que sai de dentro do `Agente` para
@@ -357,9 +369,9 @@ de todas as agências que venderam nela. Isso vale **já no MVP**, não espera o
 > duas frentes de validação do primeiro acesso), então a entidade **não morre**: ela deixa de ser "quem
 > vende" e passa a ser o **registro do membro antes da autenticação** — a etapa anterior do mesmo ciclo de
 > vida, não uma identidade rival. O que fica em pé desta seção é o diagnóstico original (não pode haver
-> **duas fontes vivas** da mesma verdade); o que muda é a conclusão de que a saída era apagar. Ver *Pontos
-> abertos* — a pergunta que decide é **quem é a fonte de agência/lotação depois do primeiro acesso**. O
-> texto abaixo é o registro da decisão anterior.
+> **duas fontes vivas** da mesma verdade); o que muda é a conclusão de que a saída era apagar.
+> **Resolvido no §8.1** (5ª rodada): a fonte de agência/lotação é o **`Funcionario`**, sempre — o perfil não
+> guarda cópia. A remoção vira renomeação e P2.5 se dissolve. O texto abaixo é o registro da decisão anterior.
 
 Nada de entidade zumbi: quando as capacidades estiverem no `Usuario` (P2.2) e a emissão derivar do logado
 (P2.3), o `Agente` **sai inteiro** — entidade, DAO, repositórios, documento, form, telas, navegação, fakes e
@@ -375,6 +387,110 @@ testes (~40 arquivos citam `Agente` hoje). O que sustenta a remoção sem transi
 O que **não** é removido: os campos **snapshot** `Passagem.agencia`/`agente` continuam existindo (são
 histórico congelado, ADR-0008) — mudam só de **origem**, passando a ser preenchidos a partir do usuário
 logado em vez de digitados.
+
+### 8. O desenho consolidado dos dois contextos (5ª rodada)
+
+Esta seção é a que vale quando conflitar com §1, §2, §4.1/§4.2 e §7.
+
+#### 8.1 Quem guarda o quê
+
+| | `Usuario` (`users/{uid}`) — **sistema** | `Funcionario` (ex-`Agente`) — **negócio** |
+|---|---|---|
+| Id | o **uid** do Auth | id próprio da coleção |
+| Identidade | e-mail, nome | nome, e-mail |
+| Autorização | **`papel`**: `ADM` / `GESTOR` / `OPERADOR` | **`cargo`**: `SUPERVISOR` / `AGENTE` / … |
+| Organização | — | **`agencia`**, **`lotacao`** |
+| Elo | **`funcionarioId`** (1-1, pode ser vazio) | — |
+
+**Agência e lotação moram só no `Funcionario`.** Não há cópia no perfil: `funcionarios` já é coleção
+**espelhada no Room** (o CRUD do ex-`Agente` existe e sincroniza), então "resolver pelo funcionário" é
+leitura **local**, não ida à rede — o argumento que justificaria um cache no `Usuario` não se sustenta. O que
+P2.2a colocou em `Usuario` (`agencia` default `AUTONOMO` + `lotacao`, `UsuarioDocumento`, `PerfilAutenticado`,
+`MIGRATION_19_20`) é **revertido**. Sobrevive do P2.2a o que era independente disso: o enum `Agencia` fora do
+`Agente` (`model/operacoes/Agencia.kt`), com `AUTONOMO`, `de`/`deOuPadrao` e o `AgenciaTest` — o dono do campo
+muda, a fronteira de leitura não.
+
+> **Horizonte (direção, não trabalho agora):** o app vai abarcar **outros stakeholders da logística**, não só
+> agências — e o `Funcionario` é o agregado que vai receber gente que **não é agente**. É exatamente por isso
+> que o cargo é o eixo aberto (a revisão estrutural) e que "agência" tende a generalizar para *vínculo
+> organizacional* algum dia. **Nada disso entra no MVP:** o foco é **emissão de passagem**, e agência segue
+> enum de conjunto fixo.
+
+#### 8.2 Uma política só, com duas entradas
+
+`PermissoesUsuario` **não se divide**. Continua política única (ADR-0010) — o que muda é que as funções que
+precisam dos dois eixos passam a receber **dois** argumentos:
+
+```
+podeEditarQualquerPassagem(papel, cargo) = ehCargoPlataforma(papel) || cargo == SUPERVISOR
+```
+
+Hoje isso é `ehCargoPlataforma(c) || c == SUPERVISOR` sobre um campo só (`PermissoesUsuario.kt:47-50`) — a
+mesma regra, agora com as duas entradas explícitas em vez de um enum que misturava os contextos. O
+fail-closed é preservado em cada eixo: papel desconhecido não é plataforma, cargo desconhecido não é
+supervisor, e **cargo ausente** (o `ADM`/`GESTOR` sem `Funcionario`) é um caso normal, não um erro — quem
+decide ali é o papel.
+
+Por que uma só, e não duas políticas: **é um MVP de emissão de passagem digital**. Enquanto o app cobre um
+processo só, separar as políticas criaria duas fontes para responder a mesma pergunta de tela. Quando o
+sistema abarcar novos processos do negócio (check-in, embarque, gestão de navio), a política **expande junto**
+— e é aí que o corte por contexto passa a valer o preço.
+
+#### 8.3 O elo: `Usuario.funcionarioId`, 1-1
+
+`users/{uid}` ganha **`funcionarioId`** — um `Funcionario` para no máximo um `Usuario`, e vice-versa. Isso
+fecha o §2.1 sem contradizê-lo: o **e-mail continua sendo a chave de descoberta** (no primeiro acesso ainda
+não existe `users/{uid}`, então o que casa a conta do Auth com o registro é o e-mail), e o **id vira o elo
+permanente** no instante em que o perfil nasce — relacionar por identidade, não por texto (ADR-0008). O
+e-mail é usado **uma vez**; depois disso ninguém mais casa pessoas por string.
+
+**No servidor** o caminho fica escrevível, que era o ponto da pergunta: `cargo()` das regras vira `papel()`
+(o mesmo `get(users/$(uid))` de hoje) e nasce um segundo salto para o cargo de negócio —
+`get(funcionarios/$(papelDoc.funcionarioId)).data.cargo`. São **dois `get` encadeados** (dentro do limite de
+10 por avaliação, mas cobrados como leitura), e o caso "sem `funcionarioId`" precisa ser **explicitamente**
+fail-closed (`exists()` antes do `get`), não por acidente de erro de avaliação.
+
+**Débito registrado:** a unicidade do 1-1 não é imposta pelo Firestore. Fica no cadastro (a gestão não
+pré-cadastra dois funcionários com o mesmo e-mail); se um dia importar, vira índice/validação de servidor.
+
+#### 8.4 `Passagem.funcionarioId` passa a ser o `funcionarioId` **do usuário**
+
+A colisão de nome se resolve fazendo o nome ficar **verdadeiro**: o campo congelado na emissão deixa de ser o
+**uid** e passa a ser o `funcionarioId` do perfil logado. Os dois `funcionarioId` do sistema (o do perfil e o
+do bilhete) passam a apontar para o **mesmo** `funcionarios/{id}` — que é a única configuração em que o nome
+não engana quem chega depois.
+
+O que muda junto (é mudança de significado de campo persistido, não renomeação):
+
+- `FormPassagemViewModel:215` congela `it.funcionarioId` em vez de `it.id`.
+- `DetalhesPassagemViewModel:129` compara a posse com `usuarioLogado.funcionarioId` (a guarda de vazio já
+  existe e passa a ser essencial).
+- `firestore.rules`: `ehDonoPassagem()` (`:35`) e a anti-forja do create (`:132`) comparam com o
+  `funcionarioId` do perfil, não com `request.auth.uid`. Continua não-forjável — o cliente não escreve o
+  próprio `funcionarioId` (é o mesmo campo protegido pela regra anti-escalonamento, §8.5). A imutabilidade
+  do update (`:140`) não muda.
+- **O create passa a exigir `funcionarioId != ''`.** Sem isso, dois usuários de plataforma sem `Funcionario`
+  emitiriam passagens com dono `""` e cada um seria "dono" das do outro. Na prática a regra diz o que o
+  negócio já dizia: **quem emite é da operação** — tem registro de funcionário.
+- **Passagens já emitidas ficam com uid gravado** e, portanto, sem dono válido. Portfólio: **regenera pelo
+  seed**, não faz backfill. (O seed semeia passagens; `users/{uid}` continua nascendo pelo cadastro in-app.)
+
+#### 8.5 A tela do ADM/GESTOR edita o **cargo**; o **papel** ninguém edita
+
+Fecha o ponto que a 4ª rodada tinha reservado ao PO:
+
+- **`cargo` (negócio) é editável em tela** — na edição do ADM/GESTOR. É o que supersede o "o form de membro
+  não tem seletor de cargo" do §4.2: o form do **SUPERVISOR** continua sem seletor; o do ADM/GESTOR ganha um.
+- **`papel` (sistema) não é editável em tela nenhuma** — segue operação de console. A regra
+  anti-escalonamento do ADR-0011 (`users/{uid}` com o cargo imutável no update, `firestore.rules:87-89`)
+  **continua intacta e passa a estar bem nomeada**: ela guarda exatamente o eixo de *sistema*, que é o que
+  não pode ser escalado pelo cliente.
+- **Regra nova em `funcionarios/{id}`:** escrever `cargo` só para `ehCargoPlataforma(papel)`; o `SUPERVISOR`
+  edita membro da própria agência **menos** o cargo; e **ninguém edita o próprio cargo** — é
+  anti-escalonamento do eixo de negócio, porque `cargo == SUPERVISOR` concede `podeEditarQualquerPassagem`
+  (§8.2).
+- Hoje `match /agents/{doc}` (`firestore.rules:106-109`) só deixa **plataforma** escrever — ou seja, o
+  `SUPERVISOR` não conseguiria nem cadastrar membro. Essa regra é reescrita junto, em P2.2b.
 
 ## Plano de migração (faseado, aditivo)
 
@@ -393,33 +509,48 @@ logado em vez de digitados.
   a entidade morre inteira em P2.5.
 - **P2.2 — `Usuario` ganha `agencia` + `lotacao`.** Cresceu de "duas colunas" para uma mudança de
   **provisionamento de identidade** (§2.1), então vai em três passos:
-  - **P2.2a — modelo.** `Usuario` ganha `agencia` (default `AUTONOMO`) + `lotacao`; o enum `Agencia` sai de
-    dentro do `Agente` (que morre em P2.5); espelho `UsuarioDocumento` + migração Room. Não depende das
-    decisões de tela — é a base de tudo.
-  - **P2.2b — cadastro pela gestão.** O registro de agente ganha **e-mail** (é a chave que liga ao Auth);
-    form nos dois recortes (§2.1: ADM/GESTOR com dropdown de agência, SUPERVISOR com a agência implícita) e
-    a lista recortada por cargo (§2.2). Sem coleção nova — reusa o cadastro de agentes.
+  - **P2.2a — modelo. ✅ FEITO, ⚠️ parcialmente revertido em P2.2a′.** `Usuario` ganhou `agencia` (default
+    `AUTONOMO`) + `lotacao`; o enum `Agencia` saiu de dentro do `Agente`; espelho `UsuarioDocumento` +
+    `MIGRATION_19_20`. A revisão estrutural tirou o chão das duas colunas (§8.1) — o enum extraído fica.
+  - **P2.2a′ — dividir os dois contextos.** É o commit estrutural, e vai inteiro ou não vai:
+    `Agente` → **`Funcionario`** (entidade, DAO, repositórios, documento, coleção `agents` → `funcionarios`,
+    form/telas do CRUD, fakes e testes) levando `agencia`/`lotacao` consigo; `Usuario.cargo` → **`papel`**
+    (`ADM`/`GESTOR`/`OPERADOR`) e `Funcionario.cargo` (`SUPERVISOR`/`AGENTE`); `Usuario` ganha
+    **`funcionarioId`** (§8.3) e **perde** `agencia`/`lotacao` — drop de coluna pelo padrão de **recriação de
+    tabela** que as migrações de P2.0 já usam (`DatabaseModule.kt:273-300`), não `ALTER TABLE DROP COLUMN`.
+    `PermissoesUsuario` passa a receber `(papel, cargo)` (§8.2), e `firestore.rules` + a suíte de emulador
+    vão **no mesmo commit** (o fail-closed morde: perfil gravado com `cargo: "AGENTE"` vira papel
+    desconhecido → sem permissão; a saída é console ou recadastro, como em P2.1).
+  - **P2.2b — cadastro pela gestão.** O registro de funcionário ganha **e-mail** (é a chave que liga ao Auth);
+    form nos dois recortes (§2.1: ADM/GESTOR com dropdown de agência **e seletor de cargo** (§8.5),
+    SUPERVISOR com a agência implícita e sem cargo) e a lista recortada por cargo (§2.2). Sem coleção nova.
+    Reescreve a regra de `funcionarios/{id}` (§8.5): supervisor escreve na própria agência, cargo só para
+    plataforma, ninguém escreve o próprio cargo.
   - **P2.2c — primeiro acesso.** Detecção pela dedução do §2.1 (autenticado com senha padrão + existe em
     agentes + não existe `users/{uid}`), tela de criar/confirmar senha, `updatePassword` no Auth,
     nascimento do `users/{uid}`, **desabilitar o autocadastro** e **remover o Google Sign-In** — que é a
     outra porta do mesmo provisionamento automático (§2.1).
-- **P2.3 — Emissão deriva do logado.** Congela agência (do usuário) na Passagem; remove
+- **P2.3 — Emissão deriva do logado.** Congela agência (**do funcionário** do logado, §8.1) na Passagem e
+  muda o significado de `Passagem.funcionarioId` para o id do funcionário (§8.4 — VM, detalhes, regras,
+  create exigindo dono não vazio, seed regenerado); remove
   `ContentAgenciaAreaPassagemForm` + eventos/`runBlocking`, e com ele as validações órfãs de
   `agencia`/`agente` (`ValidacaoDadosPassagem:57-58` exige campos que a UI não mostra).
 - **P2.4 — Identidade visual por agência.** Logo (bundle mapeado) no bilhete/impressão.
-- **P2.5 — Aposentar `Agente`.** Remoção completa (§7): `Agente`, `AgenteDao`, `AgenteRepository`/
-  `AgenteFirestoreRepository`, `AgenteDocumento`, `FormAgente*`/`ResultSearchAgente*`, `ValidacaoAgente`,
-  rotas/destinos, `FakeAgenteRepository` e testes; migração Room que dropa a tabela; seed sem agentes.
-  Só depois de P2.3 (a última leitura viva morre lá).
+- ~~**P2.5 — Aposentar `Agente`.**~~ **Dissolvida** pela revisão estrutural: a entidade não morre, é
+  renomeada — o rename foi para **P2.2a′** (precisa acontecer cedo, porque é o `Funcionario` que passa a
+  hospedar o cargo de negócio) e o CRUD dela vira o CRUD da **Equipe** em P2.2b. Não há fase de deleção.
 - **P2.6 — Escopo por agência na listagem.** Novo eixo em `PermissoesUsuario` (`podeVerTodasAgencias =
-  ehCargoPlataforma`) + filtro por agência do logado nas consultas de passagem quando ele for `false` — isolamento por
-  UI (§3, §4.1). Contagem de Passagem fica **fora** desse filtro por definição (§6).
+  ehCargoPlataforma(papel)`) + filtro pela agência do **funcionário** do logado nas consultas de passagem
+  quando ele for `false` — isolamento por UI (§3, §4.1). Contagem de Passagem fica **fora** desse filtro por
+  definição (§6).
 
 ## Consequências
 
-- **Uma identidade só** — o agente é o usuário; some a duplicação `Agente` × `Usuario`.
-- **Um eixo de permissão só** — tudo pelo cargo (ADR-0010); nenhuma permissão individual por usuário. Menos
-  lugares para perguntar "quem pode".
+- ~~**Uma identidade só**~~ → **duas identidades, um elo** (§8.1/§8.3): `Usuario` responde pelo acesso,
+  `Funcionario` pela pessoa na operação, ligados 1-1 por `funcionarioId`. Não some a duplicação porque não
+  era duplicação — era falta de contexto.
+- **Uma política só, com dois eixos** — `PermissoesUsuario` continua fonte única (ADR-0010), agora recebendo
+  papel **e** cargo (§8.2); nenhuma permissão individual por usuário. Um lugar só para perguntar "quem pode".
 - **Menos código, não mais** — a capability desaparece em vez de mudar de casa; o detalhamento passa a
   mostrar o breakdown de pagamento que hoje esconde.
 - **ADR-0010 ganha um terceiro eixo** — escopo (plataforma × agência), com "todas as passagens" passando a
@@ -528,35 +659,28 @@ Fechamento dos cinco pontos que estavam abertos:
 - **Cargo na tela de edição fica com o PO/analista** — decisão adiada; até lá, pré-cadastro nasce `AGENTE`
   e promoção segue no console.
 
+## Decisões resolvidas na conversa (analista, 2026-07-27) — 5ª rodada (os cinco pontos da revisão)
+
+O desenho que sai daqui está consolidado no **§8**.
+
+1. **Agência e lotação vão para o `Funcionario`** — saem do `Usuario` (revertendo P2.2a). E o horizonte que
+   motiva: o app vai abarcar **vários stakeholders da logística**, não só agências; o `Funcionario` vai
+   agregar gente que **não é agente**. Direção registrada, fora do MVP — **o foco é emissão de passagem**.
+2. **Uma política só, misturando os dois eixos** — `PermissoesUsuario` não se divide. É um MVP de emissão de
+   passagem digital; quando o sistema abarcar novos processos do negócio, a política **expande junto** (§8.2).
+3. **`Usuario.funcionarioId`, relação 1-1** — é o elo entre os dois contextos, e é por ele que as regras do
+   servidor alcançam o cargo de negócio (§8.3). O e-mail continua sendo a chave só do **primeiro acesso**.
+4. **`Passagem.funcionarioId` é o `funcionarioId` do usuário** — não mais o uid. O nome do campo passa a
+   dizer a verdade, e os dois `funcionarioId` do sistema apontam para o mesmo doc (§8.4).
+5. **A tela do ADM/GESTOR mexe no `cargo`, não no `papel`** — cargo de negócio é editável em tela; papel de
+   sistema continua sendo console, com o anti-escalonamento do ADR-0011 guardando exatamente esse eixo (§8.5).
+
 ## Pontos abertos
 
-Da **revisão estrutural** (sistema × negócio), três coisas que ela abre e o analista decide:
-
-- **`Usuario.agencia`/`lotacao` (feitos em P2.2a) saem?** Pela revisão, agência e lotação são **negócio** →
-  moram no `Funcionario`. A emissão (P2.3) resolve a agência pelo funcionário do logado (elo = e-mail), sem
-  precisar de cópia no perfil. Manter cópia no `Usuario` só se for **cache explícito** de login — e cache
-  tem custo: uma alocação nova só vale no próximo login. Minha leitura: **reverter** o par de campos de
-  `Usuario` e deixá-los só no `Funcionario`; a alternativa é assumir o cache por escrito.
-- **`PermissoesUsuario` se divide em duas políticas?** A revisão diz "o que compete no **sistema** se valida
-  pelo papel"; as competências da **operação** escalam no cargo do funcionário. Proposta de corte:
-  acesso a seções e CRUD no app → **papel**; editar/deletar *qualquer* passagem, confirmar embarque e as
-  funções que virão (check-in, gestor de navio) → **cargo do funcionário**. Isso muda
-  `podeEditarQualquerPassagem`, que hoje mistura os dois eixos (`ehCargoPlataforma() || SUPERVISOR`) e
-  passaria a receber **duas** entradas.
-- **Como o servidor enxerga o cargo de negócio?** As regras resolvem o papel com
-  `get(users/$(request.auth.uid))`. Para impor cargo de funcionário, elas precisam alcançar o documento do
-  funcionário por um caminho conhecido — ou o **e-mail é o id** do doc (`get(funcionarios/$(request.auth.token.email))`),
-  ou `users/{uid}` guarda o `funcionarioId`. Decidir isso agora evita descobrir depois que a regra não é
-  escrevível.
-- **Colisão de nome a resolver:** `Passagem.funcionarioId` hoje é o **uid do usuário** (ADR-0010). Com
-  `Funcionario` virando entidade de negócio, esse campo passa a ler como "id do Funcionario" e vai enganar
-  quem chegar depois.
-- **A tela de edição do ADM/GESTOR mexe no cargo?** — **reservado ao PO/analista**, decisão dele, ainda não
-  tomada. Até lá o código segue o caminho conservador: o pré-cadastro nasce **`AGENTE`** e a promoção a
-  `SUPERVISOR` continua sendo operação de **console**, com a regra anti-escalonamento intacta. Quando a
-  decisão vier, o que muda é (a) um campo de cargo na tela do ADM/GESTOR e (b) a regra que hoje congela o
-  cargo no update.
-
-Duas coisas que este ADR só encosta, para depois: promover agência de enum a coleção cadastrável (quando
-houver cadastro de agência) e mover o `groupBy` da contagem de `navioId` p/ `viagemId` (quando o
-Viagem→Trecho der data à viagem).
+- **Unicidade do 1-1 não é imposta** (§8.3) — dois `Funcionario` com o mesmo e-mail quebrariam o elo. Fica no
+  cadastro por ora; vira validação de servidor se importar.
+- **`ADM`/`GESTOR` emitem passagem?** Pelo §8.4 o create exige dono não vazio, então **um usuário de
+  plataforma sem `Funcionario` não emite**. É a leitura correta do negócio (quem emite é da operação), mas é
+  uma restrição nova — se o ADM tiver de emitir, ele precisa de registro de funcionário como qualquer um.
+- Promover agência de enum a **coleção cadastrável** (quando houver cadastro de agência) e mover o `groupBy`
+  da contagem de `navioId` p/ `viagemId` (quando o Viagem→Trecho der data à viagem).
