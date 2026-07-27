@@ -30,7 +30,7 @@ import dev.matheus.fluviapp.ui.components.cards.CommonDetalhamentoCard
 import dev.matheus.fluviapp.ui.components.contents.CommonTopRow
 import dev.matheus.fluviapp.ui.components.contents.DetalhamentoPassagemContent
 import dev.matheus.fluviapp.ui.components.dialogs.CommonInformativeDialog
-import dev.matheus.fluviapp.ui.components.dialogs.ImpressaoDigitalDialog
+import dev.matheus.fluviapp.ui.components.dialogs.EmissaoPassagemDigitalDialog
 import dev.matheus.fluviapp.ui.components.dialogs.ImpressorasDialog
 import dev.matheus.fluviapp.ui.components.forms.buttons.CommonIconButton
 import dev.matheus.fluviapp.ui.components.sheets.BarraInferiorEmissao
@@ -56,10 +56,10 @@ fun DetalhesPassagemScreen(
     onClickEmitir: () -> Unit = {},
     onDismissSheetEmissao: () -> Unit = {},
     onClickImpressaoFisica: () -> Unit = {},
-    onClickImpressaoDigital: () -> Unit = {},
+    onClickEmitirPassagemDigital: () -> Unit = {},
     onClickDismissDialogViaNavio: () -> Unit = {},
     onClickImprimirViaNavio: () -> Unit = {},
-    onDismissDialogImpressaoDigital: () -> Unit = {},
+    onDismissDialogEmissaoPassagemDigital: () -> Unit = {},
     onProcessaImageBitmap: (ImageBitmap) -> Unit = {},
     onClickMenuImpressoras: () -> Unit = {},
     onParearNovaImpressora: () -> Unit = {}
@@ -90,7 +90,7 @@ fun DetalhesPassagemScreen(
             onClickSelecionarImpressora = onClickSelecionarImpressora,
             onClickDismissDialogViaNavio = onClickDismissDialogViaNavio,
             onClickImprimirViaNavio = onClickImprimirViaNavio,
-            onDismissDialogImpressaoDigital = onDismissDialogImpressaoDigital,
+            onDismissDialogEmissaoPassagemDigital = onDismissDialogEmissaoPassagemDigital,
             onProcessaImageBitmap = onProcessaImageBitmap,
             onParearNovaImpressora = onParearNovaImpressora
         )
@@ -169,7 +169,7 @@ fun DetalhesPassagemScreen(
                 modifier,
                 onDismissSheetEmissao,
                 onClickImpressaoFisica,
-                onClickImpressaoDigital
+                onClickEmitirPassagemDigital
             )
         }
 
@@ -189,7 +189,7 @@ private fun DetalhesPassagemDialogHandler(
     onClickSelecionarImpressora: (DadosImpressora) -> Unit,
     onClickDismissDialogViaNavio: () -> Unit,
     onClickImprimirViaNavio: () -> Unit,
-    onDismissDialogImpressaoDigital: () -> Unit,
+    onDismissDialogEmissaoPassagemDigital: () -> Unit,
     onProcessaImageBitmap: (ImageBitmap) -> Unit,
     onParearNovaImpressora: () -> Unit
 ) {
@@ -238,10 +238,10 @@ private fun DetalhesPassagemDialogHandler(
         )
     }
 
-    if (state.isShowDialogImpressaoDigital) {
-        ImpressaoDigitalDialog(
+    if (state.isShowDialogEmissaoPassagemDigital) {
+        EmissaoPassagemDigitalDialog(
             modifier = modifier,
-            onDismiss = onDismissDialogImpressaoDigital,
+            onDismiss = onDismissDialogEmissaoPassagemDigital,
             dadosPassagem = state.dadosPassagem,
             onProcessaImageBitmap = onProcessaImageBitmap
         )

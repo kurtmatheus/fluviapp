@@ -72,9 +72,9 @@ fun NavGraphBuilder.detalhesPassagemNavComposable(
             onDismissSheetEmissao = {
                 viewModel.showSheetEmissao()
             },
-            onClickImpressaoDigital = {
+            onClickEmitirPassagemDigital = {
                 viewModel.showSheetEmissao()
-                viewModel.showDialogImpressaoDigital()
+                viewModel.showDialogEmissaoPassagemDigital()
             },
             onClickImpressaoFisica = {
                 viewModel.showSheetEmissao()
@@ -89,15 +89,15 @@ fun NavGraphBuilder.detalhesPassagemNavComposable(
                 viewModel.impressaoHelper.validarImprimir(context)
                 viewModel.showConfirmDialog()
             },
-            onDismissDialogImpressaoDigital = {
-                viewModel.showDialogImpressaoDigital()
+            onDismissDialogEmissaoPassagemDigital = {
+                viewModel.showDialogEmissaoPassagemDigital()
             },
             onProcessaImageBitmap = {
-                viewModel.passagemDigitalHelper.processaImagemDigital(
+                viewModel.passagemDigitalHelper.emitirPassagemDigital(
                     context = context,
                     imageBitmap = it
                 )
-                viewModel.impressaoHelper.atualizaSituacao(isImpressaoDigital = true)
+                viewModel.impressaoHelper.atualizaSituacao(ehEmissaoDigital = true)
                 context.toastMessage(context.resources.getString(R.string.msg_emissao_bem_sucedida))
             },
             onClickMenuImpressoras = {

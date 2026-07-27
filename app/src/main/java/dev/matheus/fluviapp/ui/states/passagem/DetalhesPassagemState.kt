@@ -10,5 +10,5 @@ data class DetalhesPassagemState(
     val isAdminOuFuncResposavel: Boolean = false,
 
     val isShowSheetEmissao: Boolean = false,
-    val isShowDialogImpressaoDigital: Boolean = false
+    val isShowDialogEmissaoPassagemDigital: Boolean = false
 )

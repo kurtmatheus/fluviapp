@@ -27,8 +27,8 @@ class ImpressaoHelper(
 
     private lateinit var context: Context
 
-    fun atualizaSituacao(isImpressaoDigital: Boolean = false) {
-        if (!ImpressaoPassagem.IS_VIA_CLIENTE || isImpressaoDigital) {
+    fun atualizaSituacao(ehEmissaoDigital: Boolean = false) {
+        if (!ImpressaoPassagem.IS_VIA_CLIENTE || ehEmissaoDigital) {
             runBlocking {
                 try {
                     passagemRepository.transicionar(

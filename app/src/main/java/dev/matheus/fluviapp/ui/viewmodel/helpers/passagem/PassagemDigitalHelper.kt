@@ -37,7 +37,7 @@ class PassagemDigitalHelper(
 
     }
 
-    fun processaImagemDigital(
+    fun emitirPassagemDigital(
         context: Context,
         imageBitmap: ImageBitmap
     ) {

@@ -214,6 +214,9 @@ val listaTipoVeiculoSample = listOf(
 )
 
 val dadosPassagemSample = DadosPassagem(
+    // Sem idPassagem o bilhete não desenha o QR de embarque (é o ponteiro do ADR-0012) — e o preview
+    // ficaria mostrando um bilhete que não embarca.
+    idPassagem = "passagem-modelo-1",
     numero = "2444",
     empresaNome = "NAVEGACAO MODELO",
     navio = "F/B Modelo",
@@ -221,7 +224,7 @@ val dadosPassagemSample = DadosPassagem(
     horaViagem = "12:00",
     origem = "PORTO NORTE",
     destino = "ILHA CENTRAL",
-    agencia = "Matriz",
+    agencia = MATRIZ.name,
     valorAPagar = BigDecimal("1000").formataParaMoedaBrasileira(),
     observacao = "TESTE DE OBSERVACAO",
     tipoPassagem = "INTEIRA",
@@ -237,6 +240,7 @@ val dadosPassagemSample = DadosPassagem(
 )
 
 val dadosPassagemVeiculoSample = DadosPassagem(
+    idPassagem = "passagem-modelo-2",
     numero = "2444",
     empresaNome = "NAVEGACAO MODELO",
     navio = "F/B Modelo",

@@ -27,7 +27,7 @@ fun BarraInferiorEmissao(
     modifier: Modifier,
     onDismissSheetEmissao: () -> Unit,
     onClickImpressaoFisica: () -> Unit,
-    onClickImpressaoDigital: () -> Unit
+    onClickEmitirPassagemDigital: () -> Unit
 ) {
     ModalBottomSheet(
         modifier = modifier.fillMaxWidth(),
@@ -59,7 +59,7 @@ fun BarraInferiorEmissao(
 
             IconButton(
                 modifier = modifier.weight(.5f),
-                onClick = onClickImpressaoDigital
+                onClick = onClickEmitirPassagemDigital
             ) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally
@@ -84,7 +84,7 @@ private fun BarraInferiorEmissaoPreview() {
             modifier = Modifier,
             onDismissSheetEmissao = {},
             onClickImpressaoFisica = {},
-            onClickImpressaoDigital = {}
+            onClickEmitirPassagemDigital = {}
         )
     }
 }

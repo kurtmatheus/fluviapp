@@ -147,10 +147,10 @@ class DetalhesPassagemViewModel @Inject constructor(
         }
     }
 
-    fun showDialogImpressaoDigital() {
+    fun showDialogEmissaoPassagemDigital() {
         _uiState.update {
             it.copy(
-                isShowDialogImpressaoDigital = !it.isShowDialogImpressaoDigital
+                isShowDialogEmissaoPassagemDigital = !it.isShowDialogEmissaoPassagemDigital
             )
         }
     }

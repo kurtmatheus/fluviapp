@@ -17,12 +17,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.layer.drawLayer
 import androidx.compose.ui.graphics.rememberGraphicsLayer
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -30,6 +33,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import dev.matheus.fluviapp.R
+import dev.matheus.fluviapp.model.operacoes.Agencia
 import dev.matheus.fluviapp.model.screendata.DadosPassagem
 import dev.matheus.fluviapp.sampledata.dadosPassagemSample
 import dev.matheus.fluviapp.sampledata.dadosPassagemVeiculoSample
@@ -42,9 +46,15 @@ import dev.matheus.fluviapp.services.printerservice.qrcode.QRCodeGenerator
 import dev.matheus.fluviapp.ui.theme.HeaderNavy
 import dev.matheus.fluviapp.ui.theme.LightColors
 import dev.matheus.fluviapp.ui.theme.SteelTeal
+import dev.matheus.fluviapp.ui.theme.marcaDaAgencia
 
+/**
+ * Emissão da **passagem digital**: renderiza o bilhete, captura como imagem e devolve o bitmap para
+ * quem vai persistir/compartilhar. Não é "impressão" — impressão é o caminho do papel
+ * (`ImpressaoPassagem`, térmica). Aqui a passagem *nasce* em imagem, e o nome passou a dizer isso.
+ */
 @Composable
-fun ImpressaoDigitalDialog(
+fun EmissaoPassagemDigitalDialog(
     modifier: Modifier = Modifier,
     dadosPassagem: DadosPassagem,
     onDismiss: () -> Unit,
@@ -52,14 +62,14 @@ fun ImpressaoDigitalDialog(
 ) {
     val graphicsLayer = rememberGraphicsLayer()
 
-    // usePlatformDefaultWidth = false: sem a largura estreita padrão do Dialog, o ticket ocupa a
-    // largura real e sai com as MESMAS proporções do preview (ConteudoTicketImpressao).
+    // usePlatformDefaultWidth = false: sem a largura estreita padrão do Dialog, o bilhete ocupa a
+    // largura real e sai com as MESMAS proporções do preview (ConteudoPassagemDigital).
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
-        // Box de CAPTURA: grava o conteúdo desenhado no graphicsLayer p/ virar bitmap de impressão
-        // (fundo branco). O conteúdo visual em si mora em ConteudoTicketImpressao (previewável).
+        // Box de CAPTURA: grava o conteúdo desenhado no graphicsLayer p/ virar bitmap
+        // (fundo branco). O conteúdo visual em si mora em ConteudoPassagemDigital (previewável).
         Box(
             modifier = modifier
                 .drawWithContent {
@@ -72,7 +82,7 @@ fun ImpressaoDigitalDialog(
                     drawLayer(graphicsLayer)
                 }
         ) {
-            ConteudoTicketImpressao(
+            ConteudoPassagemDigital(
                 modifier = modifier,
                 dadosPassagem = dadosPassagem
             )
@@ -91,15 +101,21 @@ fun ImpressaoDigitalDialog(
 }
 
 /**
- * Conteúdo visual do ticket digital, SEM o Dialog/captura — por isso é renderizável no @Preview
+ * Conteúdo visual da passagem digital, SEM o Dialog/captura — por isso é renderizável no @Preview
  * (o Dialog não aparece no preview do Android Studio). É aqui que se edita a aparência do bilhete.
- * Força [LightColors] + fundo branco: o ticket é impresso em papel claro, independente do tema do app.
+ * Força [LightColors] + fundo branco: o bilhete é lido claro, independente do tema do app.
+ *
+ * A identidade é a da **agência emissora** (ADR-0015 §5), resolvida do snapshot da passagem: logo 1 no
+ * topo assinando o documento, logo 2 como marca d'água. Sem marca própria (agência coringa ou nome
+ * livre), assina o **FluviApp** — que é o que o app já fazia e segue sendo o default.
  */
 @Composable
-private fun ConteudoTicketImpressao(
+private fun ConteudoPassagemDigital(
     modifier: Modifier = Modifier,
     dadosPassagem: DadosPassagem
 ) {
+    val marca = marcaDaAgencia(dadosPassagem.agencia)
+
     MaterialTheme(colorScheme = LightColors) {
         Box(
             modifier = modifier
@@ -107,16 +123,28 @@ private fun ConteudoTicketImpressao(
                 .background(Color.White)
                 .heightIn(min = 400.dp)
         ) {
-            FluviWordmark(
-                modifier = Modifier.matchParentSize(),
-                fontSize = 64.sp,
-                // Marca d'água no papel branco: gradiente ESCURO (o default claro some sobre fundo
-                // claro). Mesma receita legível do CommonDetalhamentoCard (commits de identidade).
-                alpha = 0.3f,
-                fluviColor = SteelTeal,
-                appGradient = listOf(SteelTeal, HeaderNavy, SteelTeal),
-                strokeWidth = 3f,
-            )
+            if (marca != null) {
+                Image(
+                    painter = painterResource(marca.marcaDagua),
+                    contentDescription = null,
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier
+                        .matchParentSize()
+                        .padding(48.dp)
+                        .alpha(0.12f),
+                )
+            } else {
+                FluviWordmark(
+                    modifier = Modifier.matchParentSize(),
+                    fontSize = 64.sp,
+                    // Marca d'água no papel branco: gradiente ESCURO (o default claro some sobre fundo
+                    // claro). Mesma receita legível do CommonDetalhamentoCard (commits de identidade).
+                    alpha = 0.3f,
+                    fluviColor = SteelTeal,
+                    appGradient = listOf(SteelTeal, HeaderNavy, SteelTeal),
+                    strokeWidth = 3f,
+                )
+            }
 
             Column(
                 modifier = Modifier.fillMaxWidth(),
@@ -128,14 +156,25 @@ private fun ConteudoTicketImpressao(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    FluviWordmark(
-                        modifier = Modifier.padding(16.dp),
-                        fontSize = 28.sp,
-                        // Legível no papel branco: gradiente escuro no lugar do default claro.
-                        fluviColor = SteelTeal,
-                        appGradient = listOf(SteelTeal, HeaderNavy, SteelTeal),
-                        strokeWidth = 3f,
-                    )
+                    if (marca != null) {
+                        Image(
+                            painter = painterResource(marca.logoTopo),
+                            contentDescription = dadosPassagem.agencia,
+                            contentScale = ContentScale.Fit,
+                            modifier = Modifier
+                                .padding(16.dp)
+                                .size(width = 140.dp, height = 56.dp),
+                        )
+                    } else {
+                        FluviWordmark(
+                            modifier = Modifier.padding(16.dp),
+                            fontSize = 28.sp,
+                            // Legível no papel branco: gradiente escuro no lugar do default claro.
+                            fluviColor = SteelTeal,
+                            appGradient = listOf(SteelTeal, HeaderNavy, SteelTeal),
+                            strokeWidth = 3f,
+                        )
+                    }
                     TextTitleBrownRegular(
                         modifier = Modifier.padding(40.dp),
                         text = "#${dadosPassagem.numero}"
@@ -202,9 +241,12 @@ private fun ConteudoTicketImpressao(
                             text = "${dadosPassagem.dataViagem} - ${dadosPassagem.horaViagem}"
                         )
                     }
-
-                    QrCodeEmbarque(idPassagem = dadosPassagem.idPassagem)
                 }
+
+                // O QR fecha o bilhete, centralizado no rodapé: é o que o validador lê na doca
+                // (ADR-0012). Fica FORA da coluna de detalhes de propósito — quem embarca aponta a
+                // câmera para o pé do bilhete, não procura o código no meio dos dados.
+                QrCodeEmbarque(idPassagem = dadosPassagem.idPassagem)
             }
         }
     }
@@ -213,7 +255,7 @@ private fun ConteudoTicketImpressao(
 /**
  * QR de embarque no bilhete digital — paridade com o físico (ImpressaoHelper.printQrCode), que já
  * codifica o id da passagem. É um ponteiro (ADR-0012): o validador lê o doc ao vivo pelo id. Fundo
- * branco fixo (o ticket é papel claro). Só renderiza com id presente (sample/preview sem id: sem QR).
+ * branco fixo (o bilhete é claro). Sem id não há o que ler, então não há QR.
  */
 @Composable
 private fun QrCodeEmbarque(
@@ -222,21 +264,21 @@ private fun QrCodeEmbarque(
 ) {
     if (idPassagem.isBlank()) return
     val qrBitmap = remember(idPassagem) {
-        runCatching { QRCodeGenerator().generate(idPassagem, 240) }.getOrNull()
+        runCatching { QRCodeGenerator().generate(idPassagem, 320) }.getOrNull()
     } ?: return
 
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(top = 16.dp, bottom = 20.dp),
+            .padding(top = 24.dp, bottom = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(6.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Image(
             bitmap = qrBitmap.asImageBitmap(),
             contentDescription = stringResource(R.string.label_qr_embarque),
             modifier = Modifier
-                .size(148.dp)
+                .size(180.dp)
                 .background(Color.White)
         )
         TextRegularBrown(text = stringResource(R.string.label_qr_embarque))
@@ -340,15 +382,21 @@ private fun SecaoVeiculo(
 }
 
 // Previews chamam o CONTEÚDO direto (não o Dialog, que não renderiza no preview). heightDp dá
-// espaço vertical p/ o ticket inteiro aparecer. É por aqui que se ajusta o visual do bilhete.
-@Preview(name = "Passageiro", showBackground = true, heightDp = 720)
+// espaço vertical p/ o bilhete inteiro aparecer, QR incluído. É por aqui que se ajusta o visual.
+@Preview(name = "Agência com marca", showBackground = true, heightDp = 940)
 @Composable
-private fun ImpressaoDigitalPassageiroPreview() {
-    ConteudoTicketImpressao(dadosPassagem = dadosPassagemSample)
+private fun PassagemDigitalComMarcaPreview() {
+    ConteudoPassagemDigital(dadosPassagem = dadosPassagemSample.copy(agencia = Agencia.MATRIZ.name))
 }
 
-@Preview(name = "Veículo", showBackground = true, heightDp = 720)
+@Preview(name = "Sem marca — FluviApp", showBackground = true, heightDp = 940)
 @Composable
-private fun ImpressaoDigitalVeiculoPreview() {
-    ConteudoTicketImpressao(dadosPassagem = dadosPassagemVeiculoSample)
+private fun PassagemDigitalSemMarcaPreview() {
+    ConteudoPassagemDigital(dadosPassagem = dadosPassagemSample.copy(agencia = Agencia.AUTONOMO.name))
+}
+
+@Preview(name = "Veículo", showBackground = true, heightDp = 940)
+@Composable
+private fun PassagemDigitalVeiculoPreview() {
+    ConteudoPassagemDigital(dadosPassagem = dadosPassagemVeiculoSample)
 }
