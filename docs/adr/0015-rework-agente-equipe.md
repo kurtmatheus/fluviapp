@@ -3,8 +3,8 @@
 **Status:** **Aceita** — todos os pontos fechados com o analista (ver *Decisões resolvidas*; o desenho
 vigente dos dois contextos está no **§8**; o regime de schema, no **§9**). **Em implementação:** P2.0, P2.1,
 P2.2a (parcialmente revertido pela revisão estrutural), P2.2a′-0, **P2.2a′**, o rename dos
-identificadores do CRUD de UI, **P2.2b**, **P2.2c** e **P2.3** feitos — restam **P2.4** (identidade visual
-por agência) e **P2.6** (escopo por agência na listagem de passagens). **As strings visíveis não foram
+identificadores do CRUD de UI, **P2.2b**, **P2.2c**, **P2.3** e **P2.4** feitos — resta **P2.6** (escopo por agência na listagem de
+passagens). **As strings visíveis não foram
 renomeadas**: na tela o coletivo é "Equipe" e o indivíduo é "Agente" (P2.1) — o código nomeia a entidade,
 a tela nomeia o que o usuário chama. É o **Pilar 2** do
 [`mvp-roadmap.md`](../design/mvp-roadmap.md) e responde o §6 do
@@ -17,7 +17,7 @@ a tela nomeia o que o usuário chama. É o **Pilar 2** do
 > [ADR-0012](0012-ciclo-de-vida-passagem-e-embarque-qr.md) (o check-in virou QR), o
 > [ADR-0011](0011-regras-firestore-por-cargo.md) (regras Firestore), a
 > nota [Viagem × Trecho](../design/viagem-vs-trecho.md) (a **ocupação das embarcações** é a dimensão que
-> cruza agências) e a [identidade visual](../design/) (branding por agência; `logo1/logo2.png` já no repo).
+> cruza agências) e a [identidade visual](../design/) (branding por agência; os drawables `agencia_matriz_logo1/2.png` no repo).
 
 ## Contexto
 
@@ -345,9 +345,10 @@ a suíte `firestore-tests/rules.test.js`, `CARGO_PADRAO`/`CARGO_PADRAO_AUTOCADAS
 
 ### 5. Identidade visual por agência
 
-O bilhete/impressão resolve o **logo pela agência do emissor**. Por ora, **bundle fixo** (drawable —
-`logo1/logo2.png` já no repo) mapeado por chave de agência; **Storage por agência** fica como futuro. Casa
-com o `FluviWordmark` (marca do app) × logo da agência (marca do emissor).
+O bilhete resolve o **logo pela agência do emissor**. Por ora, **bundle fixo** (drawables
+`agencia_matriz_logo1/2.png`) mapeado por chave de agência; **Storage por agência** fica como futuro.
+Casa com o `FluviWordmark` (marca do app) × logo da agência (marca do emissor) — e é o wordmark que
+assina quando a agência não tem marca própria.
 
 ### 6. O que cruza agências: só a ocupação das embarcações
 
@@ -629,7 +630,19 @@ banco no aparelho, e migrações aditivas nascem de novo — v3, v4… — a par
   `FormPassagemHelper`, que depende de dois repositórios **concretos** (Passagem/Viagem Firestore) sem
   porta. O que o compilador garante é que `agenciaEmissora` é obrigatório e vem do funcionário;
   transformar esses dois repositórios em portas é o pré-requisito do teste.
-- **P2.4 — Identidade visual por agência.** Logo (bundle mapeado) no bilhete/impressão.
+- **P2.4 — Identidade visual por agência. ✅ FEITO** (§5). No **bilhete digital**: logo 1 no topo
+  (assina o documento) e logo 2 como marca d'água, resolvidos da agência congelada no snapshot;
+  `marcaDaAgencia(agencia)` é o mapa, e devolver `null` é o caso **comum** — `AUTONOMO` e as agências
+  de nome livre assinam **FluviApp**. Bundle em drawable, renomeado para dizer de quem é
+  (`logo1/logo2` → `agencia_matriz_logo1/2`). Duas coisas entraram junto, a pedido do analista:
+  1. **O QR passou para o rodapé, centralizado e maior** (180 dp, gerado a 320 px), fora da coluna de
+     detalhes — quem embarca aponta a câmera para o pé do bilhete, não procura o código no meio dos
+     dados. Os samples ganharam `idPassagem`, senão o preview mostrava um bilhete sem QR.
+  2. **"Impressão digital" virou "emissão da passagem digital"** — em português o nome dizia
+     *impressão digital*, o dedo. O fluxo não imprime: renderiza, captura e compartilha; quem imprime é
+     o caminho térmico (`ImpressaoPassagem`), que segue sendo impressão. Renomeados o dialog, o
+     conteúdo, o estado, os eventos e o método do helper. A **impressão física** (o bilhete de papel)
+     continua dormente e sem logo de agência até o módulo de check-in (3ª rodada).
 - ~~**P2.5 — Aposentar `Agente`.**~~ **Dissolvida** pela revisão estrutural: a entidade não morre, é
   renomeada — o rename foi para **P2.2a′** (precisa acontecer cedo, porque é o `Funcionario` que passa a
   hospedar o cargo de negócio) e o CRUD dela vira o CRUD da **Equipe** em P2.2b. Não há fase de deleção.
