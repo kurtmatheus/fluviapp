@@ -3,7 +3,8 @@
 **Status:** **Aceita** — todos os pontos fechados com o analista (ver *Decisões resolvidas*; o desenho
 vigente dos dois contextos está no **§8**; o regime de schema, no **§9**). **Em implementação:** P2.0, P2.1,
 P2.2a (parcialmente revertido pela revisão estrutural), P2.2a′-0, **P2.2a′**, o rename dos
-identificadores do CRUD de UI e **P2.2b** feitos; P2.2c em diante pendentes. **As strings visíveis não foram
+identificadores do CRUD de UI, **P2.2b** e **P2.2c** feitos — o Pilar 2 fecha o provisionamento e segue
+para P2.3 (emissão deriva do logado), P2.4 (identidade visual) e P2.6 (escopo por agência na listagem). **As strings visíveis não foram
 renomeadas**: na tela o coletivo é "Equipe" e o indivíduo é "Agente" (P2.1) — o código nomeia a entidade,
 a tela nomeia o que o usuário chama. É o **Pilar 2** do
 [`mvp-roadmap.md`](../design/mvp-roadmap.md) e responde o §6 do
@@ -595,10 +596,26 @@ banco no aparelho, e migrações aditivas nascem de novo — v3, v4… — a par
        viraram testáveis com fake.
     3. **O supervisor não deleta membro** (edita, não apaga) — o §2.1 só falava de editar, e deleção sem
        dono definido é a que costuma virar buraco. Fica com a plataforma até alguém pedir o contrário.
-  - **P2.2c — primeiro acesso.** Detecção pela dedução do §2.1 (autenticado com senha padrão + existe em
-    agentes + não existe `users/{uid}`), tela de criar/confirmar senha, `updatePassword` no Auth,
-    nascimento do `users/{uid}`, **desabilitar o autocadastro** e **remover o Google Sign-In** — que é a
-    outra porta do mesmo provisionamento automático (§2.1).
+  - **P2.2c — primeiro acesso. ✅ FEITO.** Detecção pela dedução do §2.1, tela de criar/confirmar senha,
+    `updatePassword`, nascimento do `users/{uid}` **já vinculado**, autocadastro e Google Sign-In
+    removidos (com as três dependências do Credential Manager). **57 casos de emulador** (eram 55).
+    Três coisas que o desenho não previa:
+    1. **O gate de e-mail verificado saiu junto.** Ele era a garantia do *autocadastro* de que a pessoa
+       era dona do e-mail; com o pré-cadastro quem responde por isso é a gestão — e a conta criada por
+       ela nasce **não-verificada**, então manter o gate trancaria justamente quem foi cadastrado.
+       "Esqueci a senha" fica: prova posse do e-mail quando isso é necessário.
+    2. **A regra de nascimento do perfil ficou escrevível — e mais forte.** P2.2a′ tinha contornado o
+       problema proibindo vínculo no `create`; agora ela exige que o `funcionarioId` declarado aponte
+       para um funcionário com o **mesmo e-mail** do autenticado. Sem isso, escrever o próprio
+       `funcionarioId` seria escolher de quem são as passagens que se "possui" (§8.4). Só foi possível
+       porque o e-mail entrou no `Funcionario` em P2.2b.
+    3. **A ordem das duas escritas é decisão de projeto:** senha primeiro, perfil depois. Se o perfil
+       nascesse antes e a troca falhasse, o login seguinte deixaria de ser primeiro acesso e a pessoa
+       ficaria presa à senha compartilhada, sem tela que a deixe trocar. Há teste para os dois lados.
+
+    **Continua manual:** a conta no Auth nasce no **console** (a *Nota de execução* do §2.1). O app faz
+    a frente do registro de funcionário; criar a conta pelo app exigiria uma segunda instância de
+    `FirebaseApp` para não deslogar quem cadastra.
 - **P2.3 — Emissão deriva do logado.** Congela agência (**do funcionário** do logado, §8.1) na Passagem e
   muda o significado de `Passagem.funcionarioId` para o id do funcionário (§8.4 — VM, detalhes, regras,
   create exigindo dono não vazio, seed regenerado); remove
