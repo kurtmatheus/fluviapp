@@ -14,7 +14,13 @@ data class LoginUiState(
 
     val exibirErro: Boolean = false,
     val mensagemErro: Int = 0,
-    val exibirReenviarVerificacao: Boolean = false,
+
+    /**
+     * Sinal one-shot do **primeiro acesso** (ADR-0015 §2.1): não-nulo = autenticou, não tem perfil e
+     * existe funcionário com este e-mail. Carrega o **e-mail** porque é ele que casa as duas frentes do
+     * pré-cadastro; a tela de criar senha resolve o funcionário a partir dele.
+     */
+    val primeiroAcessoEmail: String? = null,
 
     val logando: Boolean = false
 )

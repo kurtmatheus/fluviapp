@@ -15,6 +15,13 @@ interface FuncionarioRepository {
     suspend fun obterFuncionariosPorAgencia(agencia: String): List<Funcionario>
     suspend fun deletar(id: String)
 
+    /**
+     * Busca **no servidor**, por e-mail — a única leitura desta porta que não passa pelo espelho Room
+     * (ADR-0003). É o primeiro acesso (ADR-0015 §2.1): a pessoa acabou de autenticar, nada foi
+     * sincronizado ainda, e é justamente este achado que distingue "primeiro acesso" de "não é da casa".
+     */
+    suspend fun obterPorEmailDoServidor(email: String): Funcionario?
+
     companion object {
         const val COLLECTION_FUNCIONARIOS = "funcionarios"
     }

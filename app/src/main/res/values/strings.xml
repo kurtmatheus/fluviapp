@@ -235,25 +235,23 @@
     <!-- Errors -->
     <string name="error_usuario_incorreto">Usuário Inválido.</string>
     <string name="error_falha_auth">Falha na Autenticação.</string>
-    <string name="error_email_nao_verificado">Confirme seu e-mail para entrar.</string>
     <string name="error_emissor_sem_funcionario">Seu acesso não está vinculado a um agente. Procure a gestão para emitir passagens.</string>
     <string name="error_email_invalido">Informe um e-mail válido.</string>
-    <string name="error_email_ja_cadastrado">E-mail já cadastrado. Faça login.</string>
-    <string name="msg_verificacao_reenviada">E-mail de verificação reenviado.</string>
-    <string name="btn_reenviar_verificacao">Reenviar verificação</string>
+    <string name="error_sem_cadastro_na_equipe">Seu e-mail não está cadastrado na equipe. Procure a gestão.</string>
     <string name="btn_esqueci_senha">Esqueci a senha</string>
-    <string name="btn_entrar_google">Entrar com Google</string>
-    <string name="error_google">Falha ao entrar com Google. Tente novamente.</string>
     <string name="msg_recuperacao_enviada">E-mail de recuperação enviado.</string>
     <string name="title_recuperar_senha">Recuperar senha</string>
     <string name="msg_recuperar_senha_instrucao">Informe o e-mail cadastrado. Enviaremos um link para você redefinir sua senha.</string>
     <string name="btn_enviar_recuperacao">Enviar link</string>
-    <string name="title_cadastro">Criar Conta</string>
-    <string name="label_nome_completo">Nome</string>
     <string name="label_confirmar_senha">Confirmar Senha</string>
-    <string name="btn_criar_conta">Criar Conta</string>
-    <string name="btn_ja_tenho_conta">Já tenho conta</string>
-    <string name="msg_cadastro_sucesso">Conta criada. Verifique seu e-mail para entrar.</string>
+
+    <!-- Primeiro acesso (ADR-0015 §2.1) -->
+    <string name="title_primeiro_acesso">Primeiro acesso</string>
+    <string name="msg_primeiro_acesso">Crie a sua senha para continuar.</string>
+    <string name="msg_primeiro_acesso_ola">Olá, %1$s. Crie a sua senha para continuar.</string>
+    <string name="label_nova_senha">Nova Senha</string>
+    <string name="btn_criar_senha">Criar senha</string>
+    <string name="msg_primeiro_acesso_concluido">Senha criada. Entre com ela para continuar.</string>
     <string name="error_senha_curta">Senha deve ter ao menos 6 caracteres.</string>
     <string name="error_senhas_diferentes">As senhas não conferem.</string>
     <string name="error_camp_obrig">Campo Obrigatório</string>

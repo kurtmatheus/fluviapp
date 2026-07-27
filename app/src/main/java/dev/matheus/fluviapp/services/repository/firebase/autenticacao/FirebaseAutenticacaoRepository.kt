@@ -4,8 +4,6 @@ import android.util.Log
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.auth.FirebaseAuthInvalidUserException
-import com.google.firebase.auth.FirebaseAuthUserCollisionException
-import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.firestore.FirebaseFirestore
 import dev.matheus.fluviapp.services.repository.firebase.documents.FuncionarioDocumento
 import dev.matheus.fluviapp.services.repository.operacoes.FuncionarioRepository
@@ -16,8 +14,7 @@ import javax.inject.Inject
 
 /**
  * Impl Firebase da [AutenticacaoRepository]. Único ponto que toca `Task`/exceções do Firebase;
- * converte para [ResultadoAutenticacao] na borda (via [motivoDe]). Escrita de perfil é
- * fire-and-forget (offline-first, como as demais).
+ * converte para [ResultadoAutenticacao] na borda (via [motivoDe]).
  */
 class FirebaseAutenticacaoRepository @Inject constructor(
     private val firebaseAuth: FirebaseAuth,
@@ -26,57 +23,24 @@ class FirebaseAutenticacaoRepository @Inject constructor(
 
     override suspend fun autenticar(email: String, senha: String): ResultadoAutenticacao = try {
         firebaseAuth.signInWithEmailAndPassword(email, senha).await()
-        ResultadoAutenticacao.Sucesso(firebaseAuth.currentUser?.isEmailVerified == true)
-    } catch (e: Exception) {
-        ResultadoAutenticacao.Falha(motivoDe(e))
-    }
-
-    override suspend fun cadastrar(email: String, senha: String): ResultadoAutenticacao = try {
-        firebaseAuth.createUserWithEmailAndPassword(email, senha).await()
-        firebaseAuth.currentUser?.sendEmailVerification()?.await()
-        ResultadoAutenticacao.Sucesso(emailVerificado = false)
-    } catch (e: Exception) {
-        ResultadoAutenticacao.Falha(motivoDe(e))
-    }
-
-    override suspend fun reenviarVerificacao(email: String, senha: String): ResultadoAutenticacao = try {
-        firebaseAuth.signInWithEmailAndPassword(email, senha).await()
-        firebaseAuth.currentUser?.sendEmailVerification()?.await()
-        firebaseAuth.signOut()
-        ResultadoAutenticacao.Sucesso(emailVerificado = false)
+        ResultadoAutenticacao.Sucesso
     } catch (e: Exception) {
         ResultadoAutenticacao.Falha(motivoDe(e))
     }
 
     override suspend fun recuperarSenha(email: String): ResultadoAutenticacao = try {
         firebaseAuth.sendPasswordResetEmail(email).await()
-        ResultadoAutenticacao.Sucesso(emailVerificado = false)
+        ResultadoAutenticacao.Sucesso
     } catch (e: Exception) {
         ResultadoAutenticacao.Falha(motivoDe(e))
     }
 
-    override suspend fun autenticarComGoogle(idToken: String): ResultadoAutenticacao = try {
-        firebaseAuth.signInWithCredential(GoogleAuthProvider.getCredential(idToken, null)).await()
-
-        // 1º login Google → auto-provisiona o perfil; só cria se ausente p/ não sobrescrever cargo.
-        firebaseAuth.currentUser?.let { user ->
-            val docRef = firestore.collection(UsuarioRepository.COLLECTION_USERS).document(user.uid)
-            if (!docRef.get().await().exists()) {
-                docRef.set(
-                    UsuarioDocumento(
-                        email = user.email.orEmpty(),
-                        username = user.displayName ?: user.email.orEmpty(),
-                        papel = PAPEL_PADRAO_AUTOCADASTRO,
-                    )
-                ).await()
-            }
-        }
-        // Conta Google já vem verificada.
-        ResultadoAutenticacao.Sucesso(emailVerificado = true)
+    override suspend fun alterarSenha(novaSenha: String): ResultadoAutenticacao = try {
+        val user = firebaseAuth.currentUser ?: return ResultadoAutenticacao.Falha(MotivoFalhaAuth.USUARIO_INEXISTENTE)
+        user.updatePassword(novaSenha).await()
+        ResultadoAutenticacao.Sucesso
     } catch (e: Exception) {
-        // Log da exceção CRUA: motivoDe() colapsa a maioria em DESCONHECIDO e perde a causa
-        // (provider Google desabilitado, DEVELOPER_ERROR/10 por web client id, rede, etc.).
-        Log.e(TAG, "autenticarComGoogle falhou: ${e.javaClass.simpleName}: ${e.message}", e)
+        Log.e(TAG, "alterarSenha falhou: ${e.javaClass.simpleName}: ${e.message}", e)
         ResultadoAutenticacao.Falha(motivoDe(e))
     }
 
@@ -112,10 +76,22 @@ class FirebaseAutenticacaoRepository @Inject constructor(
         )
     }
 
-    override suspend fun criarPerfil(email: String, username: String, papel: String) {
+    /**
+     * Escrita **aguardada**, ao contrário do resto (que é fire-and-forget offline-first): o primeiro
+     * acesso manda a pessoa logar de novo em seguida, e um perfil que ainda não chegou ao servidor
+     * faria o login seguinte parecer um novo primeiro acesso.
+     */
+    override suspend fun criarPerfil(email: String, username: String, papel: String, funcionarioId: String) {
         val uid = firebaseAuth.currentUser?.uid ?: return
         firestore.collection(UsuarioRepository.COLLECTION_USERS).document(uid)
-            .set(UsuarioDocumento(email = email, username = username, papel = papel))
+            .set(
+                UsuarioDocumento(
+                    email = email,
+                    username = username,
+                    papel = papel,
+                    funcionarioId = funcionarioId,
+                )
+            ).await()
     }
 
     override fun sair() {
@@ -124,8 +100,6 @@ class FirebaseAutenticacaoRepository @Inject constructor(
 
     private companion object {
         private const val TAG = "FirebaseAuthRepo"
-        // Menor privilégio p/ auto-cadastro: OPERADOR é o papel de quem opera (ADR-0015 §8.1).
-        const val PAPEL_PADRAO_AUTOCADASTRO = "OPERADOR"
     }
 }
 
@@ -133,6 +107,5 @@ class FirebaseAutenticacaoRepository @Inject constructor(
 internal fun motivoDe(erro: Throwable): MotivoFalhaAuth = when (erro) {
     is FirebaseAuthInvalidCredentialsException -> MotivoFalhaAuth.CREDENCIAL_INVALIDA
     is FirebaseAuthInvalidUserException -> MotivoFalhaAuth.USUARIO_INEXISTENTE
-    is FirebaseAuthUserCollisionException -> MotivoFalhaAuth.EMAIL_JA_CADASTRADO
     else -> MotivoFalhaAuth.DESCONHECIDO
 }

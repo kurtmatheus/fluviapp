@@ -46,6 +46,9 @@ const F_SUPERVISOR = 'func-supervisor';
 const F_ADM = 'func-adm';
 // Funcionário de OUTRA agência: é ele que prova o isolamento do supervisor (ADR-0015 §2.1).
 const F_OUTRA_AGENCIA = 'func-outra';
+// Pré-cadastrado que ainda não fez o primeiro acesso: tem funcionário, não tem users/{uid}.
+const F_NOVO = 'func-novo';
+const EMAIL_F_NOVO = 'novo@x.com';
 
 let testEnv;
 
@@ -78,10 +81,11 @@ beforeEach(async () => {
     await setDoc(doc(db, 'users', GESTOR), { username: 'g', email: 'g@x.com', papel: 'GESTOR' });
     // Contexto NEGÓCIO: funcionarios/{id} com cargo.
     await setDoc(doc(db, 'funcionarios', F_A), { nome: 'Agente A', agencia: 'MATRIZ', cargo: 'AGENTE' });
-    await setDoc(doc(db, 'funcionarios', F_B), { nome: 'Agente B', agencia: 'MATRIZ', cargo: 'AGENTE' });
+    await setDoc(doc(db, 'funcionarios', F_B), { nome: 'Agente B', agencia: 'MATRIZ', cargo: 'AGENTE', email: 'b@x.com' });
     await setDoc(doc(db, 'funcionarios', F_SUPERVISOR), { nome: 'Supervisor', agencia: 'MATRIZ', cargo: 'SUPERVISOR' });
     await setDoc(doc(db, 'funcionarios', F_ADM), { nome: 'Adm', agencia: 'MATRIZ', cargo: 'AGENTE' });
     await setDoc(doc(db, 'funcionarios', F_OUTRA_AGENCIA), { nome: 'De Outra', agencia: 'AGENCIA MARE', cargo: 'AGENTE' });
+    await setDoc(doc(db, 'funcionarios', F_NOVO), { nome: 'Novo', agencia: 'MATRIZ', cargo: 'AGENTE', email: EMAIL_F_NOVO });
     // Catálogo de exemplo (para os testes de leitura).
     await setDoc(doc(db, 'navios', 'navio-1'), { nome: 'Navio 1' });
     // Passagem alheia (dono = funcionário B) e o contador.
@@ -111,25 +115,46 @@ const asAnon = () => testEnv.unauthenticatedContext().firestore();
 
 // --- users/{uid}: anti-escalonamento de papel e de vínculo ---
 describe('users/{uid} — anti-escalonamento', () => {
-  test('cria o próprio perfil como OPERADOR sem vínculo → OK', async () => {
-    const db = testEnv.authenticatedContext('novo').firestore();
-    await assertSucceeds(setDoc(doc(db, 'users', 'novo'), { username: 'n', email: 'n@x', papel: 'OPERADOR' }));
+  // O nascimento do perfil é o PRIMEIRO ACESSO (ADR-0015 §2.1): quem autoriza o vínculo é o e-mail
+  // que a gestão gravou no pré-cadastro. `novo` autentica com o e-mail do funcionário F_NOVO.
+  const asNovo = () => testEnv.authenticatedContext('novo', { email: EMAIL_F_NOVO }).firestore();
+
+  test('primeiro acesso cria o próprio perfil vinculado ao funcionário do MESMO e-mail → OK', async () => {
+    await assertSucceeds(setDoc(doc(asNovo(), 'users', 'novo'), {
+      username: 'novo', email: EMAIL_F_NOVO, papel: 'OPERADOR', funcionarioId: F_NOVO,
+    }));
   });
 
   test('cria o próprio perfil já como ADM → NEGADO', async () => {
-    const db = testEnv.authenticatedContext('novo').firestore();
-    await assertFails(setDoc(doc(db, 'users', 'novo'), { username: 'n', email: 'n@x', papel: 'ADM' }));
+    await assertFails(setDoc(doc(asNovo(), 'users', 'novo'), {
+      username: 'novo', email: EMAIL_F_NOVO, papel: 'ADM', funcionarioId: F_NOVO,
+    }));
   });
 
-  test('cria o próprio perfil já vinculado a um funcionário → NEGADO', async () => {
-    // Escrever o próprio funcionarioId é escolher de quem são as passagens que ele "possui" (§8.4).
-    const db = testEnv.authenticatedContext('novo').firestore();
-    await assertFails(setDoc(doc(db, 'users', 'novo'), { username: 'n', email: 'n@x', papel: 'OPERADOR', funcionarioId: F_B }));
+  test('cria perfil vinculado ao funcionário de OUTRO e-mail → NEGADO', async () => {
+    // Sem esta regra, escrever o próprio funcionarioId seria escolher de quem são as passagens que se
+    // "possui" (§8.4) — bastaria apontar para o funcionário de outra pessoa.
+    await assertFails(setDoc(doc(asNovo(), 'users', 'novo'), {
+      username: 'novo', email: EMAIL_F_NOVO, papel: 'OPERADOR', funcionarioId: F_B,
+    }));
+  });
+
+  test('cria o próprio perfil SEM vínculo → NEGADO (não existe acesso sem pré-cadastro)', async () => {
+    await assertFails(setDoc(doc(asNovo(), 'users', 'novo'), {
+      username: 'novo', email: EMAIL_F_NOVO, papel: 'OPERADOR',
+    }));
+  });
+
+  test('cria perfil apontando para funcionário inexistente → NEGADO', async () => {
+    await assertFails(setDoc(doc(asNovo(), 'users', 'novo'), {
+      username: 'novo', email: EMAIL_F_NOVO, papel: 'OPERADOR', funcionarioId: 'nao-existe',
+    }));
   });
 
   test('cria perfil de OUTRO uid → NEGADO', async () => {
-    const db = testEnv.authenticatedContext('novo').firestore();
-    await assertFails(setDoc(doc(db, 'users', AGENTE_A), { username: 'x', email: 'x@x', papel: 'OPERADOR' }));
+    await assertFails(setDoc(doc(asNovo(), 'users', AGENTE_A), {
+      username: 'x', email: EMAIL_F_NOVO, papel: 'OPERADOR', funcionarioId: F_NOVO,
+    }));
   });
 
   test('operador tenta se auto-promover a ADM (update do papel) → NEGADO', async () => {

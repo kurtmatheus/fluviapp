@@ -3,6 +3,7 @@ package dev.matheus.fluviapp.extensions
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import dev.matheus.fluviapp.navigation.destinations.ARG_EMAIL_PREFILL
+import dev.matheus.fluviapp.navigation.destinations.ARG_EMAIL_PRIMEIRO_ACESSO
 import dev.matheus.fluviapp.navigation.destinations.FluviAppGraphDestinations
 import dev.matheus.fluviapp.navigation.destinations.FluviAppNavComposableDestinations
 
@@ -28,6 +29,10 @@ fun NavHostController.navegaParaMainScreenGraph() {
 
 fun NavHostController.navegaParaRecuperarSenha(email: String) {
     navigate("${FluviAppGraphDestinations.RecuperarSenha.route}?$ARG_EMAIL_PREFILL=$email")
+}
+
+fun NavHostController.navegaParaPrimeiroAcesso(email: String) {
+    navigate("${FluviAppGraphDestinations.PrimeiroAcesso.route}?$ARG_EMAIL_PRIMEIRO_ACESSO=$email")
 }
 
 fun NavHostController.navegaParaPesquisarViagemGraph() {

@@ -15,6 +15,7 @@ import dev.matheus.fluviapp.extensions.navegaParaLoginGraph
 import dev.matheus.fluviapp.extensions.navegaParaMainScreenGraph
 import dev.matheus.fluviapp.extensions.navegaParaPesquisarPassagemGraph
 import dev.matheus.fluviapp.extensions.navegaParaPesquisarViagemGraph
+import dev.matheus.fluviapp.extensions.navegaParaPrimeiroAcesso
 import dev.matheus.fluviapp.extensions.navegaParaRecuperarSenha
 import dev.matheus.fluviapp.extensions.navegaParaFormularioEmpresa
 import dev.matheus.fluviapp.extensions.navegaParaFormularioNavio
@@ -64,8 +65,8 @@ fun FluviAppNavHost(
             onNavegarParaMainScreen = {
                 navController.navegaParaMainScreenGraph()
             },
-            onNavegaParaCadastro = {
-                navController.navigate(FluviAppGraphDestinations.Cadastro.route)
+            onNavegaParaPrimeiroAcesso = { email ->
+                navController.navegaParaPrimeiroAcesso(email)
             },
             onNavegaParaRecuperarSenha = { email ->
                 navController.navegaParaRecuperarSenha(email)
@@ -73,7 +74,9 @@ fun FluviAppNavHost(
             onVoltarParaLogin = {
                 navController.popBackStack()
             },
-            onVoltarComEmail = { email ->
+            // Volta ao login já com o e-mail preenchido: quem acabou de criar a senha entra de novo
+            // com ela, e digitar o e-mail outra vez seria atrito puro (ADR-0015 §2.1).
+            onPrimeiroAcessoConcluido = { email ->
                 navController.getBackStackEntry(FluviAppGraphDestinations.LoginGraph.route)
                     .savedStateHandle[ARG_EMAIL_PREFILL] = email
                 navController.popBackStack()

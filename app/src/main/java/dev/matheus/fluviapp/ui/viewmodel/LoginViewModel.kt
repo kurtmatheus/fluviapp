@@ -94,25 +94,27 @@ class LoginViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Autentica e decide entre TRÊS desfechos, nesta ordem (ADR-0015 §2.1):
+     *
+     *  1. **Tem perfil** (`users/{uid}`) → sessão aberta, caminho normal.
+     *  2. **Não tem perfil, mas existe funcionário com este e-mail** → é o **primeiro acesso**. Não é um
+     *     convite guardado em lugar nenhum: é uma *dedução* de dois fatos que já existem — a conta
+     *     autenticou e o pré-cadastro está lá.
+     *  3. **Não tem nem um nem outro** → autenticou, mas não é da casa. A conta existe no Auth e não
+     *     tem registro na operação; quem resolve isso é a gestão, não o app.
+     */
     private suspend fun autenticarUsuario() {
         val email = _uiState.value.email
         val senha = _uiState.value.senha
 
         when (val resultado = autenticacaoRepository.autenticar(email, senha)) {
             is ResultadoAutenticacao.Sucesso -> {
-                if (resultado.emailVerificado) {
-                    val usuario = usuarioRepository.salvarUsuarioAutenticado(email)
-                    // Uma leitura a mais no login para resolver o contexto de NEGÓCIO (cargo + nome do
-                    // funcionário): é o mesmo caminho de dois saltos das regras (ADR-0015 §8.3), e o
-                    // espelho Room de `funcionarios` ainda não sincronizou neste ponto do fluxo.
-                    logarUsuario(usuario, autenticacaoRepository.perfilAutenticado())
+                val perfil = autenticacaoRepository.perfilAutenticado()
+                if (perfil != null) {
+                    logarUsuario(usuarioRepository.salvarUsuarioAutenticado(email), perfil)
                 } else {
-                    // gate: nao entra sem e-mail verificado; oferece reenviar.
-                    autenticacaoRepository.sair()
-                    loginFormHelper.exibeErro()
-                    loginFormHelper.setMensagemErro(R.string.error_email_nao_verificado)
-                    _uiState.value =
-                        _uiState.value.copy(logando = false, exibirReenviarVerificacao = true)
+                    deduzirPrimeiroAcesso(email)
                 }
             }
 
@@ -124,74 +126,23 @@ class LoginViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Login com Google: recebe o idToken (obtido na borda de UI via Credential Manager),
-     * autentica na porta, semeia o perfil (Room) e abre a sessão. O `LaunchedEffect(logado)` da
-     * tela cuida de sincronizar e navegar — mesmo caminho do login por e-mail/senha.
-     */
-    fun autenticarComGoogle(idToken: String) {
-        _uiState.update { it.copy(logando = true) }
-        viewModelScope.launch {
-            when (val resultado = autenticacaoRepository.autenticarComGoogle(idToken)) {
-                is ResultadoAutenticacao.Sucesso -> {
-                    val perfil = autenticacaoRepository.perfilAutenticado()
-                    if (perfil != null) {
-                        // Semeia o Room antes de marcar a sessão (evita corrida com o listener).
-                        usuarioRepository.salvar(
-                            Usuario(
-                                id = perfil.id,
-                                email = perfil.email,
-                                username = perfil.username,
-                                papel = perfil.papel,
-                                funcionarioId = perfil.funcionarioId,
-                            )
-                        )
-                        logarUsuario(usuarioRepository.salvarUsuarioAutenticado(perfil.email), perfil)
-                    } else {
-                        Log.e(TAG, "autenticarComGoogle: signIn OK mas perfil ausente em users/{uid}")
-                        loginFormHelper.exibeErro()
-                        loginFormHelper.setMensagemErro(R.string.error_falha_auth)
-                        _uiState.value = _uiState.value.copy(logando = false)
-                    }
-                }
-
-                is ResultadoAutenticacao.Falha -> {
-                    Log.e(TAG, "autenticarComGoogle: Falha motivo=${resultado.motivo}")
-                    loginFormHelper.exibeErro()
-                    loginFormHelper.setMensagemErro(mapearMensagemErroAuth(resultado.motivo))
-                    _uiState.value = _uiState.value.copy(logando = false)
-                }
-            }
+    private suspend fun deduzirPrimeiroAcesso(email: String) {
+        val funcionario = funcionarioRepository.obterPorEmailDoServidor(email)
+        if (funcionario == null) {
+            // Autenticou e não é da casa: sai da sessão para não deixar credencial válida sem perfil.
+            Log.e(TAG, "autenticado sem perfil e sem funcionário para $email")
+            autenticacaoRepository.sair()
+            loginFormHelper.exibeErro()
+            loginFormHelper.setMensagemErro(R.string.error_sem_cadastro_na_equipe)
+            _uiState.value = _uiState.value.copy(logando = false)
+            return
         }
+        _uiState.value = _uiState.value.copy(logando = false, primeiroAcessoEmail = email)
     }
 
-    /** Falha na borda do Credential Manager (não-cancelamento) — feedback ao usuário. */
-    fun falhaLoginGoogle() {
-        loginFormHelper.exibeErro()
-        loginFormHelper.setMensagemErro(R.string.error_google)
-        _uiState.update { it.copy(logando = false) }
-    }
-
-    fun reenviarVerificacao() {
-        val email = _uiState.value.email
-        val senha = _uiState.value.senha
-        _uiState.update { it.copy(logando = true) }
-        viewModelScope.launch {
-            when (val resultado = autenticacaoRepository.reenviarVerificacao(email, senha)) {
-                is ResultadoAutenticacao.Sucesso -> {
-                    loginFormHelper.exibeErro()
-                    loginFormHelper.setMensagemErro(R.string.msg_verificacao_reenviada)
-                    _uiState.value =
-                        _uiState.value.copy(logando = false, exibirReenviarVerificacao = false)
-                }
-
-                is ResultadoAutenticacao.Falha -> {
-                    loginFormHelper.exibeErro()
-                    loginFormHelper.setMensagemErro(mapearMensagemErroAuth(resultado.motivo))
-                    _uiState.value = _uiState.value.copy(logando = false)
-                }
-            }
-        }
+    /** Consome o sinal depois de navegar — senão a volta para o login reabriria a tela de senha. */
+    fun primeiroAcessoConsumido() {
+        _uiState.update { it.copy(primeiroAcessoEmail = null) }
     }
 
     /**

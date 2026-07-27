@@ -159,26 +159,11 @@ fun LoginScreen(
                     isProcessing = state.logando
                 )
 
-                OutlinedButton(
-                    modifier = modifier.fillMaxWidth(),
-                    onClick = onClickGoogle,
-                    enabled = !state.logando
-                ) {
-                    Text(text = stringResource(R.string.btn_entrar_google))
-                }
-
-                if (state.exibirReenviarVerificacao) {
-                    TextButton(onClick = onClickReenviar) {
-                        Text(text = stringResource(R.string.btn_reenviar_verificacao))
-                    }
-                }
-
+                // Só e-mail + senha (ADR-0015 §2.1): o botão do Google e o "criar conta" saíram com o
+                // autocadastro — quem entra é quem a gestão pré-cadastrou. "Esqueci a senha" fica: é o
+                // caminho de quem já tem conta e perdeu a senha, não de quem quer criar uma.
                 TextButton(onClick = { onClickRecuperarSenha(state.email) }) {
                     Text(text = stringResource(R.string.btn_esqueci_senha))
-                }
-
-                TextButton(onClick = onClickCadastrar) {
-                    Text(text = stringResource(R.string.btn_criar_conta))
                 }
             }
         } else {

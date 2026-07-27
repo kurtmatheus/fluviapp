@@ -1,12 +1,9 @@
 package dev.matheus.fluviapp.navigation.graphs
 
-import android.util.Log
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
-import androidx.credentials.exceptions.GetCredentialCancellationException
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavType
@@ -15,24 +12,21 @@ import androidx.navigation.navArgument
 import dev.matheus.fluviapp.R
 import dev.matheus.fluviapp.extensions.toastMessage
 import dev.matheus.fluviapp.navigation.destinations.ARG_EMAIL_PREFILL
+import dev.matheus.fluviapp.navigation.destinations.ARG_EMAIL_PRIMEIRO_ACESSO
 import dev.matheus.fluviapp.navigation.destinations.FluviAppGraphDestinations
-import dev.matheus.fluviapp.services.repository.firebase.autenticacao.GoogleCredentialProvider
-import dev.matheus.fluviapp.ui.screens.CadastroScreen
 import dev.matheus.fluviapp.ui.screens.LoginScreen
+import dev.matheus.fluviapp.ui.screens.PrimeiroAcessoScreen
 import dev.matheus.fluviapp.ui.screens.RecuperarSenhaScreen
-import dev.matheus.fluviapp.ui.viewmodel.CadastroViewModel
 import dev.matheus.fluviapp.ui.viewmodel.LoginViewModel
+import dev.matheus.fluviapp.ui.viewmodel.PrimeiroAcessoViewModel
 import dev.matheus.fluviapp.ui.viewmodel.RecuperarSenhaViewModel
-import kotlinx.coroutines.launch
-
-private const val TAG_LOGIN_GRAPH = "loginGraph"
 
 fun NavGraphBuilder.loginGraph(
     onNavegarParaMainScreen: () -> Unit,
-    onNavegaParaCadastro: () -> Unit,
+    onNavegaParaPrimeiroAcesso: (String) -> Unit,
     onNavegaParaRecuperarSenha: (String) -> Unit,
     onVoltarParaLogin: () -> Unit,
-    onVoltarComEmail: (String) -> Unit,
+    onPrimeiroAcessoConcluido: (String) -> Unit,
 ) {
     composable(
         route = FluviAppGraphDestinations.LoginGraph.route
@@ -41,9 +35,8 @@ fun NavGraphBuilder.loginGraph(
         val state by viewModel.uiState.collectAsState()
 
         val context = LocalContext.current
-        val scope = rememberCoroutineScope()
 
-        // e-mail vindo do cadastro (colisao): pre-preenche uma vez e consome.
+        // e-mail vindo do primeiro acesso: pre-preenche uma vez e consome.
         LaunchedEffect(Unit) {
             val prefill = backStackEntry.savedStateHandle.get<String>(ARG_EMAIL_PREFILL)
             if (!prefill.isNullOrBlank()) {
@@ -58,6 +51,15 @@ fun NavGraphBuilder.loginGraph(
             }
         }
 
+        // Primeiro acesso deduzido (ADR-0015 §2.1): navega e consome o sinal, senão a volta para o
+        // login reabriria a tela de senha.
+        LaunchedEffect(key1 = state.primeiroAcessoEmail) {
+            state.primeiroAcessoEmail?.let { email ->
+                onNavegaParaPrimeiroAcesso(email)
+                viewModel.primeiroAcessoConsumido()
+            }
+        }
+
         LoginScreen(
             state = state,
             onClickVisibilitySenha = {
@@ -67,27 +69,7 @@ fun NavGraphBuilder.loginGraph(
                 viewModel.onNavegaParaMainScreen = onNavegarParaMainScreen
                 viewModel.validarLogin()
             },
-            onClickReenviar = {
-                viewModel.reenviarVerificacao()
-            },
-            onClickCadastrar = onNavegaParaCadastro,
             onClickRecuperarSenha = onNavegaParaRecuperarSenha,
-            onClickGoogle = {
-                scope.launch {
-                    try {
-                        val serverClientId = context.getString(R.string.default_web_client_id)
-                        val idToken = GoogleCredentialProvider.obterIdToken(context, serverClientId)
-                        viewModel.onNavegaParaMainScreen = onNavegarParaMainScreen
-                        viewModel.autenticarComGoogle(idToken)
-                    } catch (e: GetCredentialCancellationException) {
-                        Log.i(TAG_LOGIN_GRAPH, "Login Google cancelado pelo usuário")
-                    } catch (e: Exception) {
-                        // NoCredentialException, ProviderConfigurationException etc. entram aqui.
-                        Log.e(TAG_LOGIN_GRAPH, "Credential Manager falhou: ${e.javaClass.simpleName}: ${e.message}", e)
-                        viewModel.falhaLoginGoogle()
-                    }
-                }
-            },
         )
     }
 
@@ -111,35 +93,35 @@ fun NavGraphBuilder.loginGraph(
     }
 
     composable(
-        route = FluviAppGraphDestinations.Cadastro.route
-    ) {
-        val viewModel = hiltViewModel<CadastroViewModel>()
+        route = "${FluviAppGraphDestinations.PrimeiroAcesso.route}?$ARG_EMAIL_PRIMEIRO_ACESSO={$ARG_EMAIL_PRIMEIRO_ACESSO}",
+        arguments = listOf(
+            navArgument(ARG_EMAIL_PRIMEIRO_ACESSO) {
+                type = NavType.StringType
+                defaultValue = ""
+            }
+        )
+    ) { backStackEntry ->
+        val viewModel = hiltViewModel<PrimeiroAcessoViewModel>()
         val state by viewModel.uiState.collectAsState()
         val context = LocalContext.current
 
-        LaunchedEffect(key1 = state.cadastrado) {
-            if (state.cadastrado) {
-                context.toastMessage(context.getString(R.string.msg_cadastro_sucesso))
-                onVoltarParaLogin()
+        // Senha trocada e perfil criado: a pessoa volta ao login e entra de novo com a senha nova —
+        // é o passo de confirmação do §2.1, e a sessão seguinte já nasce lendo o perfil que existe.
+        LaunchedEffect(key1 = state.concluido) {
+            if (state.concluido) {
+                context.toastMessage(context.getString(R.string.msg_primeiro_acesso_concluido))
+                onPrimeiroAcessoConcluido(
+                    backStackEntry.arguments?.getString(ARG_EMAIL_PRIMEIRO_ACESSO).orEmpty()
+                )
             }
         }
 
-        LaunchedEffect(key1 = state.irParaLoginComEmail) {
-            state.irParaLoginComEmail?.let { email ->
-                context.toastMessage(context.getString(R.string.error_email_ja_cadastrado))
-                onVoltarComEmail(email)
-            }
-        }
-
-        CadastroScreen(
+        PrimeiroAcessoScreen(
             state = state,
-            onClickVoltar = onVoltarParaLogin,
-            onClickVisibilitySenha = {
-                viewModel.cadastroFormHelper.updateSenhaVisible()
-            },
-            onClickCadastrar = {
-                viewModel.cadastrar()
-            },
+            onSenhaChange = viewModel::onSenhaChange,
+            onConfirmacaoChange = viewModel::onConfirmacaoChange,
+            onClickVisibilidade = viewModel::alternarVisibilidadeSenha,
+            onClickConfirmar = viewModel::confirmar,
         )
     }
 }

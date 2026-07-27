@@ -6,14 +6,21 @@ package dev.matheus.fluviapp.services.repository.firebase.autenticacao
  * puro — logo gate/reenviar/cadastro/mapeamento ficam JVM-testáveis com fake.
  */
 sealed interface ResultadoAutenticacao {
-    data class Sucesso(val emailVerificado: Boolean) : ResultadoAutenticacao
+    /**
+     * O `emailVerificado` saiu em P2.2c: o gate de verificação era a garantia do **autocadastro** de que
+     * a pessoa era dona do e-mail. Com o pré-cadastro (ADR-0015 §2.1) quem responde por isso é a gestão,
+     * e a conta criada por ela nasce não-verificada — manter o gate trancaria justamente quem foi
+     * cadastrado. A recuperação de senha continua provando posse do e-mail quando ela é necessária.
+     */
+    data object Sucesso : ResultadoAutenticacao
     data class Falha(val motivo: MotivoFalhaAuth) : ResultadoAutenticacao
 }
 
+// EMAIL_JA_CADASTRADO saiu com o autocadastro (P2.2c): colisão de e-mail só acontecia ao CRIAR conta,
+// e o app não cria mais nenhuma.
 enum class MotivoFalhaAuth {
     CREDENCIAL_INVALIDA,
     USUARIO_INEXISTENTE,
-    EMAIL_JA_CADASTRADO,
     DESCONHECIDO,
 }
 

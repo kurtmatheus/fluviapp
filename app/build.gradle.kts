@@ -130,8 +130,6 @@ dependencies {
     implementation("com.google.firebase:firebase-firestore")
     implementation("com.google.firebase:firebase-crashlytics")
 
-    // Google Sign-In via Credential Manager (moderno; evita o GoogleSignInClient legado).
-    implementation("androidx.credentials:credentials:1.3.0")
-    implementation("androidx.credentials:credentials-play-services-auth:1.3.0")
-    implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
+    // O Credential Manager (Google Sign-In) saiu em P2.2c junto com o autocadastro: o acesso é só
+    // e-mail + senha de quem a gestão pré-cadastrou (ADR-0015 §2.1).
 }

@@ -105,13 +105,23 @@ service cloud.firestore {
     // --- Perfis de usuário: papel e vínculo imutáveis pelo cliente (anti-escalonamento) ---
     match /users/{uid} {
       allow read: if autenticado();
-      // Provisionamento: só o próprio dono, sempre no menor privilégio (nunca nasce ADM pelo cliente) e
-      // SEM vínculo — quem liga um perfil a um funcionário é a gestão (ADR-0015 §8.5). Escrever o
-      // próprio funcionarioId seria escolher de quem são as passagens que ele "possui" (§8.4).
+      // Provisionamento = **primeiro acesso** (ADR-0015 §2.1), e só ele: o autocadastro saiu em P2.2c.
+      // Três exigências, e a terceira é a que fecha o buraco que P2.2a′ tinha deixado aberto:
+      //  1. só o próprio dono (uid do doc == uid autenticado);
+      //  2. sempre no menor privilégio — nunca nasce ADM/GESTOR pelo cliente (esses vêm do console);
+      //  3. o vínculo declarado tem de apontar para um funcionário **com o mesmo e-mail** do autenticado.
+      //     Sem isso, escrever o próprio funcionarioId seria escolher de quem são as passagens que ele
+      //     "possui" (§8.4) — é o e-mail, gravado pela gestão no pré-cadastro, que autoriza o elo.
+      function vinculoConfereComOEmail(fid) {
+        return fid != ''
+            && exists(/databases/$(database)/documents/funcionarios/$(fid))
+            && get(/databases/$(database)/documents/funcionarios/$(fid)).data.get('email', '')
+                 == request.auth.token.email;
+      }
       allow create: if autenticado()
                     && request.auth.uid == uid
                     && request.resource.data.papel == 'OPERADOR'
-                    && request.resource.data.get('funcionarioId', '') == '';
+                    && vinculoConfereComOEmail(request.resource.data.get('funcionarioId', ''));
       // Edita o próprio perfil, mas NUNCA o papel nem o vínculo (ambos são operação de console/gestão).
       allow update: if autenticado()
                     && request.auth.uid == uid

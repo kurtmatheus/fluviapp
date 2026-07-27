@@ -6,6 +6,7 @@ import dev.matheus.fluviapp.model.operacoes.Funcionario
 import dev.matheus.fluviapp.model.operacoes.toDocumento
 import dev.matheus.fluviapp.services.repository.operacoes.FuncionarioRepository.Companion.COLLECTION_FUNCIONARIOS
 import dev.matheus.fluviapp.services.repository.firebase.FonteSnapshots
+import dev.matheus.fluviapp.services.repository.firebase.documents.FuncionarioDocumento
 import dev.matheus.fluviapp.services.repository.firebase.documents.toFuncionario
 import dev.matheus.fluviapp.services.repository.firebase.documents.toFuncionarioDocumento
 import dev.matheus.fluviapp.di.module.SyncScope
@@ -80,6 +81,23 @@ class FuncionarioFirestoreRepository @Inject constructor(
 
     override suspend fun obterFuncionariosPorAgencia(agencia: String) =
         dao.obterTodosPorAgencia(agencia).first()
+
+    /**
+     * Consulta o servidor por e-mail (ADR-0015 §2.1). Não passa pelo Room de propósito: no primeiro
+     * acesso o espelho ainda está vazio — sincronização só começa depois do login. Devolve `null` se
+     * não houver registro, que é o caso "autenticou mas não é da casa".
+     */
+    override suspend fun obterPorEmailDoServidor(email: String): Funcionario? = try {
+        firestore.collection(COLLECTION_FUNCIONARIOS)
+            .whereEqualTo("email", email.trim())
+            .limit(1)
+            .get().await()
+            .documents.firstOrNull()
+            ?.let { it.toObject(FuncionarioDocumento::class.java)?.toFuncionario(it.id) }
+    } catch (e: Exception) {
+        Log.e(TAG, "obterPorEmailDoServidor($email): ${e.message}", e)
+        null
+    }
 
     // Deleta local (otimista) + doc do Firestore. O listener de sessão (ADR-0009) reconcilia o Room.
     // Falha no servidor não derruba a UI — só loga (o doc remanescente re-sincroniza depois).
