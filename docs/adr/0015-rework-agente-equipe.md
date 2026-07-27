@@ -2,8 +2,8 @@
 
 **Status:** **Aceita** — todos os pontos fechados com o analista (ver *Decisões resolvidas*; o desenho
 vigente dos dois contextos está no **§8**; o regime de schema, no **§9**). **Em implementação:** P2.0, P2.1,
-P2.2a (parcialmente revertido pela revisão estrutural), P2.2a′-0, **P2.2a′** e o rename dos
-identificadores do CRUD de UI feitos; P2.2b em diante pendentes. **As strings visíveis não foram
+P2.2a (parcialmente revertido pela revisão estrutural), P2.2a′-0, **P2.2a′**, o rename dos
+identificadores do CRUD de UI e **P2.2b** feitos; P2.2c em diante pendentes. **As strings visíveis não foram
 renomeadas**: na tela o coletivo é "Equipe" e o indivíduo é "Agente" (P2.1) — o código nomeia a entidade,
 a tela nomeia o que o usuário chama. É o **Pilar 2** do
 [`mvp-roadmap.md`](../design/mvp-roadmap.md) e responde o §6 do
@@ -581,11 +581,20 @@ banco no aparelho, e migrações aditivas nascem de novo — v3, v4… — a par
     Sem migração — é edição do DDL (§9). `PermissoesUsuario` passa a receber `(papel, cargo)` (§8.2), e
     `firestore.rules` + a suíte de emulador vão **no mesmo commit** (o fail-closed morde: perfil gravado com
     `cargo: "AGENTE"` vira papel desconhecido → sem permissão; a saída é console ou recadastro, como em P2.1).
-  - **P2.2b — cadastro pela gestão.** O registro de funcionário ganha **e-mail** (é a chave que liga ao Auth);
-    form nos dois recortes (§2.1: ADM/GESTOR com dropdown de agência **e seletor de cargo** (§8.5),
-    SUPERVISOR com a agência implícita e sem cargo) e a lista recortada por cargo (§2.2). Sem coleção nova.
-    Reescreve a regra de `funcionarios/{id}` (§8.5): supervisor escreve na própria agência, cargo só para
-    plataforma, ninguém escreve o próprio cargo.
+  - **P2.2b — cadastro pela gestão. ✅ FEITO.** O registro de funcionário ganhou **e-mail** (a chave que
+    liga ao Auth, validado por *forma* e não só presença); form nos dois recortes (§2.1: ADM/GESTOR com
+    dropdown de agência **e seletor de cargo** (§8.5), SUPERVISOR com a agência implícita e sem cargo); a
+    lista recortada por cargo (§2.2), com o recorte aplicado ao **universo** e não ao filtro; e a regra de
+    `funcionarios/{id}` reescrita (§8.5). Sem coleção nova. **55 casos de emulador** (eram 46).
+    Três coisas que o desenho não previa:
+    1. **`SecaoMenu.EQUIPE` passou a olhar os dois eixos.** Era papel puro — e com isso o supervisor não
+       via a seção que existe para ele. A mistura é a que o §8.2 já assumia; só não estava no menu.
+    2. **Nasceu a porta `SessaoUsuario`** (`ContextoUsuario` = usuário + funcionário). Os recortes pedem
+       papel + cargo + agência do logado, e o caminho `usuário → funcionarioId → funcionário` já estava
+       repetido em três ViewModels, cada um com uma variação. Virou interface — e, por isso, os recortes
+       viraram testáveis com fake.
+    3. **O supervisor não deleta membro** (edita, não apaga) — o §2.1 só falava de editar, e deleção sem
+       dono definido é a que costuma virar buraco. Fica com a plataforma até alguém pedir o contrário.
   - **P2.2c — primeiro acesso.** Detecção pela dedução do §2.1 (autenticado com senha padrão + existe em
     agentes + não existe `users/{uid}`), tela de criar/confirmar senha, `updatePassword` no Auth,
     nascimento do `users/{uid}`, **desabilitar o autocadastro** e **remover o Google Sign-In** — que é a
