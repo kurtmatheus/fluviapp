@@ -11,7 +11,7 @@ import javax.inject.Inject
  * Se o Room tem o dado mas o servidor rejeitou/está offline, é [pendenteDeSync] — degradado, não
  * erro: o dado local reconcilia depois. [falhou] é o desfecho que impede a gravação (Room falhou).
  *
- * Genérica por [entidade] (ex.: "empresa", "viagem", "agente") — a mesma semântica serve os módulos.
+ * Genérica por [entidade] (ex.: "empresa", "viagem", "funcionario") — a mesma semântica serve os módulos.
  */
 class RegistroCadastro @Inject constructor(
     private val telemetry: Telemetry,

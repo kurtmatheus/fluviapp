@@ -9,7 +9,7 @@ import dev.matheus.fluviapp.extensions.navegaParaBalancos
 import dev.matheus.fluviapp.extensions.navegaParaEmbarque
 import dev.matheus.fluviapp.extensions.navegaParaDetalhesPassagem
 import dev.matheus.fluviapp.extensions.navegaParaDetalhesViagem
-import dev.matheus.fluviapp.extensions.navegaParaFormularioAgente
+import dev.matheus.fluviapp.extensions.navegaParaFormularioFuncionario
 import dev.matheus.fluviapp.extensions.navegaParaFormularioViagem
 import dev.matheus.fluviapp.extensions.navegaParaLoginGraph
 import dev.matheus.fluviapp.extensions.navegaParaMainScreenGraph
@@ -18,7 +18,7 @@ import dev.matheus.fluviapp.extensions.navegaParaPesquisarViagemGraph
 import dev.matheus.fluviapp.extensions.navegaParaRecuperarSenha
 import dev.matheus.fluviapp.extensions.navegaParaFormularioEmpresa
 import dev.matheus.fluviapp.extensions.navegaParaFormularioNavio
-import dev.matheus.fluviapp.extensions.navegaParaResultPesquisarAgente
+import dev.matheus.fluviapp.extensions.navegaParaResultPesquisarFuncionario
 import dev.matheus.fluviapp.extensions.navegaParaResultadosPesquisarPassagem
 import dev.matheus.fluviapp.extensions.navegaParaResultadosPesquisarViagem
 import dev.matheus.fluviapp.extensions.navegarParaFormularioPassagemComViagem
@@ -36,8 +36,8 @@ import dev.matheus.fluviapp.navigation.graphs.pesquisarPassagemGraph
 import dev.matheus.fluviapp.navigation.graphs.pesquisarViagemGraph
 import dev.matheus.fluviapp.navigation.graphs.splashGraph
 import dev.matheus.fluviapp.navigation.navcomposables.faturamento.balancoNavComposable
-import dev.matheus.fluviapp.navigation.navcomposables.agente.formAgenteNavComposable
-import dev.matheus.fluviapp.navigation.navcomposables.agente.resultSearchAgenteNavComposable
+import dev.matheus.fluviapp.navigation.navcomposables.funcionario.formFuncionarioNavComposable
+import dev.matheus.fluviapp.navigation.navcomposables.funcionario.resultSearchFuncionarioNavComposable
 import dev.matheus.fluviapp.navigation.navcomposables.passagem.formPassagemNavComposable
 import dev.matheus.fluviapp.navigation.navcomposables.passagem.embarqueNavComposable
 import dev.matheus.fluviapp.navigation.navcomposables.viagem.formViagemNavComposable
@@ -102,11 +102,11 @@ fun FluviAppNavHost(
             onNavegaParaRelatorios = {
                 navController.navegaParaBalancos()
             },
-            onNavegaParaFormularioNovoAgente = {
-                navController.navegaParaFormularioAgente()
+            onNavegaParaFormularioNovoFuncionario = {
+                navController.navegaParaFormularioFuncionario()
             },
-            onNavegaParaFormularioPesquisaAgente = {
-                navController.navegaParaResultPesquisarAgente()
+            onNavegaParaFormularioPesquisaFuncionario = {
+                navController.navegaParaResultPesquisarFuncionario()
             },
             onNavegaParaFormularioNovaEmpresa = {
                 navController.navegaParaFormularioEmpresa()
@@ -197,7 +197,7 @@ fun FluviAppNavHost(
             }
         )
 
-        formAgenteNavComposable(
+        formFuncionarioNavComposable(
             onClickVoltar = {
                 navController.navigateUp()
             },
@@ -206,12 +206,12 @@ fun FluviAppNavHost(
             }
         )
 
-        resultSearchAgenteNavComposable(
+        resultSearchFuncionarioNavComposable(
             onClickVoltar = {
                 navController.navigateUp()
             },
-            onNavegaParaEditorAgente = {
-                navController.navegaParaFormularioAgente(it)
+            onNavegaParaEditorFuncionario = {
+                navController.navegaParaFormularioFuncionario(it)
             }
         )
 

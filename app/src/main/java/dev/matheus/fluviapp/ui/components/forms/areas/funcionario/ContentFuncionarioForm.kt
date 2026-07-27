@@ -1,4 +1,4 @@
-package dev.matheus.fluviapp.ui.components.forms.areas.agente
+package dev.matheus.fluviapp.ui.components.forms.areas.funcionario
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.KeyboardOptions
@@ -12,14 +12,14 @@ import dev.matheus.fluviapp.ui.components.forms.areas.CommonAreaForm
 import dev.matheus.fluviapp.ui.components.forms.dropdowns.DropDownFormField
 import dev.matheus.fluviapp.ui.components.forms.dropdowns.FilterDropDownForm
 import dev.matheus.fluviapp.ui.components.forms.fields.FormTextFieldBrownNoIcon
-import dev.matheus.fluviapp.ui.states.FormAgenteUiState
+import dev.matheus.fluviapp.ui.states.FormFuncionarioUiState
 
 @Composable
-fun ContentAgenteForm(
+fun ContentFuncionarioForm(
     modifier: Modifier,
-    state: FormAgenteUiState,
+    state: FormFuncionarioUiState,
     onAgenciaChange: (String) -> Unit,
-    onAgenteChange: (String) -> Unit,
+    onFuncionarioChange: (String) -> Unit,
     onLotacaoChange: (String) -> Unit,
 ) {
     FilterDropDownForm(
@@ -34,10 +34,10 @@ fun ContentAgenteForm(
 
     FormTextFieldBrownNoIcon(
         modifier = modifier,
-        value = state.agente,
-        onValueChange = onAgenteChange,
+        value = state.funcionario,
+        onValueChange = onFuncionarioChange,
         label = R.string.label_agente,
-        isError = state.isAgenteError,
+        isError = state.isFuncionarioError,
         keyboardOptions = KeyboardOptions(KeyboardCapitalization.Characters),
     )
 
@@ -53,16 +53,16 @@ fun ContentAgenteForm(
 
 @Preview(showBackground = true)
 @Composable
-private fun ContentAgenteFormPreview() {
+private fun ContentFuncionarioFormPreview() {
     CommonAreaForm(
         modifier = Modifier,
         titleArea = R.string.form_area_title_agencia,
     ) {
-        ContentAgenteForm(
+        ContentFuncionarioForm(
             modifier = it,
-            state = FormAgenteUiState(agencia = "MATRIZ", agente = "Agente Modelo", lotacao = "PORTO NORTE"),
+            state = FormFuncionarioUiState(agencia = "MATRIZ", funcionario = "Agente Modelo", lotacao = "PORTO NORTE"),
             onAgenciaChange = {},
-            onAgenteChange = {},
+            onFuncionarioChange = {},
             onLotacaoChange = {},
         )
     }

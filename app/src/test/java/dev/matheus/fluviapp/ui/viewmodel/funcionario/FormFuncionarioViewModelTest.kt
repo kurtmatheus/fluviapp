@@ -1,4 +1,4 @@
-package dev.matheus.fluviapp.ui.viewmodel.agente
+package dev.matheus.fluviapp.ui.viewmodel.funcionario
 
 import androidx.lifecycle.SavedStateHandle
 import dev.matheus.fluviapp.fakes.FakeFuncionarioRepository
@@ -18,7 +18,7 @@ import org.junit.Rule
 import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class FormAgenteViewModelTest {
+class FormFuncionarioViewModelTest {
 
     @get:Rule
     val mainRule = MainDispatcherRule()
@@ -30,28 +30,28 @@ class FormAgenteViewModelTest {
     @Test
     fun `salvar invalido marca erros e nao persiste`() = runTest(mainRule.dispatcher) {
         val fake = FakeFuncionarioRepository()
-        val vm = FormAgenteViewModel(fake, constanteFake(), SavedStateHandle())
+        val vm = FormFuncionarioViewModel(fake, constanteFake(), SavedStateHandle())
         advanceUntilIdle()
 
         vm.salvar()
 
         val s = vm.uiState.value
         assertTrue(s.isAgenciaError)
-        assertTrue(s.isAgenteError)
+        assertTrue(s.isFuncionarioError)
         assertTrue(s.isLotacaoError)
         assertTrue(fake.salvos.isEmpty())
     }
 
     @Test
-    fun `criar persiste agente novo e emite sucesso`() = runTest(mainRule.dispatcher) {
+    fun `criar persiste funcionario novo e emite sucesso`() = runTest(mainRule.dispatcher) {
         val fake = FakeFuncionarioRepository()
-        val vm = FormAgenteViewModel(fake, constanteFake(), SavedStateHandle())
+        val vm = FormFuncionarioViewModel(fake, constanteFake(), SavedStateHandle())
         advanceUntilIdle()
         val eventos = mutableListOf<Unit>()
         val job = launch { vm.sucesso.toList(eventos) }
 
         vm.onAgenciaChange("NOVA")
-        vm.onAgenteChange("Ana")
+        vm.onFuncionarioChange("Ana")
         vm.onLotacaoChange("PORTO NORTE")
         vm.salvar()
         advanceUntilIdle()
@@ -64,15 +64,15 @@ class FormAgenteViewModelTest {
     }
 
     @Test
-    fun `editar atualiza campos e preserva o id do agente persistido`() = runTest(mainRule.dispatcher) {
+    fun `editar atualiza campos e preserva o id do funcionario persistido`() = runTest(mainRule.dispatcher) {
         val fake = FakeFuncionarioRepository().apply {
-            agentes = listOf(Funcionario("a1", "Ana", "MATRIZ", "PORTO NORTE"))
+            funcionarios = listOf(Funcionario("a1", "Ana", "MATRIZ", "PORTO NORTE"))
         }
-        val vm = FormAgenteViewModel(fake, constanteFake(), SavedStateHandle(mapOf("idAgente" to "a1")))
+        val vm = FormFuncionarioViewModel(fake, constanteFake(), SavedStateHandle(mapOf("idFuncionario" to "a1")))
         advanceUntilIdle()
-        assertEquals("Ana", vm.uiState.value.agente)
+        assertEquals("Ana", vm.uiState.value.funcionario)
 
-        vm.onAgenteChange("Ana Maria")
+        vm.onFuncionarioChange("Ana Maria")
         vm.salvar()
         advanceUntilIdle()
 

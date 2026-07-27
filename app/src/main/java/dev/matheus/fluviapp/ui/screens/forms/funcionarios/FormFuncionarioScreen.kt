@@ -1,4 +1,4 @@
-package dev.matheus.fluviapp.ui.screens.forms.agentes
+package dev.matheus.fluviapp.ui.screens.forms.funcionarios
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -17,16 +17,16 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import dev.matheus.fluviapp.R
 import dev.matheus.fluviapp.ui.components.forms.areas.CommonAreaForm
-import dev.matheus.fluviapp.ui.components.forms.areas.agente.ContentAgenteForm
+import dev.matheus.fluviapp.ui.components.forms.areas.funcionario.ContentFuncionarioForm
 import dev.matheus.fluviapp.ui.components.forms.buttons.CommonIconButton
 import dev.matheus.fluviapp.ui.screens.forms.CommonScreenNoBottom
-import dev.matheus.fluviapp.ui.states.FormAgenteUiState
+import dev.matheus.fluviapp.ui.states.FormFuncionarioUiState
 
 @Composable
-fun FormAgenteScreen(
-    uiState: FormAgenteUiState,
+fun FormFuncionarioScreen(
+    uiState: FormFuncionarioUiState,
     onAgenciaChange: (String) -> Unit = {},
-    onAgenteChange: (String) -> Unit = {},
+    onFuncionarioChange: (String) -> Unit = {},
     onLotacaoChange: (String) -> Unit = {},
     onClickSalvar: () -> Unit = {},
     onClickVoltar: () -> Unit = {},
@@ -49,11 +49,11 @@ fun FormAgenteScreen(
                 modifier = modifier,
                 titleArea = uiState.titulo,
             ) {
-                ContentAgenteForm(
+                ContentFuncionarioForm(
                     modifier = modifier,
                     state = uiState,
                     onAgenciaChange = onAgenciaChange,
-                    onAgenteChange = onAgenteChange,
+                    onFuncionarioChange = onFuncionarioChange,
                     onLotacaoChange = onLotacaoChange,
                 )
             }
@@ -81,8 +81,8 @@ fun FormAgenteScreen(
 
 @Preview(showBackground = true)
 @Composable
-private fun FormAgenteScreenPreview() {
-    FormAgenteScreen(
-        uiState = FormAgenteUiState(agencia = "MATRIZ", agente = "Agente Modelo", lotacao = "PORTO NORTE"),
+private fun FormFuncionarioScreenPreview() {
+    FormFuncionarioScreen(
+        uiState = FormFuncionarioUiState(agencia = "MATRIZ", funcionario = "Agente Modelo", lotacao = "PORTO NORTE"),
     )
 }

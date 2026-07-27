@@ -1,4 +1,4 @@
-package dev.matheus.fluviapp.ui.screens.forms.agentes
+package dev.matheus.fluviapp.ui.screens.forms.funcionarios
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -38,12 +38,12 @@ import dev.matheus.fluviapp.ui.components.texts.TextRegularBrown
 import dev.matheus.fluviapp.ui.components.texts.TextSubTitleBrownItalic
 import dev.matheus.fluviapp.ui.components.texts.TextTitleBrownRegular
 import dev.matheus.fluviapp.ui.screens.forms.CommonScreenNoBottom
-import dev.matheus.fluviapp.ui.states.PesquisaAgenteUiState
+import dev.matheus.fluviapp.ui.states.PesquisaFuncionarioUiState
 import dev.matheus.fluviapp.ui.theme.FluviAppTheme
 
 @Composable
-fun ResultSearchAgenteScreen(
-    uiState: PesquisaAgenteUiState,
+fun ResultSearchFuncionarioScreen(
+    uiState: PesquisaFuncionarioUiState,
     onAgenciaChange: (String) -> Unit = {},
     onLotacaoChange: (String) -> Unit = {},
     onClickVoltar: () -> Unit = {},
@@ -59,8 +59,8 @@ fun ResultSearchAgenteScreen(
         isRefreshing = false,
         onClickVoltar = onClickVoltar,
     ) { modifier, titulo ->
-        // agente marcado para deleção (estado local de UI); != null abre o diálogo de confirmação.
-        var agenteParaDeletar by remember { mutableStateOf<Funcionario?>(null) }
+        // Funcionário marcado para deleção (estado local de UI); != null abre o diálogo de confirmação.
+        var funcionarioParaDeletar by remember { mutableStateOf<Funcionario?>(null) }
 
         Column {
             CommonTopRow(modifier = modifier, titulo = titulo)
@@ -89,37 +89,37 @@ fun ResultSearchAgenteScreen(
             FormDashedDivider(modifier = modifier.fillMaxWidth())
 
             LazyColumn {
-                items(uiState.resultados) { agente ->
-                    CardResultAgente(
+                items(uiState.resultados) { funcionario ->
+                    CardResultFuncionario(
                         modifier = modifier,
-                        agente = agente,
+                        funcionario = funcionario,
                         onEditar = onNavegaParaEditor,
-                        onDeletar = { agenteParaDeletar = it },
+                        onDeletar = { funcionarioParaDeletar = it },
                     )
                 }
             }
         }
 
-        agenteParaDeletar?.let { agente ->
+        funcionarioParaDeletar?.let { funcionario ->
             CommonInformativeDialog(
                 modifier = Modifier,
                 textMensagem = R.string.msg_confirmar_exclusao,
                 textConfirm = R.string.btn_excluir,
                 textDismiss = R.string.btn_cancelar,
                 onConfirm = {
-                    onDeletar(agente.id)
-                    agenteParaDeletar = null
+                    onDeletar(funcionario.id)
+                    funcionarioParaDeletar = null
                 },
-                onDismiss = { agenteParaDeletar = null },
+                onDismiss = { funcionarioParaDeletar = null },
             )
         }
     }
 }
 
 @Composable
-fun CardResultAgente(
+fun CardResultFuncionario(
     modifier: Modifier,
-    agente: Funcionario,
+    funcionario: Funcionario,
     onEditar: (String) -> Unit,
     onDeletar: (Funcionario) -> Unit,
 ) {
@@ -145,18 +145,18 @@ fun CardResultAgente(
                 horizontalAlignment = Alignment.Start,
                 verticalArrangement = Arrangement.SpaceEvenly,
             ) {
-                TextSubTitleBrownItalic(text = agente.agencia)
-                TextTitleBrownRegular(text = agente.descricaoNome)
-                TextRegularBrown(text = agente.lotacao)
+                TextSubTitleBrownItalic(text = funcionario.agencia)
+                TextTitleBrownRegular(text = funcionario.descricaoNome)
+                TextRegularBrown(text = funcionario.lotacao)
             }
 
-            IconButton(onClick = { onEditar(agente.id) }) {
+            IconButton(onClick = { onEditar(funcionario.id) }) {
                 Icon(
                     imageVector = Icons.Default.Edit,
                     contentDescription = stringResource(R.string.description_editar),
                 )
             }
-            IconButton(onClick = { onDeletar(agente) }) {
+            IconButton(onClick = { onDeletar(funcionario) }) {
                 Icon(
                     imageVector = Icons.Default.Delete,
                     contentDescription = stringResource(R.string.description_deletar),
@@ -169,10 +169,10 @@ fun CardResultAgente(
 
 @Preview
 @Composable
-private fun ResultSearchAgenteScreenPreview() {
+private fun ResultSearchFuncionarioScreenPreview() {
     FluviAppTheme {
-        ResultSearchAgenteScreen(
-            uiState = PesquisaAgenteUiState(
+        ResultSearchFuncionarioScreen(
+            uiState = PesquisaFuncionarioUiState(
                 agencia = "AGENCIA LITORAL",
                 listaAgencia = listaFuncionarioSample.map { it.agencia },
                 listaLotacao = listaFuncionarioSample.map { it.lotacao }.distinct(),

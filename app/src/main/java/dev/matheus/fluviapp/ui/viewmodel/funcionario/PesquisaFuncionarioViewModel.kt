@@ -1,10 +1,10 @@
-package dev.matheus.fluviapp.ui.viewmodel.agente
+package dev.matheus.fluviapp.ui.viewmodel.funcionario
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.matheus.fluviapp.model.operacoes.Funcionario
 import dev.matheus.fluviapp.services.repository.operacoes.FuncionarioRepository
-import dev.matheus.fluviapp.ui.states.PesquisaAgenteUiState
+import dev.matheus.fluviapp.ui.states.PesquisaFuncionarioUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -14,18 +14,18 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
- * Busca de agentes — VM próprio (não mais compartilhado com o formulário). O filtro por agência
+ * Busca de funcionários — VM próprio (não mais compartilhado com o formulário). O filtro por agência
  * roda aqui (não no composable): `resultados` já vem filtrado.
  */
 @HiltViewModel
-class PesquisaAgenteViewModel @Inject constructor(
+class PesquisaFuncionarioViewModel @Inject constructor(
     private val funcionarioRepository: FuncionarioRepository,
 ) : ViewModel() {
 
     private var todos: List<Funcionario> = emptyList()
 
-    private val _uiState = MutableStateFlow(PesquisaAgenteUiState())
-    val uiState: StateFlow<PesquisaAgenteUiState> = _uiState.asStateFlow()
+    private val _uiState = MutableStateFlow(PesquisaFuncionarioUiState())
+    val uiState: StateFlow<PesquisaFuncionarioUiState> = _uiState.asStateFlow()
 
     init {
         viewModelScope.launch {
@@ -54,7 +54,7 @@ class PesquisaAgenteViewModel @Inject constructor(
         _uiState.update {
             it.copy(
                 listaAgencia = funcionarioRepository.obterTodasAgencias(),
-                listaLotacao = todos.map { agente -> agente.lotacao }.distinct(),
+                listaLotacao = todos.map { funcionario -> funcionario.lotacao }.distinct(),
                 resultados = filtrar(it.agencia, it.lotacao),
             )
         }

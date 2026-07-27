@@ -30,8 +30,8 @@ fun NavGraphBuilder.mainScreenNavComposable(
     onNavegaParaFormularioPesquisaPassagem: () -> Unit,
     onNavegaParaEmbarque: () -> Unit,
     onNavegaParaBalanco: () -> Unit,
-    onNavegaParaFormularioNovoAgente: () -> Unit,
-    onNavegaParaFormularioPesquisaAgente: () -> Unit,
+    onNavegaParaFormularioNovoFuncionario: () -> Unit,
+    onNavegaParaFormularioPesquisaFuncionario: () -> Unit,
     onNavegaParaFormularioNovaEmpresa: () -> Unit,
     onNavegaParaFormularioPesquisaEmpresa: () -> Unit,
     onNavegaParaFormularioNovoNavio: () -> Unit,
@@ -75,8 +75,8 @@ fun NavGraphBuilder.mainScreenNavComposable(
             )
 
             SecaoMenu.EQUIPE -> listOf(
-                DadosBotoesMenus(R.string.btn_novo_agente, R.drawable.ic_add_75, onNavegaParaFormularioNovoAgente),
-                DadosBotoesMenus(R.string.btn_pesquisar_agente, R.drawable.ic_lupa_75, onNavegaParaFormularioPesquisaAgente),
+                DadosBotoesMenus(R.string.btn_novo_agente, R.drawable.ic_add_75, onNavegaParaFormularioNovoFuncionario),
+                DadosBotoesMenus(R.string.btn_pesquisar_agente, R.drawable.ic_lupa_75, onNavegaParaFormularioPesquisaFuncionario),
             )
 
             SecaoMenu.EMPRESA -> listOf(

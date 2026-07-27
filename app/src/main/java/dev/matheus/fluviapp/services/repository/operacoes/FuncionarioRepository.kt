@@ -3,7 +3,7 @@ package dev.matheus.fluviapp.services.repository.operacoes
 import dev.matheus.fluviapp.model.operacoes.Funcionario
 
 /**
- * Porta do repositório de agentes (DIP) — os ViewModels dependem desta interface, não da impl
+ * Porta do repositório de funcionários (DIP) — os ViewModels dependem desta interface, não da impl
  * Firestore. Testes usam um fake; produção usa [FuncionarioFirestoreRepository].
  */
 interface FuncionarioRepository {

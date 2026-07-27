@@ -70,12 +70,12 @@ fun NavHostController.navegaParaEmbarque() {
     navegaDireto(FluviAppNavComposableDestinations.EmbarqueNavComposable.route)
 }
 
-fun NavHostController.navegaParaFormularioAgente(idAgente: String = "") {
-    navegaDireto("${FluviAppNavComposableDestinations.FormAgenteNavComposable.route}?idAgente=$idAgente")
+fun NavHostController.navegaParaFormularioFuncionario(idFuncionario: String = "") {
+    navegaDireto("${FluviAppNavComposableDestinations.FormFuncionarioNavComposable.route}?idFuncionario=$idFuncionario")
 }
 
-fun NavHostController.navegaParaResultPesquisarAgente() {
-    navegaDireto(FluviAppNavComposableDestinations.ResultPesquisarAgenteNavComposable.route)
+fun NavHostController.navegaParaResultPesquisarFuncionario() {
+    navegaDireto(FluviAppNavComposableDestinations.ResultPesquisarFuncionarioNavComposable.route)
 }
 
 fun NavHostController.navegaParaFormularioEmpresa(idEmpresa: String = "") {

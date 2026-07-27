@@ -93,7 +93,7 @@ val listaBotoesMenuViagensSample = listOf(
     )
 )
 
-val listaBotoesMenuAgenteSample = listOf(
+val listaBotoesMenuEquipeSample = listOf(
     DadosBotoesMenus(
         title = R.string.btn_novo_agente,
         icon = R.drawable.ic_add_75
@@ -282,7 +282,7 @@ val userGestorSample = Usuario(
 )
 
 /** O caso comum: OPERADOR no sistema, ligado 1-1 ao funcionário que carrega cargo/agência/lotação. */
-val userAgenteSample = Usuario(
+val userOperadorSample = Usuario(
     id = "3",
     email = "agente@fluviapp.com.br",
     username = "agente",
@@ -301,7 +301,7 @@ val userAutonomoSample = Usuario(
 val listaUserSample = listOf(
     userAdminSample,
     userGestorSample,
-    userAgenteSample
+    userOperadorSample
 )
 
 val listaDadosBalancoPassagems = listOf(

@@ -1,4 +1,4 @@
-package dev.matheus.fluviapp.ui.viewmodel.agente
+package dev.matheus.fluviapp.ui.viewmodel.funcionario
 
 import dev.matheus.fluviapp.fakes.FakeFuncionarioRepository
 import dev.matheus.fluviapp.model.operacoes.Funcionario
@@ -13,7 +13,7 @@ import org.junit.Rule
 import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class PesquisaAgenteViewModelTest {
+class PesquisaFuncionarioViewModelTest {
 
     @get:Rule
     val mainRule = MainDispatcherRule()
@@ -25,10 +25,10 @@ class PesquisaAgenteViewModelTest {
     )
 
     @Test
-    fun `carrega todos os agentes e as agencias`() = runTest(mainRule.dispatcher) {
-        val fake = FakeFuncionarioRepository().apply { agentes = amostra }
+    fun `carrega todos os funcionarios e as agencias`() = runTest(mainRule.dispatcher) {
+        val fake = FakeFuncionarioRepository().apply { funcionarios = amostra }
 
-        val vm = PesquisaAgenteViewModel(fake)
+        val vm = PesquisaFuncionarioViewModel(fake)
         advanceUntilIdle()
 
         assertEquals(3, vm.uiState.value.resultados.size)
@@ -37,8 +37,8 @@ class PesquisaAgenteViewModelTest {
 
     @Test
     fun `filtra resultados por agencia no VM`() = runTest(mainRule.dispatcher) {
-        val fake = FakeFuncionarioRepository().apply { agentes = amostra }
-        val vm = PesquisaAgenteViewModel(fake)
+        val fake = FakeFuncionarioRepository().apply { funcionarios = amostra }
+        val vm = PesquisaFuncionarioViewModel(fake)
         advanceUntilIdle()
 
         vm.onAgenciaChange("AGENCIA LIT")
@@ -49,8 +49,8 @@ class PesquisaAgenteViewModelTest {
 
     @Test
     fun `carrega lotacoes distintas`() = runTest(mainRule.dispatcher) {
-        val fake = FakeFuncionarioRepository().apply { agentes = amostra }
-        val vm = PesquisaAgenteViewModel(fake)
+        val fake = FakeFuncionarioRepository().apply { funcionarios = amostra }
+        val vm = PesquisaFuncionarioViewModel(fake)
         advanceUntilIdle()
 
         assertEquals(2, vm.uiState.value.listaLotacao.size) // PORTO NORTE, ILHA CENTRAL
@@ -58,8 +58,8 @@ class PesquisaAgenteViewModelTest {
 
     @Test
     fun `filtra por lotacao (dropdown, match exato)`() = runTest(mainRule.dispatcher) {
-        val fake = FakeFuncionarioRepository().apply { agentes = amostra }
-        val vm = PesquisaAgenteViewModel(fake)
+        val fake = FakeFuncionarioRepository().apply { funcionarios = amostra }
+        val vm = PesquisaFuncionarioViewModel(fake)
         advanceUntilIdle()
 
         vm.onLotacaoChange("PORTO NORTE")
@@ -69,8 +69,8 @@ class PesquisaAgenteViewModelTest {
 
     @Test
     fun `combina filtro de agencia e lotacao`() = runTest(mainRule.dispatcher) {
-        val fake = FakeFuncionarioRepository().apply { agentes = amostra }
-        val vm = PesquisaAgenteViewModel(fake)
+        val fake = FakeFuncionarioRepository().apply { funcionarios = amostra }
+        val vm = PesquisaFuncionarioViewModel(fake)
         advanceUntilIdle()
 
         vm.onAgenciaChange("AGENCIA MARE")
@@ -81,9 +81,9 @@ class PesquisaAgenteViewModelTest {
     }
 
     @Test
-    fun `deletar remove o agente e recarrega os resultados`() = runTest(mainRule.dispatcher) {
-        val fake = FakeFuncionarioRepository().apply { agentes = amostra }
-        val vm = PesquisaAgenteViewModel(fake)
+    fun `deletar remove o funcionario e recarrega os resultados`() = runTest(mainRule.dispatcher) {
+        val fake = FakeFuncionarioRepository().apply { funcionarios = amostra }
+        val vm = PesquisaFuncionarioViewModel(fake)
         advanceUntilIdle()
 
         vm.onDeletar("1")

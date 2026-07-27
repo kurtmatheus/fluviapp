@@ -1,4 +1,4 @@
-package dev.matheus.fluviapp.navigation.navcomposables.agente
+package dev.matheus.fluviapp.navigation.navcomposables.funcionario
 
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -12,17 +12,17 @@ import androidx.navigation.navArgument
 import dev.matheus.fluviapp.R
 import dev.matheus.fluviapp.extensions.toastMessage
 import dev.matheus.fluviapp.navigation.destinations.FluviAppNavComposableDestinations
-import dev.matheus.fluviapp.ui.screens.forms.agentes.FormAgenteScreen
-import dev.matheus.fluviapp.ui.viewmodel.agente.FormAgenteViewModel
+import dev.matheus.fluviapp.ui.screens.forms.funcionarios.FormFuncionarioScreen
+import dev.matheus.fluviapp.ui.viewmodel.funcionario.FormFuncionarioViewModel
 
-internal const val ID_AGENTE_ARGUMENT = "idAgente"
+internal const val ID_AGENTE_ARGUMENT = "idFuncionario"
 
-fun NavGraphBuilder.formAgenteNavComposable(
+fun NavGraphBuilder.formFuncionarioNavComposable(
     onClickVoltar: () -> Unit,
     onNavegaParaMainScreen: () -> Unit,
 ) {
     composable(
-        route = "${FluviAppNavComposableDestinations.FormAgenteNavComposable.route}?$ID_AGENTE_ARGUMENT={$ID_AGENTE_ARGUMENT}",
+        route = "${FluviAppNavComposableDestinations.FormFuncionarioNavComposable.route}?$ID_AGENTE_ARGUMENT={$ID_AGENTE_ARGUMENT}",
         arguments = listOf(
             navArgument(ID_AGENTE_ARGUMENT) {
                 type = NavType.StringType
@@ -30,7 +30,7 @@ fun NavGraphBuilder.formAgenteNavComposable(
             }
         ),
     ) {
-        val viewModel = hiltViewModel<FormAgenteViewModel>()
+        val viewModel = hiltViewModel<FormFuncionarioViewModel>()
         val uiState by viewModel.uiState.collectAsState()
         val context = LocalContext.current
 
@@ -41,10 +41,10 @@ fun NavGraphBuilder.formAgenteNavComposable(
             }
         }
 
-        FormAgenteScreen(
+        FormFuncionarioScreen(
             uiState = uiState,
             onAgenciaChange = viewModel::onAgenciaChange,
-            onAgenteChange = viewModel::onAgenteChange,
+            onFuncionarioChange = viewModel::onFuncionarioChange,
             onLotacaoChange = viewModel::onLotacaoChange,
             onClickSalvar = viewModel::salvar,
             onClickVoltar = onClickVoltar,
