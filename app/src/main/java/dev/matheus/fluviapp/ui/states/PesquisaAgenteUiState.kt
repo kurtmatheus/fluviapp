@@ -1,6 +1,6 @@
 package dev.matheus.fluviapp.ui.states
 
-import dev.matheus.fluviapp.model.cadastro.passagem.Agente
+import dev.matheus.fluviapp.model.operacoes.Funcionario
 
 /**
  * Estado da busca de agentes — separado do formulário (molde: form e busca não compartilham VM/state).
@@ -11,5 +11,5 @@ data class PesquisaAgenteUiState(
     val listaAgencia: List<String> = emptyList(),
     val lotacao: String = "",
     val listaLotacao: List<String> = emptyList(),
-    val resultados: List<Agente> = emptyList(),
+    val resultados: List<Funcionario> = emptyList(),
 )

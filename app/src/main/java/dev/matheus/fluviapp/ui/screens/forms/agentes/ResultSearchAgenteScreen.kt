@@ -28,8 +28,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import dev.matheus.fluviapp.R
-import dev.matheus.fluviapp.model.cadastro.passagem.Agente
-import dev.matheus.fluviapp.sampledata.listaAgenteSample
+import dev.matheus.fluviapp.model.operacoes.Funcionario
+import dev.matheus.fluviapp.sampledata.listaFuncionarioSample
 import dev.matheus.fluviapp.ui.components.contents.CommonTopRow
 import dev.matheus.fluviapp.ui.components.dialogs.CommonInformativeDialog
 import dev.matheus.fluviapp.ui.components.forms.divider.FormDashedDivider
@@ -60,7 +60,7 @@ fun ResultSearchAgenteScreen(
         onClickVoltar = onClickVoltar,
     ) { modifier, titulo ->
         // agente marcado para deleção (estado local de UI); != null abre o diálogo de confirmação.
-        var agenteParaDeletar by remember { mutableStateOf<Agente?>(null) }
+        var agenteParaDeletar by remember { mutableStateOf<Funcionario?>(null) }
 
         Column {
             CommonTopRow(modifier = modifier, titulo = titulo)
@@ -119,9 +119,9 @@ fun ResultSearchAgenteScreen(
 @Composable
 fun CardResultAgente(
     modifier: Modifier,
-    agente: Agente,
+    agente: Funcionario,
     onEditar: (String) -> Unit,
-    onDeletar: (Agente) -> Unit,
+    onDeletar: (Funcionario) -> Unit,
 ) {
     Column {
         Row(
@@ -174,9 +174,9 @@ private fun ResultSearchAgenteScreenPreview() {
         ResultSearchAgenteScreen(
             uiState = PesquisaAgenteUiState(
                 agencia = "AGENCIA LITORAL",
-                listaAgencia = listaAgenteSample.map { it.agencia },
-                listaLotacao = listaAgenteSample.map { it.lotacao }.distinct(),
-                resultados = listaAgenteSample.filter { it.agencia == "AGENCIA LITORAL" },
+                listaAgencia = listaFuncionarioSample.map { it.agencia },
+                listaLotacao = listaFuncionarioSample.map { it.lotacao }.distinct(),
+                resultados = listaFuncionarioSample.filter { it.agencia == "AGENCIA LITORAL" },
             )
         )
     }

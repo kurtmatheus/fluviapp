@@ -27,10 +27,10 @@ class DocumentoBrutoMappersTest {
     }
 
     @Test
-    fun `toAgenteDocumento le os textos e campos ausentes viram default`() {
+    fun `toFuncionarioDocumento le os textos e campos ausentes viram default`() {
         val bruto = DocumentoBruto("a1", mapOf("nome" to "Agente", "lotacao" to "PORTO NORTE"))
 
-        val doc = bruto.toAgenteDocumento()
+        val doc = bruto.toFuncionarioDocumento()
 
         assertEquals("Agente", doc.nome)
         assertEquals("PORTO NORTE", doc.lotacao)

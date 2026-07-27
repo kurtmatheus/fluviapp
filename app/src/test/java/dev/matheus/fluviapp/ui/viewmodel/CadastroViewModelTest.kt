@@ -52,7 +52,9 @@ class CadastroViewModelTest {
 
         assertTrue(vm.uiState.value.cadastrado)
         assertFalse(vm.uiState.value.cadastrando)
-        assertEquals("AGENTE", fake.perfilCriado?.third)
+        // Nasce OPERADOR: papel de SISTEMA, o coringa de quem opera (ADR-0015 §8.1). O cargo de
+        // negócio não é escolhido no autocadastro — nem existe até a gestão vincular um funcionário.
+        assertEquals("OPERADOR", fake.perfilCriado?.third)
         assertEquals("ana@teste.com", fake.perfilCriado?.first)
         assertEquals(1, fake.saiuVezes)
     }

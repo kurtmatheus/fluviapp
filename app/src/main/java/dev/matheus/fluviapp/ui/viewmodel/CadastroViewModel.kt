@@ -39,7 +39,9 @@ class CadastroViewModel @Inject constructor(
             when (val resultado = autenticacaoRepository.cadastrar(email, senha)) {
                 is ResultadoAutenticacao.Sucesso -> {
                     // perfil na verdade (Firestore); nao entra logado (gate exige verificado).
-                    autenticacaoRepository.criarPerfil(email = email, nome = nome, cargo = CARGO_PADRAO)
+                    // O campo "nome" do autocadastro vira USERNAME: o Usuario não tem nome (ADR-0015 §8.1). Nasce
+                    // sem vínculo de funcionário — quem vincula é a gestão, nunca o próprio (§8.5).
+                    autenticacaoRepository.criarPerfil(email = email, username = nome, papel = PAPEL_PADRAO)
                     autenticacaoRepository.sair()
                     _uiState.update { it.copy(cadastrando = false, cadastrado = true) }
                 }
@@ -59,6 +61,6 @@ class CadastroViewModel @Inject constructor(
     }
 
     companion object {
-        private const val CARGO_PADRAO = "AGENTE"
+        private const val PAPEL_PADRAO = "OPERADOR"
     }
 }

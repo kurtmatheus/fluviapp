@@ -15,7 +15,7 @@ import dev.matheus.fluviapp.model.rascunho.montarRascunho
 import dev.matheus.fluviapp.navigation.navcomposables.passagem.EDIT_PASSAGEM_ARGUMENT
 import dev.matheus.fluviapp.navigation.navcomposables.passagem.FORM_PASSAGEM_ARGUMENT
 import dev.matheus.fluviapp.services.repository.cadastro.ConstanteRepository
-import dev.matheus.fluviapp.services.repository.cadastro.passagem.AgenteRepository
+import dev.matheus.fluviapp.services.repository.operacoes.FuncionarioRepository
 import dev.matheus.fluviapp.services.repository.firebase.PassagemFirestoreRepository
 import dev.matheus.fluviapp.services.repository.firebase.ViagemFirestoreRepository
 import dev.matheus.fluviapp.services.repository.operacoes.UsuarioRepository
@@ -54,7 +54,7 @@ class FormPassagemViewModel @Inject constructor(
     private val usuarioRepository: UsuarioRepository,
     private val constanteRepository: ConstanteRepository,
     private val viagemRepository: ViagemFirestoreRepository,
-    private val agenteRepository: AgenteRepository,
+    private val funcionarioRepository: FuncionarioRepository,
     private val passagemRepository: PassagemFirestoreRepository,
     private val rascunhoStore: RascunhoStore,
     private val emissaoTelemetry: Telemetry,
@@ -135,7 +135,7 @@ class FormPassagemViewModel @Inject constructor(
             uiStateVeiculo = _uiStateVeiculo,
             constanteRepository = constanteRepository,
             viagemRepository = viagemRepository,
-            agenteRepository = agenteRepository,
+            funcionarioRepository = funcionarioRepository,
             passagemRepository = passagemRepository,
             viagemDadosViagemMapper = viagemDadosViagemMapper,
         )
@@ -208,10 +208,23 @@ class FormPassagemViewModel @Inject constructor(
 
         val usuarioLogado = usuarioRepository.obterUltimoUsuarioLogado()
 
-        return usuarioLogado?.let {
+        // Quem emite é o FUNCIONÁRIO do logado (ADR-0015 §8.4): o par congelado no bilhete
+        // (funcionarioId + funcionarioResponsavel) passa a vir todo da mesma entidade, e o nome do
+        // campo deixa de mentir. Sem vínculo (papel puro de plataforma) não há emissor — bloqueia, em
+        // vez de gravar uma passagem órfã que o servidor rejeitaria.
+        val funcionarioEmissor = usuarioLogado?.funcionarioId
+            ?.takeIf { it.isNotBlank() }
+            ?.let { funcionarioRepository.obterPorId(it) }
+
+        if (usuarioLogado != null && funcionarioEmissor == null) {
+            context.toastMessage(context.resources.getString(R.string.error_emissor_sem_funcionario))
+            return null
+        }
+
+        return funcionarioEmissor?.let {
             val id = formPassagemHelper.salvarPassagem(
                 idPassagem = idPassagem,
-                funcionarioResponsavel = it.nome,
+                funcionarioResponsavel = it.descricaoNome,
                 funcionarioId = it.id
             )
             // promoção volátil/cacheada -> sólida: descarta o rascunho (invariante snapshot ⇔ rascunho).

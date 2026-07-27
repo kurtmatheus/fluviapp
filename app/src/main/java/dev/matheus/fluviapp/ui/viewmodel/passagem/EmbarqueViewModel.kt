@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.matheus.fluviapp.model.passagem.ResultadoEmbarque
 import dev.matheus.fluviapp.services.repository.firebase.PassagemFirestoreRepository
+import dev.matheus.fluviapp.services.repository.operacoes.FuncionarioRepository
 import dev.matheus.fluviapp.services.repository.operacoes.UsuarioRepository
 import dev.matheus.fluviapp.ui.states.passagem.EmbarqueUiState
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,6 +23,7 @@ import javax.inject.Inject
 class EmbarqueViewModel @Inject constructor(
     private val passagemRepository: PassagemFirestoreRepository,
     private val usuarioRepository: UsuarioRepository,
+    private val funcionarioRepository: FuncionarioRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(EmbarqueUiState())
@@ -50,10 +52,17 @@ class EmbarqueViewModel @Inject constructor(
         _uiState.update { it.copy(processando = true) }
         viewModelScope.launch {
             val operador = usuarioRepository.obterUltimoUsuarioLogado()
+            // O carimbo tem DUAS naturezas: `embarcadaPorId` continua sendo o **uid** — é o que a regra
+            // do servidor confere contra `request.auth.uid` (ADR-0012), e forjar autoria continua
+            // impossível. O nome exibido, esse, é do FUNCIONÁRIO (ADR-0015 §8.1); sem vínculo, o username.
+            val nomeOperador = operador?.funcionarioId
+                ?.takeIf { it.isNotBlank() }
+                ?.let { funcionarioRepository.obterPorId(it)?.descricaoNome }
+                ?: operador?.username.orEmpty()
             val resultado = if (operador == null) {
                 ResultadoEmbarque.NaoEncontrada
             } else {
-                passagemRepository.confirmarEmbarque(passagem.id, operador.id, operador.nome)
+                passagemRepository.confirmarEmbarque(passagem.id, operador.id, nomeOperador)
             }
             _uiState.update { it.copy(processando = false, passagem = null, resultado = resultado) }
         }

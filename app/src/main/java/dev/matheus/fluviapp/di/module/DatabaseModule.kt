@@ -8,7 +8,7 @@ import com.google.gson.Gson
 import dev.matheus.fluviapp.database.FluviAppDatabase
 import dev.matheus.fluviapp.database.dao.ContadorDao
 import dev.matheus.fluviapp.database.dao.cadastro.ConstanteDao
-import dev.matheus.fluviapp.database.dao.cadastro.passagem.AgenteDao
+import dev.matheus.fluviapp.database.dao.operacoes.FuncionarioDao
 import dev.matheus.fluviapp.database.dao.cadastro.viagem.EmpresaDao
 import dev.matheus.fluviapp.database.dao.cadastro.viagem.NavioDao
 import dev.matheus.fluviapp.database.dao.cadastro.viagem.TarifaViagemDao
@@ -52,7 +52,7 @@ val MIGRATION_1_2 = object : Migration(1, 2) {
 
 /** DDL da v2 — cópia fiel do `createSql` exportado pelo Room (uma linha por tabela/índice). */
 private val DDL_V2 = listOf(
-    "CREATE TABLE IF NOT EXISTS `Usuario` (`id` TEXT NOT NULL, `email` TEXT NOT NULL, `nome` TEXT NOT NULL, `cargo` TEXT NOT NULL, `agencia` TEXT NOT NULL, `lotacao` TEXT NOT NULL, `ultimoUsuarioLogado` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+    "CREATE TABLE IF NOT EXISTS `Usuario` (`id` TEXT NOT NULL, `email` TEXT NOT NULL, `username` TEXT NOT NULL, `papel` TEXT NOT NULL, `funcionarioId` TEXT NOT NULL, `ultimoUsuarioLogado` INTEGER NOT NULL, PRIMARY KEY(`id`))",
     "CREATE INDEX IF NOT EXISTS `index_Usuario_id` ON `Usuario` (`id`)",
     "CREATE TABLE IF NOT EXISTS `Constante` (`id` TEXT NOT NULL, `descricaoNome` TEXT NOT NULL, `categoria` TEXT NOT NULL, PRIMARY KEY(`id`))",
     "CREATE INDEX IF NOT EXISTS `index_Constante_id` ON `Constante` (`id`)",
@@ -60,8 +60,8 @@ private val DDL_V2 = listOf(
     "CREATE INDEX IF NOT EXISTS `index_Empresa_id` ON `Empresa` (`id`)",
     "CREATE TABLE IF NOT EXISTS `Navio` (`id` TEXT NOT NULL, `descricaoNome` TEXT NOT NULL, `capacidadeVeiculo` INTEGER NOT NULL, `capacidadeSuite2` INTEGER NOT NULL, `capacidadeSuite3` INTEGER NOT NULL, `capacidadeCamarote` INTEGER NOT NULL, `empresaId` TEXT NOT NULL, PRIMARY KEY(`id`))",
     "CREATE INDEX IF NOT EXISTS `index_Navio_id` ON `Navio` (`id`)",
-    "CREATE TABLE IF NOT EXISTS `Agente` (`id` TEXT NOT NULL, `descricaoNome` TEXT NOT NULL, `agencia` TEXT NOT NULL, `lotacao` TEXT NOT NULL, PRIMARY KEY(`id`))",
-    "CREATE INDEX IF NOT EXISTS `index_Agente_id` ON `Agente` (`id`)",
+    "CREATE TABLE IF NOT EXISTS `Funcionario` (`id` TEXT NOT NULL, `descricaoNome` TEXT NOT NULL, `agencia` TEXT NOT NULL, `lotacao` TEXT NOT NULL, `cargo` TEXT NOT NULL, PRIMARY KEY(`id`))",
+    "CREATE INDEX IF NOT EXISTS `index_Funcionario_id` ON `Funcionario` (`id`)",
     "CREATE TABLE IF NOT EXISTS `Viagem` (`id` TEXT NOT NULL, `codigo` TEXT NOT NULL, `origem` TEXT NOT NULL, `destino` TEXT NOT NULL, `empresaId` TEXT NOT NULL, `navioId` TEXT NOT NULL, PRIMARY KEY(`id`))",
     "CREATE INDEX IF NOT EXISTS `index_Viagem_id` ON `Viagem` (`id`)",
     "CREATE TABLE IF NOT EXISTS `TarifaViagem` (`viagemId` TEXT NOT NULL, `chave` TEXT NOT NULL, `valor` REAL NOT NULL, PRIMARY KEY(`viagemId`, `chave`))",
@@ -126,8 +126,8 @@ class DatabaseModule {
     }
 
     @Provides
-    fun provideAgenteDao(db: FluviAppDatabase): AgenteDao {
-        return db.agenteDao()
+    fun provideFuncionarioDao(db: FluviAppDatabase): FuncionarioDao {
+        return db.funcionarioDao()
     }
 
     @Provides

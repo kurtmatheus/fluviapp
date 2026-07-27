@@ -37,7 +37,7 @@ fun DocumentoBruto.toEmpresaDocumento() = EmpresaDocumento(
     telefone2 = texto("telefone2"),
 )
 
-fun DocumentoBruto.toAgenteDocumento() = AgenteDocumento(
+fun DocumentoBruto.toFuncionarioDocumento() = FuncionarioDocumento(
     nome = texto("nome"),
     agencia = texto("agencia"),
     lotacao = texto("lotacao"),

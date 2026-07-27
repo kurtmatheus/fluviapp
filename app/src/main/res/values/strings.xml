@@ -235,6 +235,7 @@
     <string name="error_usuario_incorreto">Usuário Inválido.</string>
     <string name="error_falha_auth">Falha na Autenticação.</string>
     <string name="error_email_nao_verificado">Confirme seu e-mail para entrar.</string>
+    <string name="error_emissor_sem_funcionario">Seu acesso não está vinculado a um agente. Procure a gestão para emitir passagens.</string>
     <string name="error_email_ja_cadastrado">E-mail já cadastrado. Faça login.</string>
     <string name="msg_verificacao_reenviada">E-mail de verificação reenviado.</string>
     <string name="btn_reenviar_verificacao">Reenviar verificação</string>

@@ -23,10 +23,13 @@ interface AutenticacaoRepository {
      */
     suspend fun autenticarComGoogle(idToken: String): ResultadoAutenticacao
 
-    /** Perfil autoritativo do usuário autenticado (`users/{uid}`); null se ausente. */
+    /**
+     * Perfil autoritativo do usuário autenticado (`users/{uid}` + o `funcionarios/{id}` ligado);
+     * null se o perfil de sistema estiver ausente.
+     */
     suspend fun perfilAutenticado(): PerfilAutenticado?
 
-    suspend fun criarPerfil(email: String, nome: String, cargo: String)
+    suspend fun criarPerfil(email: String, username: String, papel: String)
 
     fun sair()
 }

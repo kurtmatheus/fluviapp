@@ -1,8 +1,10 @@
 rules_version = '2';
 
-// Fronteira de autorização por cargo (ADR-0011). Espelha PermissoesUsuario.kt — a mesma matriz do
-// ADR-0010, agora imposta no servidor. O cargo é lido de users/{uid}; a posse, do funcionarioId da
-// passagem (ADR-0008/0010 Fase 2). Mudou um papel? Mude AQUI e no Kotlin — os dois são a fonte.
+// Fronteira de autorização (ADR-0011). Espelha PermissoesUsuario.kt — a mesma matriz do ADR-0010,
+// agora imposta no servidor. Depois da revisão estrutural (ADR-0015 §8) são DOIS eixos: o **papel** de
+// sistema vem de users/{uid}; o **cargo** de negócio vem do funcionário ligado, alcançado pelo
+// funcionarioId do perfil (§8.3). A posse da passagem também é do funcionário (§8.4).
+// Mudou um dos eixos? Mude AQUI e no Kotlin — os dois são a fonte.
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -13,32 +15,55 @@ service cloud.firestore {
     }
 
     // Perfil do autor (users/{uid}). Chamado só após autenticado() num && (short-circuit protege o get).
-    function cargo() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.cargo;
+    function perfil() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
     }
 
-    function cargoConhecido() {
-      return cargo() in ['ADM', 'GESTOR', 'SUPERVISOR', 'AGENTE'];
+    // Eixo SISTEMA.
+    function papel() {
+      return perfil().get('papel', '');
     }
 
-    // Cargos de PLATAFORMA (FluviApp), por oposição aos de agência (SUPERVISOR/AGENTE) — ADR-0015 §4.1/§4.2.
-    // Espelha PermissoesUsuario.ehCargoPlataforma.
-    function ehCargoPlataforma() {
-      return cargo() in ['ADM', 'GESTOR'];
+    function papelConhecido() {
+      return papel() in ['ADM', 'GESTOR', 'OPERADOR'];
     }
 
+    // Papéis de PLATAFORMA (FluviApp), por oposição a OPERADOR — ADR-0015 §4.1/§8.1.
+    // Espelha PermissoesUsuario.ehPapelPlataforma.
+    function ehPapelPlataforma() {
+      return papel() in ['ADM', 'GESTOR'];
+    }
+
+    // Elo 1-1 com a operação (ADR-0015 §8.3). Vazio = papel puro de plataforma, que é estado VÁLIDO.
+    function funcionarioIdDoAutor() {
+      return perfil().get('funcionarioId', '');
+    }
+
+    // Eixo NEGÓCIO: o 2º salto. Fail-closed EXPLÍCITO — sem elo ou com elo apontando para documento
+    // inexistente, devolve '' em vez de estourar a avaliação por acidente.
+    function cargoDoAutor() {
+      return funcionarioIdDoAutor() != ''
+          && exists(/databases/$(database)/documents/funcionarios/$(funcionarioIdDoAutor()))
+        ? get(/databases/$(database)/documents/funcionarios/$(funcionarioIdDoAutor())).data.get('cargo', '')
+        : '';
+    }
+
+    // Os dois eixos se encontram aqui (ADR-0015 §8.2), como no Kotlin.
     function podeEditarQualquerPassagem() {
-      return ehCargoPlataforma() || cargo() == 'SUPERVISOR';
+      return ehPapelPlataforma() || cargoDoAutor() == 'SUPERVISOR';
     }
 
+    // Posse = o FUNCIONÁRIO que emitiu (ADR-0015 §8.4), não o uid. Sem elo não há posse: '' não casa
+    // com nada, senão dois perfis sem vínculo seriam "donos" das passagens um do outro.
     function ehDonoPassagem() {
-      return resource.data.funcionarioId == request.auth.uid;
+      return funcionarioIdDoAutor() != ''
+          && resource.data.funcionarioId == funcionarioIdDoAutor();
     }
 
     // Embarque é um eixo NOVO (ADR-0012): validar embarque ≠ editar conteúdo. Quem está na doca valida,
-    // mesmo sem ter vendido → qualquer cargo conhecido. NÃO colapsar em podeEditarQualquerPassagem.
+    // mesmo sem ter vendido → qualquer papel conhecido. NÃO colapsar em podeEditarQualquerPassagem.
     function podeConfirmarEmbarque() {
-      return cargoConhecido();
+      return papelConhecido();
     }
 
     // --- Ciclo de vida da passagem (ADR-0012): a FSM Kotlin (StatusPassagem) imposta no servidor ---
@@ -61,8 +86,9 @@ service cloud.firestore {
           || (statusAtual() == 'EMITIDA' && statusNovo() == 'EMBARCADA');
     }
     // Confirmação de embarque: a aresta EMITIDA→EMBARCADA que (a) toca SÓ os 4 campos do embarque —
-    // sem contrabandear edição de conteúdo por não-dono — e (b) carimba o PRÓPRIO uid como quem embarcou
-    // (não dá forjar autoria, como o funcionarioId==uid da emissão), com nome e timestamp presentes.
+    // sem contrabandear edição de conteúdo por não-dono — e (b) carimba o PRÓPRIO uid como quem embarcou.
+    // Aqui é uid mesmo, não funcionário: é auditoria de ACESSO, e só o uid o servidor pode conferir
+    // contra request.auth (ADR-0015 §8.4 mudou a posse, não o carimbo).
     function embarqueCarimbado() {
       return request.resource.data.get('embarcadaPorId', '') == request.auth.uid
           && request.resource.data.get('embarcadaPor', '') != ''
@@ -76,40 +102,55 @@ service cloud.firestore {
                .hasOnly(['status', 'embarcadaPorId', 'embarcadaPor', 'embarcadaEm']);
     }
 
-    // --- Perfis de usuário: cargo imutável pelo cliente (anti-escalonamento) ---
+    // --- Perfis de usuário: papel e vínculo imutáveis pelo cliente (anti-escalonamento) ---
     match /users/{uid} {
       allow read: if autenticado();
-      // Provisionamento: só o próprio dono, e sempre no menor privilégio (nunca nasce ADM pelo cliente).
+      // Provisionamento: só o próprio dono, sempre no menor privilégio (nunca nasce ADM pelo cliente) e
+      // SEM vínculo — quem liga um perfil a um funcionário é a gestão (ADR-0015 §8.5). Escrever o
+      // próprio funcionarioId seria escolher de quem são as passagens que ele "possui" (§8.4).
       allow create: if autenticado()
                     && request.auth.uid == uid
-                    && request.resource.data.cargo == 'AGENTE';
-      // Edita o próprio perfil, mas NUNCA o cargo (promoção é operação de console/backend).
+                    && request.resource.data.papel == 'OPERADOR'
+                    && request.resource.data.get('funcionarioId', '') == '';
+      // Edita o próprio perfil, mas NUNCA o papel nem o vínculo (ambos são operação de console/gestão).
       allow update: if autenticado()
                     && request.auth.uid == uid
-                    && request.resource.data.cargo == resource.data.cargo;
+                    && request.resource.data.papel == resource.data.papel
+                    && request.resource.data.get('funcionarioId', '')
+                         == resource.data.get('funcionarioId', '');
       allow delete: if false;
     }
 
-    // --- Catálogos / master data: leitura p/ todo autenticado (venda lê), escrita só cargo de plataforma ---
+    // --- Equipe: o registro de negócio (ex-`agents`) ---
+    // Escrita só para papel de plataforma por ora — o SUPERVISOR cadastrando na própria agência entra
+    // em P2.2b (ADR-0015 §8.5), junto com o form. O que já vale: NINGUÉM muda o próprio cargo, nem um
+    // ADM no funcionário dele mesmo — é o anti-escalonamento do eixo de negócio, já que
+    // cargo == SUPERVISOR concede editar-qualquer-passagem.
+    match /funcionarios/{id} {
+      allow read: if autenticado();
+      allow create: if autenticado() && ehPapelPlataforma();
+      allow update: if autenticado() && ehPapelPlataforma()
+                    && !(funcionarioIdDoAutor() == id
+                         && request.resource.data.get('cargo', '') != resource.data.get('cargo', ''));
+      allow delete: if autenticado() && ehPapelPlataforma();
+    }
+
+    // --- Catálogos / master data: leitura p/ todo autenticado (venda lê), escrita só papel de plataforma ---
     match /constants/{doc} {
       allow read: if autenticado();
-      allow write: if autenticado() && ehCargoPlataforma();
+      allow write: if autenticado() && ehPapelPlataforma();
     }
     match /empresas/{doc} {
       allow read: if autenticado();
-      allow write: if autenticado() && ehCargoPlataforma();
+      allow write: if autenticado() && ehPapelPlataforma();
     }
     match /navios/{doc} {
       allow read: if autenticado();
-      allow write: if autenticado() && ehCargoPlataforma();
-    }
-    match /agents/{doc} {
-      allow read: if autenticado();
-      allow write: if autenticado() && ehCargoPlataforma();
+      allow write: if autenticado() && ehPapelPlataforma();
     }
     match /viagens/{doc} {
       allow read: if autenticado();
-      allow write: if autenticado() && ehCargoPlataforma();
+      allow write: if autenticado() && ehPapelPlataforma();
     }
 
     // --- Passagens: create sem forjar dono; update/delete por posse ou editar-qualquer ---
@@ -117,23 +158,26 @@ service cloud.firestore {
       allow read: if autenticado();
 
       // Doc especial do contador de bilhete (passagens/contador): quem emite passagem incrementa
-      // o número. Endurecido — o contador é infra compartilhada, então o cargo certo ainda escreve,
+      // o número. Endurecido — o contador é infra compartilhada, então o papel certo ainda escreve,
       // mas só preservando o invariante: incremento MONOTÔNICO (nunca retrocede → sem bilhete
       // duplicado por rewind) e SEM delete (não é concedido → default-deny). Bootstrap/seed via create.
       // (A corrida de dois clientes no mesmo N não é resolvível por regra — exige transação no app.)
-      allow create: if autenticado() && id == 'contador' && cargoConhecido();
-      allow update: if autenticado() && id == 'contador' && cargoConhecido()
+      allow create: if autenticado() && id == 'contador' && papelConhecido();
+      allow update: if autenticado() && id == 'contador' && papelConhecido()
                     && request.resource.data.numeroBilhete > resource.data.get('numeroBilhete', -1);
 
-      // Emissão: cargo conhecido e o dono declarado tem que ser o próprio autor (não dá forjar).
+      // Emissão: papel conhecido e o dono declarado tem que ser o FUNCIONÁRIO do autor (não dá forjar,
+      // porque o cliente não escreve o próprio funcionarioId). Dono vazio é recusado: quem emite é da
+      // operação (ADR-0015 §8.4) — sem isso, dois perfis de plataforma gerariam passagens órfãs.
       allow create: if autenticado()
                     && id != 'contador'
-                    && cargoConhecido()
-                    && request.resource.data.funcionarioId == request.auth.uid;
+                    && papelConhecido()
+                    && funcionarioIdDoAutor() != ''
+                    && request.resource.data.funcionarioId == funcionarioIdDoAutor();
 
       // Editar: o funcionarioId é sempre imutável (não reatribui dono) e o status só percorre arestas
       // legais da FSM (ADR-0012), nunca retrocede nem pula. Dois eixos de autorização:
-      //  - confirmação de embarque (EMITIDA→EMBARCADA, carimbada): QUALQUER cargo conhecido (eixo novo);
+      //  - confirmação de embarque (EMITIDA→EMBARCADA, carimbada): QUALQUER papel conhecido (eixo novo);
       //  - qualquer outra edição (inclui emitir A_EMITIR→EMITIDA): plataforma/Supervisor ou o dono.
       allow update: if autenticado()
                     && id != 'contador'

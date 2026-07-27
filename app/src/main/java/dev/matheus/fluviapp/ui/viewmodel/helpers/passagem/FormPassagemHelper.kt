@@ -15,7 +15,7 @@ import dev.matheus.fluviapp.model.passagem.StatusPassagem
 import dev.matheus.fluviapp.model.passagem.tarifaMotoBase
 import dev.matheus.fluviapp.model.viagem.Viagem
 import dev.matheus.fluviapp.services.repository.cadastro.ConstanteRepository
-import dev.matheus.fluviapp.services.repository.cadastro.passagem.AgenteRepository
+import dev.matheus.fluviapp.services.repository.operacoes.FuncionarioRepository
 import dev.matheus.fluviapp.services.repository.firebase.PassagemFirestoreRepository
 import dev.matheus.fluviapp.services.repository.firebase.ViagemFirestoreRepository
 import dev.matheus.fluviapp.ui.states.passagem.FormPassageiroUiState
@@ -31,7 +31,7 @@ class FormPassagemHelper(
     private val uiStateVeiculo: MutableStateFlow<FormVeiculoUiState>,
     private val constanteRepository: ConstanteRepository,
     private val viagemRepository: ViagemFirestoreRepository,
-    private val agenteRepository: AgenteRepository,
+    private val funcionarioRepository: FuncionarioRepository,
     private val passagemRepository: PassagemFirestoreRepository,
     private val viagemDadosViagemMapper: ViagemDadosViagemMapper,
 ) {
@@ -43,8 +43,8 @@ class FormPassagemHelper(
         uiStatePassagem.update {
             it.copy(
                 listaTipoDocumento = constanteRepository.obterTodosPorCategoria(DOCUMENTO.name),
-                listaAgencia = agenteRepository.obterTodasAgencias(),
-                listaAgente = agenteRepository.obterTodosAgentes(),
+                listaAgencia = funcionarioRepository.obterTodasAgencias(),
+                listaAgente = funcionarioRepository.obterTodosFuncionarios(),
                 listaFormaPagamento = constanteRepository.obterTodosPorCategoria(PAGAMENTO.name),
                 listaSituacaoPassagem = constanteRepository.obterTodosPorCategoria(STATUS_PASSAGEM.name),
                 listaCategoriaPassagem = constanteRepository.obterTodosPorCategoria(CATEGORIA_PASSAGEM.name),
@@ -55,7 +55,7 @@ class FormPassagemHelper(
     internal fun atualizarListaAgente(agenciaDescricao: String) {
         uiStatePassagem.update { state ->
             state.copy(
-                listaAgente = runBlocking { agenteRepository.obterAgentesPorAgencia(agenciaDescricao) }
+                listaAgente = runBlocking { funcionarioRepository.obterFuncionariosPorAgencia(agenciaDescricao) }
             )
         }
     }

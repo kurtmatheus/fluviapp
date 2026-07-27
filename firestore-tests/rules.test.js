@@ -2,8 +2,13 @@
  * Testes das regras do Firestore (ADR-0011) no emulador.
  *
  * Objetivo: TRAVAR A PARIDADE entre `firestore.rules` e a política Kotlin `PermissoesUsuario`
- * (ADR-0010). Cada `describe` abaixo corresponde a uma linha da matriz de autorização; se alguém
- * afrouxar uma regra sem querer, o teste correspondente quebra.
+ * (ADR-0010 + ADR-0015 §8). Cada `describe` abaixo corresponde a uma linha da matriz de autorização;
+ * se alguém afrouxar uma regra sem querer, o teste correspondente quebra.
+ *
+ * Depois da revisão estrutural são DOIS eixos e DOIS documentos por pessoa: `users/{uid}` guarda o
+ * **papel** de sistema e o elo `funcionarioId`; `funcionarios/{id}` guarda o **cargo** de negócio. A
+ * posse da passagem é do FUNCIONÁRIO (§8.4) — por isso os `funcionarioId` das passagens abaixo são
+ * ids de funcionário, não uids.
  *
  * Roda via `npm test` (usa `firebase emulators:exec` — sobe o emulador, roda o Jest, derruba).
  * Pré-requisito: Firebase CLI instalado (o mesmo usado no `firebase deploy`).
@@ -26,11 +31,19 @@ const {
 } = require('firebase/firestore');
 
 // uids de teste — o id do doc users/{uid} tem que casar com o uid do contexto autenticado,
-// porque a regra lê o cargo via get(users/$(request.auth.uid)).
+// porque a regra lê o papel via get(users/$(request.auth.uid)).
 const AGENTE_A = 'agente-a';
 const AGENTE_B = 'agente-b';
 const SUPERVISOR = 'supervisor';
 const ADM = 'adm';
+// Papel puro de plataforma: existe no sistema, NÃO existe na operação (sem funcionário) — ADR-0015 §8.1.
+const GESTOR = 'gestor';
+
+// ids de FUNCIONÁRIO (o outro contexto). É isto que a passagem congela como dono.
+const F_A = 'func-a';
+const F_B = 'func-b';
+const F_SUPERVISOR = 'func-supervisor';
+const F_ADM = 'func-adm';
 
 let testEnv;
 
@@ -55,60 +68,77 @@ beforeEach(async () => {
   await testEnv.clearFirestore();
   await testEnv.withSecurityRulesDisabled(async (ctx) => {
     const db = ctx.firestore();
-    // Perfis (users/{uid}) com os quatro cargos.
-    await setDoc(doc(db, 'users', AGENTE_A), { nome: 'Agente A', email: 'a@x.com', cargo: 'AGENTE' });
-    await setDoc(doc(db, 'users', AGENTE_B), { nome: 'Agente B', email: 'b@x.com', cargo: 'AGENTE' });
-    await setDoc(doc(db, 'users', SUPERVISOR), { nome: 'Supervisor', email: 'c@x.com', cargo: 'SUPERVISOR' });
-    await setDoc(doc(db, 'users', ADM), { nome: 'Adm', email: 'adm@x.com', cargo: 'ADM' });
+    // Contexto SISTEMA: users/{uid} com papel + elo.
+    await setDoc(doc(db, 'users', AGENTE_A), { username: 'a', email: 'a@x.com', papel: 'OPERADOR', funcionarioId: F_A });
+    await setDoc(doc(db, 'users', AGENTE_B), { username: 'b', email: 'b@x.com', papel: 'OPERADOR', funcionarioId: F_B });
+    await setDoc(doc(db, 'users', SUPERVISOR), { username: 'c', email: 'c@x.com', papel: 'OPERADOR', funcionarioId: F_SUPERVISOR });
+    await setDoc(doc(db, 'users', ADM), { username: 'adm', email: 'adm@x.com', papel: 'ADM', funcionarioId: F_ADM });
+    await setDoc(doc(db, 'users', GESTOR), { username: 'g', email: 'g@x.com', papel: 'GESTOR' });
+    // Contexto NEGÓCIO: funcionarios/{id} com cargo.
+    await setDoc(doc(db, 'funcionarios', F_A), { nome: 'Agente A', agencia: 'MATRIZ', cargo: 'AGENTE' });
+    await setDoc(doc(db, 'funcionarios', F_B), { nome: 'Agente B', agencia: 'MATRIZ', cargo: 'AGENTE' });
+    await setDoc(doc(db, 'funcionarios', F_SUPERVISOR), { nome: 'Supervisor', agencia: 'MATRIZ', cargo: 'SUPERVISOR' });
+    await setDoc(doc(db, 'funcionarios', F_ADM), { nome: 'Adm', agencia: 'MATRIZ', cargo: 'AGENTE' });
     // Catálogo de exemplo (para os testes de leitura).
     await setDoc(doc(db, 'navios', 'navio-1'), { nome: 'Navio 1' });
-    // Passagem alheia (dono = AGENTE_B) e o contador.
-    await setDoc(doc(db, 'passagens', 'alheia'), { funcionarioId: AGENTE_B, valor: 10 });
+    // Passagem alheia (dono = funcionário B) e o contador.
+    await setDoc(doc(db, 'passagens', 'alheia'), { funcionarioId: F_B, valor: 10 });
     await setDoc(doc(db, 'passagens', 'contador'), { numeroBilhete: 100 });
-    // Passagens em estados conhecidos do ciclo de vida (ADR-0012), donas do AGENTE_B (alheias ao A).
-    await setDoc(doc(db, 'passagens', 'aemitir-b'), { funcionarioId: AGENTE_B, status: 'A_EMITIR' });
-    await setDoc(doc(db, 'passagens', 'emitida-b'), { funcionarioId: AGENTE_B, status: 'EMITIDA' });
+    // Passagens em estados conhecidos do ciclo de vida (ADR-0012), donas do funcionário B (alheias ao A).
+    await setDoc(doc(db, 'passagens', 'aemitir-b'), { funcionarioId: F_B, status: 'A_EMITIR' });
+    await setDoc(doc(db, 'passagens', 'emitida-b'), { funcionarioId: F_B, status: 'EMITIDA' });
     await setDoc(doc(db, 'passagens', 'embarcada-b'), {
-      funcionarioId: AGENTE_B,
+      funcionarioId: F_B,
       status: 'EMBARCADA',
       embarcadaPorId: AGENTE_A,
       embarcadaPor: 'Agente A',
       embarcadaEm: '01/07/2026 08:00',
     });
-    await setDoc(doc(db, 'passagens', 'aemitir-a'), { funcionarioId: AGENTE_A, status: 'A_EMITIR' });
+    await setDoc(doc(db, 'passagens', 'aemitir-a'), { funcionarioId: F_A, status: 'A_EMITIR' });
   });
 });
 
-// Atalhos para os bancos autenticados por cargo.
+// Atalhos para os bancos autenticados por persona.
 const asAgenteA = () => testEnv.authenticatedContext(AGENTE_A).firestore();
 const asAgenteB = () => testEnv.authenticatedContext(AGENTE_B).firestore();
 const asSupervisor = () => testEnv.authenticatedContext(SUPERVISOR).firestore();
 const asAdm = () => testEnv.authenticatedContext(ADM).firestore();
+const asGestor = () => testEnv.authenticatedContext(GESTOR).firestore();
 const asAnon = () => testEnv.unauthenticatedContext().firestore();
 
-// --- users/{uid}: anti-escalonamento de cargo ---
+// --- users/{uid}: anti-escalonamento de papel e de vínculo ---
 describe('users/{uid} — anti-escalonamento', () => {
-  test('cria o próprio perfil como AGENTE → OK', async () => {
+  test('cria o próprio perfil como OPERADOR sem vínculo → OK', async () => {
     const db = testEnv.authenticatedContext('novo').firestore();
-    await assertSucceeds(setDoc(doc(db, 'users', 'novo'), { nome: 'Novo', email: 'n@x', cargo: 'AGENTE' }));
+    await assertSucceeds(setDoc(doc(db, 'users', 'novo'), { username: 'n', email: 'n@x', papel: 'OPERADOR' }));
   });
 
   test('cria o próprio perfil já como ADM → NEGADO', async () => {
     const db = testEnv.authenticatedContext('novo').firestore();
-    await assertFails(setDoc(doc(db, 'users', 'novo'), { nome: 'Novo', email: 'n@x', cargo: 'ADM' }));
+    await assertFails(setDoc(doc(db, 'users', 'novo'), { username: 'n', email: 'n@x', papel: 'ADM' }));
+  });
+
+  test('cria o próprio perfil já vinculado a um funcionário → NEGADO', async () => {
+    // Escrever o próprio funcionarioId é escolher de quem são as passagens que ele "possui" (§8.4).
+    const db = testEnv.authenticatedContext('novo').firestore();
+    await assertFails(setDoc(doc(db, 'users', 'novo'), { username: 'n', email: 'n@x', papel: 'OPERADOR', funcionarioId: F_B }));
   });
 
   test('cria perfil de OUTRO uid → NEGADO', async () => {
     const db = testEnv.authenticatedContext('novo').firestore();
-    await assertFails(setDoc(doc(db, 'users', AGENTE_A), { nome: 'X', email: 'x@x', cargo: 'AGENTE' }));
+    await assertFails(setDoc(doc(db, 'users', AGENTE_A), { username: 'x', email: 'x@x', papel: 'OPERADOR' }));
   });
 
-  test('agente tenta se auto-promover a ADM (update do cargo) → NEGADO', async () => {
-    await assertFails(updateDoc(doc(asAgenteA(), 'users', AGENTE_A), { cargo: 'ADM' }));
+  test('operador tenta se auto-promover a ADM (update do papel) → NEGADO', async () => {
+    await assertFails(updateDoc(doc(asAgenteA(), 'users', AGENTE_A), { papel: 'ADM' }));
   });
 
-  test('agente edita o próprio nome (cargo inalterado) → OK', async () => {
-    await assertSucceeds(updateDoc(doc(asAgenteA(), 'users', AGENTE_A), { nome: 'Novo Nome' }));
+  test('operador tenta trocar o próprio vínculo (roubar a posse do outro) → NEGADO', async () => {
+    await assertFails(updateDoc(doc(asAgenteA(), 'users', AGENTE_A), { funcionarioId: F_B }));
+  });
+
+  test('operador edita o próprio username (papel e vínculo inalterados) → OK', async () => {
+    await assertSucceeds(updateDoc(doc(asAgenteA(), 'users', AGENTE_A), { username: 'novo.nome' }));
   });
 
   test('delete do próprio perfil → NEGADO', async () => {
@@ -120,9 +150,40 @@ describe('users/{uid} — anti-escalonamento', () => {
   });
 });
 
-// --- Catálogos (navio como representante): ler todos autenticados, escrever só cargo de plataforma ---
-describe('catálogo (navios) — leitura ampla, escrita só cargo de plataforma', () => {
-  test('agente LÊ navio (a venda precisa) → OK', async () => {
+// --- funcionarios/{id}: a Equipe (ADR-0015 §8.5) ---
+describe('funcionarios — escrita de plataforma e cargo não-autoescalável', () => {
+  test('operador LÊ funcionário (a UI resolve nome/agência por aqui) → OK', async () => {
+    await assertSucceeds(getDoc(doc(asAgenteA(), 'funcionarios', F_B)));
+  });
+
+  test('operador cria funcionário → NEGADO (cadastro é da gestão)', async () => {
+    await assertFails(setDoc(doc(asAgenteA(), 'funcionarios', 'novo'), { nome: 'X', agencia: 'MATRIZ', cargo: 'AGENTE' }));
+  });
+
+  test('SUPERVISOR cria funcionário → NEGADO por ora (entra em P2.2b, com a agência dele)', async () => {
+    await assertFails(setDoc(doc(asSupervisor(), 'funcionarios', 'novo'), { nome: 'X', agencia: 'MATRIZ', cargo: 'AGENTE' }));
+  });
+
+  test('plataforma cria funcionário → OK', async () => {
+    await assertSucceeds(setDoc(doc(asAdm(), 'funcionarios', 'novo'), { nome: 'X', agencia: 'MATRIZ', cargo: 'AGENTE' }));
+  });
+
+  test('plataforma promove OUTRO funcionário a SUPERVISOR → OK', async () => {
+    await assertSucceeds(updateDoc(doc(asAdm(), 'funcionarios', F_A), { cargo: 'SUPERVISOR' }));
+  });
+
+  test('plataforma promove o PRÓPRIO funcionário → NEGADO (anti-escalonamento do eixo de negócio)', async () => {
+    await assertFails(updateDoc(doc(asAdm(), 'funcionarios', F_ADM), { cargo: 'SUPERVISOR' }));
+  });
+
+  test('plataforma edita o próprio funcionário sem tocar no cargo → OK', async () => {
+    await assertSucceeds(updateDoc(doc(asAdm(), 'funcionarios', F_ADM), { lotacao: 'Porto Sul' }));
+  });
+});
+
+// --- Catálogos (navio como representante): ler todos autenticados, escrever só papel de plataforma ---
+describe('catálogo (navios) — leitura ampla, escrita só papel de plataforma', () => {
+  test('operador LÊ navio (a venda precisa) → OK', async () => {
     await assertSucceeds(getDoc(doc(asAgenteA(), 'navios', 'navio-1')));
   });
 
@@ -130,11 +191,11 @@ describe('catálogo (navios) — leitura ampla, escrita só cargo de plataforma'
     await assertFails(getDoc(doc(asAnon(), 'navios', 'navio-1')));
   });
 
-  test('agente ESCREVE navio → NEGADO', async () => {
+  test('operador ESCREVE navio → NEGADO', async () => {
     await assertFails(setDoc(doc(asAgenteA(), 'navios', 'navio-2'), { nome: 'Navio 2' }));
   });
 
-  test('SUPERVISOR escreve navio (não é cargo de plataforma) → NEGADO', async () => {
+  test('SUPERVISOR escreve navio (cargo de agência não é papel de plataforma) → NEGADO', async () => {
     await assertFails(setDoc(doc(asSupervisor(), 'navios', 'navio-2'), { nome: 'Navio 2' }));
   });
 
@@ -145,25 +206,34 @@ describe('catálogo (navios) — leitura ampla, escrita só cargo de plataforma'
 
 // --- Passagens: emissão, posse e imutabilidade do dono ---
 describe('passagens — emissão sem forjar dono', () => {
-  test('agente cria passagem com funcionarioId = próprio uid → OK', async () => {
-    await assertSucceeds(setDoc(doc(asAgenteA(), 'passagens', 'p1'), { funcionarioId: AGENTE_A, valor: 5 }));
+  test('agente cria passagem com funcionarioId = o do próprio perfil → OK', async () => {
+    await assertSucceeds(setDoc(doc(asAgenteA(), 'passagens', 'p1'), { funcionarioId: F_A, valor: 5 }));
   });
 
-  test('agente cria passagem carimbando OUTRO dono (forjar) → NEGADO', async () => {
-    await assertFails(setDoc(doc(asAgenteA(), 'passagens', 'p1'), { funcionarioId: AGENTE_B, valor: 5 }));
+  test('agente cria passagem carimbando OUTRO funcionário (forjar) → NEGADO', async () => {
+    await assertFails(setDoc(doc(asAgenteA(), 'passagens', 'p1'), { funcionarioId: F_B, valor: 5 }));
+  });
+
+  test('agente cria passagem carimbando o próprio UID (vocabulário antigo) → NEGADO', async () => {
+    // Lock do ADR-0015 §8.4: o campo mudou de significado; uid não é mais dono válido.
+    await assertFails(setDoc(doc(asAgenteA(), 'passagens', 'p1'), { funcionarioId: AGENTE_A, valor: 5 }));
+  });
+
+  test('plataforma SEM funcionário emite passagem → NEGADO (quem emite é da operação)', async () => {
+    await assertFails(setDoc(doc(asGestor(), 'passagens', 'p1'), { funcionarioId: '', valor: 5 }));
   });
 });
 
 describe('passagens — editar/deletar por posse', () => {
   test('agente edita a PRÓPRIA passagem → OK', async () => {
-    await assertSucceeds(setDoc(doc(asAgenteB(), 'passagens', 'alheia'), { funcionarioId: AGENTE_B, valor: 20 }));
+    await assertSucceeds(setDoc(doc(asAgenteB(), 'passagens', 'alheia'), { funcionarioId: F_B, valor: 20 }));
   });
 
   test('agente edita passagem ALHEIA → NEGADO', async () => {
     await assertFails(updateDoc(doc(asAgenteA(), 'passagens', 'alheia'), { valor: 99 }));
   });
 
-  test('SUPERVISOR edita passagem alheia (editar-qualquer) → OK', async () => {
+  test('SUPERVISOR edita passagem alheia pelo CARGO (papel dele é só OPERADOR) → OK', async () => {
     await assertSucceeds(updateDoc(doc(asSupervisor(), 'passagens', 'alheia'), { valor: 99 }));
   });
 
@@ -171,8 +241,12 @@ describe('passagens — editar/deletar por posse', () => {
     await assertSucceeds(updateDoc(doc(asAdm(), 'passagens', 'alheia'), { valor: 99 }));
   });
 
+  test('plataforma sem vínculo (GESTOR) edita passagem alheia → OK (vale pelo papel)', async () => {
+    await assertSucceeds(updateDoc(doc(asGestor(), 'passagens', 'alheia'), { valor: 99 }));
+  });
+
   test('editar-qualquer NÃO pode reatribuir o dono (funcionarioId imutável) → NEGADO', async () => {
-    await assertFails(updateDoc(doc(asSupervisor(), 'passagens', 'alheia'), { funcionarioId: SUPERVISOR }));
+    await assertFails(updateDoc(doc(asSupervisor(), 'passagens', 'alheia'), { funcionarioId: F_SUPERVISOR }));
   });
 
   test('agente deleta passagem alheia → NEGADO', async () => {
@@ -186,7 +260,7 @@ describe('passagens — editar/deletar por posse', () => {
 
 // --- Contador (passagens/contador): monotônico, sem delete (endurecimento ADR-0011) ---
 describe('passagens/contador — incremento monotônico e indestrutível', () => {
-  test('cargo conhecido incrementa (100 → 101) → OK', async () => {
+  test('papel conhecido incrementa (100 → 101) → OK', async () => {
     await assertSucceeds(updateDoc(doc(asAgenteA(), 'passagens', 'contador'), { numeroBilhete: 101 }));
   });
 
@@ -200,7 +274,8 @@ describe('passagens/contador — incremento monotônico e indestrutível', () =>
 });
 
 // --- Ciclo de vida da passagem (ADR-0012 Fase 4): FSM imposta no servidor ---
-// Carimbo de embarque que o app grava: status + o próprio uid como embarcadaPorId + nome + quando.
+// Carimbo de embarque que o app grava: status + o próprio UID como embarcadaPorId + nome + quando.
+// Aqui continua sendo uid: é auditoria de acesso, e só o uid o servidor confere contra request.auth.
 const carimboEmbarque = (uid, nome) => ({
   status: 'EMBARCADA',
   embarcadaPorId: uid,
@@ -208,9 +283,9 @@ const carimboEmbarque = (uid, nome) => ({
   embarcadaEm: '02/07/2026 09:30',
 });
 
-describe('passagens — confirmação de embarque (eixo novo, qualquer cargo)', () => {
+describe('passagens — confirmação de embarque (eixo novo, qualquer papel)', () => {
   test('agente NÃO-dono confirma embarque (EMITIDA→EMBARCADA) carimbando o próprio uid → OK', async () => {
-    // AGENTE_A embarca a passagem 'emitida-b' (dono = AGENTE_B): quem está na doca valida.
+    // AGENTE_A embarca a passagem 'emitida-b' (dono = funcionário B): quem está na doca valida.
     await assertSucceeds(updateDoc(doc(asAgenteA(), 'passagens', 'emitida-b'), carimboEmbarque(AGENTE_A, 'Agente A')));
   });
 
@@ -247,7 +322,7 @@ describe('passagens — arestas legais da FSM (avança, nunca retrocede nem pula
     await assertFails(updateDoc(doc(asAdm(), 'passagens', 'aemitir-b'), carimboEmbarque(ADM, 'Adm')));
   });
 
-  test('retrocesso EMBARCADA→EMITIDA (mesmo cargo de plataforma) → NEGADO (embarque é irreversível)', async () => {
+  test('retrocesso EMBARCADA→EMITIDA (mesmo papel de plataforma) → NEGADO (embarque é irreversível)', async () => {
     await assertFails(updateDoc(doc(asAdm(), 'passagens', 'embarcada-b'), { status: 'EMITIDA' }));
   });
 

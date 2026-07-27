@@ -11,16 +11,18 @@ import dev.matheus.fluviapp.R
 import dev.matheus.fluviapp.extensions.toastMessage
 import dev.matheus.fluviapp.model.operacoes.Usuario
 import dev.matheus.fluviapp.preferences.PreferencesKey.CARGO_ATUAL
+import dev.matheus.fluviapp.preferences.PreferencesKey.PAPEL_ATUAL
 import dev.matheus.fluviapp.preferences.PreferencesKey.LOGADO
 import dev.matheus.fluviapp.preferences.PreferencesKey.USUARIO_ATUAL
 import dev.matheus.fluviapp.services.repository.cadastro.ConstanteRepository
-import dev.matheus.fluviapp.services.repository.cadastro.passagem.AgenteRepository
+import dev.matheus.fluviapp.services.repository.operacoes.FuncionarioRepository
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.EmpresaRepository
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.NavioRepository
 import dev.matheus.fluviapp.services.repository.firebase.PassagemFirestoreRepository
 import dev.matheus.fluviapp.services.repository.firebase.SeedFirestore
 import dev.matheus.fluviapp.services.repository.firebase.ViagemFirestoreRepository
 import dev.matheus.fluviapp.services.repository.firebase.autenticacao.AutenticacaoRepository
+import dev.matheus.fluviapp.services.repository.firebase.autenticacao.PerfilAutenticado
 import dev.matheus.fluviapp.services.repository.firebase.autenticacao.ResultadoAutenticacao
 import dev.matheus.fluviapp.services.repository.operacoes.UsuarioRepository
 import dev.matheus.fluviapp.ui.states.LoginUiState
@@ -42,7 +44,7 @@ class LoginViewModel @Inject constructor(
     private val constanteRepository: ConstanteRepository,
     private val empresaRepository: EmpresaRepository,
     private val navioRepository: NavioRepository,
-    private val agenteRepository: AgenteRepository,
+    private val funcionarioRepository: FuncionarioRepository,
     private val viagemRepository: ViagemFirestoreRepository,
     private val passagemRepository: PassagemFirestoreRepository,
     private val seedFirestore: SeedFirestore,
@@ -100,7 +102,10 @@ class LoginViewModel @Inject constructor(
             is ResultadoAutenticacao.Sucesso -> {
                 if (resultado.emailVerificado) {
                     val usuario = usuarioRepository.salvarUsuarioAutenticado(email)
-                    logarUsuario(usuario)
+                    // Uma leitura a mais no login para resolver o contexto de NEGÓCIO (cargo + nome do
+                    // funcionário): é o mesmo caminho de dois saltos das regras (ADR-0015 §8.3), e o
+                    // espelho Room de `funcionarios` ainda não sincronizou neste ponto do fluxo.
+                    logarUsuario(usuario, autenticacaoRepository.perfilAutenticado())
                 } else {
                     // gate: nao entra sem e-mail verificado; oferece reenviar.
                     autenticacaoRepository.sair()
@@ -136,13 +141,12 @@ class LoginViewModel @Inject constructor(
                             Usuario(
                                 id = perfil.id,
                                 email = perfil.email,
-                                nome = perfil.nome,
-                                cargo = perfil.cargo,
-                                agencia = perfil.agencia,
-                                lotacao = perfil.lotacao,
+                                username = perfil.username,
+                                papel = perfil.papel,
+                                funcionarioId = perfil.funcionarioId,
                             )
                         )
-                        logarUsuario(usuarioRepository.salvarUsuarioAutenticado(perfil.email))
+                        logarUsuario(usuarioRepository.salvarUsuarioAutenticado(perfil.email), perfil)
                     } else {
                         Log.e(TAG, "autenticarComGoogle: signIn OK mas perfil ausente em users/{uid}")
                         loginFormHelper.exibeErro()
@@ -190,12 +194,22 @@ class LoginViewModel @Inject constructor(
         }
     }
 
-    private suspend fun logarUsuario(usuarioLogado: Usuario?) {
+    /**
+     * Abre a sessão com os DOIS contextos (ADR-0015 §8.2): o papel vem do perfil de sistema, o cargo do
+     * funcionário ligado. O [perfil] é resolvido na porta de autenticação — quando ele não vem (login
+     * por e-mail/senha lendo o espelho Room), a sessão nasce **sem cargo**, que é fail-closed: o membro
+     * enxerga só o que o papel concede até o próximo login com rede.
+     *
+     * O que se exibe é o **nome do funcionário**; sem funcionário (papel puro de plataforma), o
+     * `username` — o `Usuario` não tem nome (§8.1).
+     */
+    private suspend fun logarUsuario(usuarioLogado: Usuario?, perfil: PerfilAutenticado? = null) {
         usuarioLogado?.run {
             dataStore.edit { preferences ->
                 preferences[LOGADO] = true
-                preferences[USUARIO_ATUAL] = usuarioLogado.nome
-                preferences[CARGO_ATUAL] = usuarioLogado.cargo
+                preferences[USUARIO_ATUAL] = perfil?.nome?.ifBlank { null } ?: usuarioLogado.username
+                preferences[PAPEL_ATUAL] = usuarioLogado.papel
+                preferences[CARGO_ATUAL] = perfil?.cargo.orEmpty()
             }
             _uiState.value = _uiState.value.copy(logado = true)
         } ?: run {
@@ -209,7 +223,7 @@ class LoginViewModel @Inject constructor(
     fun sincronizar(context: Context) {
         try {
             constanteRepository.sincronizar()
-            agenteRepository.sincronizar()
+            funcionarioRepository.sincronizar()
             empresaRepository.sincronizar()
             navioRepository.sincronizar()
             viagemRepository.sincronizar()

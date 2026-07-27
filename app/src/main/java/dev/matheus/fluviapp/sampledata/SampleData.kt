@@ -15,12 +15,11 @@ import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.CREDIT
 import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.DEBITO
 import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.DINHEIRO
 import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.PIX
-import dev.matheus.fluviapp.model.cadastro.passagem.Agente
-import dev.matheus.fluviapp.model.operacoes.Agencia.AUTONOMO
+import dev.matheus.fluviapp.model.operacoes.Funcionario
 import dev.matheus.fluviapp.model.operacoes.Agencia.MATRIZ
-import dev.matheus.fluviapp.model.cadastro.passagem.Agente.Lotacao.ILHA_CENTRAL
-import dev.matheus.fluviapp.model.cadastro.passagem.Agente.Lotacao.PORTO_NORTE
-import dev.matheus.fluviapp.model.cadastro.passagem.Agente.Lotacao.PORTO_SUL
+import dev.matheus.fluviapp.model.operacoes.Funcionario.Lotacao.ILHA_CENTRAL
+import dev.matheus.fluviapp.model.operacoes.Funcionario.Lotacao.PORTO_NORTE
+import dev.matheus.fluviapp.model.operacoes.Funcionario.Lotacao.PORTO_SUL
 import dev.matheus.fluviapp.model.operacoes.Usuario
 import dev.matheus.fluviapp.model.screendata.DadosBalancoPassagem
 import dev.matheus.fluviapp.model.screendata.DadosBotoesMenus
@@ -138,41 +137,43 @@ val listaAcomodacaoSample =
         Constante("3", "Suíte p/ 3 Pessoas", ACOMODACAO.name),
         Constante("4", "Camarote", ACOMODACAO.name)
     )
-val listaAgenteSample = listOf(
-    Agente("1", "Ana Ribeiro", MATRIZ.name, PORTO_NORTE.name),
-    Agente("2", "Bruno Costa", MATRIZ.name, PORTO_NORTE.name),
-    Agente("3", "Carla Dias", "AGENCIA HORIZONTE", ILHA_CENTRAL.name),
-    Agente("4", "Daniel Alves", "AGENCIA MARE", ILHA_CENTRAL.name),
-    Agente("5", "Elena Faria", "AGENCIA AURORA", ILHA_CENTRAL.name),
-    Agente("6", "Fabio Gomes", "AGENCIA HORIZONTE", ILHA_CENTRAL.name),
-    Agente("7", "Gabriela Lima", "AGENCIA MARE", ILHA_CENTRAL.name),
-    Agente("8", "Hugo Melo", "AGENCIA AURORA", ILHA_CENTRAL.name),
-    Agente("9", "Igor Nunes", "AGENCIA HORIZONTE", ILHA_CENTRAL.name),
-    Agente("10", "Julia Pires", "AGENCIA MARE", ILHA_CENTRAL.name),
-    Agente("11", "Karla Rocha", "AGENCIA AURORA", ILHA_CENTRAL.name),
-    Agente("12", "Lucas Souza", "AGENCIA HORIZONTE", ILHA_CENTRAL.name),
-    Agente("13", "Marina Teles", "AGENCIA MARE", ILHA_CENTRAL.name),
-    Agente("14", "Nadia Vaz", "AGENCIA LITORAL", PORTO_NORTE.name),
-    Agente("15", "Otavio Reis", "AGENCIA LITORAL", PORTO_NORTE.name),
-    Agente("16", "Paula Matos", "AGENCIA LITORAL", PORTO_NORTE.name),
-    Agente("17", "Rafael Braga", "AGENCIA LITORAL", PORTO_NORTE.name),
-    Agente("18", "Sofia Cunha", "AGENCIA LITORAL", PORTO_NORTE.name),
-    Agente("19", "Tiago Moraes", "AGENCIA LITORAL", PORTO_NORTE.name),
-    Agente("20", "Ursula Pinto", "AGENCIA NORTE", PORTO_NORTE.name),
-    Agente("21", "Vitor Campos", "AGENCIA NORTE", PORTO_NORTE.name),
-    Agente("22", "Wesley Aragao", "SEM AGENCIA", PORTO_NORTE.name),
-    Agente("23", "Xavier Luz", "SEM AGENCIA", PORTO_NORTE.name),
-    Agente("24", "Yasmin Freitas", "AGENCIA AURORA", ILHA_CENTRAL.name),
-    Agente("25", "Ze Carlos", "AGENCIA AURORA", ILHA_CENTRAL.name),
-    Agente("26", "Alice Barros", "AGENCIA AURORA", ILHA_CENTRAL.name),
-    Agente("27", "Bernardo Sa", "AGENCIA SUL", PORTO_SUL.name),
-    Agente("28", "Cecilia Mota", "AGENCIA MARE", ILHA_CENTRAL.name),
-    Agente("29", "Diego Farias", "AGENCIA HORIZONTE", ILHA_CENTRAL.name),
-    Agente("30", "Elisa Prado", "AGENCIA AURORA", ILHA_CENTRAL.name),
-    Agente("31", "Felipe Aragao", "AGENCIA AURORA", ILHA_CENTRAL.name),
-    Agente("32", "Gisele Nery", "AGENCIA AURORA", ILHA_CENTRAL.name),
-    Agente("33", "Heitor Vasques", MATRIZ.name, PORTO_NORTE.name),
-    Agente("999", "Sem Agente", "SEM AGENCIA", PORTO_NORTE.name)
+val listaFuncionarioSample = listOf(
+    Funcionario("1", "Ana Ribeiro", MATRIZ.name, PORTO_NORTE.name),
+    // O seed também precisa de um master de agência: sem SUPERVISOR nenhum, o eixo de negócio da
+    // política (ADR-0015 §8.2) nunca aparece em execução — só nos testes.
+    Funcionario("2", "Bruno Costa", MATRIZ.name, PORTO_NORTE.name, Funcionario.Cargo.SUPERVISOR.name),
+    Funcionario("3", "Carla Dias", "AGENCIA HORIZONTE", ILHA_CENTRAL.name),
+    Funcionario("4", "Daniel Alves", "AGENCIA MARE", ILHA_CENTRAL.name),
+    Funcionario("5", "Elena Faria", "AGENCIA AURORA", ILHA_CENTRAL.name),
+    Funcionario("6", "Fabio Gomes", "AGENCIA HORIZONTE", ILHA_CENTRAL.name),
+    Funcionario("7", "Gabriela Lima", "AGENCIA MARE", ILHA_CENTRAL.name),
+    Funcionario("8", "Hugo Melo", "AGENCIA AURORA", ILHA_CENTRAL.name),
+    Funcionario("9", "Igor Nunes", "AGENCIA HORIZONTE", ILHA_CENTRAL.name),
+    Funcionario("10", "Julia Pires", "AGENCIA MARE", ILHA_CENTRAL.name),
+    Funcionario("11", "Karla Rocha", "AGENCIA AURORA", ILHA_CENTRAL.name),
+    Funcionario("12", "Lucas Souza", "AGENCIA HORIZONTE", ILHA_CENTRAL.name),
+    Funcionario("13", "Marina Teles", "AGENCIA MARE", ILHA_CENTRAL.name),
+    Funcionario("14", "Nadia Vaz", "AGENCIA LITORAL", PORTO_NORTE.name),
+    Funcionario("15", "Otavio Reis", "AGENCIA LITORAL", PORTO_NORTE.name),
+    Funcionario("16", "Paula Matos", "AGENCIA LITORAL", PORTO_NORTE.name),
+    Funcionario("17", "Rafael Braga", "AGENCIA LITORAL", PORTO_NORTE.name),
+    Funcionario("18", "Sofia Cunha", "AGENCIA LITORAL", PORTO_NORTE.name),
+    Funcionario("19", "Tiago Moraes", "AGENCIA LITORAL", PORTO_NORTE.name),
+    Funcionario("20", "Ursula Pinto", "AGENCIA NORTE", PORTO_NORTE.name),
+    Funcionario("21", "Vitor Campos", "AGENCIA NORTE", PORTO_NORTE.name),
+    Funcionario("22", "Wesley Aragao", "SEM AGENCIA", PORTO_NORTE.name),
+    Funcionario("23", "Xavier Luz", "SEM AGENCIA", PORTO_NORTE.name),
+    Funcionario("24", "Yasmin Freitas", "AGENCIA AURORA", ILHA_CENTRAL.name),
+    Funcionario("25", "Ze Carlos", "AGENCIA AURORA", ILHA_CENTRAL.name),
+    Funcionario("26", "Alice Barros", "AGENCIA AURORA", ILHA_CENTRAL.name),
+    Funcionario("27", "Bernardo Sa", "AGENCIA SUL", PORTO_SUL.name),
+    Funcionario("28", "Cecilia Mota", "AGENCIA MARE", ILHA_CENTRAL.name),
+    Funcionario("29", "Diego Farias", "AGENCIA HORIZONTE", ILHA_CENTRAL.name),
+    Funcionario("30", "Elisa Prado", "AGENCIA AURORA", ILHA_CENTRAL.name),
+    Funcionario("31", "Felipe Aragao", "AGENCIA AURORA", ILHA_CENTRAL.name),
+    Funcionario("32", "Gisele Nery", "AGENCIA AURORA", ILHA_CENTRAL.name),
+    Funcionario("33", "Heitor Vasques", MATRIZ.name, PORTO_NORTE.name),
+    Funcionario("999", "Sem Agente", "SEM AGENCIA", PORTO_NORTE.name)
 )
 
 val listaFormaPagamentoSample = listOf(
@@ -264,38 +265,37 @@ val dadosPassagemVeiculoSample = DadosPassagem(
     corVeiculo = "VERMELHO"
 )
 
+// Papel puro de plataforma: sem funcionarioId, porque ADM/GESTOR não têm registro na operação
+// (ADR-0015 §8.1) — e, por consequência, não emitem passagem (§8.4).
 val userAdminSample = Usuario(
     id = "1",
     email = "admin@fluviapp.com.br",
-    nome = "Administrador",
-    cargo = "ADM"
+    username = "administrador",
+    papel = "ADM"
 )
 
 val userGestorSample = Usuario(
     id = "2",
     email = "gestor@fluviapp.com.br",
-    nome = "Gestor",
-    cargo = "GESTOR"
+    username = "gestor",
+    papel = "GESTOR"
 )
 
+/** O caso comum: OPERADOR no sistema, ligado 1-1 ao funcionário que carrega cargo/agência/lotação. */
 val userAgenteSample = Usuario(
     id = "3",
     email = "agente@fluviapp.com.br",
-    nome = "Agente",
-    // Era "Diretor" (minúsculo): não casava com nenhum Cargo, então o sample nascia fail-closed.
-    cargo = "AGENTE",
-    // Membro alocado: cargo de agência tem agência e lotação (ADR-0015 §2).
-    agencia = MATRIZ.name,
-    lotacao = "Porto Norte",
+    username = "agente",
+    papel = "OPERADOR",
+    funcionarioId = "1",
 )
 
-/** Recém-provisionado e ainda não alocado: cai na agência coringa (ADR-0015 §2.1). */
+/** Provisionado e ainda **sem vínculo**: entra no app, mas não emite até a gestão ligar um funcionário. */
 val userAutonomoSample = Usuario(
     id = "4",
     email = "autonomo@fluviapp.com.br",
-    nome = "Sem Agencia",
-    cargo = "AGENTE",
-    agencia = AUTONOMO.name,
+    username = "sem.vinculo",
+    papel = "OPERADOR",
 )
 
 val listaUserSample = listOf(

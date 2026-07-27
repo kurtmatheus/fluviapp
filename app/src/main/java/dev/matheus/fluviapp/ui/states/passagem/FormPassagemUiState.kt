@@ -3,7 +3,7 @@ package dev.matheus.fluviapp.ui.states.passagem
 import dev.matheus.fluviapp.R
 import dev.matheus.fluviapp.extensions.formatarDataBarrasBr
 import dev.matheus.fluviapp.model.cadastro.constantes.Constante
-import dev.matheus.fluviapp.model.cadastro.passagem.Agente
+import dev.matheus.fluviapp.model.operacoes.Funcionario
 import java.time.LocalDate
 
 data class FormPassagemUiState(
@@ -36,7 +36,7 @@ data class FormPassagemUiState(
     val agencia: String = "",
     val isAgenciaError: Boolean = false,
 
-    val listaAgente: List<Agente> = emptyList(),
+    val listaAgente: List<Funcionario> = emptyList(),
     val agente: String = "",
     val isAgenteError: Boolean = false,
     val isAgenteDisabled: Boolean = true,

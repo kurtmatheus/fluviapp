@@ -2,8 +2,8 @@ package dev.matheus.fluviapp.ui.viewmodel.agente
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import dev.matheus.fluviapp.model.cadastro.passagem.Agente
-import dev.matheus.fluviapp.services.repository.cadastro.passagem.AgenteRepository
+import dev.matheus.fluviapp.model.operacoes.Funcionario
+import dev.matheus.fluviapp.services.repository.operacoes.FuncionarioRepository
 import dev.matheus.fluviapp.ui.states.PesquisaAgenteUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,10 +19,10 @@ import javax.inject.Inject
  */
 @HiltViewModel
 class PesquisaAgenteViewModel @Inject constructor(
-    private val agenteRepository: AgenteRepository,
+    private val funcionarioRepository: FuncionarioRepository,
 ) : ViewModel() {
 
-    private var todos: List<Agente> = emptyList()
+    private var todos: List<Funcionario> = emptyList()
 
     private val _uiState = MutableStateFlow(PesquisaAgenteUiState())
     val uiState: StateFlow<PesquisaAgenteUiState> = _uiState.asStateFlow()
@@ -43,17 +43,17 @@ class PesquisaAgenteViewModel @Inject constructor(
 
     fun onDeletar(id: String) {
         viewModelScope.launch {
-            agenteRepository.deletar(id)
+            funcionarioRepository.deletar(id)
             recarregar()
         }
     }
 
     /** Recarrega `todos` do repo e reaplica os filtros correntes (usado no init e pós-deleção). */
     private suspend fun recarregar() {
-        todos = agenteRepository.obterTodosAgentes()
+        todos = funcionarioRepository.obterTodosFuncionarios()
         _uiState.update {
             it.copy(
-                listaAgencia = agenteRepository.obterTodasAgencias(),
+                listaAgencia = funcionarioRepository.obterTodasAgencias(),
                 listaLotacao = todos.map { agente -> agente.lotacao }.distinct(),
                 resultados = filtrar(it.agencia, it.lotacao),
             )
@@ -61,7 +61,7 @@ class PesquisaAgenteViewModel @Inject constructor(
     }
 
     // Agência: prefixo (dropdown editável). Lotação: seleção exata do dropdown (vazio = sem filtro).
-    private fun filtrar(agencia: String, lotacao: String): List<Agente> =
+    private fun filtrar(agencia: String, lotacao: String): List<Funcionario> =
         todos.filter {
             it.agencia.startsWith(agencia, ignoreCase = true) &&
                 (lotacao.isBlank() || it.lotacao.equals(lotacao, ignoreCase = true))

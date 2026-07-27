@@ -1,7 +1,7 @@
 package dev.matheus.fluviapp.ui.viewmodel.agente
 
-import dev.matheus.fluviapp.fakes.FakeAgenteRepository
-import dev.matheus.fluviapp.model.cadastro.passagem.Agente
+import dev.matheus.fluviapp.fakes.FakeFuncionarioRepository
+import dev.matheus.fluviapp.model.operacoes.Funcionario
 import dev.matheus.fluviapp.util.MainDispatcherRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -19,14 +19,14 @@ class PesquisaAgenteViewModelTest {
     val mainRule = MainDispatcherRule()
 
     private val amostra = listOf(
-        Agente("1", "Ana", "AGENCIA LITORAL", "PORTO NORTE"),
-        Agente("2", "Bruno", "AGENCIA MARE", "ILHA CENTRAL"),
-        Agente("3", "Carla", "AGENCIA LITORAL", "PORTO NORTE"),
+        Funcionario("1", "Ana", "AGENCIA LITORAL", "PORTO NORTE"),
+        Funcionario("2", "Bruno", "AGENCIA MARE", "ILHA CENTRAL"),
+        Funcionario("3", "Carla", "AGENCIA LITORAL", "PORTO NORTE"),
     )
 
     @Test
     fun `carrega todos os agentes e as agencias`() = runTest(mainRule.dispatcher) {
-        val fake = FakeAgenteRepository().apply { agentes = amostra }
+        val fake = FakeFuncionarioRepository().apply { agentes = amostra }
 
         val vm = PesquisaAgenteViewModel(fake)
         advanceUntilIdle()
@@ -37,7 +37,7 @@ class PesquisaAgenteViewModelTest {
 
     @Test
     fun `filtra resultados por agencia no VM`() = runTest(mainRule.dispatcher) {
-        val fake = FakeAgenteRepository().apply { agentes = amostra }
+        val fake = FakeFuncionarioRepository().apply { agentes = amostra }
         val vm = PesquisaAgenteViewModel(fake)
         advanceUntilIdle()
 
@@ -49,7 +49,7 @@ class PesquisaAgenteViewModelTest {
 
     @Test
     fun `carrega lotacoes distintas`() = runTest(mainRule.dispatcher) {
-        val fake = FakeAgenteRepository().apply { agentes = amostra }
+        val fake = FakeFuncionarioRepository().apply { agentes = amostra }
         val vm = PesquisaAgenteViewModel(fake)
         advanceUntilIdle()
 
@@ -58,7 +58,7 @@ class PesquisaAgenteViewModelTest {
 
     @Test
     fun `filtra por lotacao (dropdown, match exato)`() = runTest(mainRule.dispatcher) {
-        val fake = FakeAgenteRepository().apply { agentes = amostra }
+        val fake = FakeFuncionarioRepository().apply { agentes = amostra }
         val vm = PesquisaAgenteViewModel(fake)
         advanceUntilIdle()
 
@@ -69,7 +69,7 @@ class PesquisaAgenteViewModelTest {
 
     @Test
     fun `combina filtro de agencia e lotacao`() = runTest(mainRule.dispatcher) {
-        val fake = FakeAgenteRepository().apply { agentes = amostra }
+        val fake = FakeFuncionarioRepository().apply { agentes = amostra }
         val vm = PesquisaAgenteViewModel(fake)
         advanceUntilIdle()
 
@@ -82,7 +82,7 @@ class PesquisaAgenteViewModelTest {
 
     @Test
     fun `deletar remove o agente e recarrega os resultados`() = runTest(mainRule.dispatcher) {
-        val fake = FakeAgenteRepository().apply { agentes = amostra }
+        val fake = FakeFuncionarioRepository().apply { agentes = amostra }
         val vm = PesquisaAgenteViewModel(fake)
         advanceUntilIdle()
 

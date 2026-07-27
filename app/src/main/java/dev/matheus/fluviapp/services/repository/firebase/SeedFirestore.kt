@@ -3,9 +3,9 @@ package dev.matheus.fluviapp.services.repository.firebase
 import android.util.Log
 import com.google.firebase.firestore.FirebaseFirestore
 import dev.matheus.fluviapp.BuildConfig
-import dev.matheus.fluviapp.model.cadastro.passagem.toDocumento
+import dev.matheus.fluviapp.model.operacoes.toDocumento
 import dev.matheus.fluviapp.sampledata.listaAcomodacaoSample
-import dev.matheus.fluviapp.sampledata.listaAgenteSample
+import dev.matheus.fluviapp.sampledata.listaFuncionarioSample
 import dev.matheus.fluviapp.sampledata.listaEmpresaSample
 import dev.matheus.fluviapp.sampledata.listaFormaPagamentoSample
 import dev.matheus.fluviapp.sampledata.listaMunicipioSample
@@ -16,7 +16,7 @@ import dev.matheus.fluviapp.sampledata.listaTipoGratuidadeSample
 import dev.matheus.fluviapp.sampledata.listaTipoPassagemSample
 import dev.matheus.fluviapp.sampledata.listaTipoVeiculoSample
 import dev.matheus.fluviapp.services.repository.cadastro.ConstanteRepository
-import dev.matheus.fluviapp.services.repository.cadastro.passagem.AgenteRepository
+import dev.matheus.fluviapp.services.repository.operacoes.FuncionarioRepository
 import dev.matheus.fluviapp.services.repository.firebase.documents.ConstanteDocumento
 import dev.matheus.fluviapp.services.repository.firebase.documents.ContadorDocumento
 import dev.matheus.fluviapp.services.repository.firebase.documents.EmpresaDocumento
@@ -50,8 +50,8 @@ class SeedFirestore @Inject constructor(
         // provisiona operadores. Aqui só os catálogos.
         Log.i(TAG, "Semeando Firestore (projeto vazio, debug)")
 
-        listaAgenteSample.forEach { a ->
-            firestore.collection(AgenteRepository.COLLECTION_AGENTS).document(a.id).set(a.toDocumento())
+        listaFuncionarioSample.forEach { a ->
+            firestore.collection(FuncionarioRepository.COLLECTION_FUNCIONARIOS).document(a.id).set(a.toDocumento())
         }
 
         // ids colidem entre categorias -> auto-id; o app filtra constantes por categoria/descrição.

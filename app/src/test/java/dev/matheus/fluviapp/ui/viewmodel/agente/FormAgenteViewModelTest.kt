@@ -1,11 +1,11 @@
 package dev.matheus.fluviapp.ui.viewmodel.agente
 
 import androidx.lifecycle.SavedStateHandle
-import dev.matheus.fluviapp.fakes.FakeAgenteRepository
+import dev.matheus.fluviapp.fakes.FakeFuncionarioRepository
 import dev.matheus.fluviapp.fakes.FakeConstanteRepository
 import dev.matheus.fluviapp.model.cadastro.constantes.Constante
 import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Categoria.MUNICIPIO
-import dev.matheus.fluviapp.model.cadastro.passagem.Agente
+import dev.matheus.fluviapp.model.operacoes.Funcionario
 import dev.matheus.fluviapp.util.MainDispatcherRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.toList
@@ -29,7 +29,7 @@ class FormAgenteViewModelTest {
 
     @Test
     fun `salvar invalido marca erros e nao persiste`() = runTest(mainRule.dispatcher) {
-        val fake = FakeAgenteRepository()
+        val fake = FakeFuncionarioRepository()
         val vm = FormAgenteViewModel(fake, constanteFake(), SavedStateHandle())
         advanceUntilIdle()
 
@@ -44,7 +44,7 @@ class FormAgenteViewModelTest {
 
     @Test
     fun `criar persiste agente novo e emite sucesso`() = runTest(mainRule.dispatcher) {
-        val fake = FakeAgenteRepository()
+        val fake = FakeFuncionarioRepository()
         val vm = FormAgenteViewModel(fake, constanteFake(), SavedStateHandle())
         advanceUntilIdle()
         val eventos = mutableListOf<Unit>()
@@ -65,8 +65,8 @@ class FormAgenteViewModelTest {
 
     @Test
     fun `editar atualiza campos e preserva o id do agente persistido`() = runTest(mainRule.dispatcher) {
-        val fake = FakeAgenteRepository().apply {
-            agentes = listOf(Agente("a1", "Ana", "MATRIZ", "PORTO NORTE"))
+        val fake = FakeFuncionarioRepository().apply {
+            agentes = listOf(Funcionario("a1", "Ana", "MATRIZ", "PORTO NORTE"))
         }
         val vm = FormAgenteViewModel(fake, constanteFake(), SavedStateHandle(mapOf("idAgente" to "a1")))
         advanceUntilIdle()

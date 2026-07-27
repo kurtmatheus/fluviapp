@@ -123,13 +123,17 @@ class DetalhesPassagemViewModel @Inject constructor(
     private suspend fun atualizarIsAdminOuFuncResponsavel() {
         val usuarioLogado = usuarioRepository.obterUltimoUsuarioLogado() ?: return
         dataStore.data.collect { preferences ->
+            // Os dois eixos (ADR-0015 §8.2): papel de sistema + cargo de negócio.
+            val papel = preferences[PreferencesKey.PAPEL_ATUAL]
             val cargo = preferences[PreferencesKey.CARGO_ATUAL]
-            // Posse por identidade (ADR-0010 Fase 2): uid do dono DA PASSAGEM × uid logado
-            // (Usuario.id = doc id de users/{uid}). Passagens sem id (anteriores à Fase 2) → não-dono.
-            val ehDono = funcionarioIdPassagem.isNotEmpty() && funcionarioIdPassagem == usuarioLogado.id
+            // Posse por identidade (ADR-0010 Fase 2, revista pelo ADR-0015 §8.4): o dono da passagem é o
+            // FUNCIONÁRIO que emitiu, não o uid — o campo e o nome dele passaram a dizer a mesma coisa.
+            // Perfil sem vínculo (plataforma pura) nunca é dono: funcionarioId vazio não casa com nada.
+            val ehDono = funcionarioIdPassagem.isNotEmpty() &&
+                    funcionarioIdPassagem == usuarioLogado.funcionarioId
             _uiState.update { state ->
                 state.copy(
-                    isAdminOuFuncResposavel = PermissoesUsuario.podeEditarPassagem(cargo, ehDono)
+                    isAdminOuFuncResposavel = PermissoesUsuario.podeEditarPassagem(papel, cargo, ehDono)
                 )
             }
         }

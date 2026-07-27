@@ -8,7 +8,7 @@ import androidx.lifecycle.viewModelScope
 import dev.matheus.fluviapp.model.mappers.ViagemDadosViagemMapper
 import dev.matheus.fluviapp.model.operacoes.PermissoesUsuario
 import dev.matheus.fluviapp.preferences.PreferencesKey
-import dev.matheus.fluviapp.services.repository.cadastro.passagem.AgenteRepository
+import dev.matheus.fluviapp.services.repository.operacoes.FuncionarioRepository
 import com.google.firebase.auth.FirebaseAuth
 import dev.matheus.fluviapp.services.repository.firebase.PassagemFirestoreRepository
 import dev.matheus.fluviapp.services.repository.firebase.SincronizacaoSessao
@@ -31,7 +31,7 @@ class MainScreenViewModel @Inject constructor(
     private val viagemRepository: ViagemFirestoreRepository,
     private val viagemMapper: ViagemDadosViagemMapper,
     private val passagemRepository: PassagemFirestoreRepository,
-    private val agenteRepository: AgenteRepository,
+    private val funcionarioRepository: FuncionarioRepository,
     private val firebaseAuth: FirebaseAuth,
     private val sincronizacaoSessao: SincronizacaoSessao,
     private val estadoSincronizacao: EstadoSincronizacao,
@@ -63,11 +63,12 @@ class MainScreenViewModel @Inject constructor(
         viewModelScope.launch {
             dataStore.data.collect { prefs ->
                 val username = prefs[PreferencesKey.USUARIO_ATUAL]
-                val cargo = prefs[PreferencesKey.CARGO_ATUAL]
+                // Menu é eixo puramente de SISTEMA (ADR-0015 §8.2): quem vê o quê sai do papel.
+                val papel = prefs[PreferencesKey.PAPEL_ATUAL]
                 _uiState.update { state ->
                     state.copy(
                         userName = username ?: state.userName,
-                        secoesVisiveis = PermissoesUsuario.secoesVisiveis(cargo),
+                        secoesVisiveis = PermissoesUsuario.secoesVisiveis(papel),
                     )
                 }
             }
@@ -126,6 +127,6 @@ class MainScreenViewModel @Inject constructor(
     private fun sincronizarFirestore() {
         viagemRepository.sincronizar()
         passagemRepository.sincronizarNumeroBilheteEmTempoReal()
-        agenteRepository.sincronizar()
+        funcionarioRepository.sincronizar()
     }
 }

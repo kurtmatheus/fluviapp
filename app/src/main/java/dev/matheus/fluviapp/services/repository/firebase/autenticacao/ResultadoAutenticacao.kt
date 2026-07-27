@@ -21,13 +21,20 @@ enum class MotivoFalhaAuth {
  * Perfil autenticado em termos de domínio, lido de `users/{uid}` após o login. Usado para semear
  * a sessão (Room + DataStore) sem depender do listener de `carregarUsuarios` (evita corrida no
  * 1º login Google, quando o perfil acabou de ser criado).
+ *
+ * Carrega os **dois contextos** resolvidos de uma vez (ADR-0015 §8.3): o de sistema, que vem de
+ * `users/{uid}`, e o de negócio ([cargo]/[nome]), que vem de `funcionarios/{funcionarioId}` — o mesmo
+ * caminho de dois saltos que as regras do servidor percorrem. A sessão guarda o que **decide acesso**
+ * (papel + cargo) e o que **identifica na tela** (nome/username); agência e lotação não vêm — quem
+ * precisa delas resolve pelo funcionário, que já está espelhado no Room (§8.1).
  */
 data class PerfilAutenticado(
     val id: String,
     val email: String,
-    val nome: String,
-    val cargo: String,
-    /** Capacidades organizacionais do membro (ADR-0015 §2) — viajam junto p/ semear a sessão. */
-    val agencia: String = "",
-    val lotacao: String = "",
+    val username: String,
+    val papel: String,
+    val funcionarioId: String = "",
+    /** Do `Funcionario` ligado (§8.3). Vazios quando o papel é puro de plataforma. */
+    val cargo: String = "",
+    val nome: String = "",
 )

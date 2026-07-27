@@ -1,15 +1,17 @@
 package dev.matheus.fluviapp.model.operacoes
 
 /**
- * Agência a que um [Usuario] pertence — **capacidade organizacional**, não permissão (ADR-0015 §2):
- * diz *onde* o membro atua; *o que* ele pode fazer continua saindo do cargo ([Usuario.Cargo]).
+ * Agência a que um [Funcionario] pertence — **capacidade organizacional**, não permissão (ADR-0015
+ * §8.1): diz *onde* a pessoa atua; *o que* ela pode fazer sai do papel e do cargo.
  *
- * Vivia dentro de `Agente.Agencia`. Saiu de lá porque a entidade `Agente` é aposentada (ADR-0015 §7) e
- * o `Usuario` não pode depender de quem vai morrer.
+ * Vivia dentro de `Agente.Agencia`, passou por `Usuario` (P2.2a) e voltou para o contexto de negócio com
+ * a revisão estrutural — é o funcionário que tem agência, não a conta de acesso.
  *
  * **Conjunto fixo por ora** (ADR-0015): vira coleção cadastrável quando houver cadastro de agência — daí
- * a relação passa a ser por id (ADR-0008). Enquanto é enum, o valor persistido é o `name`, com String só
- * na fronteira (mesmo padrão de `Cargo`/`StatusPassagem`).
+ * a relação passa a ser por id (ADR-0008). Enquanto isso, `Funcionario.agencia` ainda é String **livre**
+ * (o seed tem "AGENCIA HORIZONTE" e outras que não estão aqui), então este enum nomeia o que o app
+ * conhece — a coringa e a matriz — e não valida o campo. Fechar essa folga é trabalho do P2.2b, quando a
+ * agência virar seletor.
  */
 enum class Agencia {
     /**
@@ -22,12 +24,5 @@ enum class Agencia {
     companion object {
         /** Converte o valor persistido no enum canônico; `null` se desconhecido (deriva de dado). */
         fun de(valor: String?): Agencia? = entries.firstOrNull { it.name == valor }
-
-        /**
-         * Leitura de fronteira: valor ausente/vazio/desconhecido cai em [AUTONOMO]. Cobre documento
-         * antigo (Firestore é schemaless — perfis anteriores a este campo simplesmente não o têm) sem
-         * espalhar `null` pelo modelo.
-         */
-        fun deOuPadrao(valor: String?): Agencia = de(valor) ?: AUTONOMO
     }
 }

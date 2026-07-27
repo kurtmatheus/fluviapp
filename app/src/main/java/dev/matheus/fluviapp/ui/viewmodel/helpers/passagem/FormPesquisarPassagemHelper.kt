@@ -2,7 +2,7 @@ package dev.matheus.fluviapp.ui.viewmodel.helpers.passagem
 
 import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Categoria.STATUS_PASSAGEM
 import dev.matheus.fluviapp.services.repository.cadastro.ConstanteRepository
-import dev.matheus.fluviapp.services.repository.operacoes.UsuarioRepository
+import dev.matheus.fluviapp.services.repository.operacoes.FuncionarioRepository
 import dev.matheus.fluviapp.ui.states.passagem.PesquisarPassagemUiState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
@@ -11,7 +11,7 @@ import kotlinx.coroutines.runBlocking
 class FormPesquisarPassagemHelper(
     private val uiState: MutableStateFlow<PesquisarPassagemUiState>,
     private val constanteRepository: ConstanteRepository,
-    private val usuarioRepository: UsuarioRepository
+    private val funcionarioRepository: FuncionarioRepository
 ) {
 
     init {
@@ -40,7 +40,7 @@ class FormPesquisarPassagemHelper(
                     atualizarBarraPesquisa(it)
                 },
                 listaSituacaoPassagem = runBlocking { constanteRepository.obterTodosPorCategoria(STATUS_PASSAGEM.name) },
-                listaOperadores = runBlocking { usuarioRepository.obterTodos().map { it.nome } }
+                listaOperadores = runBlocking { funcionarioRepository.obterTodosFuncionarios().map { it.descricaoNome } }
             )
         }
     }

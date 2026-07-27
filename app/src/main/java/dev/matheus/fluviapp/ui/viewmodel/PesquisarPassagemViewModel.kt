@@ -5,12 +5,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.matheus.fluviapp.extensions.filtrarPor
 import dev.matheus.fluviapp.model.mappers.PassagemDadosPassagemMapper
+import dev.matheus.fluviapp.model.operacoes.Funcionario
 import dev.matheus.fluviapp.model.operacoes.PermissoesUsuario
 import dev.matheus.fluviapp.model.operacoes.Usuario
 import dev.matheus.fluviapp.services.repository.cadastro.ConstanteRepository
 import dev.matheus.fluviapp.services.repository.firebase.PassagemFirestoreRepository
 import dev.matheus.fluviapp.services.repository.firebase.documents.PassagemDocumento
 import dev.matheus.fluviapp.services.repository.firebase.documents.toPassagem
+import dev.matheus.fluviapp.services.repository.operacoes.FuncionarioRepository
 import dev.matheus.fluviapp.services.repository.operacoes.UsuarioRepository
 import dev.matheus.fluviapp.ui.states.passagem.PesquisarPassagemUiState
 import dev.matheus.fluviapp.ui.viewmodel.helpers.passagem.FormPesquisarPassagemHelper
@@ -31,6 +33,7 @@ class PesquisarPassagemViewModel @Inject constructor(
     private val passagemRepository: PassagemFirestoreRepository,
     private val dadosPassagemMapper: PassagemDadosPassagemMapper,
     private val usuarioRepository: UsuarioRepository,
+    private val funcionarioRepository: FuncionarioRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(PesquisarPassagemUiState())
@@ -45,6 +48,13 @@ class PesquisarPassagemViewModel @Inject constructor(
 
     lateinit var usuarioLogado: Usuario
 
+    /**
+     * O lado NEGÓCIO do logado (ADR-0015 §8.1): de onde saem o cargo (2ª entrada da política) e o nome
+     * que filtra as passagens do próprio. Null para papel puro de plataforma — que, por não ter nome de
+     * emissor, também não tem "minhas passagens" a filtrar.
+     */
+    private var funcionarioLogado: Funcionario? = null
+
     init {
         viewModelScope.launch {
             inicializarHelpers()
@@ -56,16 +66,19 @@ class PesquisarPassagemViewModel @Inject constructor(
         formPesquisarPassagemHelper = FormPesquisarPassagemHelper(
             uiState = _uiState,
             constanteRepository = constanteRepository,
-            usuarioRepository = usuarioRepository
+            funcionarioRepository = funcionarioRepository
         )
         validacaoFormPesquisarPassagemHelper = ValidacaoFormPesquisarPassagemHelper(
             uiState = _uiState
         )
         usuarioLogado = usuarioRepository.obterUltimoUsuarioLogado()!!
+        funcionarioLogado = usuarioLogado.funcionarioId
+            .takeIf { it.isNotBlank() }
+            ?.let { funcionarioRepository.obterPorId(it) }
     }
 
     private fun inicializarPermissaoEspecial() {
-        if (PermissoesUsuario.podeVerTodasPassagens(usuarioLogado.cargo)) {
+        if (PermissoesUsuario.podeVerTodasPassagens(usuarioLogado.papel, funcionarioLogado?.cargo)) {
             formPesquisarPassagemHelper.atualizaPermissaoEspecial()
         }
     }
@@ -74,7 +87,14 @@ class PesquisarPassagemViewModel @Inject constructor(
         usuarioRepository.obterUltimoUsuarioLogado()?.let { usuarioLogado ->
             val pesquisarPassagemUiState = _uiState.value
 
-            val usuarioValidado = if (PermissoesUsuario.podeVerTodasPassagens(usuarioLogado.cargo)) pesquisarPassagemUiState.operador else usuarioLogado.nome
+            // Quem vê todas escolhe o operador no filtro; os demais veem as próprias — e "as próprias"
+            // se identifica pelo NOME DO FUNCIONÁRIO, que é o que a emissão congela (ADR-0015 §8.1).
+            val usuarioValidado =
+                if (PermissoesUsuario.podeVerTodasPassagens(usuarioLogado.papel, funcionarioLogado?.cargo)) {
+                    pesquisarPassagemUiState.operador
+                } else {
+                    funcionarioLogado?.descricaoNome.orEmpty()
+                }
 
             // try só na chamada de rede (equivalente ao antigo addOnFailureListener). Erros de
             // mapeamento NÃO entram aqui — surgem com o próprio stack, não mascarados de "Falha no Processo".

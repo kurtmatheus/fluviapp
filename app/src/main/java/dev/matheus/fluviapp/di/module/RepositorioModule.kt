@@ -2,8 +2,8 @@ package dev.matheus.fluviapp.di.module
 
 import dev.matheus.fluviapp.services.repository.cadastro.ConstanteFirestoreRepository
 import dev.matheus.fluviapp.services.repository.cadastro.ConstanteRepository
-import dev.matheus.fluviapp.services.repository.cadastro.passagem.AgenteFirestoreRepository
-import dev.matheus.fluviapp.services.repository.cadastro.passagem.AgenteRepository
+import dev.matheus.fluviapp.services.repository.operacoes.FuncionarioFirestoreRepository
+import dev.matheus.fluviapp.services.repository.operacoes.FuncionarioRepository
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.EmpresaFirestoreRepository
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.EmpresaRepository
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.NavioFirestoreRepository
@@ -25,7 +25,7 @@ abstract class RepositorioModule {
 
     @Binds
     @Singleton
-    abstract fun bindAgenteRepository(impl: AgenteFirestoreRepository): AgenteRepository
+    abstract fun bindFuncionarioRepository(impl: FuncionarioFirestoreRepository): FuncionarioRepository
 
     @Binds
     @Singleton

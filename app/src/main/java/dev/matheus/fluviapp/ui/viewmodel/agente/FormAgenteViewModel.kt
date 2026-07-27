@@ -6,11 +6,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.matheus.fluviapp.R
 import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Categoria.MUNICIPIO
-import dev.matheus.fluviapp.model.cadastro.passagem.Agente
+import dev.matheus.fluviapp.model.operacoes.Funcionario
 import dev.matheus.fluviapp.model.mapDescricao
 import dev.matheus.fluviapp.navigation.navcomposables.agente.ID_AGENTE_ARGUMENT
 import dev.matheus.fluviapp.services.repository.cadastro.ConstanteRepository
-import dev.matheus.fluviapp.services.repository.cadastro.passagem.AgenteRepository
+import dev.matheus.fluviapp.services.repository.operacoes.FuncionarioRepository
 import dev.matheus.fluviapp.ui.states.FormAgenteUiState
 import dev.matheus.fluviapp.ui.viewmodel.helpers.agente.validarAgente
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -30,7 +30,7 @@ import javax.inject.Inject
  */
 @HiltViewModel
 class FormAgenteViewModel @Inject constructor(
-    private val agenteRepository: AgenteRepository,
+    private val funcionarioRepository: FuncionarioRepository,
     private val constanteRepository: ConstanteRepository,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
@@ -52,7 +52,7 @@ class FormAgenteViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update {
                 it.copy(
-                    listaAgencia = agenteRepository.obterTodasAgencias(),
+                    listaAgencia = funcionarioRepository.obterTodasAgencias(),
                     listaMunicipios = constanteRepository.obterTodosPorCategoria(MUNICIPIO.name).mapDescricao(),
                 )
             }
@@ -61,7 +61,7 @@ class FormAgenteViewModel @Inject constructor(
 
     private fun carregar() {
         viewModelScope.launch {
-            agenteRepository.obterPorId(idAgente)?.let { agente ->
+            funcionarioRepository.obterPorId(idAgente)?.let { agente ->
                 _uiState.update {
                     it.copy(
                         titulo = R.string.subtitle_editar_agente,
@@ -97,13 +97,13 @@ class FormAgenteViewModel @Inject constructor(
             try {
                 // Edição: parte do agente persistido (preserva o id) e aplica os campos do form.
                 // Criação: novo agente com id vazio (auto-id).
-                val base = if (idAgente.isNotBlank()) agenteRepository.obterPorId(idAgente) else null
-                val agente = (base ?: Agente(id = "", descricaoNome = "", agencia = "", lotacao = "")).copy(
+                val base = if (idAgente.isNotBlank()) funcionarioRepository.obterPorId(idAgente) else null
+                val agente = (base ?: Funcionario(id = "", descricaoNome = "", agencia = "", lotacao = "")).copy(
                     descricaoNome = s.agente,
                     agencia = s.agencia,
                     lotacao = s.lotacao,
                 )
-                agenteRepository.salvar(agente)
+                funcionarioRepository.salvar(agente)
                 _sucesso.send(Unit)
             } catch (e: Exception) {
                 Log.e(TAG, "salvar: ${e.message}", e)

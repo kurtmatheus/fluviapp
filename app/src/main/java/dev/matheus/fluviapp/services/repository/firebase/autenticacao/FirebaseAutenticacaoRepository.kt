@@ -7,7 +7,8 @@ import com.google.firebase.auth.FirebaseAuthInvalidUserException
 import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.firestore.FirebaseFirestore
-import dev.matheus.fluviapp.model.operacoes.Agencia
+import dev.matheus.fluviapp.services.repository.firebase.documents.FuncionarioDocumento
+import dev.matheus.fluviapp.services.repository.operacoes.FuncionarioRepository
 import dev.matheus.fluviapp.services.repository.firebase.documents.UsuarioDocumento
 import dev.matheus.fluviapp.services.repository.operacoes.UsuarioRepository
 import kotlinx.coroutines.tasks.await
@@ -64,8 +65,8 @@ class FirebaseAutenticacaoRepository @Inject constructor(
                 docRef.set(
                     UsuarioDocumento(
                         email = user.email.orEmpty(),
-                        nome = user.displayName ?: user.email.orEmpty(),
-                        cargo = CARGO_PADRAO_AUTOCADASTRO,
+                        username = user.displayName ?: user.email.orEmpty(),
+                        papel = PAPEL_PADRAO_AUTOCADASTRO,
                     )
                 ).await()
             }
@@ -79,25 +80,42 @@ class FirebaseAutenticacaoRepository @Inject constructor(
         ResultadoAutenticacao.Falha(motivoDe(e))
     }
 
+    /**
+     * Resolve os dois contextos no login (ADR-0015 §8.3): lê `users/{uid}` e, se houver elo, segue para
+     * `funcionarios/{funcionarioId}` — os mesmos dois saltos que as regras do servidor fazem. Sem elo
+     * (papel puro de plataforma), cargo e nome ficam vazios, o que é estado válido: quem decide ali é o
+     * papel. Falha na 2ª leitura NÃO derruba o login — degrada para "sem cargo", que é fail-closed.
+     */
     override suspend fun perfilAutenticado(): PerfilAutenticado? {
         val user = firebaseAuth.currentUser ?: return null
         val doc = firestore.collection(UsuarioRepository.COLLECTION_USERS).document(user.uid)
             .get().await().toObject(UsuarioDocumento::class.java) ?: return null
+
+        val funcionario = doc.funcionarioId.takeIf { it.isNotBlank() }?.let { id ->
+            try {
+                firestore.collection(FuncionarioRepository.COLLECTION_FUNCIONARIOS).document(id)
+                    .get().await().toObject(FuncionarioDocumento::class.java)
+            } catch (e: Exception) {
+                Log.e(TAG, "perfilAutenticado: funcionario $id ilegível: ${e.message}", e)
+                null
+            }
+        }
+
         return PerfilAutenticado(
             id = user.uid,
             email = doc.email,
-            nome = doc.nome,
-            cargo = doc.cargo,
-            // Mesma normalização da fronteira do documento: sem agência → AUTONOMO (ADR-0015 §2).
-            agencia = Agencia.deOuPadrao(doc.agencia).name,
-            lotacao = doc.lotacao,
+            username = doc.username,
+            papel = doc.papel,
+            funcionarioId = doc.funcionarioId,
+            cargo = funcionario?.cargo.orEmpty(),
+            nome = funcionario?.nome.orEmpty(),
         )
     }
 
-    override suspend fun criarPerfil(email: String, nome: String, cargo: String) {
+    override suspend fun criarPerfil(email: String, username: String, papel: String) {
         val uid = firebaseAuth.currentUser?.uid ?: return
         firestore.collection(UsuarioRepository.COLLECTION_USERS).document(uid)
-            .set(UsuarioDocumento(email = email, nome = nome, cargo = cargo))
+            .set(UsuarioDocumento(email = email, username = username, papel = papel))
     }
 
     override fun sair() {
@@ -106,8 +124,8 @@ class FirebaseAutenticacaoRepository @Inject constructor(
 
     private companion object {
         private const val TAG = "FirebaseAuthRepo"
-        // Menor privilégio p/ auto-cadastro (mesmo default do cadastro por e-mail/senha).
-        const val CARGO_PADRAO_AUTOCADASTRO = "AGENTE"
+        // Menor privilégio p/ auto-cadastro: OPERADOR é o papel de quem opera (ADR-0015 §8.1).
+        const val PAPEL_PADRAO_AUTOCADASTRO = "OPERADOR"
     }
 }
 

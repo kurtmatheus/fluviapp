@@ -1,13 +1,13 @@
-package dev.matheus.fluviapp.services.repository.cadastro.passagem
+package dev.matheus.fluviapp.services.repository.operacoes
 
 import android.util.Log
-import dev.matheus.fluviapp.database.dao.cadastro.passagem.AgenteDao
-import dev.matheus.fluviapp.model.cadastro.passagem.Agente
-import dev.matheus.fluviapp.model.cadastro.passagem.toDocumento
-import dev.matheus.fluviapp.services.repository.cadastro.passagem.AgenteRepository.Companion.COLLECTION_AGENTS
+import dev.matheus.fluviapp.database.dao.operacoes.FuncionarioDao
+import dev.matheus.fluviapp.model.operacoes.Funcionario
+import dev.matheus.fluviapp.model.operacoes.toDocumento
+import dev.matheus.fluviapp.services.repository.operacoes.FuncionarioRepository.Companion.COLLECTION_FUNCIONARIOS
 import dev.matheus.fluviapp.services.repository.firebase.FonteSnapshots
-import dev.matheus.fluviapp.services.repository.firebase.documents.toAgente
-import dev.matheus.fluviapp.services.repository.firebase.documents.toAgenteDocumento
+import dev.matheus.fluviapp.services.repository.firebase.documents.toFuncionario
+import dev.matheus.fluviapp.services.repository.firebase.documents.toFuncionarioDocumento
 import dev.matheus.fluviapp.di.module.SyncScope
 import dev.matheus.fluviapp.services.repository.firebase.sincronizarColecao
 import dev.matheus.fluviapp.telemetry.RegistroCadastro
@@ -20,16 +20,16 @@ import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import javax.inject.Singleton
 
-/** Impl Firestore da porta [AgenteRepository] — espelha no Room (ADR-0003), contrato do molde. */
+/** Impl Firestore da porta [FuncionarioRepository] — espelha no Room (ADR-0003), contrato do molde. */
 @Singleton
-class AgenteFirestoreRepository @Inject constructor(
-    private val dao: AgenteDao,
+class FuncionarioFirestoreRepository @Inject constructor(
+    private val dao: FuncionarioDao,
     private val firestore: FirebaseFirestore,
     private val registroCadastro: RegistroCadastro,
     @SyncScope private val syncScope: CoroutineScope,
     private val registroSincronizacao: RegistroSincronizacao,
     private val fonteSnapshots: FonteSnapshots,
-) : AgenteRepository {
+) : FuncionarioRepository {
 
     private var syncJob: Job? = null
 
@@ -37,28 +37,28 @@ class AgenteFirestoreRepository @Inject constructor(
         if (syncJob?.isActive == true) return
         syncJob = sincronizarColecao(
             fonte = fonteSnapshots,
-            colecao = COLLECTION_AGENTS,
+            colecao = COLLECTION_FUNCIONARIOS,
             scope = syncScope,
             registro = registroSincronizacao,
-            paraModelo = { it.toAgenteDocumento().toAgente(it.id) },
+            paraModelo = { it.toFuncionarioDocumento().toFuncionario(it.id) },
             salvarTodos = { dao.salvarTodos(*it.toTypedArray()) },
         )
     }
 
-    override suspend fun salvar(agente: Agente) {
-        val documento = if (agente.id.isBlank()) {
-            firestore.collection(COLLECTION_AGENTS).document()
+    override suspend fun salvar(funcionario: Funcionario) {
+        val documento = if (funcionario.id.isBlank()) {
+            firestore.collection(COLLECTION_FUNCIONARIOS).document()
         } else {
-            firestore.collection(COLLECTION_AGENTS).document(agente.id)
+            firestore.collection(COLLECTION_FUNCIONARIOS).document(funcionario.id)
         }
-        val comId = agente.copy(id = documento.id)
+        val comId = funcionario.copy(id = documento.id)
 
         // FALHA: Room não gravou — desfecho não recuperável, propaga pro VM tratar.
         try {
             dao.salvar(comId)
         } catch (e: Exception) {
             registroCadastro.falhou(ENTIDADE, e)
-            throw RuntimeException("Falha ao salvar agente: ${e.message}", e)
+            throw RuntimeException("Falha ao salvar funcionario: ${e.message}", e)
         }
 
         // Room já tem o dado (otimista). Aguarda o ack do Firestore: SUCESSO se confirmar,
@@ -76,9 +76,9 @@ class AgenteFirestoreRepository @Inject constructor(
     override suspend fun obterTodasAgencias(): List<String> =
         dao.obterTodasAgencias().first().distinct()
 
-    override suspend fun obterTodosAgentes() = dao.obterTodos().first()
+    override suspend fun obterTodosFuncionarios() = dao.obterTodos().first()
 
-    override suspend fun obterAgentesPorAgencia(agencia: String) =
+    override suspend fun obterFuncionariosPorAgencia(agencia: String) =
         dao.obterTodosPorAgencia(agencia).first()
 
     // Deleta local (otimista) + doc do Firestore. O listener de sessão (ADR-0009) reconcilia o Room.
@@ -86,14 +86,14 @@ class AgenteFirestoreRepository @Inject constructor(
     override suspend fun deletar(id: String) {
         dao.deletar(id)
         try {
-            firestore.collection(COLLECTION_AGENTS).document(id).delete().await()
+            firestore.collection(COLLECTION_FUNCIONARIOS).document(id).delete().await()
         } catch (e: Exception) {
             Log.e(TAG, "deletar($id): ${e.message}", e)
         }
     }
 
     private companion object {
-        const val TAG = "agenteRepository"
-        const val ENTIDADE = "agente"
+        const val TAG = "funcionarioRepository"
+        const val ENTIDADE = "funcionario"
     }
 }

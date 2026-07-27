@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 2,
-    "identityHash": "f3c3962c55aa7374f27063959705acf7",
+    "identityHash": "11346e06dd05fc5bc873333d472df488",
     "entities": [
       {
         "tableName": "Usuario",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `email` TEXT NOT NULL, `nome` TEXT NOT NULL, `cargo` TEXT NOT NULL, `agencia` TEXT NOT NULL, `lotacao` TEXT NOT NULL, `ultimoUsuarioLogado` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `email` TEXT NOT NULL, `username` TEXT NOT NULL, `papel` TEXT NOT NULL, `funcionarioId` TEXT NOT NULL, `ultimoUsuarioLogado` INTEGER NOT NULL, PRIMARY KEY(`id`))",
         "fields": [
           {
             "fieldPath": "id",
@@ -21,26 +21,20 @@
             "notNull": true
           },
           {
-            "fieldPath": "nome",
-            "columnName": "nome",
+            "fieldPath": "username",
+            "columnName": "username",
             "affinity": "TEXT",
             "notNull": true
           },
           {
-            "fieldPath": "cargo",
-            "columnName": "cargo",
+            "fieldPath": "papel",
+            "columnName": "papel",
             "affinity": "TEXT",
             "notNull": true
           },
           {
-            "fieldPath": "agencia",
-            "columnName": "agencia",
-            "affinity": "TEXT",
-            "notNull": true
-          },
-          {
-            "fieldPath": "lotacao",
-            "columnName": "lotacao",
+            "fieldPath": "funcionarioId",
+            "columnName": "funcionarioId",
             "affinity": "TEXT",
             "notNull": true
           },
@@ -245,8 +239,8 @@
         "foreignKeys": []
       },
       {
-        "tableName": "Agente",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `descricaoNome` TEXT NOT NULL, `agencia` TEXT NOT NULL, `lotacao` TEXT NOT NULL, PRIMARY KEY(`id`))",
+        "tableName": "Funcionario",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `descricaoNome` TEXT NOT NULL, `agencia` TEXT NOT NULL, `lotacao` TEXT NOT NULL, `cargo` TEXT NOT NULL, PRIMARY KEY(`id`))",
         "fields": [
           {
             "fieldPath": "id",
@@ -271,6 +265,12 @@
             "columnName": "lotacao",
             "affinity": "TEXT",
             "notNull": true
+          },
+          {
+            "fieldPath": "cargo",
+            "columnName": "cargo",
+            "affinity": "TEXT",
+            "notNull": true
           }
         ],
         "primaryKey": {
@@ -281,13 +281,13 @@
         },
         "indices": [
           {
-            "name": "index_Agente_id",
+            "name": "index_Funcionario_id",
             "unique": false,
             "columnNames": [
               "id"
             ],
             "orders": [],
-            "createSql": "CREATE INDEX IF NOT EXISTS `index_Agente_id` ON `${TABLE_NAME}` (`id`)"
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_Funcionario_id` ON `${TABLE_NAME}` (`id`)"
           }
         ],
         "foreignKeys": []
@@ -811,7 +811,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'f3c3962c55aa7374f27063959705acf7')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '11346e06dd05fc5bc873333d472df488')"
     ]
   }
 }
