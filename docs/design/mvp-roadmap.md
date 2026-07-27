@@ -1,7 +1,7 @@
 # Roadmap para o MVP
 
-**Status:** Rascunho — Claude semeou a pedido do analista (2026-07-26); revisão/ajuste de ordem e escopo
-pendente. Não é código; é o sequenciamento dos passos até o MVP e as sementes de ADR que faltam.
+**Status:** Pilares **1 e 2 completos** (2026-07-27); resta o **3** (CI/CD). Não é código; é o
+sequenciamento dos passos até o MVP e as sementes de ADR que faltam.
 
 O MVP tem **três pilares** (na ordem proposta pelo analista):
 
@@ -41,20 +41,34 @@ As fatias do `balanco-passagens-mapper.md §7`, **excluindo a fatia 4** (módulo
 - **P1.2 — Contagem: suíte por bilhete + `associateBy`. ✅ FEITO (commit d118021).** 1 suíte por bilhete
   (`temPassageiro3`→3p, senão 2p; solo conta); `contador` extraído p/ função pura `contarOcupacaoNavio` +
   `associateBy` no lookup; +4 testes por caso. Breakdown segue no ramo REDE (coerente com P1.1).
-- **P1.3 — Renomear módulo → "Contagem de Passagem".** Só o nome no menu/títulos. **SEM filtro por cargo**
-  (revisão 2026-07-26): o operador **vê** a contagem geral — precisa dos números da viagem para orientação.
-  O filtro por cargo fica **só no Faturamento**. *Baixo risco (strings).*
-- **P1.4 — Threading (opcional p/ MVP).** Avaliar/refatorar o `runBlocking` N+1 de `obterTodasPorDataStatus`
-  (tela de pesquisa) → `suspend`/`await`+cache. *Dívida de perf; pode ficar pós-MVP se apertar.*
+- **P1.3 — Renomear módulo → "Contagem de Passagem". ✅ FEITO (commit 6014b5a).** As telas já diziam
+  "Contagem de Passagem"; o **código** ainda dizia Balanço — e morava no pacote `faturamento`.
+  `Balanco*` → `ContagemPassagem*`, pacote `faturamento` → `contagem`, rota `listaRelatorios` →
+  `contagemPassagem`, chaves de string. Não foi só cosmético: o ADR-0015 §6 separa Contagem (ocupação,
+  **cross-agência**, recurso compartilhado) de Faturamento (financeiro, **isolado por agência**) — a
+  contagem morando dentro de `faturamento` convidava a confusão que o desenho evita. **Sem filtro por
+  cargo**, como decidido: a Contagem vive na seção Passagem, visível a todos.
+- **P1.4 — Threading. ✅ FEITO (commit 6014b5a).** `obterTodasPorDataStatus` gravava no Room com um
+  `runBlocking { dao.salvar(it) }` **por documento**, dentro do listener de sucesso — N bloqueios de
+  thread por consulta —, e a travessia acontecia **duas vezes** (o ViewModel remapeava o mesmo snapshot).
+  Agora é `suspend`, devolve a lista mapeada e grava em **uma** transação (`salvarTodas`).
 
-**Pré-requisito de dado:** o SEED não popula tarifas; para a contagem/emissão funcionar numa viagem, a tarifa
-precisa estar cadastrada (viagem criada manual). Decidir se o MVP **semeia tarifas** ou mantém manual.
+**Pilar 1 fechado** com P1.1–P1.4. A fatia 4 (Faturamento) segue fora por definição — é o "sem faturamento".
+
+**Pré-requisito de dado, ainda aberto:** o SEED não popula tarifas; para a contagem/emissão funcionar numa
+viagem, a tarifa precisa estar cadastrada (viagem criada manual). Decidir se o MVP **semeia tarifas** ou
+mantém manual. É a única pergunta viva do Pilar 1 — e vale notar que ela decide se o app **demonstra** sem
+intervenção num projeto Firebase novo.
 
 ## Pilar 2 — Rework de Agente → Equipe ([ADR-0015](../adr/0015-rework-agente-equipe.md))
 
-O maior pilar. É a rework de identidade/multi-agência que o §6 do estudo do form já apontava. O
-[ADR-0015](../adr/0015-rework-agente-equipe.md) está **aceito em direção** (todos os pontos fechados com o
-analista em 2026-07-26) — ele manda; as fases abaixo são o resumo:
+O maior pilar. É a rework de identidade/multi-agência que o §6 do estudo do form já apontava.
+
+> **✅ COMPLETO** (2026-07-27). O [ADR-0015](../adr/0015-rework-agente-equipe.md) é a fonte: ele passou por
+> uma **revisão estrutural** (dois contextos, sistema × negócio) que reescreveu boa parte do plano — o
+> `Agente` não morreu, virou `Funcionario`; nasceram `Usuario.papel` × `Funcionario.cargo`, o elo
+> `funcionarioId` e o regime de schema como DDL (§9). O resumo abaixo é o **plano original**, mantido como
+> registro; onde ele diverge do ADR, vale o ADR.
 
 - **P2.1 — Vocabulário: "Equipe" + cargos novos. ✅ FEITO** (ADR-0015 §4.2). Menu "Agentes" → "Equipe"
   (`SecaoMenu.AGENTE` → `EQUIPE`) **e** o rename dos cargos: `DIRETOR` → `GESTOR` (gestor **do sistema**),
@@ -101,8 +115,8 @@ cedo. É DevOps/release, não domínio.*
 ## Sequência e dependências (proposta)
 
 ```
-Pilar 1 (P1.1 → P1.2 → P1.3 [→ P1.4 opcional])
-Pilar 2 (P2.1 solto; P2.2 → P2.3 → P2.4)          ← precisa do ADR-0015 primeiro
+Pilar 1 ✅ (P1.1 → P1.2 → P1.3 → P1.4)
+Pilar 2 ✅ (ADR-0015: P2.0 → P2.1 → P2.2a′ → P2.2b → P2.2c → P2.3 → P2.4 → P2.6)
 Pilar 3 (P3.1 → P3.2 → P3.3)                       ← independente, encaixa quando quiser
 ```
 
@@ -111,8 +125,8 @@ build estável). P2.1 (rótulo Equipe) pode ir junto com o P1 por ser barato.
 
 ## Perguntas abertas (semear os ADRs)
 
-**Pilar 1:** MVP **semeia tarifas** (para a contagem ter dado) ou mantém viagem/tarifa manual? P1.4
-(threading) entra no MVP ou fica pós-MVP?
+**Pilar 1:** MVP **semeia tarifas** (para a contagem ter dado) ou mantém viagem/tarifa manual? (P1.4
+entrou no MVP — feito.)
 
 **Pilar 2:** nada aberto — todas as perguntas que estavam aqui (lotação, override de agência, capability,
 logo por agência, isolamento, destino do `Agente`, recorte da contagem) foram respondidas pelo analista e
