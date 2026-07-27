@@ -4,6 +4,8 @@ import dev.matheus.fluviapp.services.repository.cadastro.ConstanteFirestoreRepos
 import dev.matheus.fluviapp.services.repository.cadastro.ConstanteRepository
 import dev.matheus.fluviapp.services.repository.operacoes.FuncionarioFirestoreRepository
 import dev.matheus.fluviapp.services.repository.operacoes.FuncionarioRepository
+import dev.matheus.fluviapp.services.repository.operacoes.SessaoUsuario
+import dev.matheus.fluviapp.services.repository.operacoes.SessaoUsuarioRoom
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.EmpresaFirestoreRepository
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.EmpresaRepository
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.NavioFirestoreRepository
@@ -42,6 +44,11 @@ abstract class RepositorioModule {
     @Binds
     @Singleton
     abstract fun bindNavioRepository(impl: NavioFirestoreRepository): NavioRepository
+
+    /** Quem está operando: os dois contextos resolvidos num lugar só (ADR-0015 §8.1). */
+    @Binds
+    @Singleton
+    abstract fun bindSessaoUsuario(impl: SessaoUsuarioRoom): SessaoUsuario
 
     /** Fonte de snapshots (seam testável do sync — §10 Nível 2). */
     @Binds

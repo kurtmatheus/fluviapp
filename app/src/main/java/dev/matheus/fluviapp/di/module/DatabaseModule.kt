@@ -60,7 +60,7 @@ private val DDL_V2 = listOf(
     "CREATE INDEX IF NOT EXISTS `index_Empresa_id` ON `Empresa` (`id`)",
     "CREATE TABLE IF NOT EXISTS `Navio` (`id` TEXT NOT NULL, `descricaoNome` TEXT NOT NULL, `capacidadeVeiculo` INTEGER NOT NULL, `capacidadeSuite2` INTEGER NOT NULL, `capacidadeSuite3` INTEGER NOT NULL, `capacidadeCamarote` INTEGER NOT NULL, `empresaId` TEXT NOT NULL, PRIMARY KEY(`id`))",
     "CREATE INDEX IF NOT EXISTS `index_Navio_id` ON `Navio` (`id`)",
-    "CREATE TABLE IF NOT EXISTS `Funcionario` (`id` TEXT NOT NULL, `descricaoNome` TEXT NOT NULL, `agencia` TEXT NOT NULL, `lotacao` TEXT NOT NULL, `cargo` TEXT NOT NULL, PRIMARY KEY(`id`))",
+    "CREATE TABLE IF NOT EXISTS `Funcionario` (`id` TEXT NOT NULL, `descricaoNome` TEXT NOT NULL, `agencia` TEXT NOT NULL, `lotacao` TEXT NOT NULL, `cargo` TEXT NOT NULL, `email` TEXT NOT NULL, PRIMARY KEY(`id`))",
     "CREATE INDEX IF NOT EXISTS `index_Funcionario_id` ON `Funcionario` (`id`)",
     "CREATE TABLE IF NOT EXISTS `Viagem` (`id` TEXT NOT NULL, `codigo` TEXT NOT NULL, `origem` TEXT NOT NULL, `destino` TEXT NOT NULL, `empresaId` TEXT NOT NULL, `navioId` TEXT NOT NULL, PRIMARY KEY(`id`))",
     "CREATE INDEX IF NOT EXISTS `index_Viagem_id` ON `Viagem` (`id`)",

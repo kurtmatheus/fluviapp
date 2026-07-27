@@ -69,14 +69,18 @@ fun ResultSearchFuncionarioScreen(
                 modifier = modifier.padding(10.dp, 10.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                FilterDropDownForm(
-                    modifier = modifier.fillMaxWidth(),
-                    listaItens = uiState.listaAgencia,
-                    label = R.string.label_agencia,
-                    value = uiState.agencia,
-                    onValueChange = onAgenciaChange,
-                    keyboardType = KeyboardType.Text,
-                )
+                // Sem filtro de agência para quem só enxerga a própria (ADR-0015 §2.2) — a lista já
+                // vem recortada, então o campo não teria o que filtrar.
+                if (uiState.podeFiltrarPorAgencia) {
+                    FilterDropDownForm(
+                        modifier = modifier.fillMaxWidth(),
+                        listaItens = uiState.listaAgencia,
+                        label = R.string.label_agencia,
+                        value = uiState.agencia,
+                        onValueChange = onAgenciaChange,
+                        keyboardType = KeyboardType.Text,
+                    )
+                }
                 FilterDropDownForm(
                     modifier = modifier.fillMaxWidth(),
                     listaItens = uiState.listaLotacao,
@@ -95,6 +99,7 @@ fun ResultSearchFuncionarioScreen(
                         funcionario = funcionario,
                         onEditar = onNavegaParaEditor,
                         onDeletar = { funcionarioParaDeletar = it },
+                        podeDeletar = uiState.podeDeletar,
                     )
                 }
             }
@@ -122,6 +127,7 @@ fun CardResultFuncionario(
     funcionario: Funcionario,
     onEditar: (String) -> Unit,
     onDeletar: (Funcionario) -> Unit,
+    podeDeletar: Boolean = true,
 ) {
     Column {
         Row(
@@ -156,11 +162,15 @@ fun CardResultFuncionario(
                     contentDescription = stringResource(R.string.description_editar),
                 )
             }
-            IconButton(onClick = { onDeletar(funcionario) }) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = stringResource(R.string.description_deletar),
-                )
+            // Remover membro é da plataforma (§8.5): para o supervisor o botão não existe — a regra do
+            // servidor também nega, então mostrá-lo só produziria erro depois do clique.
+            if (podeDeletar) {
+                IconButton(onClick = { onDeletar(funcionario) }) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = stringResource(R.string.description_deletar),
+                    )
+                }
             }
         }
         HorizontalDivider(modifier = Modifier)

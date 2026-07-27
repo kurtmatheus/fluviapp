@@ -27,7 +27,9 @@ fun FormFuncionarioScreen(
     uiState: FormFuncionarioUiState,
     onAgenciaChange: (String) -> Unit = {},
     onFuncionarioChange: (String) -> Unit = {},
+    onEmailChange: (String) -> Unit = {},
     onLotacaoChange: (String) -> Unit = {},
+    onCargoChange: (String) -> Unit = {},
     onClickSalvar: () -> Unit = {},
     onClickVoltar: () -> Unit = {},
 ) {
@@ -54,7 +56,9 @@ fun FormFuncionarioScreen(
                     state = uiState,
                     onAgenciaChange = onAgenciaChange,
                     onFuncionarioChange = onFuncionarioChange,
+                    onEmailChange = onEmailChange,
                     onLotacaoChange = onLotacaoChange,
+                    onCargoChange = onCargoChange,
                 )
             }
             Column(
@@ -83,6 +87,11 @@ fun FormFuncionarioScreen(
 @Composable
 private fun FormFuncionarioScreenPreview() {
     FormFuncionarioScreen(
-        uiState = FormFuncionarioUiState(agencia = "MATRIZ", funcionario = "Agente Modelo", lotacao = "PORTO NORTE"),
+        uiState = FormFuncionarioUiState(
+            agencia = "MATRIZ",
+            funcionario = "Agente Modelo",
+            email = "agente.modelo@fluviapp.com.br",
+            lotacao = "PORTO NORTE",
+        ),
     )
 }

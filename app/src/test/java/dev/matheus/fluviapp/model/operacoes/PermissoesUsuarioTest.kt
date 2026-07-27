@@ -96,11 +96,46 @@ class PermissoesUsuarioTest {
     }
 
     @Test
-    fun `operador so ve Passagem — inclusive sendo supervisor na operacao`() {
-        // O menu não pergunta o cargo: seção é eixo de sistema (§8.2). O supervisor manda dentro da
-        // agência, não no cadastro de viagens/navios/empresas.
-        assertEquals(listOf(SecaoMenu.PASSAGEM), PermissoesUsuario.secoesVisiveis(operador))
-        assertFalse(PermissoesUsuario.podeAcessar(SecaoMenu.EQUIPE, operador))
+    fun `agente so ve Passagem`() {
+        assertEquals(listOf(SecaoMenu.PASSAGEM), PermissoesUsuario.secoesVisiveis(operador, agente))
+        assertFalse(PermissoesUsuario.podeAcessar(SecaoMenu.EQUIPE, operador, agente))
+    }
+
+    @Test
+    fun `supervisor ve Passagem e EQUIPE — e nada de cadastro de plataforma`() {
+        // A Equipe é a única seção que olha o cargo: ela existe para o supervisor gerir a própria
+        // agência (§2.2). Viagem/Empresa/Navio continuam sendo cadastro de plataforma.
+        assertEquals(
+            listOf(SecaoMenu.PASSAGEM, SecaoMenu.EQUIPE),
+            PermissoesUsuario.secoesVisiveis(operador, supervisor),
+        )
+        assertFalse(PermissoesUsuario.podeAcessar(SecaoMenu.VIAGEM, operador, supervisor))
+        assertFalse(PermissoesUsuario.podeAcessar(SecaoMenu.NAVIO, operador, supervisor))
+    }
+
+    // --- Eixo ação sobre a Equipe (§2.1/§2.2/§8.5) ---
+
+    @Test
+    fun `cadastrar membro e da plataforma ou do supervisor`() {
+        assertTrue(PermissoesUsuario.podeCadastrarFuncionario(adm, null))
+        assertTrue(PermissoesUsuario.podeCadastrarFuncionario(operador, supervisor))
+        assertFalse(PermissoesUsuario.podeCadastrarFuncionario(operador, agente))
+        assertFalse(PermissoesUsuario.podeCadastrarFuncionario(null, null))
+    }
+
+    @Test
+    fun `escolher agencia, definir cargo, deletar e ver todas as agencias sao SO da plataforma`() {
+        listOf(adm, gestor).forEach { papel ->
+            assertTrue(PermissoesUsuario.podeEscolherAgencia(papel))
+            assertTrue(PermissoesUsuario.podeDefinirCargo(papel))
+            assertTrue(PermissoesUsuario.podeDeletarFuncionario(papel))
+            assertTrue(PermissoesUsuario.podeVerTodasAgencias(papel))
+        }
+        // O supervisor cadastra, mas na agência dele, sem promover ninguém e sem apagar.
+        assertFalse(PermissoesUsuario.podeEscolherAgencia(operador))
+        assertFalse(PermissoesUsuario.podeDefinirCargo(operador))
+        assertFalse(PermissoesUsuario.podeDeletarFuncionario(operador))
+        assertFalse(PermissoesUsuario.podeVerTodasAgencias(operador))
     }
 
     @Test

@@ -5,8 +5,7 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.matheus.fluviapp.model.passagem.ResultadoEmbarque
 import dev.matheus.fluviapp.services.repository.firebase.PassagemFirestoreRepository
-import dev.matheus.fluviapp.services.repository.operacoes.FuncionarioRepository
-import dev.matheus.fluviapp.services.repository.operacoes.UsuarioRepository
+import dev.matheus.fluviapp.services.repository.operacoes.SessaoUsuario
 import dev.matheus.fluviapp.ui.states.passagem.EmbarqueUiState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -17,13 +16,12 @@ import javax.inject.Inject
 
 /**
  * ViewModel da validação de embarque (ADR-0012). Dono do estado; injeta o MESMO repositório da
- * emissão (sem repo novo) e o de usuário (identidade do operador que carimba o embarque).
+ * emissão (sem repo novo) e a sessão (identidade do operador que carimba o embarque).
  */
 @HiltViewModel
 class EmbarqueViewModel @Inject constructor(
     private val passagemRepository: PassagemFirestoreRepository,
-    private val usuarioRepository: UsuarioRepository,
-    private val funcionarioRepository: FuncionarioRepository,
+    private val sessaoUsuario: SessaoUsuario,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(EmbarqueUiState())
@@ -51,18 +49,18 @@ class EmbarqueViewModel @Inject constructor(
         val passagem = _uiState.value.passagem ?: return
         _uiState.update { it.copy(processando = true) }
         viewModelScope.launch {
-            val operador = usuarioRepository.obterUltimoUsuarioLogado()
             // O carimbo tem DUAS naturezas: `embarcadaPorId` continua sendo o **uid** — é o que a regra
             // do servidor confere contra `request.auth.uid` (ADR-0012), e forjar autoria continua
             // impossível. O nome exibido, esse, é do FUNCIONÁRIO (ADR-0015 §8.1); sem vínculo, o username.
-            val nomeOperador = operador?.funcionarioId
-                ?.takeIf { it.isNotBlank() }
-                ?.let { funcionarioRepository.obterPorId(it)?.descricaoNome }
-                ?: operador?.username.orEmpty()
-            val resultado = if (operador == null) {
+            val contexto = sessaoUsuario.atual()
+            val resultado = if (contexto == null) {
                 ResultadoEmbarque.NaoEncontrada
             } else {
-                passagemRepository.confirmarEmbarque(passagem.id, operador.id, nomeOperador)
+                passagemRepository.confirmarEmbarque(
+                    passagem.id,
+                    contexto.usuario.id,
+                    contexto.nomeExibicao,
+                )
             }
             _uiState.update { it.copy(processando = false, passagem = null, resultado = resultado) }
         }

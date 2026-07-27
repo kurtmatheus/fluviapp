@@ -80,6 +80,7 @@
     <string name="label_cor_veículo">Cor do Veículo</string>
     <string name="label_agencia">Agência</string>
     <string name="label_agente">Agente</string>
+    <string name="label_cargo">Cargo</string>
     <string name="label_valor_total">Valor Total</string>
     <string name="label_obs">Observação</string>
     <string name="label_hora_viagem">Hora da Viagem</string>
@@ -236,6 +237,7 @@
     <string name="error_falha_auth">Falha na Autenticação.</string>
     <string name="error_email_nao_verificado">Confirme seu e-mail para entrar.</string>
     <string name="error_emissor_sem_funcionario">Seu acesso não está vinculado a um agente. Procure a gestão para emitir passagens.</string>
+    <string name="error_email_invalido">Informe um e-mail válido.</string>
     <string name="error_email_ja_cadastrado">E-mail já cadastrado. Faça login.</string>
     <string name="msg_verificacao_reenviada">E-mail de verificação reenviado.</string>
     <string name="btn_reenviar_verificacao">Reenviar verificação</string>

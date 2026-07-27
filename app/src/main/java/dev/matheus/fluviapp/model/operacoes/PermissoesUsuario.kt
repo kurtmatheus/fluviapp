@@ -32,15 +32,49 @@ object PermissoesUsuario {
 
     private fun ehPapelPlataforma(papel: Papel?): Boolean = papel == ADM || papel == GESTOR
 
-    // --- Eixo seção (menu): puramente de SISTEMA ---
+    // --- Eixo seção (menu) ---
 
-    fun podeAcessar(secao: SecaoMenu, papel: String?): Boolean = when (secao) {
+    /**
+     * Quase todo o menu é eixo de SISTEMA — cadastro de viagem, empresa e navio é da plataforma. A
+     * exceção é a **Equipe**: ela existe para o `SUPERVISOR` gerir os membros da própria agência
+     * (ADR-0015 §2.2), então a seção olha os dois eixos. É a mistura que o §8.2 assume enquanto o app
+     * cobre um processo só.
+     */
+    fun podeAcessar(secao: SecaoMenu, papel: String?, cargo: String? = null): Boolean = when (secao) {
         SecaoMenu.PASSAGEM -> true
-        SecaoMenu.VIAGEM, SecaoMenu.EQUIPE, SecaoMenu.EMPRESA, SecaoMenu.NAVIO -> ehPapelPlataforma(papel)
+        SecaoMenu.EQUIPE -> podeCadastrarFuncionario(papel, cargo)
+        SecaoMenu.VIAGEM, SecaoMenu.EMPRESA, SecaoMenu.NAVIO -> ehPapelPlataforma(papel)
     }
 
-    fun secoesVisiveis(papel: String?): List<SecaoMenu> =
-        SecaoMenu.entries.filter { podeAcessar(it, papel) }
+    fun secoesVisiveis(papel: String?, cargo: String? = null): List<SecaoMenu> =
+        SecaoMenu.entries.filter { podeAcessar(it, papel, cargo) }
+
+    // --- Eixo ação sobre a Equipe (ADR-0015 §2.1/§2.2/§8.5) ---
+
+    /** Cadastrar/editar membro: plataforma em qualquer agência, supervisor na dele (§2.1). */
+    fun podeCadastrarFuncionario(papel: String?, cargo: String?): Boolean =
+        ehPapelPlataforma(papel) || Cargo.de(cargo) == Cargo.SUPERVISOR
+
+    /**
+     * Escolher a agência do membro no form. Para o supervisor ela é **implícita** — a dele —, e não por
+     * comodidade de UI: é o isolamento por agência (§3) aplicado ao cadastro.
+     */
+    fun podeEscolherAgencia(papel: String?): Boolean = ehPapelPlataforma(papel)
+
+    /**
+     * Definir o **cargo** de um membro (§8.5, decisão do analista): só a plataforma. O supervisor gere a
+     * própria agência, mas não fabrica outro supervisor — cargo concede editar-qualquer-passagem (§8.2).
+     */
+    fun podeDefinirCargo(papel: String?): Boolean = ehPapelPlataforma(papel)
+
+    /** Remover membro é operação de plataforma; o supervisor edita, não apaga (§2.1). */
+    fun podeDeletarFuncionario(papel: String?): Boolean = ehPapelPlataforma(papel)
+
+    /**
+     * Enxergar **todas as agências** (listagem da Equipe hoje; passagens em P2.6 — §4.1). O supervisor
+     * vê só a própria, e por isso a agência deixa de ser filtro para ele: sobra a lotação (§2.2).
+     */
+    fun podeVerTodasAgencias(papel: String?): Boolean = ehPapelPlataforma(papel)
 
     // --- Eixo ação sobre a Passagem (com posse) ---
 

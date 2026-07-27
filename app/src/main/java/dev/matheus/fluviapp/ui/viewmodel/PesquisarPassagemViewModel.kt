@@ -5,15 +5,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.matheus.fluviapp.extensions.filtrarPor
 import dev.matheus.fluviapp.model.mappers.PassagemDadosPassagemMapper
-import dev.matheus.fluviapp.model.operacoes.Funcionario
+import dev.matheus.fluviapp.model.operacoes.ContextoUsuario
 import dev.matheus.fluviapp.model.operacoes.PermissoesUsuario
-import dev.matheus.fluviapp.model.operacoes.Usuario
 import dev.matheus.fluviapp.services.repository.cadastro.ConstanteRepository
 import dev.matheus.fluviapp.services.repository.firebase.PassagemFirestoreRepository
 import dev.matheus.fluviapp.services.repository.firebase.documents.PassagemDocumento
 import dev.matheus.fluviapp.services.repository.firebase.documents.toPassagem
 import dev.matheus.fluviapp.services.repository.operacoes.FuncionarioRepository
-import dev.matheus.fluviapp.services.repository.operacoes.UsuarioRepository
+import dev.matheus.fluviapp.services.repository.operacoes.SessaoUsuario
 import dev.matheus.fluviapp.ui.states.passagem.PesquisarPassagemUiState
 import dev.matheus.fluviapp.ui.viewmodel.helpers.passagem.FormPesquisarPassagemHelper
 import dev.matheus.fluviapp.ui.viewmodel.helpers.passagem.validacao.ValidacaoFormPesquisarPassagemHelper
@@ -32,8 +31,8 @@ class PesquisarPassagemViewModel @Inject constructor(
     private val constanteRepository: ConstanteRepository,
     private val passagemRepository: PassagemFirestoreRepository,
     private val dadosPassagemMapper: PassagemDadosPassagemMapper,
-    private val usuarioRepository: UsuarioRepository,
     private val funcionarioRepository: FuncionarioRepository,
+    private val sessaoUsuario: SessaoUsuario,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(PesquisarPassagemUiState())
@@ -46,14 +45,12 @@ class PesquisarPassagemViewModel @Inject constructor(
 
     lateinit var onNavegaParaResultadosPesquisa: () -> Unit
 
-    lateinit var usuarioLogado: Usuario
-
     /**
-     * O lado NEGÓCIO do logado (ADR-0015 §8.1): de onde saem o cargo (2ª entrada da política) e o nome
-     * que filtra as passagens do próprio. Null para papel puro de plataforma — que, por não ter nome de
-     * emissor, também não tem "minhas passagens" a filtrar.
+     * Os dois contextos do logado (ADR-0015 §8.1): de onde saem o cargo (2ª entrada da política) e o
+     * nome que filtra as passagens do próprio. Sem funcionário (papel puro de plataforma) não há nome de
+     * emissor — e quem vê todas as passagens não precisa dele.
      */
-    private var funcionarioLogado: Funcionario? = null
+    private var contexto: ContextoUsuario? = null
 
     init {
         viewModelScope.launch {
@@ -71,29 +68,27 @@ class PesquisarPassagemViewModel @Inject constructor(
         validacaoFormPesquisarPassagemHelper = ValidacaoFormPesquisarPassagemHelper(
             uiState = _uiState
         )
-        usuarioLogado = usuarioRepository.obterUltimoUsuarioLogado()!!
-        funcionarioLogado = usuarioLogado.funcionarioId
-            .takeIf { it.isNotBlank() }
-            ?.let { funcionarioRepository.obterPorId(it) }
+        contexto = sessaoUsuario.atual()
     }
 
     private fun inicializarPermissaoEspecial() {
-        if (PermissoesUsuario.podeVerTodasPassagens(usuarioLogado.papel, funcionarioLogado?.cargo)) {
+        val contexto = contexto ?: return
+        if (PermissoesUsuario.podeVerTodasPassagens(contexto.papel, contexto.cargo)) {
             formPesquisarPassagemHelper.atualizaPermissaoEspecial()
         }
     }
 
     suspend fun carregarDadosPesquisados() {
-        usuarioRepository.obterUltimoUsuarioLogado()?.let { usuarioLogado ->
+        contexto?.let { contexto ->
             val pesquisarPassagemUiState = _uiState.value
 
             // Quem vê todas escolhe o operador no filtro; os demais veem as próprias — e "as próprias"
             // se identifica pelo NOME DO FUNCIONÁRIO, que é o que a emissão congela (ADR-0015 §8.1).
             val usuarioValidado =
-                if (PermissoesUsuario.podeVerTodasPassagens(usuarioLogado.papel, funcionarioLogado?.cargo)) {
+                if (PermissoesUsuario.podeVerTodasPassagens(contexto.papel, contexto.cargo)) {
                     pesquisarPassagemUiState.operador
                 } else {
-                    funcionarioLogado?.descricaoNome.orEmpty()
+                    contexto.funcionario?.descricaoNome.orEmpty()
                 }
 
             // try só na chamada de rede (equivalente ao antigo addOnFailureListener). Erros de

@@ -7,7 +7,9 @@ data class FuncionarioDocumento(
     val agencia: String = "",
     val lotacao: String = "",
     /** Cargo de negócio (ADR-0015 §8.1). Documento gravado antes deste campo lê como vazio. */
-    val cargo: String = ""
+    val cargo: String = "",
+    /** Chave do primeiro acesso (ADR-0015 §2.1) — casa este registro com a conta do Auth. */
+    val email: String = ""
 )
 
 fun FuncionarioDocumento.toFuncionario(id: String): Funcionario {
@@ -18,6 +20,7 @@ fun FuncionarioDocumento.toFuncionario(id: String): Funcionario {
         lotacao = lotacao,
         // Ausente vira AGENTE (o menor privilégio), não "sem cargo": quem tem registro de funcionário já
         // está na operação. Valor DESCONHECIDO, esse, atravessa cru — quem nega é a política (fail-closed).
-        cargo = cargo.ifBlank { Funcionario.Cargo.AGENTE.name }
+        cargo = cargo.ifBlank { Funcionario.Cargo.AGENTE.name },
+        email = email
     )
 }

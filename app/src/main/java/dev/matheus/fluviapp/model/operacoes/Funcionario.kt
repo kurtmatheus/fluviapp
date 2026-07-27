@@ -26,6 +26,12 @@ data class Funcionario(
      * gestão (ADR-0015 §8.5), nunca do próprio.
      */
     val cargo: String = Cargo.AGENTE.name,
+    /**
+     * **A chave que liga o pré-cadastro à pessoa** (ADR-0015 §2.1): no primeiro acesso ainda não existe
+     * `users/{uid}`, então é o e-mail que casa a conta do Auth com este registro. Depois disso o elo
+     * permanente é o id ([Usuario.funcionarioId], §8.3) — o e-mail é chave de **descoberta**, uma vez só.
+     */
+    val email: String = "",
 ) : IObjetoSimplificado {
 
     /**
@@ -57,6 +63,7 @@ fun Funcionario.toDocumento(): FuncionarioDocumento {
         nome = descricaoNome,
         agencia = agencia,
         lotacao = lotacao,
-        cargo = cargo
+        cargo = cargo,
+        email = email
     )
 }

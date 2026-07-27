@@ -121,17 +121,51 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // --- Equipe: o registro de negócio (ex-`agents`) ---
-    // Escrita só para papel de plataforma por ora — o SUPERVISOR cadastrando na própria agência entra
-    // em P2.2b (ADR-0015 §8.5), junto com o form. O que já vale: NINGUÉM muda o próprio cargo, nem um
-    // ADM no funcionário dele mesmo — é o anti-escalonamento do eixo de negócio, já que
-    // cargo == SUPERVISOR concede editar-qualquer-passagem.
+    // --- Equipe: o registro de negócio (ex-`agents`) — ADR-0015 §2.1/§8.5 ---
+    // Dois escritores, com alcances diferentes: a **plataforma** em qualquer agência, e o **supervisor**
+    // só na dele. Três invariantes que valem para os dois:
+    //  1. NINGUÉM muda o próprio cargo — nem um ADM no funcionário dele mesmo. É o anti-escalonamento do
+    //     eixo de negócio, já que cargo == SUPERVISOR concede editar-qualquer-passagem.
+    //  2. O supervisor NUNCA toca em cargo (nem no dos outros): promover é da plataforma.
+    //  3. O supervisor não move ninguém para fora nem traz de fora: agência de origem E de destino têm
+    //     de ser a dele, senão o isolamento por agência (§3) seria contornável por edição.
+    function agenciaDoAutor() {
+      return funcionarioIdDoAutor() != ''
+          && exists(/databases/$(database)/documents/funcionarios/$(funcionarioIdDoAutor()))
+        ? get(/databases/$(database)/documents/funcionarios/$(funcionarioIdDoAutor())).data.get('agencia', '')
+        : '';
+    }
+    function ehSupervisor() {
+      return cargoDoAutor() == 'SUPERVISOR';
+    }
+    function naAgenciaDoAutor(agencia) {
+      return agenciaDoAutor() != '' && agencia == agenciaDoAutor();
+    }
+    function cargoInalterado() {
+      return request.resource.data.get('cargo', '') == resource.data.get('cargo', '');
+    }
+    function naoMexeNoProprioCargo(id) {
+      return !(funcionarioIdDoAutor() == id && !cargoInalterado());
+    }
+
     match /funcionarios/{id} {
       allow read: if autenticado();
-      allow create: if autenticado() && ehPapelPlataforma();
-      allow update: if autenticado() && ehPapelPlataforma()
-                    && !(funcionarioIdDoAutor() == id
-                         && request.resource.data.get('cargo', '') != resource.data.get('cargo', ''));
+
+      allow create: if autenticado()
+                    && (ehPapelPlataforma()
+                        || (ehSupervisor()
+                            && naAgenciaDoAutor(request.resource.data.get('agencia', ''))
+                            && request.resource.data.get('cargo', 'AGENTE') == 'AGENTE'));
+
+      allow update: if autenticado()
+                    && (ehPapelPlataforma()
+                        || (ehSupervisor()
+                            && naAgenciaDoAutor(resource.data.get('agencia', ''))
+                            && naAgenciaDoAutor(request.resource.data.get('agencia', ''))
+                            && cargoInalterado()))
+                    && naoMexeNoProprioCargo(id);
+
+      // Remover membro é da plataforma: o supervisor edita, não apaga (§2.1).
       allow delete: if autenticado() && ehPapelPlataforma();
     }
 

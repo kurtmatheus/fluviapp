@@ -16,9 +16,9 @@ import dev.matheus.fluviapp.navigation.navcomposables.passagem.EDIT_PASSAGEM_ARG
 import dev.matheus.fluviapp.navigation.navcomposables.passagem.FORM_PASSAGEM_ARGUMENT
 import dev.matheus.fluviapp.services.repository.cadastro.ConstanteRepository
 import dev.matheus.fluviapp.services.repository.operacoes.FuncionarioRepository
+import dev.matheus.fluviapp.services.repository.operacoes.SessaoUsuario
 import dev.matheus.fluviapp.services.repository.firebase.PassagemFirestoreRepository
 import dev.matheus.fluviapp.services.repository.firebase.ViagemFirestoreRepository
-import dev.matheus.fluviapp.services.repository.operacoes.UsuarioRepository
 import dev.matheus.fluviapp.services.repository.rascunho.RascunhoStore
 import dev.matheus.fluviapp.telemetry.Telemetry
 import dev.matheus.fluviapp.ui.states.passagem.FormPassageiroUiState
@@ -51,10 +51,10 @@ internal const val TAMANHO_PASS = 8
 
 @HiltViewModel
 class FormPassagemViewModel @Inject constructor(
-    private val usuarioRepository: UsuarioRepository,
     private val constanteRepository: ConstanteRepository,
     private val viagemRepository: ViagemFirestoreRepository,
     private val funcionarioRepository: FuncionarioRepository,
+    private val sessaoUsuario: SessaoUsuario,
     private val passagemRepository: PassagemFirestoreRepository,
     private val rascunhoStore: RascunhoStore,
     private val emissaoTelemetry: Telemetry,
@@ -206,17 +206,14 @@ class FormPassagemViewModel @Inject constructor(
             ResultadoEmissao.Ok -> Unit
         }
 
-        val usuarioLogado = usuarioRepository.obterUltimoUsuarioLogado()
-
         // Quem emite é o FUNCIONÁRIO do logado (ADR-0015 §8.4): o par congelado no bilhete
         // (funcionarioId + funcionarioResponsavel) passa a vir todo da mesma entidade, e o nome do
         // campo deixa de mentir. Sem vínculo (papel puro de plataforma) não há emissor — bloqueia, em
         // vez de gravar uma passagem órfã que o servidor rejeitaria.
-        val funcionarioEmissor = usuarioLogado?.funcionarioId
-            ?.takeIf { it.isNotBlank() }
-            ?.let { funcionarioRepository.obterPorId(it) }
+        val contexto = sessaoUsuario.atual()
+        val funcionarioEmissor = contexto?.funcionario
 
-        if (usuarioLogado != null && funcionarioEmissor == null) {
+        if (contexto != null && funcionarioEmissor == null) {
             context.toastMessage(context.resources.getString(R.string.error_emissor_sem_funcionario))
             return null
         }

@@ -44,6 +44,8 @@ const F_A = 'func-a';
 const F_B = 'func-b';
 const F_SUPERVISOR = 'func-supervisor';
 const F_ADM = 'func-adm';
+// Funcionário de OUTRA agência: é ele que prova o isolamento do supervisor (ADR-0015 §2.1).
+const F_OUTRA_AGENCIA = 'func-outra';
 
 let testEnv;
 
@@ -79,6 +81,7 @@ beforeEach(async () => {
     await setDoc(doc(db, 'funcionarios', F_B), { nome: 'Agente B', agencia: 'MATRIZ', cargo: 'AGENTE' });
     await setDoc(doc(db, 'funcionarios', F_SUPERVISOR), { nome: 'Supervisor', agencia: 'MATRIZ', cargo: 'SUPERVISOR' });
     await setDoc(doc(db, 'funcionarios', F_ADM), { nome: 'Adm', agencia: 'MATRIZ', cargo: 'AGENTE' });
+    await setDoc(doc(db, 'funcionarios', F_OUTRA_AGENCIA), { nome: 'De Outra', agencia: 'AGENCIA MARE', cargo: 'AGENTE' });
     // Catálogo de exemplo (para os testes de leitura).
     await setDoc(doc(db, 'navios', 'navio-1'), { nome: 'Navio 1' });
     // Passagem alheia (dono = funcionário B) e o contador.
@@ -160,8 +163,44 @@ describe('funcionarios — escrita de plataforma e cargo não-autoescalável', (
     await assertFails(setDoc(doc(asAgenteA(), 'funcionarios', 'novo'), { nome: 'X', agencia: 'MATRIZ', cargo: 'AGENTE' }));
   });
 
-  test('SUPERVISOR cria funcionário → NEGADO por ora (entra em P2.2b, com a agência dele)', async () => {
-    await assertFails(setDoc(doc(asSupervisor(), 'funcionarios', 'novo'), { nome: 'X', agencia: 'MATRIZ', cargo: 'AGENTE' }));
+  test('SUPERVISOR cria funcionário na PRÓPRIA agência → OK', async () => {
+    await assertSucceeds(setDoc(doc(asSupervisor(), 'funcionarios', 'novo'), { nome: 'X', agencia: 'MATRIZ', cargo: 'AGENTE' }));
+  });
+
+  test('SUPERVISOR cria funcionário em OUTRA agência → NEGADO', async () => {
+    await assertFails(setDoc(doc(asSupervisor(), 'funcionarios', 'novo'), { nome: 'X', agencia: 'AGENCIA MARE', cargo: 'AGENTE' }));
+  });
+
+  test('SUPERVISOR cria funcionário já como SUPERVISOR → NEGADO (não fabrica par)', async () => {
+    await assertFails(setDoc(doc(asSupervisor(), 'funcionarios', 'novo'), { nome: 'X', agencia: 'MATRIZ', cargo: 'SUPERVISOR' }));
+  });
+
+  test('SUPERVISOR edita membro da própria agência (lotação) → OK', async () => {
+    await assertSucceeds(updateDoc(doc(asSupervisor(), 'funcionarios', F_A), { lotacao: 'Ilha Central' }));
+  });
+
+  test('SUPERVISOR edita membro de OUTRA agência → NEGADO', async () => {
+    await assertFails(updateDoc(doc(asSupervisor(), 'funcionarios', F_OUTRA_AGENCIA), { lotacao: 'Ilha Central' }));
+  });
+
+  test('SUPERVISOR transfere membro para outra agência → NEGADO (não exporta gente)', async () => {
+    await assertFails(updateDoc(doc(asSupervisor(), 'funcionarios', F_A), { agencia: 'AGENCIA MARE' }));
+  });
+
+  test('SUPERVISOR traz membro de outra agência para a dele → NEGADO (nem importa)', async () => {
+    await assertFails(updateDoc(doc(asSupervisor(), 'funcionarios', F_OUTRA_AGENCIA), { agencia: 'MATRIZ' }));
+  });
+
+  test('SUPERVISOR promove membro da própria agência → NEGADO (cargo é da plataforma)', async () => {
+    await assertFails(updateDoc(doc(asSupervisor(), 'funcionarios', F_A), { cargo: 'SUPERVISOR' }));
+  });
+
+  test('SUPERVISOR deleta membro da própria agência → NEGADO (edita, não apaga)', async () => {
+    await assertFails(deleteDoc(doc(asSupervisor(), 'funcionarios', F_A)));
+  });
+
+  test('AGENTE edita membro da própria agência → NEGADO (não é cargo de gestão)', async () => {
+    await assertFails(updateDoc(doc(asAgenteA(), 'funcionarios', F_B), { lotacao: 'Ilha Central' }));
   });
 
   test('plataforma cria funcionário → OK', async () => {

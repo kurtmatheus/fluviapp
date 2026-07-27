@@ -15,16 +15,16 @@ import dev.matheus.fluviapp.navigation.destinations.FluviAppNavComposableDestina
 import dev.matheus.fluviapp.ui.screens.forms.funcionarios.FormFuncionarioScreen
 import dev.matheus.fluviapp.ui.viewmodel.funcionario.FormFuncionarioViewModel
 
-internal const val ID_AGENTE_ARGUMENT = "idFuncionario"
+internal const val ID_FUNCIONARIO_ARGUMENT = "idFuncionario"
 
 fun NavGraphBuilder.formFuncionarioNavComposable(
     onClickVoltar: () -> Unit,
     onNavegaParaMainScreen: () -> Unit,
 ) {
     composable(
-        route = "${FluviAppNavComposableDestinations.FormFuncionarioNavComposable.route}?$ID_AGENTE_ARGUMENT={$ID_AGENTE_ARGUMENT}",
+        route = "${FluviAppNavComposableDestinations.FormFuncionarioNavComposable.route}?$ID_FUNCIONARIO_ARGUMENT={$ID_FUNCIONARIO_ARGUMENT}",
         arguments = listOf(
-            navArgument(ID_AGENTE_ARGUMENT) {
+            navArgument(ID_FUNCIONARIO_ARGUMENT) {
                 type = NavType.StringType
                 defaultValue = ""
             }
@@ -45,7 +45,9 @@ fun NavGraphBuilder.formFuncionarioNavComposable(
             uiState = uiState,
             onAgenciaChange = viewModel::onAgenciaChange,
             onFuncionarioChange = viewModel::onFuncionarioChange,
+            onEmailChange = viewModel::onEmailChange,
             onLotacaoChange = viewModel::onLotacaoChange,
+            onCargoChange = viewModel::onCargoChange,
             onClickSalvar = viewModel::salvar,
             onClickVoltar = onClickVoltar,
         )

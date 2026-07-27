@@ -63,12 +63,14 @@ class MainScreenViewModel @Inject constructor(
         viewModelScope.launch {
             dataStore.data.collect { prefs ->
                 val username = prefs[PreferencesKey.USUARIO_ATUAL]
-                // Menu é eixo puramente de SISTEMA (ADR-0015 §8.2): quem vê o quê sai do papel.
+                // O menu é quase todo eixo de SISTEMA, mas a seção Equipe também olha o cargo: ela
+                // existe para o supervisor gerir a própria agência (ADR-0015 §2.2/§8.2).
                 val papel = prefs[PreferencesKey.PAPEL_ATUAL]
+                val cargo = prefs[PreferencesKey.CARGO_ATUAL]
                 _uiState.update { state ->
                     state.copy(
                         userName = username ?: state.userName,
-                        secoesVisiveis = PermissoesUsuario.secoesVisiveis(papel),
+                        secoesVisiveis = PermissoesUsuario.secoesVisiveis(papel, cargo),
                     )
                 }
             }
