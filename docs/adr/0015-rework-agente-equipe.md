@@ -1,8 +1,9 @@
 # ADR-0015: Agente é o usuário — Equipe, agência/lotação como capacidades, agência transversal à emissão
 
 **Status:** **Aceita** — todos os pontos fechados com o analista (ver *Decisões resolvidas*; o desenho
-vigente dos dois contextos está no **§8**). **Em implementação:** P2.0, P2.1 e P2.2a feitos (P2.2a
-parcialmente revertido pela revisão estrutural); P2.2a′ em diante pendentes. É o **Pilar 2** do
+vigente dos dois contextos está no **§8**; o regime de schema, no **§9**). **Em implementação:** P2.0, P2.1,
+P2.2a (parcialmente revertido pela revisão estrutural) e P2.2a′-0 feitos; P2.2a′ em diante pendentes. É o
+**Pilar 2** do
 [`mvp-roadmap.md`](../design/mvp-roadmap.md) e responde o §6 do
 [estudo do form de passagem](../design/form-passagem-validacao-exibicao.md).
 
@@ -397,7 +398,7 @@ Esta seção é a que vale quando conflitar com §1, §2, §4.1/§4.2 e §7.
 | | `Usuario` (`users/{uid}`) — **sistema** | `Funcionario` (ex-`Agente`) — **negócio** |
 |---|---|---|
 | Id | o **uid** do Auth | id próprio da coleção |
-| Identidade | e-mail, nome | nome, e-mail |
+| Identidade | e-mail, **`username`** | **`nome`**, e-mail |
 | Autorização | **`papel`**: `ADM` / `GESTOR` / `OPERADOR` | **`cargo`**: `SUPERVISOR` / `AGENTE` / … |
 | Organização | — | **`agencia`**, **`lotacao`** |
 | Elo | **`funcionarioId`** (1-1, pode ser vazio) | — |
@@ -409,6 +410,22 @@ P2.2a colocou em `Usuario` (`agencia` default `AUTONOMO` + `lotacao`, `UsuarioDo
 `MIGRATION_19_20`) é **revertido**. Sobrevive do P2.2a o que era independente disso: o enum `Agencia` fora do
 `Agente` (`model/operacoes/Agencia.kt`), com `AUTONOMO`, `de`/`deOuPadrao` e o `AgenciaTest` — o dono do campo
 muda, a fronteira de leitura não.
+
+**O `nome` também é do negócio; o `Usuario` fica com `username`.** Nome de pessoa é atributo do
+`Funcionario` — o `Usuario` perde o campo e ganha **`username`**, que é *credencial*, não identidade civil:
+serve como **alternativa ao e-mail no login**. O corte é o mesmo do resto da tabela (quem a pessoa é ×
+como ela entra), e tem duas consequências que precisam estar escritas:
+
+- **O Firebase Auth não loga por username** — só e-mail/senha. Logo o login por username é um **passo
+  anterior**: resolver `username → e-mail` (leitura por caminho/consulta conhecida) e só então
+  `signInWithEmailAndPassword`. Isso torna o `username` **único por natureza** — sem unicidade, não é
+  credencial. Mesmo débito do 1-1 (§8.3): a unicidade não é imposta pelo Firestore, fica no cadastro.
+- **Quem mostra "o nome do usuário" passa a resolver pelo funcionário.** Hoje `Usuario.nome` alimenta o
+  snapshot `funcionarioResponsavel` da emissão (`FormPassagemViewModel:214`), o filtro por operador
+  (`PesquisarPassagemViewModel:77`, `FormPesquisarPassagemHelper:43`) e o `USUARIO_ATUAL` do DataStore
+  (`LoginViewModel:197`). Com o nome no `Funcionario`, o par congelado no bilhete fica **coerente**:
+  `funcionarioId` **e** `funcionarioResponsavel` passam a vir da mesma entidade (§8.4). Onde não houver
+  funcionário (plataforma pura), o que se exibe é o `username`.
 
 > **Horizonte (direção, não trabalho agora):** o app vai abarcar **outros stakeholders da logística**, não só
 > agências — e o `Funcionario` é o agregado que vai receber gente que **não é agente**. É exatamente por isso
@@ -472,8 +489,8 @@ O que muda junto (é mudança de significado de campo persistido, não renomeaç
 - **O create passa a exigir `funcionarioId != ''`.** Sem isso, dois usuários de plataforma sem `Funcionario`
   emitiriam passagens com dono `""` e cada um seria "dono" das do outro. Na prática a regra diz o que o
   negócio já dizia: **quem emite é da operação** — tem registro de funcionário.
-- **Passagens já emitidas ficam com uid gravado** e, portanto, sem dono válido. Portfólio: **regenera pelo
-  seed**, não faz backfill. (O seed semeia passagens; `users/{uid}` continua nascendo pelo cadastro in-app.)
+- **Não há passagem emitida a converter** (confirmado pelo analista): o app é resetado para o MVP e o
+  conteúdo volta pelo seed. Nada de backfill — nem aqui, nem no schema (§9).
 
 #### 8.5 A tela do ADM/GESTOR edita o **cargo**; o **papel** ninguém edita
 
@@ -491,6 +508,32 @@ Fecha o ponto que a 4ª rodada tinha reservado ao PO:
   (§8.2).
 - Hoje `match /agents/{doc}` (`firestore.rules:106-109`) só deixa **plataforma** escrever — ou seja, o
   `SUPERVISOR` não conseguiria nem cadastrar membro. Essa regra é reescrita junto, em P2.2b.
+
+### 9. Enquanto não há homologação, o schema é **DDL**, não histórico
+
+Decisão do analista, e ela reenquadra todo o resto do plano: **o app é resetado para o MVP.** Não há dado
+original, não há versão publicada, não há homologação. Logo as **19 migrações Room viram uma só** — um DDL
+que cria as tabelas já na **forma final** — e a versão do banco **volta para 2**.
+
+Por que isso é coerente e não preguiça: uma migração existe para levar um banco **que existe** de um estado
+a outro. Nenhum banco fora das máquinas de desenvolvimento passou por aqueles 19 estados; guardá-los é
+guardar o caminho para um lugar onde ninguém esteve — e cada mudança de entidade daqui pra frente pagaria
+pedágio a essa ficção (foi exatamente o que P2.2a fez, e o §8.1 acabou de desfazer).
+
+O que muda na prática:
+
+- **`FluviAppDatabase`**: `version = 2`, `exportSchema = true`, e o schema exportado
+  (`app/schemas/…/2.json`, via `room.schemaLocation`) vira a **fonte do DDL** — o SQL da migração é o
+  `createSql` do Room, não transcrição à mão. Mudou entidade? Roda o KSP, traz o `createSql` novo.
+- **`fallbackToDestructiveMigrationOnDowngrade()`**: os aparelhos de desenvolvimento estão em v20 e vão
+  abrir um schema v2 — isso é *downgrade*, que o Room recusa por padrão. Recriar é a única resposta possível
+  (não existe caminho 20 → 2) e a correta (não há o que preservar).
+- **P2.2a′ não escreve migração nenhuma.** Tirar `agencia`/`lotacao`/`nome` do `Usuario`, acrescentar
+  `username`/`funcionarioId`, renomear a tabela `Agente` → `Funcionario`: tudo isso vira **edição do DDL**.
+  Some junto a preocupação com `DROP COLUMN` e recriação de tabela que o plano carregava.
+
+**Quando o regime acaba:** na primeira versão publicada/homologada. A partir daí volta a existir usuário com
+banco no aparelho, e migrações aditivas nascem de novo — v3, v4… — a partir deste v2.
 
 ## Plano de migração (faseado, aditivo)
 
@@ -512,15 +555,17 @@ Fecha o ponto que a 4ª rodada tinha reservado ao PO:
   - **P2.2a — modelo. ✅ FEITO, ⚠️ parcialmente revertido em P2.2a′.** `Usuario` ganhou `agencia` (default
     `AUTONOMO`) + `lotacao`; o enum `Agencia` saiu de dentro do `Agente`; espelho `UsuarioDocumento` +
     `MIGRATION_19_20`. A revisão estrutural tirou o chão das duas colunas (§8.1) — o enum extraído fica.
+  - **P2.2a′-0 — colapsar o schema. ✅ FEITO** (§9): 19 migrações → um DDL gerado pelo Room, `version = 2`,
+    `exportSchema = true`, fallback destrutivo no downgrade. É pré-requisito dos passos abaixo — sem ele,
+    cada mudança de entidade escreveria uma migração que ninguém executaria.
   - **P2.2a′ — dividir os dois contextos.** É o commit estrutural, e vai inteiro ou não vai:
     `Agente` → **`Funcionario`** (entidade, DAO, repositórios, documento, coleção `agents` → `funcionarios`,
-    form/telas do CRUD, fakes e testes) levando `agencia`/`lotacao` consigo; `Usuario.cargo` → **`papel`**
-    (`ADM`/`GESTOR`/`OPERADOR`) e `Funcionario.cargo` (`SUPERVISOR`/`AGENTE`); `Usuario` ganha
-    **`funcionarioId`** (§8.3) e **perde** `agencia`/`lotacao` — drop de coluna pelo padrão de **recriação de
-    tabela** que as migrações de P2.0 já usam (`DatabaseModule.kt:273-300`), não `ALTER TABLE DROP COLUMN`.
-    `PermissoesUsuario` passa a receber `(papel, cargo)` (§8.2), e `firestore.rules` + a suíte de emulador
-    vão **no mesmo commit** (o fail-closed morde: perfil gravado com `cargo: "AGENTE"` vira papel
-    desconhecido → sem permissão; a saída é console ou recadastro, como em P2.1).
+    form/telas do CRUD, fakes e testes) levando `agencia`/`lotacao` consigo e ganhando o **`cargo`**
+    (`SUPERVISOR`/`AGENTE`); `Usuario.cargo` → **`papel`** (`ADM`/`GESTOR`/`OPERADOR`), `Usuario.nome` →
+    **`username`** (§8.1), `Usuario` ganha **`funcionarioId`** (§8.3) e **perde** `agencia`/`lotacao`.
+    Sem migração — é edição do DDL (§9). `PermissoesUsuario` passa a receber `(papel, cargo)` (§8.2), e
+    `firestore.rules` + a suíte de emulador vão **no mesmo commit** (o fail-closed morde: perfil gravado com
+    `cargo: "AGENTE"` vira papel desconhecido → sem permissão; a saída é console ou recadastro, como em P2.1).
   - **P2.2b — cadastro pela gestão.** O registro de funcionário ganha **e-mail** (é a chave que liga ao Auth);
     form nos dois recortes (§2.1: ADM/GESTOR com dropdown de agência **e seletor de cargo** (§8.5),
     SUPERVISOR com a agência implícita e sem cargo) e a lista recortada por cargo (§2.2). Sem coleção nova.
@@ -674,6 +719,17 @@ O desenho que sai daqui está consolidado no **§8**.
    dizer a verdade, e os dois `funcionarioId` do sistema apontam para o mesmo doc (§8.4).
 5. **A tela do ADM/GESTOR mexe no `cargo`, não no `papel`** — cargo de negócio é editável em tela; papel de
    sistema continua sendo console, com o anti-escalonamento do ADR-0011 guardando exatamente esse eixo (§8.5).
+
+## Decisões resolvidas na conversa (analista, 2026-07-27) — 6ª rodada
+
+- **`Passagem.funcionarioId` = o `funcionarioId` do perfil, confirmado** (§8.4) — e **não há passagem
+  emitida** a converter: o app é resetado para o MVP.
+- **`nome` é atributo só do `Funcionario`; o `Usuario` ganha `username`**, alternativa ao e-mail no login
+  (§8.1). Puxa junto: unicidade do username e o passo `username → e-mail` antes do `signIn` (o Auth não loga
+  por username).
+- **O histórico de migrações Room é colapsado num DDL** que cria as tabelas na forma final, com a versão
+  voltando para **2** (§9). Sem dado original, sem versão, sem homologação — migração é para banco que
+  existe, e não existe nenhum.
 
 ## Pontos abertos
 
