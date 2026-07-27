@@ -3,8 +3,8 @@
 **Status:** **Aceita** — todos os pontos fechados com o analista (ver *Decisões resolvidas*; o desenho
 vigente dos dois contextos está no **§8**; o regime de schema, no **§9**). **Em implementação:** P2.0, P2.1,
 P2.2a (parcialmente revertido pela revisão estrutural), P2.2a′-0, **P2.2a′**, o rename dos
-identificadores do CRUD de UI, **P2.2b** e **P2.2c** feitos — o Pilar 2 fecha o provisionamento e segue
-para P2.3 (emissão deriva do logado), P2.4 (identidade visual) e P2.6 (escopo por agência na listagem). **As strings visíveis não foram
+identificadores do CRUD de UI, **P2.2b**, **P2.2c** e **P2.3** feitos — restam **P2.4** (identidade visual
+por agência) e **P2.6** (escopo por agência na listagem de passagens). **As strings visíveis não foram
 renomeadas**: na tela o coletivo é "Equipe" e o indivíduo é "Agente" (P2.1) — o código nomeia a entidade,
 a tela nomeia o que o usuário chama. É o **Pilar 2** do
 [`mvp-roadmap.md`](../design/mvp-roadmap.md) e responde o §6 do
@@ -616,11 +616,19 @@ banco no aparelho, e migrações aditivas nascem de novo — v3, v4… — a par
     **Continua manual:** a conta no Auth nasce no **console** (a *Nota de execução* do §2.1). O app faz
     a frente do registro de funcionário; criar a conta pelo app exigiria uma segunda instância de
     `FirebaseApp` para não deslogar quem cadastra.
-- **P2.3 — Emissão deriva do logado.** Congela agência (**do funcionário** do logado, §8.1) na Passagem e
-  muda o significado de `Passagem.funcionarioId` para o id do funcionário (§8.4 — VM, detalhes, regras,
-  create exigindo dono não vazio, seed regenerado); remove
-  `ContentAgenciaAreaPassagemForm` + eventos/`runBlocking`, e com ele as validações órfãs de
-  `agencia`/`agente` (`ValidacaoDadosPassagem:57-58` exige campos que a UI não mostra).
+- **P2.3 — Emissão deriva do logado. ✅ FEITO.** A agência congelada no bilhete é a do **funcionário**
+  que emitiu (na edição, preserva a congelada — o bilhete é histórico); saiu a área manual inteira
+  (composable, eventos, campos do state, `listaAgente`/`listaAgencia` e o `atualizarListaAgente`, que
+  era o **último `runBlocking`** do `FormPassagemHelper`) e saíram as validações órfãs. O significado do
+  `Passagem.funcionarioId` já tinha mudado em P2.2a′.
+  **Além do previsto: o campo `Passagem.agente` morreu.** O §7 dizia mantê-lo mudando de origem, mas
+  depois do P2.2a′ ele guardaria exatamente o que `funcionarioResponsavel` já guarda — o nome do
+  emissor, vindo da mesma entidade. Duas colunas para o mesmo fato só criam a chance de discordarem, e
+  no bilhete impresso o nome saía duas vezes ("Agente" e "Operador"); ficou a linha do Operador.
+  **Lacuna registrada:** não há teste automatizado da derivação da agência — o caminho passa pelo
+  `FormPassagemHelper`, que depende de dois repositórios **concretos** (Passagem/Viagem Firestore) sem
+  porta. O que o compilador garante é que `agenciaEmissora` é obrigatório e vem do funcionário;
+  transformar esses dois repositórios em portas é o pré-requisito do teste.
 - **P2.4 — Identidade visual por agência.** Logo (bundle mapeado) no bilhete/impressão.
 - ~~**P2.5 — Aposentar `Agente`.**~~ **Dissolvida** pela revisão estrutural: a entidade não morre, é
   renomeada — o rename foi para **P2.2a′** (precisa acontecer cedo, porque é o `Funcionario` que passa a
