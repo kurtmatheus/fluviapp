@@ -3,8 +3,8 @@
 **Status:** **Aceita** — todos os pontos fechados com o analista (ver *Decisões resolvidas*; o desenho
 vigente dos dois contextos está no **§8**; o regime de schema, no **§9**). **Em implementação:** P2.0, P2.1,
 P2.2a (parcialmente revertido pela revisão estrutural), P2.2a′-0, **P2.2a′**, o rename dos
-identificadores do CRUD de UI, **P2.2b**, **P2.2c**, **P2.3** e **P2.4** feitos — resta **P2.6** (escopo por agência na listagem de
-passagens). **As strings visíveis não foram
+identificadores do CRUD de UI, **P2.2b**, **P2.2c**, **P2.3**, **P2.4** e **P2.6** feitos — o **Pilar 2
+está completo**. O que sobra são os débitos registrados nas *Consequências* e nos *Pontos abertos*. **As strings visíveis não foram
 renomeadas**: na tela o coletivo é "Equipe" e o indivíduo é "Agente" (P2.1) — o código nomeia a entidade,
 a tela nomeia o que o usuário chama. É o **Pilar 2** do
 [`mvp-roadmap.md`](../design/mvp-roadmap.md) e responde o §6 do
@@ -646,10 +646,16 @@ banco no aparelho, e migrações aditivas nascem de novo — v3, v4… — a par
 - ~~**P2.5 — Aposentar `Agente`.**~~ **Dissolvida** pela revisão estrutural: a entidade não morre, é
   renomeada — o rename foi para **P2.2a′** (precisa acontecer cedo, porque é o `Funcionario` que passa a
   hospedar o cargo de negócio) e o CRUD dela vira o CRUD da **Equipe** em P2.2b. Não há fase de deleção.
-- **P2.6 — Escopo por agência na listagem.** Novo eixo em `PermissoesUsuario` (`podeVerTodasAgencias =
-  ehCargoPlataforma(papel)`) + filtro pela agência do **funcionário** do logado nas consultas de passagem
-  quando ele for `false` — isolamento por UI (§3, §4.1). Contagem de Passagem fica **fora** desse filtro por
-  definição (§6).
+- **P2.6 — Escopo por agência na listagem. ✅ FEITO** (§4.1). O recorte entra **na consulta**
+  (`whereEqualTo` na agência), não num filtro pós-leitura — assim nenhum caminho de UI o contorna. Só
+  filtros de igualdade, então segue sem índice composto. O dropdown de operador acompanha o escopo (o
+  supervisor filtra pelos nomes da própria agência). A **Contagem de Passagem** não foi tocada e ganhou
+  comentário dizendo por quê (§6), para ninguém "consertar" isso depois.
+  **O escopo virou tipo, não String vazia:** `EscopoAgencia = Todas | Apenas(agencia) | Nenhuma`. Com
+  String, "não filtra nada" e "não tem agência nenhuma" seriam o mesmo valor — e um perfil sem vínculo
+  abriria a listagem inteira. `Nenhuma` devolve lista vazia sem ir à rede.
+  **O débito do §3 ganhou um teste que o afirma:** na suíte de emulador, um agente lê passagem de outra
+  agência e **passa**. Promover o isolamento ao servidor passa a ser decisão, não descoberta.
 
 ## Consequências
 
