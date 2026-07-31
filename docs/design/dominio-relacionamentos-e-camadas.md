@@ -1,5 +1,16 @@
 # Estudo de design do domínio — entidades, relacionamentos e camadas de dados
 
+> ⚠️ **SUPERADO como visão geral do domínio (2026-07-31).** Use o
+> [catálogo do domínio da plataforma](dominio-da-plataforma.md). Este documento é da era do **ADR-0008** e
+> descreve um domínio que mudou desde então: fala em `Agente` (virou `Funcionario` no ADR-0015), trata
+> passageiro e veículo como *value objects* (o [desenho da Passagem](dominio-passagem.md) revisou: são
+> participantes de mesmo nível), lista "nove entidades" sem Porto, Trecho, Rota nem Atuação (ADR-0016), e
+> registra os relacionamentos por **nome** — que é exatamente o problema que o ADR-0008 veio resolver e
+> resolveu.
+>
+> **Continua valendo como história:** é aqui que está o diagnóstico original que motivou o ADR-0008, e o
+> §2.1 ("todo relacionamento vivo é feito por NOME") é o achado que originou a decisão.
+
 > Estudo-base do FluviApp. Alimenta o [ADR-0008](../adr/0008-relacionamentos-por-identidade.md)
 > (relacionar por identidade) e conversa com o [ADR-0003](../adr/0003-modelo-de-memoria-do-dado.md)
 > (modelo de memória do dado). Ancorado no código concreto em `2026-07`.
