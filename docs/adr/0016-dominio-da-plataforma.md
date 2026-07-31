@@ -1,8 +1,9 @@
 # ADR-0016: Domínio da plataforma — parte, atuação e ativo (multi-empresa e multi-segmento)
 
-**Status:** **Aceita (direção)** — decisões do analista, 1ª a 6ª rodada (2026-07-28) e **7ª rodada
-(2026-07-31)**, que **dissolveu o Trecho, criou a Localidade e fixou a lei do domínio sobre a persistência**.
-Sem código: este ADR fixa o domínio e o mapa de coleções; a implementação é faseada abaixo. Supera a pergunta de provisionamento que estava
+**Status:** **Aceita (direção)** — decisões do analista, 1ª a 6ª rodada (2026-07-28), **7ª rodada (2026-07-31)**,
+que **dissolveu o Trecho, criou a Localidade e fixou a lei do domínio sobre a persistência**, e **8ª rodada
+(2026-07-31)**, que fez da **atuação o eixo organizador de cargo, permissão e painel**. Sem código: este ADR fixa
+o domínio e o mapa de coleções; a implementação é faseada abaixo. Supera a pergunta de provisionamento que estava
 aberta no [roadmap do MVP](../design/mvp-roadmap.md) (Pilar 3) e promove a
 [nota Viagem × Trecho](../design/viagem-vs-trecho.md) de "fora do MVP" para dentro dele, na versão do §7.
 
@@ -79,8 +80,11 @@ A separação que o ADR-0015 §8 desenhou em dois contextos (sistema × negócio
 | Quem | O que enxerga | O que faz |
 |---|---|---|
 | `ADM` / `GESTOR` (papel de plataforma, **sem** funcionário) | Só o **painel administrativo** | Cadastra empresa e suas atuações, navio, catálogo, funcionário e as capacidades da plataforma (**localidade** e **porto**). **Não emite passagem.** |
-| `SUPERVISOR` (cargo, com funcionário) | A **operação** | Monta as **rotas** da empresa em que atua — com as tarifas dela — sobre os portos concedidos. Emite passagem. |
-| `AGENTE` (cargo, com funcionário) | A **operação** | Emite passagem sobre as rotas que já existem. |
+| `SUPERVISOR` — cargo **do `AGENCIAMENTO`** | A operação **de agenciamento** | Monta as **rotas** da empresa em que atua — com as tarifas dela — sobre os portos e navios concedidos. Emite passagem. |
+| `AGENTE` — cargo **do `AGENCIAMENTO`** | A operação **de agenciamento** | Emite passagem sobre as rotas que já existem. |
+
+*Os dois cargos acima não são "os cargos do sistema" — são **os cargos de uma atuação**. A 8ª rodada fez dessa
+qualificação parte do modelo (§6.1): `TRANSPORTE` terá os seus, a portuária terá os dela quando acordar.*
 
 O primeiro plano não é regra nova: o `Usuario.kt:30-32` **já documenta** que `ADM`/`GESTOR` "existem sem registro
 na operação — e, por isso mesmo, não emitem passagem (§8.4)". O que este ADR faz é **fechar a contradição entre o
@@ -103,9 +107,14 @@ outro, e o ponto de contato é a **concessão** (§7).
 Isso mantém a política de seção **quase toda de sistema**. A `EQUIPE` continua sendo a única exceção que olha os
 dois eixos (ADR-0015 §2.2): o supervisor gere os membros de onde atua.
 
-Consequência de UI: `SecaoMenu` deixa de ser uma lista de seções de um menu só e passa a ter duas famílias.
-`PASSAGEM` e `ROTA` ficam na operação; `EMPRESA`, `NAVIO`, `PORTO`, `TRECHO` e `CATALOGO` ficam no painel;
-`EQUIPE` aparece nos dois. `VIAGEM` sai do menu — o nome estava errado desde o começo (§7).
+Consequência de UI *(revista na 8ª rodada)*: `SecaoMenu` deixa de ser uma lista de seções de um menu só — e não
+passa a ter **duas** famílias, e sim **uma por atuação, mais o painel da plataforma**. `EMPRESA`, `NAVIO`,
+`LOCALIDADE`, `PORTO` e `CATALOGO` ficam no painel; `PASSAGEM` e `ROTA` são a família do `AGENCIAMENTO`; a frota
+será a do `TRANSPORTE`; o check-in será a da portuária. `EQUIPE` aparece no painel e em cada atuação — é a única
+que atravessa. `VIAGEM` sai do menu — o nome estava errado desde o começo (§7).
+
+A divisão em duas famílias era o que se enxergava quando havia um segmento operante só; com o cargo qualificado
+pela atuação (§6.1), a família **deriva da atuação** em vez de ser enumerada à mão.
 
 ### 3. `Constante` vira `Catalogo`, e `IObjetoSimplificado` fica só nele
 
@@ -176,8 +185,8 @@ preparar agora; é uma linha a acrescentar quando o caso aparecer.
 # PARTES — quem existe
 empresas/{empresaId}                     nome, razaoSocial, cnpj, endereco, telefone1, telefone2
    ├── atuacoes/{ATUACAO}                um doc por atuação; o id É o nome da atuação
-   │        AGENCIAMENTO           → portoIds[], armadorIds[]       ← concessões (§7)
-   │        TRANSPORTE             → (é o armador; a frota dele é global)
+   │        AGENCIAMENTO           → portoIds[], navioIds[]         ← concessões (§7)
+   │        TRANSPORTE             → (dona da frota; cadastra os próprios navios)
    │        PORTUARIA_OPERACAO     → portoIds[]                     ← dormente (§5)
    │        PORTUARIA_ARRENDAMENTO → portoIds[]                     ← dormente (§5)
    └── rotas/{rotaId}                    a oferta — só existe com atuação AGENCIAMENTO (§7)
@@ -192,7 +201,7 @@ navios/{navioId}                         nome, capacidades, tipoEmbarcacao, empr
 
 # PESSOAS E EMISSÃO
 users/{uid}                              papel, username, funcionarioId
-funcionarios/{funcionarioId}             nome, email, cargo, empresaIds[]               (§6)
+funcionarios/{funcionarioId}             nome, email, vinculos[{empresaId,atuacao,cargo}] (§6)
 passagens/{passagemId}                   intocada (FSM, contador, consulta)
 ```
 
@@ -209,7 +218,25 @@ O critério de colocação passa a ser explícito, e é ele que faz o resto se d
 (`NavioFirestoreRepository.COLLECTION_NAVIOS`, e `Navio.empresaId` desde o ADR-0008 Fase 3), e está certo pela
 segunda linha do critério: a agência vende passagem em navio que **não é dela**, então o navio é referenciado
 entre partes e precisa de endereço global. Movê-lo para dentro da empresa obrigaria a rota a guardar o par
-`(armadorId, navioId)` para resolver a referência — o mesmo problema que fez o porto subir para a raiz (§5).
+`(empresaId, navioId)` para resolver a referência — o mesmo problema que fez o porto subir para a raiz (§5).
+
+**Quem cadastra navio: a plataforma OU a empresa dona** *(7ª rodada)*. No ato do cadastro ele **pertence a uma
+empresa existente com atuação `TRANSPORTE`** — não há navio sem dono. É o único caso de uma **parte escrevendo
+numa coleção da raiz**, e ele revela que "capacidade da plataforma" vinha misturando dois eixos independentes:
+
+| | **cadastrado pela plataforma** | **cadastrado pela parte** |
+|---|---|---|
+| **sem dono** | catálogo, localidade, porto | — (e é certo que esteja vazio) |
+| **com dono** | navio *(também)* | navio, rota |
+
+O navio é **ativo e capacidade da plataforma ao mesmo tempo**, e não há contradição: os dois eixos respondem
+perguntas diferentes — *de quem é* e *quem pode criar*. A definição do §4 que dizia "capacidade da plataforma =
+sem dono" estava estreita demais; o correto é **quem tem autoridade de cadastro**.
+
+*Por que a empresa pode cadastrar a própria frota sem que isso vire brecha:* com a concessão por **navio** (§7),
+cadastrar um navio **não concede nada** — quem decide em quais embarcações uma agência vende é a plataforma, no
+ato da concessão. Enquanto a concessão era por `armadorIds`, a empresa cadastrando a própria frota estaria
+auto-atestando exatamente o fato que a regra conferia; conceder por navio **remove a razão de restringir**.
 
 **Atuação é documento, não nome de coleção** — e essa escolha paga uma dívida que as rodadas anteriores tinham
 criado. Quando o segmento era o *nome* da subcoleção, o app não tinha como descobrir em que segmentos uma empresa
@@ -321,10 +348,13 @@ quase nulo justamente porque são *valores*, não estrutura: não há coleção 
 
 ### 6. Funcionário serve uma ou mais empresas
 
+*Revisto na 8ª rodada: o `cargo` sai do documento e entra no vínculo.*
+
 ```
 funcionarios/{funcionarioId}
-    nome, email, cargo
-    empresaIds: [ … ]
+    nome, email
+    vinculos:   [ { empresaId, atuacao, cargo }, … ]   ← onde atua, em quê, e como
+    empresaIds: [ … ]                                  ← derivado dos vínculos, só para consulta
 ```
 
 Um funcionário serve mais de uma empresa, e o vínculo é a **assinatura do id da empresa** no próprio documento.
@@ -332,8 +362,39 @@ Um funcionário serve mais de uma empresa, e o vínculo é a **assinatura do id 
 Nas rodadas anteriores isso era um par `{empresaId, agenciaId}`, porque a agência parecia ser outra coisa. Com o
 §4, **o par colapsa**: os dois ids eram o mesmo. Saber em que empresa a pessoa atua já responde onde ela atua.
 
-`cargo` permanece **um só, da pessoa** — não por empresa. É a escolha mínima, e mantém a política do ADR-0010 com
-uma entrada de cargo em vez de N.
+**O `empresaIds` continua existindo, e é denormalização deliberada.** O Firestore não consulta campo de dentro de
+elemento de array: `array-contains` casa o **elemento inteiro**, então "quem trabalha na empresa X" não sai de
+`vinculos`. A saída é manter o array chato de ids ao lado — **derivado, no mesmo documento e na mesma escrita**,
+sem sincronia entre documentos. É o caso mais barato de dado derivado que existe, e está registrado como
+denormalização para não ser lido como redundância acidental.
+
+#### 6.1 O cargo é qualificado pela atuação *(8ª rodada)*
+
+`SUPERVISOR` e `AGENTE` nunca foram "os cargos do sistema" — são **os cargos do `AGENCIAMENTO`**. Quem gere frota
+numa transportadora faz outra coisa; quem faz check-in numa arrendatária, outra. **Cada atuação tem a sua lista de
+cargos**, e é ela que organiza permissão e painel.
+
+Três consequências, e a primeira é a que fecha um ponto aberto:
+
+- **O cargo passa a ser por vínculo, não por pessoa** — e o vínculo é o par **(empresa, atuação)**, não só a
+  empresa: uma mesma empresa pode exercer duas atuações, e a pessoa pode ter papel diferente em cada uma. Isto
+  **resolve o Ponto aberto 7** e supera a decisão da 6ª rodada (`cargo` um só, da pessoa), que era a escolha
+  mínima enquanto havia um segmento operante só.
+- **O cargo continua sendo tipo de código, não linha de catálogo** — pelo mesmo motivo do tipo de embarcação
+  (§8): **cargo concede permissão**. Um cargo cadastrável seria escalonamento de privilégio por cadastro. A
+  forma: um `Cargo` só, em que **cada valor declara a que atuação pertence** — `SUPERVISOR(AGENCIAMENTO)`,
+  `AGENTE(AGENCIAMENTO)`, e os de transporte quando existirem. Mantém `Cargo.de(String)`, mantém a política com
+  uma entrada só, e torna o par `(atuação, cargo)` explícito e testável.
+- **A política ganha a atuação como coordenada.** `PermissoesUsuario` responde hoje por `(papel, cargo)`; passa a
+  responder por `(papel, atuação, cargo)`. Continua **única** (ADR-0010): é a mesma política com uma pergunta a
+  mais, não uma segunda.
+
+Isso **supera parcialmente o ADR-0015**, que fixou o cargo como eixo aberto e **plano**. A tese dele continua de
+pé — o papel é fechado, o cargo cresce com a operação —; o que muda é que o cargo cresce **dentro de uma
+atuação**, e não numa lista global.
+
+**E é isto que faz a plataforma ser multi-segmento de verdade:** acrescentar um segmento deixa de ser mexer no
+modelo de permissão e passa a ser declarar uma atuação, seus cargos e sua seção de menu.
 
 Consequências diretas:
 
@@ -342,10 +403,13 @@ Consequências diretas:
   relação é por id.
 - **`EscopoAgencia` volta a ter uma dimensão.** O sealed interface de hoje (`Todas` / `Apenas(agencia)` /
   `Nenhuma`) sobrevive quase intacto; o que muda é que o recorte passa a ser por **empresa**, não por String de
-  agência. O caso "funcionário com dois vínculos" ainda precisa de uma **seleção de contexto** no login ou na
-  emissão.
+  agência.
+- **O contexto ativo passa a ser o vínculo.** A "seleção de contexto" que a 6ª rodada deixou pendente ganha
+  forma: o que se escolhe não é a empresa, é o **vínculo** — e essa escolha determina de uma vez o cargo em
+  vigor, as seções do menu e o recorte das listagens. `ContextoUsuario` passa a carregá-lo.
 - **A emissão precisa saber sob qual vínculo emite.** Hoje a agência do bilhete vem do emissor (ADR-0015 §P2.3),
-  o que é resposta única porque o funcionário tem uma agência. Com dois vínculos, deixa de ser.
+  o que é resposta única porque o funcionário tem uma agência. Com dois vínculos, deixa de ser — e a resposta é
+  o vínculo ativo.
 
 ### 7. A Rota é a oferta da agência — e o Trecho não precisa existir
 
@@ -376,23 +440,35 @@ no cliente ou por denormalização, porque o Firestore não faz junção. É cus
 aparece quando existir relatório por linha.
 
 **A concessão: a empresa recebe o recorte que pode operar.** A atuação de agenciamento guarda os portos e os
-**armadores** concedidos:
+**navios** concedidos:
 
 ```
 empresas/{empresaId}/atuacoes/AGENCIAMENTO
-    portoIds:   [ … ]        ← quais lugares
-    armadorIds: [ … ]        ← para quais transportadores ela agencia
+    portoIds: [ … ]          ← quais lugares
+    navioIds: [ … ]          ← em quais embarcações ela vende
 ```
 
-`armadorIds` aponta para **empresas com atuação `TRANSPORTE`** — e é aqui que a atuação de transporte deixa de ser
-um rótulo vazio: ela é o que qualifica uma parte a ser agenciada. A relação agência↔armador, que num modelo
-relacional seria uma tabela de associação entre partes, aqui é a **concessão** — o mesmo mecanismo que governa o
-porto, aplicado a uma parte em vez de a uma capacidade. Uma peça, dois usos.
+*Revisto na 7ª rodada: era `armadorIds` — concessão por **empresa transportadora**, herdando a frota inteira
+dela. Passou a ser **por navio**.*
 
-Com o trecho dissolvido, a concessão fica com **duas dimensões: onde** (portos) e **para quem** (armadores). A
-linha que a empresa pode vender deixa de ser concedida diretamente e passa a ser **consequência dos portos que ela
+**"Armador" era nome de papel, não entidade:** a empresa com atuação `TRANSPORTE`, dona da embarcação. O termo
+sobrevive como vocabulário do negócio; como campo, não — quem se concede agora é o **navio**, que é o que a
+agência de fato vende.
+
+Conceder por navio tem uma consequência técnica que vale mais que a mudança em si: **a checagem da rota deixa de
+ser indireta**. Com `armadorIds`, conferir a concessão exigia ler o navio (`navios/{id}.empresaId`) para só então
+comparar — um `get()` a mais por escrita, na regra do Firestore e na UI. Com `navioIds`, é
+`rota.navioId ∈ atuacao.navioIds`: comparação direta, uma leitura a menos, e **desaparece a única junção de três
+saltos do domínio**.
+
+O preço, e é uma escolha, não um efeito colateral: **frota nova nasce não-concedida**. O armador compra um navio e
+a agência que o representa não vende nele até a plataforma conceder. Com `armadorIds` era o contrário — a frota
+nova entrava sozinha. É fail-closed, coerente com o resto do ADR, e troca conveniência por controle explícito.
+
+Com o trecho dissolvido, a concessão fica com **duas dimensões: onde** (portos) e **em quê** (navios). A linha que
+a empresa pode vender deixa de ser concedida diretamente e passa a ser **consequência dos portos que ela
 recebeu** — quem tem os portos de Manaus e de Parintins pode montar a rota entre eles; quem não tem, não pode. O
-recorte não perdeu força: perdeu uma dimensão redundante.
+recorte não perdeu força: perdeu uma dimensão redundante e ganhou precisão na que sobrou.
 
 Isso resolve o impasse que as rodadas anteriores deixaram: se só a plataforma cadastra porto, o supervisor ficaria
 bloqueado esperando alguém criar o que ele precisa. Não fica — **a empresa já chega provisionada**. Ele não
@@ -446,15 +522,16 @@ para um MVP: agenda é modelo, contador é otimização.
 
 Restam duas, ambas puras e testáveis sem device, no molde do ADR-0006:
 
-1. **De concessão:** os dois portos têm que estar em `portoIds` da atuação, e o **dono do navio** tem que estar em
-   `armadorIds`. Sem isso, o recorte concedido seria decorativo: bastaria digitar um id de fora. Esta tem que
-   valer **também no servidor** (F8), porque é ela que impede uma empresa de operar o que não lhe foi concedido.
+1. **De concessão:** os dois portos têm que estar em `portoIds` da atuação, e o **navio** em `navioIds`. Sem isso,
+   o recorte concedido seria decorativo: bastaria digitar um id de fora. Esta tem que valer **também no servidor**
+   (F8), porque é ela que impede uma empresa de operar o que não lhe foi concedido. Desde a 7ª rodada é
+   **comparação direta** — os três ids estão na atuação, e nenhum documento extra precisa ser lido.
 2. **De sentido:** embarque e desembarque não podem ser o mesmo porto. É trivial, e é **nova** — enquanto havia
    trecho, o par de cidades distintas garantia isso de graça.
 
-A checagem do armador tem uma característica que a outra não tem, e vale registrar: ela é **indireta**. A rota
-guarda `navioId`, não o armador; descobrir o dono exige ler o navio (`navios/{id}.empresaId`) e só então comparar
-com `armadorIds`. Na UI isso é um lookup a mais; na regra do Firestore, um `get()` a mais por escrita.
+*A 7ª rodada eliminou a característica que tornava esta checagem cara: com `armadorIds`, ela era **indireta** — a
+rota guarda `navioId`, não o dono, então descobrir o armador exigia ler `navios/{id}.empresaId` para só então
+comparar. Um lookup a mais na UI, um `get()` a mais por escrita na regra. Concedendo o navio, some.*
 
 ### 8. O tipo de embarcação decide o que a rota pode vender
 
@@ -559,10 +636,13 @@ As fases são ordenadas por **dependência**, e as duas primeiras não têm pré
   o porto seleciona uma localidade, então ela vem primeiro. Não dependem de empresa nenhuma; podem vir antes da
   F5. *(`trechos` saiu na 7ª rodada.)*
 - **F5 — Parte e atuação.** Cadastro de empresa com suas **atuações** (`atuacoes/{ATUACAO}`) e a **concessão** de
-  `portoIds`/`armadorIds` na atuação de agenciamento (§4, §7). `Navio` ganha `tipoEmbarcacao` e **fica onde está**.
+  `portoIds`/`navioIds` na atuação de agenciamento (§4, §7). `Navio` ganha `tipoEmbarcacao`, **fica onde está** e
+  passa a poder ser cadastrado pela empresa dona (§4).
   Aqui `Agencia` e `Funcionario.Lotacao` (enums) morrem.
-- **F6 — Funcionário multi-empresa.** `empresaIds: [ … ]`; seleção de contexto quando houver mais de um;
-  `EscopoAgencia` passa a recortar por empresa (§6).
+- **F6 — Funcionário multi-empresa e cargo por vínculo.** `vinculos: [{empresaId, atuacao, cargo}]` + o
+  `empresaIds` derivado para consulta; `Cargo` passa a declarar sua atuação; a política ganha a atuação como
+  coordenada; seleção de contexto quando houver mais de um vínculo; `EscopoAgencia` recorta por empresa (§6,
+  §6.1). *É a fase que mais toca código existente — `PermissoesUsuario`, `ContextoUsuario` e o menu.*
 - **F7 — Rota.** `Viagem` → `Rota` em `empresas/{id}/rotas`, com `navioId`, os dois portos por id, a tabela de
   tarifa do ADR-0013 e a agenda semanal; ocorrências calculadas (§7). A capacidade por tipo de embarcação (§8)
   entra aqui, governando as células de tarifa e o form de emissão. As duas validações de coerência da rota também.
@@ -577,10 +657,13 @@ As fases são ordenadas por **dependência**, e as duas primeiras não têm pré
   nível de `empresas/{id}/…` precisa de `match` próprio. É o maior item de custo deste ADR — mas menor do que nas
   rodadas anteriores: com `localidades` e `portos` sendo capacidades da plataforma, a escrita neles é papel puro
   (`ehPapelPlataforma`), sem regra híbrida papel-ou-cargo.
-- **A regra mais delicada é a da rota:** validar a concessão (§7) obriga a regra a **ler dois outros documentos**
-  durante o write — a atuação, para os portos, e o **navio**, porque o armador é conferido indiretamente
-  (`navios/{id}.empresaId ∈ armadorIds`). São duas leituras por escrita de rota; sem elas o recorte concedido só
-  existe na UI.
+- **A regra da rota lê um documento a mais no write:** validar a concessão (§7) obriga a ler a **atuação**, onde
+  estão `portoIds` e `navioIds`. Sem isso o recorte concedido só existe na UI. *Eram duas leituras até a 7ª
+  rodada, quando a concessão por navio eliminou a checagem indireta do armador.*
+- **A escrita em `navios` deixa de ser só da plataforma** (§4): a regra passa a admitir *papel de plataforma **ou**
+  funcionário da empresa dona com atuação `TRANSPORTE`* — o que custa um `get()` na atuação. A regra da rota
+  ficou mais barata e a do navio, mais cara; no saldo, a leitura extra migrou do caminho quente (montar rota) para
+  o frio (cadastrar navio).
 - **O isolamento fica misto:** rota e atuação por **caminho**; navio por **campo** (`empresaId`). Regra de campo é
   mais sutil — o cliente tem de filtrar a query, senão ela é negada inteira. É o preço de o navio ser referenciado
   entre partes (§4), e é assimetria consciente, não descuido.
@@ -590,6 +673,13 @@ As fases são ordenadas por **dependência**, e as duas primeiras não têm pré
 - **`podeCriarPassagem` e `podeAcessar` mudam de critério**, e `SecaoMenu` deixa de ser uma família só. Quem
   depende delas hoje (menu, form de passagem, regras) muda junto. O ganho é fechar a contradição entre
   `Usuario.kt:30-32` e a política.
+- **A política ganha uma coordenada e o `Funcionario` muda de forma** (8ª rodada): `(papel, cargo)` vira
+  `(papel, atuação, cargo)`, e `cargo` sai do documento para o vínculo. É o item que mais toca código já escrito
+  — `PermissoesUsuario`, `ContextoUsuario`, `Funcionario` e todo chamador de `cargo`. Em troca, um segmento novo
+  deixa de exigir mudança na política: exige uma atuação com seus cargos (§6.1).
+- **A `EQUIPE` fica mais complexa de editar.** Atribuir cargo passa a ser atribuir **(empresa, atuação, cargo)**,
+  e a tela precisa oferecer só os cargos da atuação escolhida — o que é bom (não se cria supervisor de
+  agenciamento numa transportadora) e é uma tela a mais do que a de hoje.
 - **Um valor novo de catálogo — tipo de embarcação ou atuação — nasce sem capacidade** (§8). É fail-closed
   intencional, e vai surpreender quem cadastrar "Catamarã" esperando que ele leve carro.
 - **O painel ganha uma ordem de dependência entre cadastros**, e ela não é imposta por wizard: catálogo →
@@ -674,8 +764,8 @@ Revisitar quando:
 - **O relatório por linha existir** (7ª rodada): sem `trechoId`, agrupar por "Manaus → Parintins" é consulta sobre
   o par de portos, ou uma denormalização das duas localidades na rota. É escolha de **leitura**, e não é motivo
   para reviver o trecho (§7).
-- **Houver mais de um cargo por pessoa** (supervisor numa empresa, agente em outra): `cargo` sai do documento e
-  entra no vínculo (§6), e a política ganha o cargo como parâmetro do par (empresa, cargo).
+- ~~**Houver mais de um cargo por pessoa**~~ — **aconteceu na 8ª rodada**, e antes do gatilho previsto: não foi a
+  pessoa com dois cargos que forçou, foi a **atuação** ter cargos próprios (§6.1).
 
 ## Pontos abertos (analista decide)
 
@@ -685,10 +775,10 @@ Revisitar quando:
    mais simples do app foi escolhida como piloto do eixo de storage justamente por isso (§9).
 2. ~~**Remoção de porto/armador da concessão**~~ — **RESOLVIDO na 7ª rodada.** Para catálogo, localidade e porto:
    **não se remove, desativa-se** (`ativo`, §5) — o item some dos seletores e continua resolvendo o que já o
-   referencia, sem collection group para verificar. Para o **armador saindo de `armadorIds`**: é **caso de
-   sincronização, não de modelo**. A concessão é referência viva; tirar um armador não invalida
-   retroativamente nada — a regra de escrita da rota (F8) barra as escritas seguintes, e as rotas já gravadas
-   continuam legíveis até serem reconciliadas. Não há estado a inventar: nem `ativo` no array, nem
+   referencia, sem collection group para verificar. Para o **navio saindo de `navioIds`** (era `armadorIds` antes
+   da 7ª rodada): é **caso de sincronização, não de modelo**. A concessão é referência viva; tirar um navio não
+   invalida retroativamente nada — a regra de escrita da rota (F8) barra as escritas seguintes, e as rotas já
+   gravadas continuam legíveis até serem reconciliadas. Não há estado a inventar: nem `ativo` no array, nem
    versionamento de rota.
 3. **A agenda semanal fica na Rota** (§7) — assumi, porque a rota é a viagem e a agenda é o *quando*.
 4. **A Rota referencia o navio** (§7) — assumi, porque sem isso o §8 não sabe o tipo de embarcação para filtrar as
@@ -698,8 +788,9 @@ Revisitar quando:
 6. **`SUPERVISOR` monta a rota, `AGENTE` só emite** (§2) — assumi, porque a rota carrega a tarifa e preço é
    decisão de quem responde pela operação. Junto: **a concessão é editável depois do cadastro** da atuação, ou só
    na criação? Assumi editável.
-7. **Cargo por pessoa ou por vínculo** (§6); e **onde se escolhe o contexto** quando há dois vínculos — login ou
-   emissão?
+7. ~~**Cargo por pessoa ou por vínculo**~~ — **RESOLVIDO na 8ª rodada: por vínculo**, e o vínculo é o par
+   **(empresa, atuação)** (§6.1). Continua aberto **onde se escolhe o contexto** quando há mais de um vínculo —
+   login ou emissão. A escolha determina cargo, seções e recorte de uma vez só.
 8. **`GESTOR` cadastra tudo que o `ADM` cadastra**, ou há algo exclusivo do `ADM` no painel (criar empresa, por
    exemplo)? Hoje `ehPapelPlataforma` trata os dois como um só. *Parcialmente respondido pelo ADR-0017 §7.1: o
    CRUD do catálogo é **só do `ADM`** — é a primeira vez que os dois papéis se separam. Falta dizer se a regra
@@ -764,8 +855,9 @@ Revisitar quando:
   (§4).
 - **Matriz/filial, se um dia:** é **um campo** no doc da empresa apontando para outra empresa. Hoje o
   agenciamento pode ser **remoto**, então a distinção física não é necessária (§4).
-- **A agência agencia para armadores:** a concessão inclui `armadorIds` — empresas com atuação `TRANSPORTE` (§7).
-  A relação entre partes é expressa como concessão, não como estrutura nova.
+- ~~**A agência agencia para armadores:** a concessão inclui `armadorIds`~~ — **superado pela 7ª rodada**:
+  concede-se **navio**, não empresa transportadora (§7). Sobrevive o princípio: a relação entre partes é expressa
+  como concessão, não como estrutura nova.
 
 **7ª rodada — a lei é o domínio (2026-07-31)**
 
@@ -805,11 +897,40 @@ Revisitar quando:
   concessão** é o caso que não cabe nesse molde — e é **sincronização, não modelo**: a concessão é referência
   viva, a regra barra as escritas seguintes e nada se invalida retroativamente.
 - **`ordem` no catálogo** — hoje o item nasce por `.add()` e a lista sai na ordem que o Firestore devolver (§3).
+- **A concessão passa a ser por navio** (`navioIds`), não por empresa transportadora (`armadorIds`). "Armador"
+  fica como vocabulário de papel, não como campo. Ganho: a checagem da rota deixa de ser indireta — some a única
+  junção de três saltos do domínio. Preço: **frota nova nasce não-concedida** (§7).
+- **Navio é cadastrado pela plataforma OU pela empresa dona** (com atuação `TRANSPORTE`), e no cadastro ele
+  **pertence a uma empresa existente**. Isso corrige a definição do §4: "capacidade da plataforma" não é *sem
+  dono*, é *quem tem autoridade de cadastro* — são dois eixos, e o navio é a célula que os separa. Conceder por
+  navio é o que torna seguro deixar a empresa cadastrar a própria frota: cadastrar **não concede nada** (§4).
 - **Só o catálogo é `ADM`-only; localidade e porto são papel de plataforma** (`ADM` + `GESTOR`). O critério:
   **quanto mais perto o dado está da semântica do código, mais restrito é quem o escreve** — o catálogo é o
   vocabulário que o código consome, localidade e porto são cadastro de gestão corrente (§5).
 - **A pressão do modelo não vem da estrutura, vem de dois regimes de carga.** Testados os três sinais de alerta do
   modelo de documentos: as três relações N:N passam (arrays pequenos, consulta de um lado só), a junção tripla do
-  armador passa (um `get()` a mais), e **a agregação sobre `passagens` é o único ponto que aperta de verdade** —
-  o Firestore tem `count`/`sum`/`average`, mas não tem `GROUP BY`. A resposta é o eixo analítico do ADR-0017, não
-  desmontar o modelo de documentos que serve bem a operação.
+  armador passa (um `get()` a mais) — *e deixou de existir com a concessão por navio* —, e **a agregação sobre
+  `passagens` é o único ponto que aperta de verdade**: o Firestore tem `count`/`sum`/`average`, mas não tem
+  `GROUP BY`. A resposta é o eixo analítico do ADR-0017, não desmontar o modelo de documentos que serve bem a
+  operação.
+
+**8ª rodada — a atuação organiza cargo, permissão e painel (2026-07-31)**
+
+- **Cada atuação tem sua própria lista de cargos.** `SUPERVISOR` e `AGENTE` não são cargos do sistema — são
+  cargos do **`AGENCIAMENTO`**. `TRANSPORTE` terá os seus (gerir frota), a portuária os dela (check-in) quando
+  acordar (§6.1).
+- **O cargo passa a ser por vínculo, e o vínculo é (empresa, atuação)** — não só a empresa, porque uma mesma
+  empresa exerce mais de uma atuação. `Funcionario` guarda `vinculos: [{empresaId, atuacao, cargo}]`, com
+  `empresaIds` derivado ao lado **só para consulta** (o Firestore não filtra campo de dentro de elemento de
+  array). **Fecha o Ponto aberto 7** e supera a decisão da 6ª rodada de um cargo por pessoa (§6).
+- **O cargo continua tipo de código, não linha de catálogo** — cargo concede permissão, e cargo cadastrável seria
+  escalonamento de privilégio por cadastro. Forma: um `Cargo` só, com **cada valor declarando sua atuação**
+  (§6.1). Mesmo raciocínio da exceção nomeada do §8.
+- **A política ganha a atuação como coordenada:** `(papel, cargo)` → `(papel, atuação, cargo)`, continuando
+  **única** (ADR-0010). **Supera parcialmente o ADR-0015**, que fixou o cargo como eixo aberto e *plano*: ele
+  cresce, mas **dentro de uma atuação**.
+- **`SecaoMenu` não tem duas famílias — tem uma por atuação, mais o painel** (§2). A família **deriva** da
+  atuação em vez de ser enumerada à mão, e é isso que faz a plataforma ser multi-segmento de verdade:
+  acrescentar um segmento vira declarar atuação + cargos + seção, sem tocar o modelo de permissão.
+- **O contexto ativo é o vínculo:** escolher o vínculo determina de uma vez o cargo em vigor, as seções do menu e
+  o recorte das listagens (§6).
