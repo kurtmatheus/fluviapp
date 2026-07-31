@@ -5,6 +5,15 @@ ADR-0015, [ADR-0016](../adr/0016-dominio-da-plataforma.md) e
 [ADR-0017](../adr/0017-eixo-de-storage-firestore-only.md) **decidiram e ainda não foi construído**.
 Ancorado no código em `2026-07-31`, depois do pacote `model` virar **`domain`**.
 
+> ✅ **Rodada de decisões em 2026-07-31 — já incorporada ao ADR-0016 como 7ª rodada.** Os dois documentos
+> estão alinhados; aqui fica o detalhe de campos e enums, lá a decisão e o porquê. Os quatro pontos:
+> (a) a **lei é o domínio**, entidade pode conter
+> entidade e a entity do Room vira **DTO** (§1.1), com o critério embutir/referenciar/congelar que a teoria
+> impõe (§1.2); (b) **`Trecho` deixa de existir** — o par de cidades sai de Porto e Rota (§3.5); (c) nasce
+> **`Localidade`** (UF + município, dois `Catalogo` embutidos), que é a dimensão do eixo analítico (§3.4);
+> (d) **`Porto` tem `localidade`**, não `cidade: String`. Os pontos afetados do ADR-0016 são §5, §7 e o
+> plano F4/F7.
+
 > Substitui, como visão geral, o [estudo transversal de domínio](dominio-relacionamentos-e-camadas.md)
 > (escrito na era do ADR-0008, quando ainda havia `Agente` e relação por nome). Não substitui o
 > [desenho do agregado Passagem](dominio-passagem.md), que continua sendo a fonte para o bilhete, nem a
@@ -48,6 +57,88 @@ Consequência que ainda não está no código: **`ADM`/`GESTOR` não emitem pass
 na operação. Emitir passa a exigir **vínculo de funcionário** (`funcionarioId` não vazio), não papel
 **[alvo]**. Hoje `PermissoesUsuario.podeCriarPassagem` devolve `true` para qualquer papel conhecido.
 
+## 1.1 A lei é o domínio (decisão do analista, 2026-07-31)
+
+Duas regras de camada que governam todo o resto deste documento:
+
+**1. Uma entidade pode ter outra entidade como atributo, e o domínio decide isso sozinho.** Se `Porto` tem
+uma cidade e cidade é item de `Catalogo`, então `Porto.cidade` é do tipo `Catalogo` — não uma String que
+por acaso veio de lá. Como isso vira documento no Firestore (embutido, referenciado por id, denormalizado)
+é **problema de outra camada**, resolvido caso a caso pelo que o Firestore faz melhor. O domínio não se
+deforma para caber no banco; o banco se organiza para servir o domínio.
+
+> Isto **revisa** o ADR-0016 §5, que gravava `cidade` como String por valor justificando que "rótulo é dado
+> por valor". A justificativa era de persistência, e persistência não decide forma de domínio. O que ela
+> continua decidindo — e legitimamente — é **como** aquele `Catalogo` aterrissa no documento.
+
+**2. A entity do Room vira DTO, e o DTO é a figura central entre as camadas.** A classe plana que hoje
+carrega `@Entity` deixa de ser "a forma do banco" e passa a ser **a forma de trânsito**: é o que atravessa
+datasource → repositório → caso de uso → UI, porque o dado será requisitado e usado entre elas. O ADR-0003
+já chamava o modelo de "DTO-cêntrico"; aqui isso se completa — o DTO perde o vínculo com o Room (que sai
+pelo ADR-0017) e ganha o papel que já exercia de fato.
+
+Ficam **três formas**, com fronteiras nomeadas, e é isso que impede uma de contaminar a outra:
+
+| Forma | Onde vive | Quem a conhece | Característica |
+|---|---|---|---|
+| **Entidade de domínio** | `domain/` | ninguém acima; todo o resto abaixo | rica e **composta** (pode conter outra entidade), sem anotação de framework |
+| **DTO** | camada de dados | datasource, repositório, caso de uso, UI | **plano**, transportável, comparável, serializável |
+| **Documento** | Firestore | só o repositório/mapper | a forma que o Firestore serve melhor — embutida ou por referência |
+
+A tradução entre elas é trabalho de **mapper**, e mapper é infraestrutura. Nenhuma das três é "a
+verdadeira": a entidade é a **lei**, o DTO é o **trânsito**, o documento é o **armazenamento**.
+
+## 1.2 Onde o modelo de documentos aperta — e o critério de embutir, referenciar ou congelar
+
+O §1.1 libera o domínio para compor entidades, o que levanta a pergunta certa: *isto não está ficando
+estruturado demais para NoSQL?* A teoria responde que **o critério não é quão estruturado, é quão
+conectado**.
+
+Kleppmann (*DDIA*, cap. 2) situa a fraqueza do modelo de documentos em **muitos-para-muitos e junção** —
+não em profundidade nem em rigor de esquema. Bancos de documentos são o modelo hierárquico revivido, e o
+que derrubou o hierárquico foi exatamente N:N. Fowler & Sadalage dizem o mesmo pelo outro lado: são bancos
+**orientados a agregado**, ótimos em "me dá esse agregado inteiro por chave" e ruins em perguntas que
+atravessam agregados. Domínio profundo é de graça no Firestore; ele não cobra por riqueza de modelo, cobra
+por **forma de consulta**.
+
+**Os três sinais de alerta, testados neste modelo:**
+
+| Sinal | Neste domínio | Veredito |
+|---|---|---|
+| **Muitos-para-muitos** | três: `Funcionario ↔ Empresa` (`empresaIds[]`), `Agência ↔ Armador` (`armadorIds[]`), `Empresa ↔ Porto` (`portoIds[]`) | **passa** — os arrays são pequenos por natureza e a consulta é de um lado só; o outro lado sai com `array-contains`. Aperta em "empresas que têm o porto X **e** o Y": uma cláusula `array-contains` por consulta, logo duas consultas + interseção no cliente |
+| **Junção de 3+ entidades** | uma: rota → navio → empresa dona → `armadorIds` (§5.4) | **passa** — é um `get()` a mais, e só na escrita |
+| **Agregação e consulta ad-hoc sobre eventos** | balanço, contagem e faturamento sobre `passagens` | **é aqui que aperta.** O Firestore tem `count()`/`sum()`/`average()`, mas **não tem `GROUP BY`**: "faturamento por agência por dia" não é uma consulta, é uma por grupo |
+
+**A conclusão é que a pressão não vem da estrutura — vem de dois regimes de carga no mesmo banco.** A
+emissão é OLTP (escrita pontual, leitura por chave, offline, alto volume) e o Firestore a serve muito bem;
+o relatório é analítico (agregação por múltiplos eixos sobre o histórico) e ele o serve mal **por
+desenho**. Os cadastros — empresa, localidade, porto, navio, catálogo, rota — são **dado de referência**:
+pequeno, lido muito, escrito pouco, relações rasas. É o caso de uso favorito do modelo de documentos, e
+podem ficar estruturados à vontade.
+
+Isso converge com a decisão de plataforma já tomada (ADR-0017): quando o eixo analítico pesar, a resposta é
+**um segundo lugar para o dado analítico** — o back-end centralizador —, não desmontar o modelo de
+documentos que serve bem a operação. Em vocabulário de Kleppmann, o Firestore segue como **sistema de
+registro** e o analítico é **dado derivado**, mantido a partir dele.
+
+### O critério, que é a guarda que o §1.1 precisa
+
+Vernon (*Effective Aggregate Design*, regra 3) é explícito: **agregados referenciam outros agregados por
+identidade, nunca por contenção** — e isso vale para o agregado *persistido*. Sem esta guarda escrita, o
+§1.1 autorizaria aninhar agregado dentro de agregado no documento, que é o caminho mais curto para o
+problema real do modelo: **duplicata viva a manter em N lugares**.
+
+| Fazer | Quando | Exemplo aqui |
+|---|---|---|
+| **Embutir** | é *value object* ou rótulo: pequeno, estável, sempre lido junto, sem vida própria | os dois `Catalogo` dentro de `Localidade` (§3.4) |
+| **Referenciar por id** | é agregado com ciclo de vida próprio | o `Porto` visto pela `Rota`; a `Empresa` vista pelo `Navio` |
+| **Congelar (duplicar de propósito)** | a cópia é **imutável por desenho** | o snapshot da `Passagem` (ADR-0008) |
+
+O terceiro caso é o único em que denormalizar **não tem custo de manutenção** — porque a cópia *não deve*
+ser atualizada. É o que a `Passagem` já faz: congela empresa, navio, origem e destino porque um bilhete
+emitido é fato histórico. O modelo já distinguia os três regimes na prática; o que faltava era o critério
+escrito.
+
 ## 2. Mapa do domínio
 
 O critério de colocação (ADR-0016 §4) é o que faz o resto se decidir sozinho:
@@ -66,8 +157,8 @@ empresas/{empresaId}                     nome, razaoSocial, cnpj, endereco, tele
    └── rotas/{rotaId}          [alvo]    a oferta — só com atuação AGENCIAMENTO
 
 # CAPACIDADES DA PLATAFORMA — sem dono
-portos/{portoId}               [alvo]    nome, cidade
-trechos/{trechoId}             [alvo]    cidadeOrigem, cidadeDestino
+localidades/{localidadeId}     [alvo]    uf (Catalogo), municipio (Catalogo)   ← embutidos
+portos/{portoId}               [alvo]    nome, localidade                      ← referência
 catalogo/{itemId}              [alvo]    categoria, descricao        (hoje: constants/{id})
 
 # ATIVOS — dono por campo, endereçáveis globalmente
@@ -114,17 +205,22 @@ sincronia.
 
 | Atuação | Campos | Estado |
 |---|---|---|
-| `AGENCIAMENTO` | `trechoIds[]`, `portoIds[]`, `armadorIds[]` | ativa — é a que sustenta a rota |
+| `AGENCIAMENTO` | `portoIds[]`, `armadorIds[]` | ativa — é a que sustenta a rota (*`trechoIds[]` saiu com o §3.5*) |
 | `TRANSPORTE` | — (é o armador; a frota é global, por `Navio.empresaId`) | ativa como qualificador |
 | `PORTUARIA_OPERACAO` | `portoIds[]` | **dormente** — quem opera o cais |
 | `PORTUARIA_ARRENDAMENTO` | `portoIds[]` | **dormente** — a arrendatária, quem faz check-in |
 
-Os três arrays da atuação de agenciamento são a **concessão**: o recorte que a plataforma concede à
-empresa. `armadorIds` aponta para empresas com atuação `TRANSPORTE` — a relação agência↔armador, que num
-modelo relacional seria tabela de associação, aqui é o mesmo mecanismo de concessão que já governa trecho
-e porto. **Uma peça, três usos.**
+Os arrays da atuação de agenciamento são a **concessão**: o recorte que a plataforma concede à empresa.
+`armadorIds` aponta para empresas com atuação `TRANSPORTE` — a relação agência↔armador, que num modelo
+relacional seria tabela de associação, aqui é o mesmo mecanismo de concessão que governa o porto. **Uma
+peça, dois usos.**
 
-**Conceder não é cadastrar:** o form da atuação só *seleciona*; quem cria trecho e porto é o módulo deles.
+Com o Trecho dissolvido (§3.5), a concessão fica com **duas dimensões: onde** (portos) e **para quem**
+(armadores). A linha que a empresa pode vender deixa de ser concedida diretamente e passa a ser
+**consequência dos portos que ela recebeu** — quem tem os portos de Manaus e de Parintins pode montar a
+rota entre eles, e quem não tem, não pode.
+
+**Conceder não é cadastrar:** o form da atuação só *seleciona*; quem cria porto é o módulo dele.
 
 ### 3.3 Navio — o ativo
 
@@ -145,53 +241,143 @@ e porto. **Uma peça, três usos.**
 então é referenciado entre partes e precisa de endereço global. `IObjetoSimplificado` sai dele **[alvo]**
 — um navio tem identidade, atributos e ciclo de vida; não é um par id/descrição.
 
-### 3.4 Porto — capacidade da plataforma **[alvo]**
+### 3.4 Localidade e Porto — as âncoras geográficas **[alvo]** · *revisado em 2026-07-31*
 
-`portos/{portoId}`
+**`localidades/{localidadeId}`** — capacidade da plataforma, sem dono.
+
+| Campo | Tipo | Natureza | Notas |
+|---|---|---|---|
+| `id` | String | identidade | opaco — a identidade não se amarra a cadastro de terceiro |
+| `uf` | **`Catalogo`** | **value object embutido** | embute `id` + `descricao` (`"PA"`); `categoria` não embute — o nome do campo já diz |
+| `municipio` | **`Catalogo`** | **value object embutido** | embute `id` + `descricao` (`"Belém"`) |
+| `codigoIbge` | String? | **chave natural** | opcional no cadastro, **único quando presente** |
+| `ativo` | Boolean | estado | desativar em vez de remover |
+
+A `Localidade` é o **par UF + município como uma coisa só**, e ela existe por três razões que se somam:
+
+1. **É a aplicação exata do critério do §1.2.** Item de catálogo é *value object de referência* — pequeno,
+   estável, sempre lido junto, sem vida própria. Logo **embute**, e é o único caso da tabela em que embutir
+   é a resposta certa.
+2. **É a dimensão do eixo analítico.** Em modelagem dimensional, `Localidade` é uma **dimensão**, e é o que
+   torna possível perguntar "passagens por UF" ou "por município" sem agrupar String solta. Com `cidade`
+   como texto no porto, a UF não existia em lugar nenhum e o agrupamento seria por igualdade de rótulo —
+   frágil e sem hierarquia. Isto é o que prepara o terreno para o back-end analítico do §1.2.
+3. **Enriquece a exibição sem consulta extra.** "Porto de Val-de-Cães — Belém/PA" sai de uma leitura só,
+   porque UF e município vieram embutidos.
+
+**Invariantes que nascem com ela:** o par `(uf, municipio)` é **único**, e o `codigoIbge` é **único quando
+presente**. Não é preciosismo — é dimensão de análise: duas localidades para o mesmo município fragmentam
+todo relatório que agrupe por elas, e o erro só aparece depois, no número errado. São as primeiras regras
+de unicidade do domínio, e valem no cadastro **e** na regra do servidor.
+
+**Por que o `codigoIbge`:** é a **chave natural** do município. Resolve a unicidade de graça e — o que pesa
+mais — é o que permite cruzar esta dimensão com **dado externo** (censo, malha, tarifa regulada) quando o
+eixo analítico existir. Não é o id do documento, é campo: o id continua opaco para não amarrar a identidade
+a um cadastro de terceiro. Opcional no cadastro, porque exigi-lo poria fricção no painel para quem não tem o
+número à mão — e o preço, escrito: localidade sem código não cruza com fonte externa até alguém preenchê-lo.
+
+**`portos/{portoId}`**
 
 | Campo | Tipo | Natureza | Notas |
 |---|---|---|---|
 | `id` | String | identidade | |
-| `nome` | String | valor | |
-| `cidade` | String | **valor do catálogo** (`MUNICIPIO`) | **não é id, de propósito** |
+| `nome` | String | valor | **único dentro da localidade** — dois "Porto Central" em Belém são o mesmo problema um nível abaixo |
+| `localidade` | **`Localidade`** | **referência a agregado** | substitui o antigo `cidade` |
+| `ativo` | Boolean | estado | desativar em vez de remover |
 
-`cidade` por valor contraria o ADR-0008 conscientemente: o catálogo dá um **rótulo**, e rótulo é dado por
-valor. Relacionar por id vale para o que tem vida própria e muda; o nome de um município não muda.
+`Porto.localidade` é **referência**, não embutido — pelo critério do §1.2, `Localidade` tem coleção,
+identidade e ciclo de vida próprios. Embutir uma cópia viva dela em cada porto criaria N cópias do mesmo
+município para manter. (Como a referência aterrissa no documento — só o id, ou id + um par de rótulos para
+exibição — é a pergunta §8.7.)
+
+**Desativar, não remover — e isto fecha um ponto aberto.** Remover um porto invalida as rotas e as
+concessões que o referenciam, e verificar "nenhuma rota usa" exigiria *collection group*. Com `ativo`, o
+porto desativado **some dos seletores e continua resolvendo** as rotas e os bilhetes que já apontam para
+ele — que é o comportamento certo para dado referenciado por fato histórico. Vale igual para `Localidade` e
+`Catalogo`.
+
+**Quem cadastra — e as três não são iguais nisto:**
+
+| Capacidade | Quem cadastra |
+|---|---|
+| **Catálogo** | **só `ADM`** (ADR-0017 §7.1) |
+| **Localidade** | papel de plataforma — `ADM` + `GESTOR` |
+| **Porto** | papel de plataforma — `ADM` + `GESTOR` |
+
+O critério, que vale para o painel inteiro: **quanto mais perto o dado está da semântica do código, mais
+restrito é quem o escreve.** O catálogo é o mais perto de todos — as categorias são tipo fechado (§3.8), e
+um item novo muda o que os seletores oferecem e o que a regra do tipo de embarcação admite (§4.8); erro ali
+é sistêmico. Localidade e porto são cadastro de gestão corrente, e prendê-los ao `ADM` criaria gargalo sem
+ganhar segurança.
+
+**Substitui a decisão anterior:** o ADR-0016 §5 gravava `cidade` como String por valor, justificando que
+"rótulo é dado por valor". A justificativa era de persistência, e persistência não decide forma de domínio
+(§1.1).
+
+Com a dissolução do Trecho (§3.5), estas duas entidades passam a ser **a única âncora geográfica do
+domínio**: a localidade dá o lugar no mapa, o porto dá o lugar físico, e é do par de portos de uma rota que
+sai a linha.
+
+**Escalabilidade, já que a coleção vai começar pequena.** Localidade é dado de referência clássico: cresce
+até o tamanho do recorte geográfico atendido e para. Dois pontos ficam registrados desde já:
+
+- **Ela é a primeira coleção de referência que pode deixar de ser "pequena".** O ADR-0017 D1 transforma cada
+  coleção espelhada num `StateFlow` em memória, com a premissa explícita de que "são coleções pequenas". Um
+  recorte municipal ou estadual mantém a premissa; uma cobertura nacional (milhares de municípios) **a
+  quebra** — e a resposta então não é voltar ao espelho, é essa coleção deixar de ser observada por inteiro
+  e passar a ser consultada sob demanda (`whereEqualTo` por UF, busca por prefixo). **É a exceção prevista
+  ao D1, e o gatilho é o tamanho.**
+- **A hierarquia para em dois níveis de propósito.** País e região não entram enquanto não houver operação
+  que os peça; quando entrarem, entram como mais dois `Catalogo` embutidos, sem mudar a forma.
 
 Porto é **lugar físico**, e lugar físico não pertence a quem navega — o cais de Manaus é o mesmo cais para
 todas as empresas que atracam nele. O que a empresa tem no porto não é o porto: é a **atuação** nele.
 
-### 3.5 Trecho — capacidade da plataforma **[alvo]**
+### 3.5 Trecho — **dissolvido** (decisão do analista, 2026-07-31)
 
-`trechos/{trechoId}`
+**O `Trecho` deixa de existir como entidade.** O que ele guardava — o par de cidades — passa a estar em
+**Porto** (que tem a cidade) e em **Rota** (que tem os dois portos). Não há coleção `trechos/`, não há
+`trechoId` na rota, não há `trechoIds[]` na concessão e não há módulo de cadastro de trecho.
 
-| Campo | Tipo | Natureza |
-|---|---|---|
-| `id` | String | identidade |
-| `cidadeOrigem` | String | valor do catálogo (`MUNICIPIO`) |
-| `cidadeDestino` | String | valor do catálogo (`MUNICIPIO`) |
+**Por que era dispensável:** a rota já referencia dois portos, e cada porto já sabe sua cidade — logo o par
+`(cidadeOrigem, cidadeDestino)` é **derivável**. Guardá-lo à parte era manter, num documento próprio, uma
+informação que os outros dois já determinam, com o risco clássico da redundância: um trecho dizendo
+Manaus → Parintins e um par de portos dizendo outra coisa. Uma linha deixa de ser **cadastro** e passa a ser
+**leitura sobre os portos**.
 
-O trecho é **só o par de cidades** — o que o mercado chama de linha (Manaus → Parintins). **Não tem data,
-nem tarifa, nem porto, nem dono.** Só o painel cadastra, e é isso que faz dele bem comum de verdade em vez
-de um cadastro que cada empresa refaz.
+**O argumento do compartilhamento sobrevive, num nível abaixo.** O ADR-0016 §7 defendia o trecho como bem
+comum: duas empresas que vendem a mesma linha não deveriam refazer o cadastro. Isso continua verdade — só
+que o que é comum e da plataforma agora é o **porto**, e as duas empresas compartilham *os dois portos* em
+vez da linha que eles formam. Nada é duplicado que devesse ser comum.
+
+**O que se paga, e precisa estar escrito:** sem `trechoId`, "quais rotas fazem Manaus → Parintins" deixa de
+ser igualdade num campo e vira consulta sobre **o par de portos**; e se a pergunta for por *cidade* em vez
+de por porto, ela se resolve no cliente ou por denormalização, porque o Firestore não faz junção. É custo
+de **leitura**, não de modelo, e só aparece quando existir relatório por linha (§8.6).
 
 ### 3.6 Rota — a oferta da agência **[alvo]** (hoje: `Viagem`)
 
 `empresas/{empresaId}/rotas/{rotaId}`
 
+*Revisada em 2026-07-31: sem `trechoId` (§3.5).*
+
 | Campo | Tipo | Natureza | Notas |
 |---|---|---|---|
 | `id` | String | identidade | |
-| `trechoId` | String | referência | qual par de cidades esta rota realiza |
 | `navioId` | String | referência | qual embarcação opera — governa as tarifas (§4.8) |
-| `embarquePortoId` | String | referência | por id simples |
-| `desembarquePortoId` | String | referência | por id simples |
+| `embarquePorto` | `Porto` | **entidade composta** | de onde sai — **é o porto**, e dele vem a cidade de origem |
+| `desembarquePorto` | `Porto` | **entidade composta** | onde atraca — dele vem a cidade de destino |
 | `tarifas` | mapa | valor | a tabela do ADR-0013, **da empresa** (§3.7) |
 | `agenda` | lista de `{diaSemana, hora}` | valor | dias em que opera e a hora de cada dia |
 
-A rota é **como uma empresa realiza aquele par de cidades**: de qual porto sai, onde atraca, com qual
-embarcação, a que preço e em que dias. **A tarifa é dela** — é por isso que mora na parte. Duas empresas
-que vendem a mesma linha **compartilham o trecho** e têm **rotas próprias**.
+A rota é **como uma empresa realiza aquela ligação**: de qual porto sai, onde atraca, com qual embarcação, a
+que preço e em que dias. **A tarifa é dela** — é por isso que mora na parte. Duas empresas que vendem a
+mesma linha **compartilham os portos** e têm **rotas próprias**.
+
+**A linha é derivada, não guardada:** `origem = embarquePorto.localidade`,
+`destino = desembarquePorto.localidade` — e agora ela vem com UF junto, o que a torna agrupável (§3.4). Os
+dois portos são **referências** pelo critério do §1.2 (agregado com ciclo de vida próprio); como a
+referência aterrissa no documento é o §8.7.
 
 **As viagens concretas não são persistidas:** as ocorrências da semana são **calculadas** a partir da
 agenda. Não há coleção de ocorrências no MVP, e o custo é nomeado — a ocupação continua contada a partir
@@ -203,7 +389,7 @@ O que existe hoje no lugar disso é a **`Viagem`** (`domain/viagem/Viagem.kt`), 
 |---|---|---|
 | `id` | String | permanece |
 | `codigo` | String | derivado (origem/destino/empresa) — sem equivalente na Rota |
-| `origem`, `destino` | String | viram `trechoId` + os dois portos |
+| `origem`, `destino` | String | viram os **dois portos** (e a cidade sai de cada um) |
 | `empresaId` | String | vira o **caminho** (`empresas/{id}/rotas`) |
 | `navioId` | String | permanece |
 
@@ -232,16 +418,43 @@ célula (§5.3). **Célula ausente é fail-closed**: sem tarifa tabelada, não e
 |---|---|---|
 | `id` | String | String |
 | `descricaoNome` | String | **`descricao`** — e o documento **já grava `descricao`**; `descricaoNome` só existe no Kotlin |
-| `categoria` | String | String livre na fronteira, validada por quem consome |
+| `categoria` | String (do enum `Categoria`) | String na fronteira, **do tipo fechado `Categoria`** — ver abaixo |
+| `ordem` | — | Int — **novo** |
+| `ativo` | — | Boolean — **novo**, desativar em vez de remover |
+
+**Invariante:** `(categoria, descricao)` é **único**. É a mesma regra da `Localidade` um nível abaixo — dois
+"Belém" em `MUNICIPIO` fragmentam a dimensão geográfica antes mesmo de ela ser montada.
+
+**`ordem`** existe porque hoje o item nasce por `.add()` com id gerado e a lista sai na ordem em que o
+Firestore devolver: "Rede, Suíte, Camarote" apareceria embaralhado.
 
 É a tabela do que o negócio precisa **nomear mas não precisa modelar**: UF, município, tipo de documento,
 tipo de veículo, acomodação, forma de pagamento, tipo de passagem, e — novos **[alvo]** —
 `TIPO_EMBARCACAO` e `ATUACAO`.
 
+**O item de catálogo é um *value object de referência*** (§1.2): não tem ciclo de vida próprio, é pequeno,
+estável e sempre lido junto de quem o usa. Por isso é o **único tipo que embute** em vez de ser
+referenciado — e a `Localidade` (§3.4) é a primeira entidade a exercer isso, guardando dois deles
+(`UF` e `MUNICIPIO`) como a sua própria substância.
+
 **O critério que separa catálogo de tipo de domínio:** quem tem **regra** vira tipo (`StatusPassagem`,
 `TipoPassagem`, `TipoGratuidade`); quem é **só rótulo** vira linha de catálogo. Manter os dois vocabulários
 para a mesma coisa é a receita de divergirem — e foi o que aconteceu com `Constante.Descricao`, que ainda
 lista `CORTESIA`, `A_EMITIR` e `EMITIDA` **[morre]**.
+
+**Mas `Categoria` não cai nesse critério — e a decisão anterior de matá-la junto com `Descricao` tratava as
+duas como iguais por engano.** Ela não é rótulo de usuário: é o **índice do catálogo**, e o código depende
+dela. Seis chamadores consultam por categoria — `ViagemDadosViagemMapper.kt:31` (`MUNICIPIO`),
+`ContagemPassagensMapper.kt:77` (`GRATUIDADE`), `FormFuncionarioViewModel` (`MUNICIPIO`) e os helpers do
+form de passagem (`ACOMODACAO`, `TIPO_PASSAGEM`, `GRATUIDADE`, `DOCUMENTO`, `PAGAMENTO`). Como String
+livre, cada um carregaria um literal — e um erro de digitação **devolve lista vazia em silêncio**: seletor
+sem itens, sem erro, sem log.
+
+Então **`Categoria` continua tipo fechado** **[alvo]**. Isso não impede acrescentar **item** sem deploy, que
+é o ganho que interessa; impede acrescentar **categoria** sem deploy — e isso é o correto, pelo mesmo
+fail-closed do §4.8: categoria nova sem código que a consuma não serve para nada. Valores: `MUNICIPIO`,
+`DOCUMENTO`, `VEICULO`, `ACOMODACAO`, `TIPO_PASSAGEM`, `GRATUIDADE`, `PAGAMENTO`, e os novos `UF`,
+`TIPO_EMBARCACAO` e `ATUACAO`. Saem `CATEGORIA_PASSAGEM` e `STATUS_PASSAGEM`, que viraram tipos.
 
 `IObjetoSimplificado` (`id` + `descricaoNome`) **fica exclusivo do catálogo** **[alvo]**: um item de
 catálogo *é* um par id/descrição — é tudo que ele é. `Funcionario` e `Navio` deixam de implementá-la.
@@ -341,7 +554,8 @@ A convenção é uniforme e vale para todos: **String só na fronteira**. `de()`
 Três papéis, e a tendência é continuar três. Quem cresce é o cargo.
 
 **[alvo]** O ADR-0017 §7.1 acrescenta a primeira separação entre `ADM` e `GESTOR`: o CRUD do catálogo é só
-do `ADM`. Hoje a política trata os dois como um bloco (`ehPapelPlataforma`).
+do `ADM`. Hoje a política trata os dois como um bloco (`ehPapelPlataforma`), e ele **continua valendo para
+todo o resto do painel** — a separação é do catálogo, não do papel (§3.4).
 
 ### 4.2 `Funcionario.Cargo` — o eixo aberto **[hoje]**
 
@@ -429,6 +643,14 @@ embarcação não leva. Mata na origem uma classe inteira de erro que seria vali
 Os **limites** ("navio leva carro de forma limitada") ficam para depois — quando entrarem, a capacidade
 deixa de ser conjunto e vira **quantidade**, e aí quer ser dado no documento, não código.
 
+### 4.8.1 `Catalogo.Categoria` — o índice do catálogo **[hoje, sobrevive]**
+
+`MUNICIPIO` · `UF` **[alvo]** · `DOCUMENTO` · `VEICULO` · `ACOMODACAO` · `TIPO_PASSAGEM` · `GRATUIDADE` ·
+`PAGAMENTO` · `TIPO_EMBARCACAO` **[alvo]** · `ATUACAO` **[alvo]**
+
+Saem `CATEGORIA_PASSAGEM` e `STATUS_PASSAGEM` — viraram tipos de domínio. **É o único enum do catálogo que
+sobrevive**, e a razão está no §3.8: categoria é vocabulário de **código**, não rótulo de usuário.
+
 ### 4.9 `Atuacao` — os segmentos **[alvo]** (ADR-0016 §4)
 
 `AGENCIAMENTO` · `TRANSPORTE` · `PORTUARIA_OPERACAO` · `PORTUARIA_ARRENDAMENTO`
@@ -446,7 +668,7 @@ Batizar a estrutura de "fluvial" comprometeria o domínio com um eixo que a plat
 Hoje: `PASSAGEM`, `VIAGEM`, `EQUIPE`, `EMPRESA`, `NAVIO`.
 
 **[alvo]** passa a ter duas famílias (ADR-0016 §2): **operação** = `PASSAGEM`, `ROTA`; **painel** =
-`EMPRESA`, `NAVIO`, `PORTO`, `TRECHO`, `CATALOGO`; `EQUIPE` aparece nos dois — é a única seção que olha os
+`EMPRESA`, `NAVIO`, `LOCALIDADE`, `PORTO`, `CATALOGO` (sem `TRECHO` — §3.5); `EQUIPE` nos dois — a única que olha os
 dois eixos, porque o supervisor gere os membros de onde atua. **`VIAGEM` sai**: o nome estava errado desde
 o começo.
 
@@ -489,16 +711,21 @@ embarque — é ação de doca, mesmo para quem não vendeu.
 `floor(cc / 100) * 100`, 1:1 em reais: 125cc→100, 250cc→200, 300cc→300. **Abaixo de 100cc dá zero**, que é
 consequência conhecida do piso. É regra provisória, substituível por célula tabelada.
 
-### 5.4 Coerência da rota — duas camadas **[alvo]** (ADR-0016 §7)
+### 5.4 Coerência da rota **[alvo]** — *revisada em 2026-07-31*
 
-1. **Geográfica:** o porto de embarque tem que estar na `cidadeOrigem` do trecho, e o de desembarque na
-   `cidadeDestino`. Como o porto guarda a cidade, a checagem é local e barata — e é ela que impede uma rota
-   de dizer que vai a Parintins atracando em Manaus.
-2. **De concessão:** `trechoId` e os dois portos têm que estar nas capacidades da atuação, e **o dono do
-   navio** tem que estar em `armadorIds`. Sem isso o recorte concedido seria decorativo: bastaria digitar
-   um id de fora.
+Com o Trecho dissolvido (§3.5), a regra **geográfica desaparece por construção**: ela existia para impedir
+que o par de portos contradissesse o par de cidades declarado no trecho, e **não há mais dois lugares para
+discordar**. A cidade de origem *é* a do porto de embarque. Um invariante que some porque a redundância que
+o exigia sumiu é o melhor tipo de simplificação.
 
-A segunda tem que valer **também no servidor**, e tem uma característica que as outras não têm: é
+Restam duas checagens, ambas puras:
+
+1. **De concessão:** os dois portos têm que estar em `portoIds[]` da atuação, e **o dono do navio** tem que
+   estar em `armadorIds`. Sem isso o recorte concedido seria decorativo — bastaria digitar um id de fora.
+2. **De sentido:** embarque e desembarque não podem ser o mesmo porto. É trivial e é nova: enquanto havia
+   trecho, o par de cidades distintas garantia isso de graça.
+
+A primeira tem que valer **também no servidor**, e tem uma característica que a segunda não tem: é
 **indireta**. A rota guarda `navioId`, não o armador — descobrir o dono exige ler o navio. Na UI é um
 lookup a mais; na regra do Firestore, um `get()` a mais por escrita.
 
@@ -525,13 +752,25 @@ corrigir — são quatro funções de extensão que só precisam mudar de arquiv
 Nada disso impede o app de funcionar; o que impede é o domínio **ser reutilizável e testável sozinho** —
 que é o ponto de separá-lo.
 
+**A decisão do §1.1 muda o desfecho da primeira linha, e para melhor.** A saída não é "apagar as anotações
+e ficar com a mesma classe plana": é que **aquela classe plana vira o DTO** e a entidade de domínio nasce
+ao lado dela, rica e composta. As dez classes anotadas não desaparecem — elas **mudam de camada e de
+nome**, e é o mapper que passa a ligar as duas pontas. O que some é a coincidência de hoje, em que uma
+única classe é simultaneamente a lei do negócio, a linha da tabela e o objeto que a tela lê.
+
+Isso reordena o trabalho: o §1.1 não é mais uma consequência do ADR-0017 — é o **desenho de destino** que
+diz para onde a classe vai quando o Room sair.
+
 ## 7. O que muda quando os ADRs forem implementados
 
 | Hoje | Alvo | ADR |
 |---|---|---|
 | `Constante` (`constants`) | `Catalogo` (`catalogo`), sem enums internos | 0016 §3 |
-| `Viagem` (raiz) | `Trecho` (raiz) + `Rota` (`empresas/{id}/rotas`) | 0016 §7 |
-| — | `Porto` (raiz) | 0016 §5 |
+| `Viagem` (raiz) | `Rota` (`empresas/{id}/rotas`), com os dois portos | 0016 §7, **revisado** (§3.5) |
+| — | `Localidade` (raiz): `uf` + `municipio` embutidos, `codigoIbge`, `ativo` | §3.4, **novo** |
+| — | `Porto` (raiz), com `localidade` por referência e `ativo` | 0016 §5, **revisado** (§3.4) |
+| `Constante` sem ordem nem estado | `Catalogo` com `ordem` e `ativo`, `(categoria, descricao)` único | §3.8, **novo** |
+| Remover cadastro de referência | **desativar** (`ativo`) — some do seletor, segue resolvendo | §3.4 |
 | — | `empresas/{id}/atuacoes/{ATUACAO}` + concessão | 0016 §4 |
 | `Funcionario.agencia` + `lotacao` | `Funcionario.empresaIds[]` | 0016 §6 |
 | `Navio` sem tipo | `Navio.tipoEmbarcacao` governando as tarifas | 0016 §8 |
@@ -547,10 +786,24 @@ Herdadas dos ADRs, e que o domínio não resolve sozinho:
 
 1. **Sob qual vínculo se emite** quando o funcionário serve duas empresas (§3.9) — escolha no login ou na
    emissão?
-2. **Remoção de trecho/porto/armador concedido** que rotas já referenciam: invalida rota e concessão. O MVP
-   assume que não remove.
+2. ~~**Remoção de porto/armador concedido**~~ — **RESOLVIDO.** Catálogo, localidade e porto: não se remove,
+   **desativa-se** (`ativo` — §3.4). Armador saindo de `armadorIds`: é **caso de sincronização, não de
+   modelo** — a concessão é referência viva, a regra de escrita da rota barra as escritas seguintes e nada
+   se invalida retroativamente. Não há estado a inventar.
 3. **`cargo` por pessoa ou por vínculo** — hoje é por pessoa, e o ADR-0016 assume que continua.
 4. **Onde mora a validação de coerência da rota** (§5.4) no código: função pura no domínio, como a tarifa,
    ou caso de uso? *Inclinação: função pura no domínio — ela só precisa dos dados, não de repositório.*
 5. **A chave tarifária vira tipo fechado?** (§4.7) Hoje é String canônica por convenção, o que contraria o
    critério do §3.8: ela **tem regra** (define eixo e admissibilidade), logo deveria ser tipo.
+6. *(nova — decisões de 2026-07-31)* **A busca por linha vai existir?** Sem `Trecho`, "quais rotas fazem Manaus → Parintins" é consulta sobre
+   o par de portos (§3.5). Se um relatório por linha entrar no escopo, é aí que se decide entre resolver no
+   cliente e denormalizar as cidades na rota. **Não** é motivo para reviver o trecho — é escolha de leitura.
+7. *(nova)* **Quanto de rótulo viaja da `Rota` para o `Porto`?** Já resolvido para a `Localidade` (embute
+   `id` + `descricao` de cada `Catalogo`) e para `Porto.localidade` (referência). Falta a rota: guarda só
+   `embarquePortoId`, ou guarda `{id, nome, municipio, uf}` para desenhar a linha sem uma segunda leitura?
+   *Inclinação: guardar os rótulos como **cache de leitura** — não como verdade —, com a advertência de que
+   renomear um porto deixa cópias velhas até serem reescritas. Se isso incomodar, a alternativa honesta é só
+   o id.*
+8. *(nova)* **O DTO é um por entidade ou um por caso de uso?** (§1.1) Um por entidade é o que existe hoje (a entity
+   plana do Room vira o DTO); um por caso de uso evita carregar campo que a tela não usa, mas multiplica as
+   classes. *Inclinação: um por entidade agora, especializando só quando doer.*
