@@ -1,10 +1,12 @@
 # Desenho de domínio — o agregado Passagem
 
-**Status:** Rascunho — Claude rascunhou; **revisado em `2026-08-01`** contra o [ADR-0015](../adr/0015-rework-agente-equipe.md)
-(implementado), o [ADR-0016](../adr/0016-dominio-da-plataforma.md) (domínio da plataforma) e o
+**Status:** **base** — Claude rascunhou; **revisado em `2026-08-01`** contra o
+[ADR-0015](../adr/0015-rework-agente-equipe.md) (implementado), o
+[ADR-0016](../adr/0016-dominio-da-plataforma.md) (domínio da plataforma) e o
 [ADR-0017](../adr/0017-eixo-de-storage-firestore-only.md) (Firestore-only). A revisão traz a fotografia de
-volta ao código **e** abre a direção do analista: **extrair os participantes do agregado como entidades
-referenciadas — a primeira é o `Cliente`** (§11).
+volta ao código **e** registra a rodada de decisões do analista sobre o agregado (§11) — que **viraram o
+[ADR-0018](../adr/0018-agregado-passagem-participantes-modo-e-lancamentos.md)**. Este documento fica como o
+**registro do caminho até elas**: quando ele e o ADR-0018 discordarem, o ADR vence.
 
 > Complementa o [estudo transversal de domínio](dominio-relacionamentos-e-camadas.md) e o
 > [catálogo do domínio da plataforma](dominio-da-plataforma.md) (§3.11 resume o que aqui está por extenso).
@@ -93,7 +95,10 @@ colapsou as 19 migrações num DDL único).
   é terminal. `podeTransicionarPara(destino)`, `ehTerminal()`.
 - **String só na fronteira**: `de(valor: String?)` converte na leitura (tolerante à grafia legada); grava-se
   o `.name`; `rotulo()` só para exibição. Convenção hoje uniforme no domínio (catálogo §4).
-- **Cancelar não é estado** — segue *delete físico*. `CANCELADA`/`EXPIRADA` ficaram como futuro.
+- **Cancelar era *delete físico*** — e **deixou de ser** em 2026-08-01: *"cancelar só desativa, manter
+  histórico é prioridade"*. `CANCELADA` vira **estado terminal**, alcançável de `A_EMITIR` e `EMITIDA` e
+  **nunca de `EMBARCADA`** (ADR-0018 D17/D18); cancelada não ocupa estoque, não entra na receita e mantém o
+  número. `EXPIRADA` segue como futuro — é regra temporal, não ação de operador.
 
 `domain/passagem/StatusPassagem.kt:13` · transição de aplicação em
 `PassagemFirestoreRepository.transicionar(id, novo)` — hoje espelha Room + Firestore; **com o ADR-0017 F5
@@ -629,7 +634,10 @@ campos que ficaram de fora do lançamento por over-engineering (§11.9b) voltam 
 - **crédito / conta corrente do pagador**, com o pagador saindo do pool por `CNPJ:…` (§11.8) sem entidade
   nova;
 - **estorno e devolução**, que hoje não existem porque cancelar é *delete* físico (§3);
-- **fechamento de caixa por turno**, que a dupla `criadoEm` + emissor (§11.9b) passa a tornar possível.
+- **fechamento de caixa por turno**, que a dupla `criadoEm` + emissor (§11.9b) passa a tornar possível;
+- **a tarifa inferida** (§11.11a) — descobrir o preço praticado por rota, modo, classe e período a partir do
+  pool de valores registrados. É o candidato mais forte a morar aqui: inferir tarifa **é** análise de
+  dinheiro através de muitas vendas.
 
 O que o módulo **não** deve fazer é voltar a colar isso na passagem: o bilhete registra o que se pagou
 naquela venda; o faturamento é a visão do dinheiro através de muitas vendas. São escalas diferentes.
@@ -792,6 +800,103 @@ Ou seja, a grafia canônica **é a oficial de cada padrão**, não "tudo sem tra
 que a mesma placa só tenha **uma** grafia possível ao entrar. Como a placa é a chave natural do pool
 (§11.9a), isso é o que impede `ABC-1234` e `abc1234` de virarem dois veículos — e é validação de fronteira,
 o mesmo lugar onde os enums do domínio já fazem `de()`.
+
+## 11.11 A tarifa de referência — congelar, resolver ou inferir? (aberta)
+
+**Levantado pelo analista em 2026-08-01, depois do ADR-0018 escrito:** com os lançamentos (§11.9b), a
+`tarifaBase` pode deixar de ser usada e **tudo ser inferido dos lançamentos e dos valores informados**. Não
+tínhamos analisado — e a análise mostra que há **duas perguntas dentro de uma**, com custos bem diferentes.
+
+**Primeiro, a distinção que muda tudo.** "Inferir do lançamento" e "não congelar a `tarifaBase`" não são a
+mesma coisa:
+
+- a **tarifa de referência** (quanto o bilhete *deveria* custar) vem da **tabela da viagem** — e a chave
+  para consultá-la (modo, e no veículo a classe) **está no bilhete** (§11.3/D7). Ela é resolvível a qualquer
+  momento **sem** o lançamento;
+- o **lançamento** diz quanto **entrou**. Inferir a referência dele é dizer que o preço certo é o preço
+  cobrado.
+
+Três caminhos, então:
+
+| Caminho | O que guarda | O que custa |
+|---|---|---|
+| **A. Congelar** (hoje, ADR-0013) | `tarifaBase` no bilhete | um campo; e a emissão exige a célula cadastrada (fail-closed) |
+| **B. Resolver depois** | só a chave; a base sai da tabela quando precisar | bilhete histórico **muda** se a tabela for editada — fere o §5 — e o relatório faz leitura extra |
+| **C. Inferir do lançamento** | nada além do que se pagou | perde a referência inteira (abaixo) |
+
+**O que o caminho C custa, concretamente:**
+
+1. **O desconto vira zero por definição.** `descontoDerivado(devida, cobrado)` mede o resíduo abaixo da
+   devida; se a devida **é** o cobrado, o resíduo é sempre zero. E é literalmente a conta que o ADR-0013
+   matou — `CalculoTarifa.kt` diz que substitui *"a conta circular do antigo `getValorTotal` (total
+   reconstruído somando pagamentos)"*.
+2. **O balanço financeiro colapsa.** O ADR-0014 é *esperada × real × déficit*; com esperada = real, sobra
+   "quanto entrou" — que a soma dos lançamentos já dava.
+3. **A gratuidade fica sem valor nenhum.** É o caso mais duro: gratuidade **não gera lançamento** (valor
+   zero). Sem referência, o bilhete não sabe **quanto se abdicou** — e a "receita abdicada pela gratuidade"
+   é justamente *o número que mostra o custo da lei* (ADR-0014, *Alternativas futuras*). Some também a
+   verificação da **meia**: metade de quê?
+4. **Cai a guarda de emissão.** `resolverTarifaBase → null → ResultadoEmissao.SemTarifa` é o que impede
+   vender sem preço definido e obriga a tabela a existir (ADR-0013, fail-closed). Sem referência, esse
+   bloqueio não tem o que checar — vender passa a ser sempre possível, com qualquer valor.
+
+**O que C ganha, e não é pouco:** um campo a menos, nenhuma dependência de tabela cadastrada para vender, e
+um fluxo em que o operador informa o valor e pronto. Se o negócio **não** pratica desconto discricionário e
+não quer medir gratuidade em dinheiro, C é honesto — o modelo passa a dizer só o que de fato acontece.
+
+**Nota de compatibilidade:** a emissão pós-pagamento (D12) torna a **receita real** confiável em qualquer
+caminho. O que está em jogo é só o **contrafactual** — o que deveria ter sido cobrado.
+
+### 11.11a Decisão: caminho C — a tarifa é inferida do pool, não cadastrada
+
+**Decisão de 2026-08-01, com a razão que faltava.** Houve um estudo não gravado em que **a tarifa passaria a
+ser da Rota** (convertida da Viagem). Ele esbarrou num problema de **propriedade**: sendo a Rota
+**reutilizável por outras empresas usuárias**, uma tarifa cadastrada nela ficaria sem dono claro —
+*rota × agência* — e isso **daria confusão**. É a mesma conclusão que o ADR-0016 já registrou na 9ª rodada,
+ao definir Rota e Viagem como **capacidades compartilhadas da plataforma** e **adormecer a tarifa
+cadastrada**.
+
+Logo: **os valores são registrados, e do pool de dados nasce a inferência da tarifa** — a análise dos
+valores informados ao longo do tempo. *"É simples."*
+
+**O que isso reposiciona (não é só um campo a menos):**
+
+- **A tarifa deixa de ser lei e vira observação.** O preço não é decretado no cadastro e verificado na
+  venda; é **praticado** na venda e **descoberto** na análise. Some a ambiguidade de dono: ninguém precisa
+  ser proprietário de um número que não é mais cadastrado por ninguém.
+- **`tarifaBase` sai do bilhete** e, com ela, `TarifaViagem` como fonte de preço. O bilhete guarda o que
+  guardava de fato: os **lançamentos** (§11.9b) e a **categoria** (modo, classe, tipo tarifário) — que
+  deixam de ser chave de consulta de preço e passam a ser as **dimensões da inferência**.
+- **A alma da plataforma (§11.5) ganha seu mecanismo.** *"Quantos e qual veículo e qual preço"* — o preço
+  agora é **dado observado**, por rota, modo, classe e período. Tarifa praticada é informação de mercado; a
+  tabela cadastrada nunca foi.
+- **O controle muda de natureza: de preventivo para analítico.** Hoje a emissão bloqueia quando a célula não
+  existe (`ResultadoEmissao.SemTarifa`, fail-closed do ADR-0013); esse bloqueio **perde objeto**. O que
+  resta exigindo é o **valor informado**, que a validação já cobre. Vender fora da curva deixa de ser
+  impedido no ato e passa a ser **detectável depois** — coerente com o pool do §11.8: o importante é ter os
+  dados.
+- **Meia, gratuidade e desconto viram categoria + estatística.** `TipoPassagem.tarifaDevida()` (inteira =
+  base, meia = base/2, gratuidade = 0) perde a função de **cálculo** e fica como **rótulo**; o valor da meia
+  passa a ser informado. E a **receita abdicada pela gratuidade** — que sem referência pareceria perdida
+  (§11.11.3) — volta como **estimativa**: a tarifa inferida do período diz quanto valeria aquele bilhete
+  gratuito. Estimativa, não certeza contábil; é o que o modelo honestamente sabe.
+- **O balanço (ADR-0014) não morre — muda de régua.** "Receita esperada" deixa de sair do tabelado e passa a
+  sair da **prática histórica**; déficit vira desvio em relação ao que se costuma cobrar naquela rota. O
+  relatório continua respondendo "faturou quanto × quanto se esperava", com "esperava" apoiado em dados em
+  vez de cadastro.
+- **A regra da moto** (`floor(cc/100)*100`, ADR-0013) some como cálculo; a **cilindrada continua registrada**
+  (é atributo do veículo, §11.9a) e vira mais uma dimensão da inferência.
+
+**Alcance:** isto **supera boa parte do ADR-0013** (tabela por célula, tarifa devida como cálculo, desconto
+derivado, fail-closed de célula ausente) e **revisa a régua do ADR-0014**. Sobrevivem do ADR-0013 os tipos
+fechados (`TipoPassagem`, `TipoGratuidade`), a **cota de gratuidade** (que nunca dependeu de preço) e o
+dinheiro em `BigDecimal` no cálculo / `Double` na fronteira.
+
+**Onde isto vai virar ADR** *(decisão de 2026-08-01)*: **fica anotado para ADR futuro — e provavelmente
+dentro do módulo faturamento** (§11.9b′), não como ADR isolado. A tese se sustenta: inferir tarifa é
+**análise de valores praticados através de muitas vendas**, que é a definição do módulo. O ADR-0018 apenas
+deixa de congelar a `tarifaBase` (D11′); o método da inferência — dimensões, janela de tempo, o que
+responder enquanto não há histórico — nasce lá.
 
 ## 12. Referências
 

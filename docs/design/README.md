@@ -24,7 +24,7 @@ aqui é mexer no efeito, não na causa.
 | Documento | Estado | Do que trata |
 |---|---|---|
 | [dominio-da-plataforma.md](dominio-da-plataforma.md) | **base** | **O catálogo completo**: os dois contextos, o mapa de coleções, todas as entidades com seus campos, todos os enums e as regras puras. Marca o que é `[hoje]`, `[alvo]` e `[morre]` |
-| [dominio-passagem.md](dominio-passagem.md) | **base** | O agregado Passagem em detalhe — participantes, snapshot × id, ciclo de vida |
+| [dominio-passagem.md](dominio-passagem.md) | **base** · §11 fechado → ADR-0018 | O agregado Passagem em detalhe — participantes, snapshot × id, ciclo de vida. O §11 traz a rodada de 2026-08-01 (pools, modo, lançamentos) decisão a decisão |
 | [viagem-vs-trecho.md](viagem-vs-trecho.md) | fechado → ADR-0016 §7 | O insight que separou Trecho (par de cidades) de Rota (a viagem de verdade) |
 | [dominio-relacionamentos-e-camadas.md](dominio-relacionamentos-e-camadas.md) | **superado** | Visão geral da era do ADR-0008 (ainda fala em `Agente` e relação por nome). Substituído por `dominio-da-plataforma.md` |
 
