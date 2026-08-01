@@ -272,7 +272,8 @@ hoje se sustenta por limpeza reativa e `if`:
   tipo de passagem, gratuidade e os três passageiros** ao marcar veículo (`FormPassagemHelper.kt:53-79`).
 - `FormPassagemScreen.kt:202` **troca a área inteira** de passageiro pela de veículo.
 - `ContentPagamentoAreaForm.kt:102` força `TipoPassagem.INTEIRA` no modo veículo — veículo não tem meia nem
-  gratuidade, porque essas categorias são **da pessoa**.
+  gratuidade, porque essas categorias pertencem ao modo **rede**, o único em que a unidade vendida é uma
+  pessoa (§11.9c).
 - **A tabela de tarifa já é de uma dimensão só**: `TarifaViagem.chave` é canônica ∈ {`REDE`, `SUITE`,
   `CAMAROTE`, `CARRO`, `CARRETA`, `CAMINHAO`} — **nunca existiu célula `SUITE × CARRO`**.
 
@@ -317,9 +318,8 @@ contrário.
    agência** — pessoa é uma só; o recorte é de alcance, não de existência.
 3. ~~**Divergência valor × cadastro.**~~ **Decidido em 2026-08-01** (§11.7): **só a plataforma
    sobrescreve.** A agência cria e assina; corrigir o que já está no pool é ato de curadoria, do painel.
-4. **Ordem contra o ADR-0017.** A §11 mexe na forma do documento; a F5 (Passagem) tira o Room. Vale esperar a
-   F5 — em que o achatamento morre sozinho (§6) — ou o `Cliente` entra antes, como coleção nova, sem tocar
-   no formato da passagem?
+4. ~~**Ordem contra o ADR-0017.**~~ **Decidido em 2026-08-01:** nenhuma das duas — **fecha-se o domínio
+   inteiro do agregado primeiro** (§11.9), e só então se discute por onde a implementação entra.
 5. **Quem é o segundo.** O veículo é a candidata natural a virar a segunda entidade extraída (placa é chave
    natural de verdade). Fica registrado, não decidido.
 6. ~~**Titular do modo veículo.**~~ **Decidido em 2026-08-01** (§11.3): o titular é o veículo; o responsável
@@ -490,6 +490,308 @@ O que cai fora do caminho crítico por causa disso:
 que a normalização posterior rode; contagem de **atendimentos** (que é o que a passagem registra) continua
 exata. Confundir as duas seria vender precisão que o modelo não promete — e o modelo escolheu, de propósito,
 ter o dado em vez de ter a unicidade.
+
+## 11.9 Fechar o domínio antes de implementar — as partes que faltam
+
+**Decisão de 2026-08-01.** Primeiro **fecha-se o domínio do agregado inteiro**; só depois se decide por onde
+a implementação entra. O `Cliente` foi a primeira parte a ser resolvida (§11.1–11.8), não a única — enquanto
+as outras estiverem indefinidas, qualquer código escrito escolhe por elas.
+
+**Estado em 2026-08-01: o domínio do agregado está fechado.** Todas as decisões de negócio foram tomadas;
+o que resta em "o que falta" é **forma**, a resolver no ADR. Três partes já estavam no padrão chave +
+valores:
+
+| Parte | Estado | O que falta |
+|---|---|---|
+| Participante pessoa | **fechada** (§11.1–11.8) | — |
+| Modo / acomodação | **fechada** (§11.3) | — |
+| Viagem | **fechada** (§11.10a) — a passagem aponta para a **ocorrência** (o dia exato) | forma da ocorrência (§11.10a) |
+| Emissor | **fechada** (§11.10b) — agência **por id** + nome snapshot | — |
+| Embarque | **fechada** (§11.10c) — o estado é o status; o carimbo vira sub-objeto | ajustar a regra do servidor junto |
+| **Veículo** | **fechada** (§11.9a/§11.10d) — pool, chave = placa, máscara na entrada | — |
+| **Pagamento** | **fechada** (§11.9b/b′) — lançamentos `{id, forma, valor}` embutidos; emissão pós-pagamento | — (faturamento é módulo à parte) |
+| Carimbo de tempo | **fechada** (§11.9b) — `criadoEm` / `alteradoEm` | campos novos: hoje a passagem não registra quando foi emitida |
+| **Tipo tarifário** | **fechada** (§11.9c) — é da acomodação | — |
+| Capacidade / estoque | **fechada** (§11.9e) — é do navio, no cadastro | forma: onde a capacidade mora no `Navio` |
+| **Numeração** | **fechada** (§11.9d) — por viagem | forma: contador atômico por viagem |
+
+### 11.9a O veículo é entidade de pool — a placa é a chave natural
+
+**Decisão de 2026-08-01.** O veículo vira a **segunda entidade extraída**, no mesmo regime do `Cliente`:
+pool acumulativo (não master data), **chave natural = a placa**, assinatura por agência (§11.7) e
+sobrescrita só pela plataforma. No bilhete, o mesmo par do §11.1: **`veiculoId` (a placa) + os valores
+congelados**.
+
+**A placa é uma chave melhor do que o documento de pessoa** — é única por construção e não tem o problema
+CPF × RG do §11.8. O pool de veículos, portanto, **não "polui"**: duplicata só nasce de erro de digitação.
+E isso desloca o peso da curadoria — como só a plataforma corrige (§11.7), placa digitada errada é entrada
+errada até alguém do painel arrumar.
+
+Daí sai uma exigência que o `Cliente` não tinha: **a placa precisa de forma canônica**. Sem normalizar
+caixa, hífen e espaço, `ABC-1234` e `abc1234` viram dois veículos — e o formato Mercosul (`ABC1D23`) convive
+com o antigo. É o mesmo princípio de "String só na fronteira" que os enums do domínio já seguem: normaliza
+na entrada, grava o canônico.
+
+**O que o pool guarda é o que identifica o veículo** — classe, modelo, cor e, na moto, a cilindrada. Note
+que a cilindrada **é do veículo**, não da venda: ela está hoje no bilhete porque justifica a tarifa
+(ADR-0013), e continua lá como valor congelado, mas o lugar natural do atributo é o veículo. O
+**responsável pela retirada não entra no pool** — é pessoa (vai para `clientes`, quando informado) e o
+vínculo é da **passagem**, não do veículo: quem retira muda a cada travessia (§11.3).
+
+Dois ganhos, e o primeiro eu tinha subestimado:
+
+- **Serve ao operador, não só à análise.** Digitar a placa preenche classe, modelo e cor — o análogo do
+  autocomplete de nome (§9), e mais direto: aqui a busca é **get por id**, porque o operador digita a chave
+  inteira, sem precisar de lista. A mecânica do §11.7 (tentar criar, cair no `arrayUnion`) resolve inclusive
+  o caso do veículo já cadastrado por outra agência: não se enxerga o documento, tenta-se criar, o create
+  falha, assina-se — e a partir dali ele aparece.
+- **Torna a série por classe confiável** (§11.5). A classe passa a ser atributo **do veículo**, estável entre
+  travessias, em vez de digitação repetida a cada venda; e uma placa cadastrada como `CARRO` numa venda e
+  `CAMINHAO` noutra deixa de ser invisível — vira divergência que o pool expõe.
+
+**Limite herdado:** placa é dado pessoal indireto (rastreia deslocamento de alguém). Vale a mesma
+consideração do §11.7 — recorte por assinatura agora, back-end centralizador quando o dado exigir mais.
+
+### 11.9b Pagamento — a análise (a pedido do analista, 2026-08-01)
+
+Hoje são quatro colunas nomeadas — `valorPix`/`valorDinheiro`/`valorDebito`/`valorCredito` — e **tudo o que
+o sistema lê delas é a soma**: `valorCobrado = pix + dinheiro + débito + crédito`
+(`PassagemDadosPassagemMapper.kt:43`), que vira a "receita real" do ADR-0014. Nenhuma consulta filtra por
+forma; nenhuma regra do servidor as toca individualmente.
+
+**O que essa forma não consegue registrar** — não por falta de campo, mas por construção:
+
+| O fato | Por que não cabe |
+|---|---|
+| Dois lançamentos da **mesma forma** (dois cartões, dois pagadores no pix) | colapsam num número só |
+| **Quando** se pagou | tudo é implícito "no ato" — não existe pagar depois |
+| **Estorno / devolução** | não há o que estornar: cancelar hoje é *delete* físico (§3) |
+| **Troco** | cabe o apurado, não o recebido |
+| **NSU / autorização / txid** | sem lugar — e é o que permite **conciliar** com o extrato da adquirente |
+| **Quem recebeu** | infere-se do emissor; num caixa com turnos, recebedor ≠ emissor |
+| **Taxa da adquirente** | a "receita real" do ADR-0014 é **bruta**; a líquida não é derivável |
+
+Três desses batem direto na proposta da plataforma. **Conciliação** (o que o adquirente depositou × o que o
+sistema diz) é o insight financeiro mais valioso de uma bilheteria e hoje é impossível. **Receita líquida ×
+bruta** muda o número que o gestor lê: crédito com taxa e prazo não é dinheiro em caixa hoje. E **pagar
+depois** não é hipótese remota — os interessados do §11.3 (despachante, transportadora) são exatamente quem
+opera em conta corrente.
+
+**O argumento que decide, e é o mesmo que o analista já aplicou ao pool (§11.8):** somar por forma no
+momento da escrita **descarta informação de forma irreversível**. O lançamento é o **fato**; a soma é
+derivável dele, e o inverso nunca. Se a plataforma existe para guardar o dado e extrair insight depois, a
+estrutura tem de preservar o evento — "o importante é ter os dados, pode ser até normalizado depois" vale
+para o dinheiro tanto quanto para as pessoas.
+
+**O custo é menor do que parece.** A soma deixa de ser leitura de campo, mas **já hoje** ninguém soma no
+banco: o balanço lê as passagens e agrega em Kotlin (ADR-0014 §1), e o ADR-0017 remove o SQL de qualquer
+forma. Nenhuma consulta atual filtra por forma de pagamento, então **nada quebra no servidor**. E a UI pode
+continuar exatamente igual — quatro formas fixas com seus campos —, com o mapper montando os lançamentos: a
+mudança é de **registro**, não de tela.
+
+**Decisão de 2026-08-01: lista de lançamentos, embutida, com identidade própria — e só isso.** O item é
+`{id, forma, valor}`. **Nada de NSU, txid, taxa ou recebedor no lançamento: seria over-engineering.** O `id`
+existe para que promover a lista a coleção `lancamentos` seja **mover, não redesenhar**, se o dia chegar.
+
+Duas das lacunas que a análise listou se resolvem **fora** do lançamento, e melhor:
+
+- **Quando se pagou** → **`criadoEm` e `alteradoEm` na passagem**. Como a emissão é pós-pagamento
+  (§11.9b′), o instante da criação **é** o instante do pagamento. E aqui há uma ausência que a decisão
+  corrige: **a Passagem hoje não registra quando foi emitida** — tem `dataViagem` (quando se viaja) e
+  `embarcadaEm` (quando embarcou), mas nenhum carimbo de criação ou de última alteração. Relatório por
+  período hoje só sabe agrupar por data de viagem, não por **quando o dinheiro entrou**.
+- **Quem recebeu** → é **auto-explicativo**: quem emitiu recebeu, e o emissor já está congelado
+  (`funcionarioId` + `funcionarioResponsavel`, §5). Campo novo seria duplicar fato existente — o mesmo erro
+  que o `agente` cometia antes de morrer no ADR-0015.
+
+### 11.9b′ Emissão é pós-pagamento — e por isso o faturamento é outro módulo
+
+**Decisão de 2026-08-01: a emissão é pós-pagamento.** A passagem **nasce paga**; não existe bilhete "em
+aberto" dentro do agregado.
+
+Isso dissolve, por decisão de negócio, o eixo "a receber" que a análise apontava como a peça cara — e com
+ele os três pontos onde o app assumia pagamento no ato. **Nenhum precisa mudar**, e agora se sabe por quê:
+
+1. `validarDadosPassagem` exigir ao menos uma forma de pagamento (`ValidacaoDadosPassagem.kt:46-48`) não é
+   limitação: é **a regra**.
+2. `descontoDerivado(devida, cobrado)` continua íntegro. Era o risco maior — bilhete com `cobrado = 0`
+   apareceria no ADR-0014 como **receita zero e desconto de 100%** —, e ele **não se materializa**, porque
+   não existe passagem sem pagamento.
+3. A FSM de emissão (§3) segue com **um eixo só**. Não nasce a segunda máquina de estados, que o §8 mostra
+   custar paridade em três camadas.
+
+**O faturamento vira módulo à parte**, a desenhar quando o negócio pedir — não uma extensão da passagem. É
+onde a transportadora que embarca vários veículos e acerta em conta será tratada de verdade, e onde os
+campos que ficaram de fora do lançamento por over-engineering (§11.9b) voltam a fazer sentido:
+
+- **conciliação** (NSU / autorização / txid) contra o extrato da adquirente;
+- **taxa e prazo por forma** — receita líquida × bruta, crédito que cai em D+30 (o ADR-0014 mede bruta);
+- **crédito / conta corrente do pagador**, com o pagador saindo do pool por `CNPJ:…` (§11.8) sem entidade
+  nova;
+- **estorno e devolução**, que hoje não existem porque cancelar é *delete* físico (§3);
+- **fechamento de caixa por turno**, que a dupla `criadoEm` + emissor (§11.9b) passa a tornar possível.
+
+O que o módulo **não** deve fazer é voltar a colar isso na passagem: o bilhete registra o que se pagou
+naquela venda; o faturamento é a visão do dinheiro através de muitas vendas. São escalas diferentes.
+
+### 11.9c O tipo tarifário é da acomodação — a unidade vendida é o espaço
+
+**Decisão de 2026-08-01.** O tipo tarifário **não é da pessoa**: é da **acomodação**. **"Um camarote vale um
+camarote"**, e comporta até três pessoas; a suíte, idem. O que se vende é o **espaço**, e o preço é dele.
+
+Isso responde a pergunta em aberto de forma mais limpa do que qualquer das duas hipóteses que eu havia
+levantado. Não é que "todo mundo no camarote sai inteira" — é que **não há pessoa sendo tarifada ali**, logo
+meia e gratuidade não têm onde se aplicar. A categoria tarifária pertence ao **modo rede**, o único em que a
+unidade vendida coincide com uma pessoa:
+
+| Modo | Unidade vendida | Categoria tarifária |
+|---|---|---|
+| `REDE` | a pessoa (uma rede, uma pessoa) | **inteira / meia / gratuidade** |
+| `SUITE` / `CAMAROTE` | o espaço (até 3 ocupantes) | não se aplica — o espaço não tem idade |
+| `VEICULO` | o veículo (classe) | não se aplica |
+
+E **o código já está correto**: `validarPassageiro` só exige tipo tarifário na rede
+(`ValidacaoPassageiro.kt:51`) e o ADR-0013 já registrava "tipo tarifário só existe na REDE". O que faltava
+era a **razão** estar escrita — sem ela, a ausência do campo em suíte/camarote parecia esquecimento, e foi
+assim que a li. `tipoPassagem`/`gratuidade` no bilhete continuam onde estão, e **são nulos por construção**
+fora da rede: valor preenchido em outro modo deve ser ignorado, não interpretado (fail-closed).
+
+Um efeito colateral que fecha sozinho: a **cota de gratuidade** (2 por categoria por viagem, ADR-0013) conta
+**por passagem**, e como gratuidade só existe na rede — onde uma passagem é uma pessoa —, contar por
+passagem já é contar por pessoa. Não há divergência a corrigir.
+
+**Os quatro resíduos, decididos em 2026-08-01:**
+
+1. **A capacidade é do navio** — do **ativo** do ADR-0016, não do tipo de acomodação. Detalhado em §11.9e.
+2. **Um bilhete = uma unidade** — "o negócio já está abstraído assim: três nomes e documentos em um
+   bilhete". Grupo de cinco em dois camarotes são **duas passagens**. Não existe bilhete de dois camarotes.
+3. **A capacidade é atribuída no cadastro do navio, e é isso que dá controle** — §11.9e.
+4. **Nomear ≠ tarifar, e o modo governa quem existe.** Os passageiros 2 e 3 são nominados com documento
+   obrigatório (§11.8) sem efeito no preço: a lista é o **manifesto de embarque**. E **só faz sentido acionar
+   o passageiro 2 em suíte ou camarote** — "outro cliente, tanto no state quanto na apresentação quanto na
+   lógica". Ou seja, **cada participante é um `Cliente`** (§11.1), com o seu próprio `clienteId` e o seu
+   botão de salvar (§11.2), e **quantos existem é propriedade do modo** (§11.3): rede 1, suíte/camarote até
+   a capacidade, veículo nenhum — só o responsável opcional.
+   > Consequência de forma a considerar no ADR: hoje o participante é **triplicado por numeração**
+   > (`nomePassageiro1/2/3` na entidade, ×3 no UiState, ×3 na validação). Se cada um é o mesmo conceito
+   > repetido, o que o modelo pede é uma **coleção de participantes** limitada pela capacidade — não três
+   > conjuntos de campos com sufixo. Proposta minha, não decisão.
+
+### 11.9e A capacidade vem do navio — e o estoque passa a ser controlável
+
+**Decisão de 2026-08-01.** A capacidade é do **navio** — o *ativo* do ADR-0016 — e é **atribuída no
+cadastro do navio**: quantas redes, quantas suítes, quantos camarotes (e, pelo ADR-0016, se leva veículo e
+de que classes). **"Assim se tem controle."**
+
+Duas coisas mudam de estatuto com isso:
+
+- **A tela deixa de codificar o negócio.** O "até 3" que hoje é constante do form (checkbox de passageiro
+  2 e 3) passa a ser leitura da capacidade do navio da viagem — e a suíte de um navio pode não ser a suíte
+  de outro, que é o que a plataforma multi-empresa exige.
+- **Ocupação deixa de ser só relatório.** Hoje o balanço mede ocupação **depois** da venda; com capacidade
+  declarada, existe um **estoque** por viagem e a emissão pode confrontá-lo **antes**.
+
+**O mecanismo já existe no app, e é o mesmo da cota de gratuidade.** O ADR-0013 conta o que já foi emitido
+naquela viagem (`contarGratuidadePorViagem`, com `excetoId` para a edição não bloquear a si mesma) e
+devolve um caso tipado que a UI mostra como bloqueio persistente (`ResultadoEmissao.CotaGratuidadeAtingida`).
+Capacidade é o **mesmo padrão** com outro contador: contar as passagens da viagem por modo e comparar com o
+declarado no navio, fail-closed, com o mesmo desenho de banner. Herda também a mesma limitação já assumida
+lá: a contagem é *firestore-driven* e a **paridade no servidor é parcial** — dois caixas vendendo o último
+camarote ao mesmo tempo é a corrida que o cliente sozinho não resolve.
+
+**O que ainda falta desenhar aqui** (não é decisão de negócio, é forma): onde a capacidade mora no
+`Navio` — um mapa `{modo → quantidade}` acompanha o eixo do §11.3 e a tabela de tarifa da viagem, que já é
+`{chave → valor}`; e se a capacidade de veículo é contagem de vagas ou metragem, que o ADR-0016 trata como
+capacidade do ativo.
+
+### 11.9d A numeração é por viagem
+
+**Decisão de 2026-08-01.** O escopo da numeração do bilhete é a **viagem**. Hoje `ContadorBilhete` é **um
+documento único** (`id = 1`) com uma contagem global — numa plataforma multi-empresa, todas as empresas
+dividiriam a mesma sequência e disputariam o mesmo documento a cada emissão.
+
+O que a decisão traz:
+
+- **A sequência reinicia a cada travessia**, e o número passa a significar algo: *o n-ésimo bilhete daquela
+  viagem*. Casa com o manifesto de embarque (§11.9c.4), que é a lista daquela travessia, e com o eixo
+  financeiro do ADR-0014, que já agrega **por viagem**.
+- **Unicidade passa a ser do par `(viagemId, numero)`** — o número sozinho deixa de identificar. O `id` do
+  documento continua sendo a identidade técnica (é ele que o QR carrega, §4), então nada no embarque muda.
+- **O contador vira um por viagem** — `contadores/{viagemId}` ou campo na própria viagem. E a concorrência
+  fica **mais concentrada**: dois caixas da mesma travessia disputam o mesmo contador, o que hoje é
+  ler-somar-gravar (`adicionarContador`, ainda com `runBlocking` — dívida do §9). Incremento atômico do
+  servidor (`FieldValue.increment`) resolve, e é o mesmo tipo de garantia que a capacidade do §11.9e vai
+  precisar. **Numerar e ocupar são o mesmo problema de corrida** — vale resolvê-los juntos.
+- **Reemissão não renumera** — já é o comportamento atual (`numero = passagemExistente?.numero ?: novo`).
+
+## 11.10 As resoluções de forma (2026-08-01)
+
+### 11.10a A viagem é atômica por dia da semana e hora — a passagem aponta para a ocorrência
+
+**Decisão.** A **Viagem** é atômica em **dia da semana + hora** — "terça-feira, 15:00". Ela é a **escala**, e
+o sistema **infere as ocorrências no intervalo de segunda a domingo**. O que a passagem consome é o **item
+de viagem**: a ocorrência que **grava o dia exato** e guarda o que é daquela travessia específica, para
+controle e apresentação.
+
+**Os atalhos de criação de passagem continuam funcionando como hoje** — a tela lista a escala da semana e a
+emissão se ancora no item do dia. É o que torna a mudança barata: muda o que a passagem aponta, não como o
+operador chega nela.
+
+Isso resolve o "o que se congela" da tabela: a passagem congela a **ocorrência**, não a escala. E força uma
+precisão em duas decisões já tomadas, que sem ela ficariam ambíguas:
+
+- **A numeração por viagem (§11.9d) é por ocorrência.** O n-ésimo bilhete *daquela travessia de terça 15:00
+  do dia 12*, não da escala das terças. Contador na ocorrência.
+- **A capacidade / estoque (§11.9e) também é por ocorrência.** O navio tem 10 camarotes **em cada saída** —
+  vender contra a escala misturaria semanas inteiras.
+- O eixo financeiro do ADR-0014, que agrega por `viagemId`, passa a agregar **por ocorrência** — que é o que
+  "receita da travessia" sempre quis dizer.
+
+> Conversa direto com o ADR-0016 (**Rota** = a viagem de verdade, com portos, tarifas e **agenda**) e com a
+> nota de vocabulário do [viagem × trecho](viagem-vs-trecho.md). O que este parágrafo acrescenta é a
+> **atomicidade**: a unidade da agenda é `(dia da semana, hora)`, e a ocorrência é a materialização dela numa
+> data.
+
+### 11.10b A agência do emissor entra por id
+
+**Decisão.** `agencia` deixa de ser só texto: a passagem passa a congelar **`agenciaId` + o nome como
+snapshot**, o mesmo par que já vale para viagem, navio, empresa e funcionário (§5, ADR-0008). A agência é
+entidade desde o ADR-0015; faltava a passagem tratá-la como tal.
+
+Ganho concreto: o recorte por agência da consulta (ADR-0015 P2.6) e a identidade visual por agência no
+bilhete passam a depender de **id**, não de casamento de nome — que é exatamente o tipo de fragilidade que o
+ADR-0008 nasceu para matar. O nome continua no bilhete impresso, congelado.
+
+### 11.10c Embarque: o estado é o status; o que vira sub-objeto é o carimbo
+
+**Esclarecimento** — a pergunta da tabela não era sobre o estado. O **estado continua sendo o
+`status = EMBARCADA`** da FSM (§3); nada disso muda. O que está em discussão são os **três campos do
+carimbo** — `embarcadaPorId`, `embarcadaPor`, `embarcadaEm` —, hoje planos e com default `""`.
+
+**Decisão: viram um sub-objeto `embarque` ausente quando não houve embarque.** O ganho é tornar
+**impossível de representar** o estado meio-preenchido (carimbo vazio com status `EMBARCADA`, ou carimbo
+preenchido com status `EMITIDA`): ou o objeto existe inteiro, ou não existe. Hoje isso só se detecta lendo
+três strings vazias e interpretando.
+
+Custo a assumir junto: a regra do servidor `ehConfirmacaoEmbarque()` endurece exatamente esses quatro nomes
+de campo (`hasOnly(['status','embarcadaPorId','embarcadaPor','embarcadaEm'])`, §8) e a suíte de emulador
+cobre isso. Mudar a forma **muda a regra e o teste no mesmo incremento** — é o dever de paridade do §8, e
+não dá para fatiar em dois.
+
+### 11.10d Placa: máscara na entrada, e o traço é do padrão antigo
+
+**Decisão.** A normalização da placa (§11.9a) **não é cara**: resolve-se com **controle de caractere no
+campo**. O traço está no teclado numérico, e a máscara **aceita** o traço digitado e **o insere sozinha**
+quando faltar — a regra é a própria forma da placa:
+
+- **antigo `LLL-NNNN`**: três letras seguidas de **quatro dígitos** → leva traço (inserido se o operador não
+  digitar);
+- **Mercosul `LLLNLNN`**: três letras, dígito, **letra**, dois dígitos → **não** leva traço.
+
+Ou seja, a grafia canônica **é a oficial de cada padrão**, não "tudo sem traço": o que a máscara garante é
+que a mesma placa só tenha **uma** grafia possível ao entrar. Como a placa é a chave natural do pool
+(§11.9a), isso é o que impede `ABC-1234` e `abc1234` de virarem dois veículos — e é validação de fronteira,
+o mesmo lugar onde os enums do domínio já fazem `de()`.
 
 ## 12. Referências
 
