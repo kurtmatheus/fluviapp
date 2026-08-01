@@ -160,6 +160,9 @@ empresas/{empresaId}                     nome, razaoSocial, cnpj, endereco, tele
 localidades/{localidadeId}     [alvo]    uf (Catalogo), municipio (Catalogo)   ← embutidos
 portos/{portoId}               [alvo]    nome, localidade                      ← referência
 catalogo/{itemId}              [alvo]    categoria, descricao        (hoje: constants/{id})
+rotas/{rotaId}                 [alvo]    portoOrigem, portoDestino, distanciaMn, tempoMedioH
+viagens/{viagemId}             [alvo]    rotaId, navioId, diaSemana, hora   ← ATÔMICA
+   ↑ as duas: criadoPor, criadoEm, ativo — compartilhadas, imutáveis, sem exclusão (§3.6)
 
 # ATIVOS — dono por campo, endereçáveis globalmente
 navios/{navioId}                         nome, capacidades, empresaId (+ tipoEmbarcacao [alvo])
@@ -205,7 +208,7 @@ sincronia.
 
 | Atuação | Campos | Estado |
 |---|---|---|
-| `AGENCIAMENTO` | `portoIds[]`, `navioIds[]` | ativa — é a que sustenta a rota (*`trechoIds[]` e `armadorIds[]` saíram — §3.5 e §3.3*) |
+| `AGENCIAMENTO` | `portoIds[]`, `navioIds[]` (concessão) + `rotasNegadas[]`, `viagensNegadas[]` (preferência) | ativa (*`trechoIds[]` e `armadorIds[]` saíram — §3.5 e §3.3*) |
 | `TRANSPORTE` | — (dona da frota; **cadastra os próprios navios**, §3.3) | ativa — qualifica quem pode ter navio |
 | `PORTUARIA_OPERACAO` | `portoIds[]` | **dormente** — quem opera o cais |
 | `PORTUARIA_ARRENDAMENTO` | `portoIds[]` | **dormente** — a arrendatária, quem faz check-in |
@@ -233,6 +236,20 @@ que ela recebeu** — quem tem os portos de Manaus e de Parintins pode montar a 
 tem, não pode.
 
 **Conceder não é cadastrar:** o form da atuação só *seleciona*; quem cria porto é o módulo dele.
+
+**Concessão e negada não são a mesma coisa e não podem compartilhar mecanismo** *(2026-07-31)*:
+
+| | O que é | Direção | Onde vale |
+|---|---|---|---|
+| **Concessão** (`portoIds`, `navioIds`) | **segurança** — o que a agência pode **vender** | *allow-list*, **fail-closed** | servidor (regra) |
+| **Negadas** (`rotasNegadas`, `viagensNegadas`) | **conforto** — o que ela escolhe não **ver** | *deny-list*, **fail-open** | tela |
+
+**Visualização = pool − negadas; venda = concessão.** Filtrar a visualização pela concessão faria a agência
+nova ver tela vazia, e o ganho do pool compartilhado (§3.6) se perderia. Tratar a negada como autorização
+inverteria o default de um sistema que é fail-closed em todo o resto.
+
+*Escala:* a deny-list funciona enquanto o pool é pequeno; com centenas de viagens, o movimento natural é
+inverter para adoção explícita ("as minhas rotas").
 
 ### 3.3 Navio — o ativo
 
@@ -386,7 +403,63 @@ ser igualdade num campo e vira consulta sobre **o par de portos**; e se a pergun
 de por porto, ela se resolve no cliente ou por denormalização, porque o Firestore não faz junção. É custo
 de **leitura**, não de modelo, e só aparece quando existir relatório por linha (§8.6).
 
-### 3.6 Rota — a oferta da agência **[alvo]** (hoje: `Viagem`)
+### 3.6 Rota e Viagem — capacidades compartilhadas **[alvo]** · *redefinidas em 2026-07-31*
+
+**`rotas/{rotaId}`** — o **onde** e o **quanto longe**.
+
+| Campo | Tipo | Natureza | Notas |
+|---|---|---|---|
+| `id` | String | identidade | |
+| `portoOrigem` | `Porto` | referência | a cidade é inferida dele (§3.4) |
+| `portoDestino` | `Porto` | referência | idem |
+| `distanciaMn` | Double | valor | milhas náuticas — **estético hoje** |
+| `tempoMedioH` | Double | valor | tempo médio em horas — **estético hoje** |
+| `criadoPor` / `criadoEm` | String / data | **assinatura** | quem criou e quando |
+| `ativo` | Boolean | estado | não se exclui |
+
+**`viagens/{viagemId}`** — o **quando** e **em quê**. **É atômica: uma saída = um documento.**
+
+| Campo | Tipo | Natureza |
+|---|---|---|
+| `id` | String | identidade |
+| `rotaId` | String | referência |
+| `navioId` | String | referência |
+| `diaSemana` | enum | valor — **anda junto com a hora** |
+| `hora` | String | valor |
+| `criadoPor` / `criadoEm` / `ativo` | | assinatura + estado |
+
+A Viagem não é uma rota com agenda dentro: é o par `(navio, horário)` sobre uma rota. **A ocorrência
+concreta é `(viagemId, data)`** — e com isso `Passagem.viagemId` **deixa de mentir**: hoje aponta para uma
+entidade chamada Viagem que é um trecho, e a viagem concreta é reconstruída de data e hora **digitadas no
+formulário**.
+
+**Sem dono, universalmente acessíveis, e imutáveis.** Quem cria assina; ninguém exclui. Se a saída muda de
+horário, **desativa-se e cria-se outra** — versionamento por substituição. É a imutabilidade que torna
+seguro compartilhar sem dono: nenhuma agência quebra o que a outra vende. Passagem antiga apontando viagem
+desativada é o comportamento correto, mesma natureza do snapshot.
+
+**A partida física ganha identidade — e o conflito da capacidade some.** Duas agências que vendem o mesmo
+navio na mesma saída têm **a mesma viagem**. Ocupação = `count(passagens where viagemId = X and data = D)`,
+atravessando empresas sem *collection group*; faturamento = o mesmo conjunto filtrado por empresa. Ocupação
+(do navio) e faturamento (da agência) deixam de disputar a mesma entidade.
+
+**Por que isto não ressuscita o Trecho:** o Trecho morreu por ser **derivável**. A Rota carrega `distanciaMn`
+e `tempoMedioH`, fatos que nenhuma outra entidade tem. Entidade compartilhada se justifica quando não é
+derivável. *(Os dois campos são de exibição hoje, não por natureza: hora de chegada é `hora + tempoMedioH`, e
+distância é a base de qualquer tarifa por milha.)*
+
+**Unicidade é condição, não higiene:** par de portos na Rota, `(rotaId, navioId, diaSemana, hora)` na Viagem,
+**no servidor**. O pool sem dono prolifera por natureza — duas agências criam "Belém → Manaus" duas vezes
+porque não acharam a existente —, e pool duplicado refragmenta a ocupação, que é o ganho principal se
+perdendo pela porta dos fundos.
+
+**A lista de negadas** (`rotasNegadas[]` / `viagensNegadas[]` na atuação, §3.2) é do supervisor da agência:
+o que não interessa some da tela. **Não é autorização** — ver o quadro no §3.2.
+
+---
+
+*O texto abaixo é do desenho anterior, quando a Rota era da empresa e carregava a tarifa. Preservado como
+registro; onde conflitar, vale o de cima.*
 
 `empresas/{empresaId}/rotas/{rotaId}`
 
@@ -424,7 +497,25 @@ O que existe hoje no lugar disso é a **`Viagem`** (`domain/viagem/Viagem.kt`), 
 | `empresaId` | String | vira o **caminho** (`empresas/{id}/rotas`) |
 | `navioId` | String | permanece |
 
-### 3.7 Tarifa — tabela de duas dimensões
+### 3.7 Tarifa — **cadastro dormente desde 2026-07-31** (ADR-0013)
+
+> **A tabela cadastrada não será construída.** A `Rota` virou capacidade compartilhada sem dono (§3.6), e
+> entidade sem dono não tem de quem ter tarifa. O dado passa a ser o **valor informado** na emissão; base,
+> desconto e resultado são **inferidos por agregação** de passagens por rota e viagem.
+>
+> **O que morre é a fonte da base, não a matemática.** `TipoPassagem`, `TipoGratuidade`,
+> `TipoPassagem.tarifaDevida`, `descontoDerivado`, `tarifaMotoBase` e o dinheiro em `BigDecimal` scale 2
+> sobrevivem intactos — muda de onde vem o argumento `tarifaBase`. E a base inferida só significa algo
+> agrupada por **(viagem, acomodação)** e **(viagem, classe)**, que são **os dois eixos da tabela**: ela não
+> morre, deixa de ser *cadastrada* e passa a ser *observada*.
+>
+> Consequências: **`ResultadoEmissao.SemTarifa` deixa de existir** — nada bloqueia a emissão por falta de
+> cadastro, o que dissolve a premissa do ADR-0017 D7; **`MEIA` vira classificação** e a aritmética migra
+> para a agregação (a base é inferida só das INTEIRAS, então as meias não a poluem); e há **cold start** — a
+> primeira passagem de uma viagem nova não tem base. `Passagem.tarifaBase` nasce nulo, caso que o
+> `PassagemDadosPassagemMapper` já trata.
+
+*O desenho abaixo fica como registro do que foi decidido e não construído.*
 
 `domain/viagem/TarifaViagem.kt` **[hoje]** (ADR-0013)
 
@@ -566,6 +657,12 @@ histórico.
 **Passageiro e veículo são participantes de mesmo nível** — não value objects descritivos. O veículo viaja
 sob um responsável pela retirada que é **opcional**: o modelo **tolera** veículo sem responsável, e essa
 inconsistência é aceita, não barrada.
+
+**[alvo]** *(decisão de 2026-08-01)* Os participantes deixam de ser campos achatados e passam a ser gravados
+como **chave + valores**: `clienteId` para referenciar e os campos congelados para o bilhete. Nasce o
+**`Cliente`** — a mesma entidade para passageiro e para responsável pela retirada —, salvável por um botão
+no meio da emissão. Detalhado em [dominio-passagem.md §11](dominio-passagem.md), incluindo o que falta
+decidir (identidade, tenancy do cliente e o eixo dos quatro modos rede/suíte/camarote/veículo).
 
 ### 3.12 Entidades de suporte
 
@@ -834,6 +931,9 @@ diz para onde a classe vai quando o Room sair.
 |---|---|---|
 | `Constante` (`constants`) | `Catalogo` (`catalogo`), sem enums internos | 0016 §3 |
 | `Viagem` (raiz) | `Rota` (`empresas/{id}/rotas`), com os dois portos | 0016 §7, **revisado** (§3.5) |
+| `Viagem` = trecho, da empresa | `Rota` + `Viagem` **na raiz**, compartilhadas, imutáveis, assinadas | §3.6, **novo** |
+| Tarifa cadastrada na viagem | tarifa **dormente**; base inferida por agregação | §3.7 |
+| Data e hora **digitadas** na emissão | ocorrência = `(viagemId, data)` selecionada | §3.6 |
 | — | `Localidade` (raiz): `uf` + `municipio` embutidos, `codigoIbge`, `ativo` | §3.4, **novo** |
 | — | `Porto` (raiz), com `localidade` por referência e `ativo` | 0016 §5, **revisado** (§3.4) |
 | `Constante` sem ordem nem estado | `Catalogo` com `ordem` e `ativo`, `(categoria, descricao)` único | §3.8, **novo** |
@@ -853,9 +953,9 @@ diz para onde a classe vai quando o Room sair.
 
 Herdadas dos ADRs, e que o domínio não resolve sozinho:
 
-1. **Onde se escolhe o vínculo ativo** quando a pessoa tem mais de um (§3.9) — no login ou na emissão? *O que
-   se escolhe já está definido (o vínculo, não a empresa) e o que a escolha determina também (cargo, seções,
-   recorte); falta o momento.*
+1. ~~**Onde se escolhe o vínculo ativo**~~ — **RESOLVIDO: no login.** A escolha determina cargo, seções e
+   recorte de uma vez, então tem de estar feita antes de qualquer tela existir. Trocar de vínculo é trocar de
+   sessão de trabalho, não uma opção dentro da emissão.
 2. ~~**Remoção de porto/navio concedido**~~ — **RESOLVIDO.** Catálogo, localidade e porto: não se remove,
    **desativa-se** (`ativo` — §3.4). Navio saindo de `navioIds`: é **caso de sincronização, não de
    modelo** — a concessão é referência viva, a regra de escrita da rota barra as escritas seguintes e nada
