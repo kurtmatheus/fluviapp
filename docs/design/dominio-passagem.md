@@ -849,15 +849,35 @@ caminho. O que está em jogo é só o **contrafactual** — o que deveria ter si
 
 ### 11.11a Decisão: caminho C — a tarifa é inferida do pool, não cadastrada
 
-**Decisão de 2026-08-01, com a razão que faltava.** Houve um estudo não gravado em que **a tarifa passaria a
-ser da Rota** (convertida da Viagem). Ele esbarrou num problema de **propriedade**: sendo a Rota
-**reutilizável por outras empresas usuárias**, uma tarifa cadastrada nela ficaria sem dono claro —
-*rota × agência* — e isso **daria confusão**. É a mesma conclusão que o ADR-0016 já registrou na 9ª rodada,
-ao definir Rota e Viagem como **capacidades compartilhadas da plataforma** e **adormecer a tarifa
-cadastrada**.
+> **Correção de rota (2026-08-01):** isto **não é decisão nova** — o **ADR-0016 §7.2 (9ª rodada)** já a
+> tomou, e com mais detalhe do que a primeira redação desta seção supunha. O que o analista trouxe aqui foi
+> a **razão** (a propriedade da tarifa numa rota compartilhada) e a confirmação. Onde este estudo divergir do
+> §7.2, **vale o §7.2**; o parágrafo abaixo foi alinhado a ele.
+
+**A razão que faltava.** Houve um estudo não gravado em que **a tarifa passaria a ser da Rota** (convertida
+da Viagem). Ele esbarrou num problema de **propriedade**: sendo a Rota **reutilizável por outras empresas
+usuárias**, uma tarifa cadastrada nela ficaria sem dono claro — *rota × agência* — e isso **daria confusão**.
+Por isso o ADR-0016 definiu Rota e Viagem como **capacidades compartilhadas da plataforma** e **adormeceu a
+tarifa cadastrada**: *"tarifa é competência da agência, e uma entidade sem dono não tem de quem ter tarifa"*.
 
 Logo: **os valores são registrados, e do pool de dados nasce a inferência da tarifa** — a análise dos
 valores informados ao longo do tempo. *"É simples."*
+
+**O que o §7.2 já fixa, e que corrige duas afirmações desta seção:**
+
+- **"O que morre é a fonte da base, não a matemática."** `descontoDerivado(base, cobrado)` **continua
+  valendo** — a base deixa de vir de uma célula cadastrada e passa a vir da **agregação**. Não é que o
+  desconto perca objeto: ele muda de referência. **A tabela não morre — deixa de ser cadastrada e passa a
+  ser observada.**
+- **`Passagem.tarifaBase` não sai do modelo: passa a nascer nulo**, e o `PassagemDadosPassagemMapper` já
+  trata esse caso (`if (entry.tarifaBase != null)`), então nada quebra hoje.
+- **O agrupamento da inferência é `(viagem, acomodação)` e `(viagem, classe de veículo)`** — os mesmos dois
+  eixos da tabela que morreu —, e a base é inferida **só das INTEIRAS**, para que meia e gratuidade não
+  poluam a estatística.
+- **`MEIA` vira classificação**: o agente informa o valor e marca a categoria; a conta migra inteira para a
+  agregação.
+- **Cold start nomeado:** a primeira passagem de uma viagem nova não tem base inferida. Aceitável para
+  relatório, **inaceitável para guarda bloqueante** — mais um motivo para `SemTarifa` morrer.
 
 **O que isso reposiciona (não é só um campo a menos):**
 
@@ -875,28 +895,27 @@ valores informados ao longo do tempo. *"É simples."*
   resta exigindo é o **valor informado**, que a validação já cobre. Vender fora da curva deixa de ser
   impedido no ato e passa a ser **detectável depois** — coerente com o pool do §11.8: o importante é ter os
   dados.
-- **Meia, gratuidade e desconto viram categoria + estatística.** `TipoPassagem.tarifaDevida()` (inteira =
-  base, meia = base/2, gratuidade = 0) perde a função de **cálculo** e fica como **rótulo**; o valor da meia
-  passa a ser informado. E a **receita abdicada pela gratuidade** — que sem referência pareceria perdida
-  (§11.11.3) — volta como **estimativa**: a tarifa inferida do período diz quanto valeria aquele bilhete
-  gratuito. Estimativa, não certeza contábil; é o que o modelo honestamente sabe.
+- **Meia vira classificação, e a conta migra para a agregação** (§7.2). `TipoPassagem.tarifaDevida()` deixa
+  de ser aplicada **no ato da emissão** — o agente informa o valor e marca a categoria —, mas a **matemática
+  sobrevive** do lado da análise, agora sobre a base inferida. E a **receita abdicada pela gratuidade** —
+  que sem referência pareceria perdida (§11.11.3) — volta como **estimativa**: a tarifa inferida do período
+  diz quanto valeria aquele bilhete gratuito. Estimativa, não certeza contábil.
 - **O balanço (ADR-0014) não morre — muda de régua.** "Receita esperada" deixa de sair do tabelado e passa a
-  sair da **prática histórica**; déficit vira desvio em relação ao que se costuma cobrar naquela rota. O
-  relatório continua respondendo "faturou quanto × quanto se esperava", com "esperava" apoiado em dados em
+  sair da **prática histórica** agregada por viagem; déficit vira desvio em relação ao que se costuma cobrar.
+  O relatório continua respondendo "faturou quanto × quanto se esperava", com "esperava" apoiado em dados em
   vez de cadastro.
 - **A regra da moto** (`floor(cc/100)*100`, ADR-0013) some como cálculo; a **cilindrada continua registrada**
   (é atributo do veículo, §11.9a) e vira mais uma dimensão da inferência.
 
-**Alcance:** isto **supera boa parte do ADR-0013** (tabela por célula, tarifa devida como cálculo, desconto
-derivado, fail-closed de célula ausente) e **revisa a régua do ADR-0014**. Sobrevivem do ADR-0013 os tipos
-fechados (`TipoPassagem`, `TipoGratuidade`), a **cota de gratuidade** (que nunca dependeu de preço) e o
-dinheiro em `BigDecimal` no cálculo / `Double` na fronteira.
+**Alcance:** isto **supera o cadastro de tarifa do ADR-0013** (tabela por célula, guarda `SemTarifa`,
+aplicação da tarifa devida no ato) e **revisa a régua do ADR-0014**. Sobrevivem do ADR-0013 **as funções
+puras** (`tarifaDevida`, `descontoDerivado` — agora sobre base inferida), os tipos fechados, a **cota de
+gratuidade** (que nunca dependeu de preço) e o dinheiro em `BigDecimal` no cálculo / `Double` na fronteira.
 
-**Onde isto vai virar ADR** *(decisão de 2026-08-01)*: **fica anotado para ADR futuro — e provavelmente
-dentro do módulo faturamento** (§11.9b′), não como ADR isolado. A tese se sustenta: inferir tarifa é
-**análise de valores praticados através de muitas vendas**, que é a definição do módulo. O ADR-0018 apenas
-deixa de congelar a `tarifaBase` (D11′); o método da inferência — dimensões, janela de tempo, o que
-responder enquanto não há histórico — nasce lá.
+**Onde isto já está e onde ainda vai:** a decisão mora no **ADR-0016 §7.2**; o ADR-0018 apenas deixa de
+congelar a `tarifaBase` (D11′, que é o "nasce nulo" de lá). O que **falta** — e que o analista situou no
+**módulo faturamento** (§11.9b′) — é o **método**: janela de tempo, número mínimo de bilhetes para a base
+valer, como apresentar viagem sem histórico, e se a inferência é calculada na leitura ou materializada.
 
 ## 12. Referências
 

@@ -153,13 +153,15 @@ domínio não tem o que responder.**
   **`criadoEm`/`alteradoEm` na passagem** (que hoje **não registra quando foi emitida** — só `dataViagem` e
   `embarcadaEm`), e **quem recebeu** já é o emissor congelado.
 
-- **D11′ — A `tarifaBase` deixa de ser congelada no bilhete.** O que a passagem guarda de dinheiro são os
-  **lançamentos** (o que entrou) e a **categoria** (modo, classe, tipo tarifário) — que deixa de ser chave
-  para consultar um preço cadastrado e passa a ser **dimensão de análise**. A tarifa vira grandeza
-  **inferida** do pool de valores praticados, não cadastrada (estudo §11.11a; a política inteira é ADR
-  próprio). Consequência imediata a assumir: **cai o bloqueio de emissão por célula ausente**
-  (`ResultadoEmissao.SemTarifa`, ADR-0013) — o que resta exigindo é o valor informado, que a validação já
-  cobre.
+- **D11′ — A `tarifaBase` deixa de ser congelada: passa a nascer nula.** Isto **não decide** a política
+  tarifária — ela já é do [ADR-0016 §7.2](0016-dominio-da-plataforma.md) (9ª rodada), que pôs a tarifa
+  cadastrada dormente e passou a **inferir base, desconto e resultado por agregação** (por `(viagem,
+  acomodação)` e `(viagem, classe de veículo)`, só das inteiras). Aqui só se registra o efeito no agregado:
+  o que a passagem guarda de dinheiro são os **lançamentos** (o que entrou) e a **categoria** (modo, classe,
+  tipo tarifário), que deixa de ser chave para consultar preço cadastrado e passa a ser **dimensão de
+  análise**; e **cai o bloqueio de emissão por célula ausente** (`ResultadoEmissao.SemTarifa`) — o que resta
+  exigindo é o valor informado, que a validação já cobre. **As funções puras do ADR-0013 sobrevivem**: muda a
+  fonte da base, não a matemática.
 
 - **D12 — A emissão é pós-pagamento; o faturamento é módulo à parte.** A passagem **nasce paga**; não existe
   bilhete "em aberto" dentro do agregado. Isso **dissolve por decisão** o eixo "a receber": a exigência de
@@ -283,14 +285,11 @@ estabelece.
   (bilhete que perdeu a validade sozinho), não ação de operador, e é decisão à parte de D17.
 - **A devolução do dinheiro** — cancelar desativa o bilhete (D17); estornar o pagamento é do módulo de
   faturamento (D12).
-- **A política tarifária.** O analista decidiu, ainda em 2026-08-01, que **a tarifa não será cadastrada: ela
-  é inferida do pool de valores praticados** ([estudo §11.11a](../design/dominio-passagem.md)) — porque a
-  Rota é reutilizável por várias empresas e uma tarifa cadastrada nela ficaria sem dono (é o que o ADR-0016
-  já anunciara ao *adormecer a tarifa cadastrada*). O efeito aqui é pontual e está em **D11′**: a
-  `tarifaBase` deixa de ser congelada. O resto — o que acontece com a tabela por célula, com a tarifa devida
-  como cálculo, com o desconto derivado e com a régua do balanço — **supera parte do ADR-0013 e revisa o
-  ADR-0014**, e fica **anotado para ADR futuro, provavelmente dentro do módulo faturamento**: inferir tarifa
-  é análise de dinheiro através de muitas vendas, que é a definição daquele módulo.
+- **A política tarifária** — já decidida no **ADR-0016 §7.2**, não aqui (D11′ registra só o efeito no
+  agregado). O que continua em aberto é o **método da inferência** — janela, mínimo de bilhetes para a base
+  valer, viagem sem histórico, cálculo na leitura × materializado —, e o analista o situou no **módulo
+  faturamento**: inferir tarifa é análise de dinheiro através de muitas vendas, que é a definição daquele
+  módulo.
 - **Assento/cabine numerada** — a capacidade é contagem (D8), não inventário identificado.
 - **A forma da UI de abas** — o eixo existe (D6); como ele se desenha é matéria da camada de apresentação.
 
