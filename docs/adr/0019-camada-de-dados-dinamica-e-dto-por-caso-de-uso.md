@@ -66,11 +66,14 @@ Restam **11 usos de `toObject`** e um punhado de `set(objetoTipado)` — é essa
   existem (`DadosViagemCard`, `DadosContagemPassagem`, `DadosImpressora`) são o exemplo do padrão certo — uma
   por consumidor.
 
-- **D2 — As classes `[Entidade]Documento` saem dos repositórios.** No nível do código elas *"podiam ser só
-  `Map`s de chave e valor que funcionariam do mesmo jeito"*. Elas **continuam existindo como documentação da
-  estrutura** — o registro legível de que campos um documento tem —, mas deixam de ser o tipo que o
-  repositório instancia. **Documentação com dono, não classe morta:** quem mexe na coleção atualiza o
-  arquivo no mesmo commit.
+- **D2 — As classes `[Entidade]Documento` saem dos repositórios e, depois, deixam de existir.** No nível do
+  código elas *"podiam ser só `Map`s de chave e valor que funcionariam do mesmo jeito"*. Primeiro deixam de
+  ser o tipo que o repositório instancia; **quando o domínio revisado estiver implementado, elas não são mais
+  necessárias — nem como documentação.** Quem documenta a estrutura é **o próprio domínio**: as entidades
+  ricas (ADR-0016 §9, *entidade = lei*) e o [catálogo do domínio da plataforma](../design/dominio-da-plataforma.md),
+  que descreve entidades, campos, enums e regras **na linguagem do negócio**. Manter uma segunda descrição
+  da mesma estrutura, em Kotlin e sem compilador que a verifique, seria criar a segunda verdade que este
+  projeto vem eliminando desde o ADR-0008.
 
 - **D3 — A fronteira de leitura é o `Map`, via `DocumentoBruto`.** Generaliza-se a porta que já existe: o
   repositório lê `DocumentoBruto` e entrega ao mapper **do caso de uso**. Some a desserialização por
@@ -91,11 +94,25 @@ Restam **11 usos de `toObject`** e um punhado de `set(objetoTipado)` — é essa
   painel da plataforma é o molde do painel por agência**, que é o molde dos painéis dos outros segmentos.
   Por isso o painel vem **depois** do domínio revisado, e não antes.
 
-- **D7 — O que se paga está nomeado: perde-se o compilador na leitura.** `Map` não tem campo errado — tem
-  **chave ausente**, e ela falha em silêncio, devolvendo o default. Três mitigações, todas já existentes no
-  app: os **acessores defensivos** do `DocumentoBruto`; **teste de mapeamento** por caso de uso (os de
-  `DocumentoBrutoMappersTest` são o molde); e o `*Documento` de D2 como **documentação de referência**. Se
-  essa documentação envelhecer em silêncio, o custo volta — é o risco assumido.
+- **D7 — Chave ausente não é falha: é a forma que a entidade tomou.** *"A Passagem é uma entidade única que
+  assume várias formas, e esse dinamismo se paga com o Firestore."* O **modo** (ADR-0018 D6) decide o que
+  existe no documento: bilhete de veículo não tem passageiros 2 e 3; de rede não tem placa nem cilindrada;
+  sem embarque não tem carimbo (D14 de lá). **A ausência carrega informação — e é importante para análise**:
+  a forma do documento revela o modo, sem depender de um campo que o declare. Documento esparso é o
+  esperado, não defeito.
+  Isso separa dois casos que a primeira redação deste ADR confundia:
+  - **ausência semântica** — o campo não existe porque aquela forma não o tem. É **dado**; o default
+    fail-closed está certo, e a projeção de cada caso de uso simplesmente não pergunta pelo que o modo não
+    tem;
+  - **ausência acidental** — o campo deveria existir e o nome saiu errado. **Essa** é a que o compilador
+    cobria, e é o que se endereça: **constantes de nome de campo** (D4), **teste de mapeamento** por caso de
+    uso (`DocumentoBrutoMappersTest` é o molde) e o **domínio como fonte única** do que cada forma tem (D2).
+
+- **D8 — O domínio fixado aqui é o canônico da plataforma.** O app é *mobile-first* por decisão (ADR-0017), e
+  **o domínio definido neste regime vai se repetir nos outros sistemas** — inclusive no back-end
+  centralizador que aquele ADR previu. Isso eleva o que D2 diz: o domínio não é documentação *do app*, é **a
+  especificação da plataforma**, e a forma esparsa do D7 é parte dela. Quem for ler estas coleções amanhã
+  precisa encontrar escrito que **ausência significa forma**, não dado faltando.
 
 ## Consequências
 
@@ -113,10 +130,13 @@ Restam **11 usos de `toObject`** e um punhado de `set(objetoTipado)` — é essa
 
 **O que se paga**
 
-- **Erro de nome de campo vira erro de execução**, não de compilação (D7).
+- **Erro de nome de campo vira erro de execução**, não de compilação — só na *ausência acidental* (D7).
 - **Mais mappers**, um por caso de uso, no lugar de um por entidade — é a troca deliberada: mais classes
   pequenas e específicas em vez de uma grande e genérica.
-- **Documentação que pode mentir** — os `*Documento` sem compilador que os verifique (D2).
+- **O domínio passa a ter obrigação de estar certo.** Some a descrição paralela em Kotlin (D2), então o
+  catálogo do domínio e as entidades ricas viram a **única** fonte do que cada forma tem. Domínio
+  desatualizado deixa de ser dívida de documentação e passa a ser dívida de **especificação** — para este e
+  para os sistemas que vierem (D8).
 
 **Reversibilidade.** Alta e por coleção: como cada repositório é dono do próprio caminho, dá para voltar a
 `toObject` numa coleção específica sem tocar nas outras. O que não é reversível de graça é a **quebra da
@@ -134,8 +154,8 @@ pagamento vira lançamentos).
 - **F3 — Quebrar a `DadosPassagem`** nas projeções por consumidor — **lista** primeiro (é onde o `N+1`
   aparece), depois detalhe/impressão. Encontra-se com a F5/F6 do ADR-0017 e com a F6 do ADR-0018.
 - **F4 — Escrita em `Map`** nos repositórios que ainda usam `set(objetoTipado)`.
-- **F5 — Aposentar os `*Documento` como tipo**, mantendo-os como documentação (D2), e remover o
-  `DocumentoBrutoMappers` intermediário quando não sobrar chamador.
+- **F5 — Remover os `*Documento`** (D2), junto com o `DocumentoBrutoMappers` intermediário, quando não
+  sobrar chamador — com o domínio implementado, não há o que eles ainda descrevam.
 
 Cada fase compila e mantém a suíte verde — mesma tradição do ADR-0009 e do ADR-0017.
 

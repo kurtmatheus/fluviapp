@@ -144,9 +144,10 @@ ou que dispara leitura para preencher campo que não exibe.** Hoje isso acusaria
 
 - **DTO por caso de uso é a pedida.** `DadosPassagem` é o exemplo do que não fazer: será **refatorado e
   revitalizado** em projeções por consumidor.
-- **As classes `[Entidade]Documento` saem dos repositórios.** Elas continuam valendo como **documentação da
-  estrutura** — mas, no nível do código, *"podiam ser só `Map`s de chave e valor que funcionariam do mesmo
-  jeito"*. A fronteira de dados passa a ser **dinâmica, com `Map`**.
+- **As classes `[Entidade]Documento` saem dos repositórios** — no nível do código, *"podiam ser só `Map`s de
+  chave e valor que funcionariam do mesmo jeito"*. A fronteira de dados passa a ser **dinâmica, com `Map`**.
+  E **elas não sobrevivem como documentação**: *"uma vez que o domínio estiver implementado, quem documenta
+  é o domínio revisado — o domínio da plataforma que serve ao negócio"* (correção de 2026-08-02).
 - **O domínio define a relação; o caso de uso define o uso.** O Firestore é a camada de dados que **reflete**
   o domínio — não o que o dita.
 - **A consequência de método é a maior:** ao definir uma tela, **do domínio nascem as fronteiras** (mappers,
@@ -158,12 +159,12 @@ leitura para preencher campo que a tela descarta (§2a) e que o SDK não permite
 com `Map` na fronteira, **o repositório para de instanciar 25 campos tipados para o mapper usar 11** — a
 tipagem passa a acontecer **onde o uso é conhecido**, que é exatamente o DTO de caso de uso.
 
-**O que se paga, e vale estar escrito:** perde-se a checagem do compilador na leitura do documento (`Map`
-não tem campo errado — tem chave ausente). A mitigação é a mesma convenção que o domínio já usa em toda
-fronteira: **conversão explícita com fail-closed** (`de(valor)` → `null` quando desconhecido), concentrada no
-mapper de cada caso de uso, e teste de mapeamento como rede. As classes `*Documento` que ficam como
-documentação passam a ter **um leitor humano, não um compilador** — se envelhecerem em silêncio, o custo
-volta.
+**O que se paga, e vale estar escrito:** perde-se a checagem do compilador na leitura do documento. Mas
+**chave ausente não é falha — é a forma que a entidade tomou**: *"a Passagem é uma entidade única que assume
+várias formas, e esse dinamismo se paga com o Firestore"*. O modo decide o que existe no documento, e a
+ausência **carrega informação importante para análise**. O que resta a cobrir é a **ausência acidental** (o
+nome do campo escrito errado), com constantes de nome, teste de mapeamento por caso de uso e o **domínio
+como fonte única** do que cada forma tem.
 
 > **Virou o [ADR-0019](../adr/0019-camada-de-dados-dinamica-e-dto-por-caso-de-uso.md)** — a camada de dados
 > muda de regime, e é o *passo 2* que o ADR-0003 previa sem decidir. Este estudo fica como o registro da
