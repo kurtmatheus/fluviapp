@@ -101,10 +101,14 @@ O maior pilar. É a rework de identidade/multi-agência que o §6 do estudo do f
 > | **Escolha do vínculo no login** | não existe — a splash resolve só `currentUser != null` | ADR-0016, 8ª rodada |
 > | **`Funcionario` importa `FuncionarioDocumento`** | vazamento domínio → DTO dentro da entidade | ADR-0019 D2 |
 >
-> **Não é retrabalho: é a segunda metade.** O ADR-0015 fixou *quem é a pessoa na operação*; o ADR-0016 disse
-> *em que empresa e em que atuação* ela é isso. Essas pendências não têm frente própria — elas entram
-> **dentro das frentes E2/E3 e da P3.A**, que é onde empresa, atuação e agência passam a existir como
-> cadastro. Fazê-las antes seria construir vínculo sem ter a que vincular.
+> **Isto é um retrato, não um backlog.** A tabela mede **o domínio revisado contra o código de hoje** — e
+> como a revitalização é **por etapas**, parte destes itens some sozinha quando a etapa chegar, e outros vão
+> aparecer que ninguém listou. Não vale persegui-los um a um: **com o domínio e a camada de dados revisados,
+> a apresentação vai se moldando**. Serve para saber que o Pilar 2 não fechou — não para virar fila.
+>
+> O ADR-0015 fixou *quem é a pessoa na operação*; o ADR-0016 disse *em que empresa e em que atuação* ela é
+> isso. É por isso que nada aqui tem frente própria: cai dentro de E2/E3 e da P3.A, quando empresa, atuação
+> e agência passarem a existir como cadastro.
 >
 > Segue valendo como decisão, não como pendência: **as strings visíveis não foram renomeadas** — na tela o
 > coletivo é "Equipe" e o indivíduo é "Agente" (`btn_novo_agente`).
@@ -306,14 +310,16 @@ A distribuição fica por último: não faz sentido distribuir antes de haver pa
 
 ## Perguntas abertas (semear os ADRs)
 
+> **O que não conta como pergunta aberta:** diferença entre o **domínio revisado** e o **código de hoje**.
+> Isso é delta de implementação, e a revitalização por etapas o consome — alguns itens somem, outros
+> aparecem. Aqui ficam só as perguntas que **ninguém pode responder olhando o código**.
+
 **Pilar 1:** nada aberto. A pergunta das tarifas foi respondida pelo [ADR-0016](../adr/0016-dominio-da-plataforma.md)
 (seed morre; tarifa entra no cadastro da rota).
 
-**Pilar 2:** nenhuma **pergunta** aberta — as que estavam aqui (lotação, override de agência, capability,
-logo por agência, isolamento, destino do `Agente`, recorte da contagem) foram respondidas no
-[ADR-0015](../adr/0015-rework-agente-equipe.md). O que resta é **implementação**, não decisão: o vínculo
-`(empresa, atuação)`, a agência por id e a lotação como localidade — tudo já decidido no ADR-0016 e listado
-no §Pilar 2.
+**Pilar 2:** nenhuma pergunta aberta — as que estavam aqui foram respondidas no
+[ADR-0015](../adr/0015-rework-agente-equipe.md) e no ADR-0016. O que resta é **implementação**, e cai nas
+etapas (§Pilar 2).
 
 **Pilar 3 — esteira (P3.B):**
 - Provedor de CI (GitHub Actions?) e onde ficam os secrets (keystore, service account)? **Não há remoto git
