@@ -49,16 +49,5 @@ class MainActivity : ComponentActivity() {
 fun FluviApp(
     navController: NavHostController = rememberNavController()
 ) {
-    FluviApp {
-        FluviAppNavHost(
-            navController = navController
-        )
-    }
-}
-
-@Composable
-fun FluviApp(
-    content: @Composable () -> Unit
-) {
-    content()
+    FluviAppNavHost(navController = navController)
 }
