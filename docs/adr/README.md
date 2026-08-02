@@ -44,6 +44,7 @@ o antigo passa a valer como história. Este índice existe para responder, sem a
 | [0016](0016-dominio-da-plataforma.md) | Domínio da plataforma | **vigente** | — 9 rodadas; **sem pontos abertos** desde 2026-08-01 |
 | [0017](0017-eixo-de-storage-firestore-only.md) | Firestore-only | **vigente** | — |
 | [0018](0018-agregado-passagem-participantes-modo-e-lancamentos.md) | O agregado Passagem | **vigente** | — |
+| [0019](0019-camada-de-dados-dinamica-e-dto-por-caso-de-uso.md) | `Map` na fronteira, DTO por caso de uso | **vigente** | — realiza o *passo 2* que o ADR-0003 previu |
 
 ---
 
@@ -74,6 +75,10 @@ porque uma entidade sem dono não tem de quem ter tarifa.
 **ADR-0017 — Firestore-only.** Tirou o Room do caminho, e com isso **destravou** o ADR-0016 (dois pontos
 abertos deixaram de existir) e barateou o ADR-0018 (o achatamento da Passagem perde a razão de ser).
 
+**ADR-0019 — a camada de dados.** Fechou o *passo 2* do ADR-0003, que estava aberto desde o começo: a
+fronteira vira `Map` e o DTO passa a ser por **caso de uso**. E trouxe o método que governa o resto do
+roadmap: **da tela nascem as fronteiras e as camadas**, nunca o contrário.
+
 **ADR-0018 — o agregado Passagem.** Deu identidade aos participantes (pools `Cliente` e `Veiculo`), tipou o
 **modo**, pôs a capacidade no navio, fixou a numeração por ocorrência, trocou os quatro campos de pagamento
 por **lançamentos** e transformou o cancelamento em estado, porque **manter histórico é prioridade**.
@@ -82,11 +87,8 @@ por **lançamentos** e transformou o cancelamento em estado, porque **manter his
 
 - **O método da inferência tarifária** — janela, mínimo de bilhetes, viagem sem histórico, cálculo na
   leitura × materializado. Situado no **módulo faturamento** (ADR-0018, *o que não decide*).
-- **ADR da camada de dados dinâmica** — **decidido em 2026-08-02, falta escrever**: DTO **por caso de uso**,
-  e as classes `[Entidade]Documento` saem dos repositórios em favor de **`Map` na fronteira** (elas ficam
-  como documentação da estrutura). Base medida no
-  [estudo](../design/dto-por-entidade-ou-caso-de-uso.md) §7 — é o "passo 2" que o ADR-0003 previu e não
-  decidiu.
+- **Se o DTO carrega tipo ou `String` formatada** (ADR-0019, *o que não decide*) — hoje o mapper formata
+  tudo, e a inferência tarifária vai pedir número.
 - **O módulo faturamento** — conciliação, taxa e prazo, conta corrente do pagador, estorno, fechamento de
   caixa.
 

@@ -165,9 +165,9 @@ mapper de cada caso de uso, e teste de mapeamento como rede. As classes `*Docume
 documentação passam a ter **um leitor humano, não um compilador** — se envelhecerem em silêncio, o custo
 volta.
 
-> Isto merece **ADR próprio** (a camada de dados muda de regime, e o ADR-0003 previa exatamente este passo 2
-> — "DTO-cêntrico" — sem decidi-lo). Ele conversa com o ADR-0017 (que já tira o Room) e com o ADR-0016
-> (entidade = lei · DTO = trânsito · documento = armazenamento).
+> **Virou o [ADR-0019](../adr/0019-camada-de-dados-dinamica-e-dto-por-caso-de-uso.md)** — a camada de dados
+> muda de regime, e é o *passo 2* que o ADR-0003 previa sem decidir. Este estudo fica como o registro da
+> medida que sustentou a decisão; onde os dois discordarem, vale o ADR.
 
 ## 8. Perguntas para o analista
 
