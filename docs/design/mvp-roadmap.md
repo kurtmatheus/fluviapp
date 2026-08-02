@@ -227,9 +227,10 @@ estão registradas no [ADR-0015](../adr/0015-rework-agente-equipe.md) (*Decisõe
 
 **Pilar 3 — domínio (P3.A):** ~~o que trava o começo é o rename `Constante`→`Catalogo` tocando o Room~~ —
 **não trava mais**: sem espelho, não há entidade a renomear ([ADR-0017](../adr/0017-eixo-de-storage-firestore-only.md)).
-Dos dez pontos abertos do [ADR-0016](../adr/0016-dominio-da-plataforma.md#pontos-abertos-analista-decide),
-**nove estão resolvidos**; resta o **6** — quem cria rota e viagem no pool compartilhado, e se a concessão é
-editável depois do cadastro.
+Os dez pontos abertos do [ADR-0016](../adr/0016-dominio-da-plataforma.md#pontos-abertos-analista-decide)
+**estão todos resolvidos** desde 2026-08-01 — o último foi o 6: **o `SUPERVISOR` cria rota e viagem** (criar
+no pool comum afeta todas as agências) **e a concessão é editável** depois do cadastro. O domínio do Pilar 3
+não tem mais pergunta pendente; o que falta é execução.
 
 **Fora dos pilares, esperando decisão:** o **método da inferência tarifária** (janela, mínimo de bilhetes,
 viagem sem histórico), situado no **módulo faturamento**; e **DTO por entidade × por caso de uso**, que saiu

@@ -915,12 +915,16 @@ Revisitar quando:
    é a **Viagem** (§7.1). O §8 foi ajustado: o tipo de embarcação chega pela viagem escolhida, não pela rota.
 5. ~~**A Rota precisa de espelho no Room?**~~ **RESOLVIDO pelo ADR-0017 (7ª rodada): não, por construção** — não
    há Room a espelhar. O caminho offline da emissão passa a ser o cache do SDK (ADR-0017 D6).
-6. **`SUPERVISOR` monta a rota, `AGENTE` só emite** (§2) — **ainda aberto, e a justificativa original caiu.**
-   Eu tinha assumido isso *porque a rota carregava a tarifa*; com a tarifa dormente (§7.2) e depois **inferida**
-   (ADR-0018 D11′), a rota virou fato geográfico compartilhado, sem preço. Então a pergunta se reduz a: **criar
-   rota e viagem no pool comum é ato de supervisor, ou qualquer agente pode?** (criar afeta todas as agências —
-   §7.1). Junto, e independente: **a concessão é editável depois do cadastro da atuação, ou só na criação?**
-   Assumi editável.
+6. ~~**`SUPERVISOR` monta a rota, `AGENTE` só emite**~~ — **RESOLVIDO em 2026-08-01: o `SUPERVISOR` cria rota
+   e viagem; a concessão é editável.** A justificativa original havia caído (assumi o supervisor *porque a
+   rota carregava a tarifa*, e com a tarifa inferida ela virou fato geográfico sem preço), mas a decisão se
+   sustenta por outra razão, mais forte: **criar no pool comum afeta todas as agências** (§7.1). Rota e
+   viagem são capacidades sem dono e **imutáveis por substituição** — quem escreve ali escreve para a
+   plataforma inteira, e duplicata degrada a ocupação de todos. É responsabilidade de quem responde pela
+   operação, não de quem vende o bilhete. O `AGENTE` **emite**; o que ele pode fazer sobre o pool é a
+   *deny-list* (`rotasNegadas[]`/`viagensNegadas[]`), que é conforto de tela e não altera o comum.
+   **A concessão é editável depois do cadastro** — coerente com o que a 7ª rodada já decidira para o navio
+   que sai de `navioIds`: é **sincronização, não modelo**, e nada se invalida retroativamente.
 7. ~~**Cargo por pessoa ou por vínculo**~~ — **RESOLVIDO na 8ª rodada: por vínculo**, e o vínculo é o par
    **(empresa, atuação)** (§6.1). ~~E onde se escolhe o contexto?~~ **No login** — a escolha determina cargo,
    seções e recorte de uma vez, então precisa estar feita antes de qualquer tela existir. Trocar de vínculo é

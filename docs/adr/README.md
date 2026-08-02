@@ -41,7 +41,7 @@ o antigo passa a valer como história. Este índice existe para responder, sem a
 | [0013](0013-tabela-de-tarifa-e-tipo-tarifario.md) | Tarifa tabelada e tipo tarifário | **dormente (a tabela) · vigente (as funções)** | a **tabela cadastrada não será construída** e `SemTarifa` morre — ADR-0016 §7.2. As funções puras vivem: muda a **fonte** da base |
 | [0014](0014-balanco-financeiro-da-travessia.md) | Balanço financeiro | **vigente · parcial** | a **régua** muda (esperada vem da inferência, não do tabelado — ADR-0016 §7.2); agrega por **ocorrência** e exclui canceladas — ADR-0018 D9/D18 |
 | [0015](0015-rework-agente-equipe.md) | Equipe, agência, cargo | **vigente · parcial** | o cargo passa a ser **por vínculo `(empresa, atuação)`**, não por pessoa — ADR-0016 (8ª rodada) |
-| [0016](0016-dominio-da-plataforma.md) | Domínio da plataforma | **vigente** | — 9 rodadas; resta **um** ponto aberto (nº 6) |
+| [0016](0016-dominio-da-plataforma.md) | Domínio da plataforma | **vigente** | — 9 rodadas; **sem pontos abertos** desde 2026-08-01 |
 | [0017](0017-eixo-de-storage-firestore-only.md) | Firestore-only | **vigente** | — |
 | [0018](0018-agregado-passagem-participantes-modo-e-lancamentos.md) | O agregado Passagem | **vigente** | — |
 
@@ -80,8 +80,6 @@ por **lançamentos** e transformou o cancelamento em estado, porque **manter his
 
 ## O que está esperando decisão
 
-- **ADR-0016, ponto aberto 6** — quem cria rota e viagem no pool compartilhado (supervisor ou qualquer
-  agente), e se a concessão é editável depois do cadastro.
 - **O método da inferência tarifária** — janela, mínimo de bilhetes, viagem sem histórico, cálculo na
   leitura × materializado. Situado no **módulo faturamento** (ADR-0018, *o que não decide*).
 - **DTO por entidade × por caso de uso** — saiu dos pontos abertos do ADR-0016 para **estudo + ADR próprios**
