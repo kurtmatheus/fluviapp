@@ -1,7 +1,17 @@
 # ADR-0010: Autorização por cargo — política única, dois eixos, posse por identidade
 
-**Status:** Aceita (direção). Fase 1 (política + correção de comportamento) e Fase 2 (posse por
-identidade) implementadas; Fase 3 (regras Firestore por cargo) fica para ADR futuro.
+**Status:** Aceita e implementada. Fase 1 (política + correção de comportamento) e Fase 2 (posse por
+identidade) implementadas; a Fase 3 virou o [ADR-0011](0011-regras-firestore-por-cargo.md) (regras no
+servidor), também implementado.
+
+> **Vigente em parte — o vocabulário e o número de eixos mudaram.** A tese central (política **única**,
+> segurança por identidade, fail-closed) é a viga do sistema e continua inteira. Mudou o que ela recebe:
+> - **os cargos foram renomeados** — `DIRETOR`/`COLABORADOR_MASTER`/`OPERADOR` deram lugar a **papel**
+>   (`ADM`/`GESTOR`/`OPERADOR`, do sistema) × **cargo** (`SUPERVISOR`/`AGENTE`, do negócio)
+>   ([ADR-0015](0015-rework-agente-equipe.md) §8);
+> - **a atuação entrou como terceira coordenada**: `(papel, cargo)` → `(papel, atuação, cargo)`, e cada
+>   atuação tem a sua lista de cargos ([ADR-0016](0016-dominio-da-plataforma.md), 8ª rodada). A política
+>   segue **única** — cresce em coordenadas, não em cópias.
 
 > **Estendido pelo [ADR-0015](0015-rework-agente-equipe.md):**
 > - **Vocabulário — já implementado (P2.1).** Os cargos deste ADR foram renomeados: `DIRETOR` → **`GESTOR`**,

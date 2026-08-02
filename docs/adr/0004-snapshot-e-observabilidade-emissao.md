@@ -2,6 +2,13 @@
 
 **Status:** Aceita (direção); avaliação do flip completo — execução faseada
 
+> **Vigente em parte — o rascunho muda de casa.** O snapshot local continua sendo **não-autoritativo** e a
+> porta `RascunhoStore` continua sendo o único ponto que conhece o mecanismo; o que muda é a implementação:
+> **sai do Room e vai para o DataStore** ([ADR-0017](0017-eixo-de-storage-firestore-only.md) D4), sem que
+> nenhum chamador perceba. E o conteúdo do rascunho acompanha o agregado revisado — modo no lugar de
+> `acomodacao` + `isVeiculoChecked`, e lançamentos no lugar dos quatro campos de valor
+> ([ADR-0018](0018-agregado-passagem-participantes-modo-e-lancamentos.md) D6/D11).
+
 **Contexto**
 
 A emissão de passagem é o fluxo mais rico do app e o laboratório natural do modelo de memória

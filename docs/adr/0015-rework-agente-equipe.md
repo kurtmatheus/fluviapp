@@ -1,7 +1,16 @@
 # ADR-0015: Agente é o usuário — Equipe, agência/lotação como capacidades, agência transversal à emissão
 
-**Status:** **Aceita** — todos os pontos fechados com o analista (ver *Decisões resolvidas*; o desenho
-vigente dos dois contextos está no **§8**; o regime de schema, no **§9**). **Em implementação:** P2.0, P2.1,
+**Status:** **Aceita e implementada (Pilar 2 completo)** — todos os pontos fechados com o analista (ver
+*Decisões resolvidas*; o desenho vigente dos dois contextos está no **§8**; o regime de schema, no **§9**,
+hoje superado pelo [ADR-0017](0017-eixo-de-storage-firestore-only.md)).
+
+> **Vigente em parte — o cargo mudou de dono.** Aqui o cargo é **da pessoa** (`Funcionario.cargo`); o
+> [ADR-0016](0016-dominio-da-plataforma.md) (8ª rodada) o tornou **por vínculo**, e o vínculo é o par
+> `(empresa, atuação)`: `Funcionario.vinculos: [{empresaId, atuacao, cargo}]`. A mesma pessoa pode ser
+> `SUPERVISOR` numa agência e outra coisa noutra empresa. Some junto a ideia de que `SUPERVISOR`/`AGENTE`
+> são "os cargos do sistema": são os cargos do **agenciamento**. O resto do ADR — os dois contextos
+> (papel × cargo), o `OPERADOR` como elo, a agência derivada do emissor, a política única — está de pé e
+> **em produção no código**. **Em implementação:** P2.0, P2.1,
 P2.2a (parcialmente revertido pela revisão estrutural), P2.2a′-0, **P2.2a′**, o rename dos
 identificadores do CRUD de UI, **P2.2b**, **P2.2c**, **P2.3**, **P2.4** e **P2.6** feitos — o **Pilar 2
 está completo**. O que sobra são os débitos registrados nas *Consequências* e nos *Pontos abertos*. **As strings visíveis não foram

@@ -4,30 +4,42 @@
 "futuro" e **entrou no MVP**. Esta nota fica como registro do insight que o originou; **o vocabulário final é o do
 ADR**, e ele difere do desta nota num ponto essencial (ver o aviso abaixo).
 
-> ### ⚠️ Vocabulário: esta nota tem **dois** conceitos; o ADR-0016 tem **três**
+> ### ⚠️ Vocabulário — leia isto antes do resto *(atualizado em 2026-08-01)*
 >
-> A nota supôs que a entidade `Viagem` de hoje era o **Trecho** (rota + tarifas) e que faltava só modelar a
-> **Viagem** (Trecho + data). O ADR-0016 encontrou **duas coisas espremidas** no que a nota chamou de Trecho, e
-> separou em dois níveis:
+> Esta nota tem **dois** conceitos (Trecho com tarifas dentro, e Viagem = Trecho + data). O desenho vigente
+> tem **três**, e **nenhum deles se chama Trecho** — a 7ª rodada do ADR-0016 **dissolveu o Trecho**, porque o
+> par de cidades é **derivável** dos portos e não precisava de entidade própria.
 >
-> | Conceito | No ADR-0016 | Onde vive |
+> | Conceito vigente | O que é | Onde vive |
 > |---|---|---|
-> | **Trecho** | Só o **par de cidades** (a linha). Sem tarifa, sem porto, sem data, **sem dono**. | `trechos/{id}` — raiz, superentidade compartilhada |
-> | **Rota** | A **viagem de verdade**: trecho + navio + portos de embarque/desembarque + **tarifas** + agenda semanal. | `empresas/{e}/agenciamento/{a}/rotas/{id}` — da agência |
+> | **Rota** | o **onde**: dois portos (as cidades vêm deles), `distanciaMn`, `tempoMedioH`. Sem tarifa, sem navio, sem agenda. | `rotas/{id}` — capacidade da plataforma, **sem dono** |
+> | **Viagem** | o **quando e em quê**, e é **atômica**: `(rota, navio, diaSemana, hora)` — uma saída, um documento | `viagens/{id}` — também sem dono |
+> | **Ocorrência** | a travessia concreta: **`(viagemId, data)`** | não é coleção: é a viagem materializada numa data |
 >
-> Ou seja: onde esta nota diz "Trecho" com tarifas dentro (§2, §3, §5), leia **Rota**. O "Trecho" do ADR é mais
-> enxuto do que o desta nota. A previsão do §4 — "várias agências operam sobre os mesmos trechos" — foi o que
-> motivou a separação: o trecho subiu para a raiz para ser compartilhado de fato.
+> Três correções ao texto abaixo, todas do ADR-0016 (7ª a 9ª rodadas) e do
+> [ADR-0018](../adr/0018-agregado-passagem-participantes-modo-e-lancamentos.md):
 >
-> **Do plano do §3, o que entrou e o que não entrou:** entraram os itens 1 (renomear), 2 (agenda semanal) e 4
-> (a data deixa de nascer no bilhete). **Não entrou o item 3** — as ocorrências da semana são **calculadas**
-> a partir da agenda, não persistidas, então **não existe contador por acomodação** e a ocupação continua sendo
-> contada a partir dos bilhetes. É otimização adiada de propósito (ADR-0016 §7).
+> 1. **Onde a nota diz "Trecho" com tarifas dentro (§2, §3, §5), não leia "Rota" — leia "Rota + Viagem".** A
+>    agenda **não** ficou na Rota: `diaSemana` e `hora` são da **Viagem**, e o navio também. A Viagem é o
+>    vínculo temporal entre rota e embarcação.
+> 2. **A tarifa saiu de cena.** Rota e Viagem são compartilhadas por várias empresas, e *uma entidade sem dono
+>    não tem de quem ter tarifa* (§7.1). A tabela cadastrada adormeceu (§7.2) e o preço passou a ser
+>    **inferido** dos valores praticados. Onde a nota fala em tarifa do trecho/rota, o conceito **não existe
+>    mais**.
+> 3. **A previsão do §4 se confirmou, e foi além:** não é só que "várias agências operam sobre os mesmos
+>    trechos" — elas compartilham **a mesma viagem**, e é isso que faz a ocupação parar de se fragmentar:
+>    `count(passagens where viagemId = X and data = D)`.
+>
+> **Do plano do §3:** entraram os itens 1 (renomear), 2 (agenda) e 4 (a data deixa de nascer no bilhete). O
+> **item 3 continua fora** — as ocorrências são **calculadas**, não persistidas, e não há contador por
+> acomodação; a ocupação sai dos bilhetes. Mas a régua mudou: com a capacidade agora declarada no **navio**
+> ([ADR-0018 D8](../adr/0018-agregado-passagem-participantes-modo-e-lancamentos.md)), essa contagem deixa de
+> ser só relatório e passa a **barrar a emissão** quando a ocorrência lota.
 
 > Conversa com o [estudo do domínio da passagem](dominio-passagem.md), o
 > [ADR-0008](../adr/0008-relacionamentos-por-identidade.md) (relacionar por id), o
-> [ADR-0013](../adr/0013-tabela-de-tarifa-e-tipo-tarifario.md) (tarifa tabelada na Viagem) e o
-> [estudo da contagem de passagem](balanco-passagens-mapper.md).
+> ~~[ADR-0013](../adr/0013-tabela-de-tarifa-e-tipo-tarifario.md) (tarifa tabelada na Viagem)~~ — **dormente**,
+> ver o aviso acima — e o [estudo da contagem de passagem](balanco-passagens-mapper.md).
 
 ---
 

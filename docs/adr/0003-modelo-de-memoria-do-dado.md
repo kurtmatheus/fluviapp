@@ -1,6 +1,17 @@
 # ADR-0003: Modelo de memória do dado — DTO-cêntrico, Room espelhando Firestore
 
-**Status:** Aceita (direção); execução faseada, em preparação
+**Status:** **Vigente em parte** — a leitura de camadas (volátil / cacheada / sólida) e o trade-off SQL × JSON
+continuam sendo a base, mas **dois pontos foram superados** (ver [índice de vigência](README.md)):
+
+> - **O nível *cacheada* deixa de ser o Room.** O [ADR-0017](0017-eixo-de-storage-firestore-only.md) tira o
+>   espelho local: quem faz esse papel passa a ser o cache do SDK do Firestore, e a fonte reativa vira um
+>   `StateFlow` por coleção. Onde este ADR diz "Room espelhando Firestore", leia "cache do SDK".
+> - **A fronteira das formas foi nomeada com mais precisão** pelo [ADR-0016](0016-dominio-da-plataforma.md)
+>   (7ª rodada): **entidade = lei** (rica, sem framework), **DTO = trânsito** (plano), **documento =
+>   armazenamento**. A classe plana anotada não some com o Room — **muda de camada**.
+>
+> O **passo 2** que este ADR previa (forma do dado: blob JSON / DTO-cêntrico) **continua não decidido** — o
+> ADR-0017 é explícito em não decidi-lo, e o ponto 10 do ADR-0016 virou estudo próprio.
 
 **Contexto**
 

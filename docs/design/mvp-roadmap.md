@@ -1,9 +1,11 @@
 # Roadmap para o MVP
 
-**Status:** Pilares **1 e 2 completos** (2026-07-27); resta o **3**, que **cresceu de escopo** em 2026-07-28:
-deixou de ser só esteira de CI/CD e passou a ter um **domínio de plataforma** por baixo
-([ADR-0016](../adr/0016-dominio-da-plataforma.md)). Não é código; é o sequenciamento dos passos até o MVP e as
-sementes de ADR que faltam.
+**Status:** Pilares **1 e 2 completos** (2026-07-27); resta o **3**, que cresceu duas vezes — em 2026-07-28
+ganhou um **domínio de plataforma** por baixo ([ADR-0016](../adr/0016-dominio-da-plataforma.md)), e em
+2026-07-31/08-01 ganhou **dois eixos transversais** que não existiam quando este roadmap foi escrito: o
+[ADR-0017](../adr/0017-eixo-de-storage-firestore-only.md) (o Room sai) e o
+[ADR-0018](../adr/0018-agregado-passagem-participantes-modo-e-lancamentos.md) (o agregado Passagem
+reescrito). **Revisado em 2026-08-01** contra os três. Não é código; é o sequenciamento dos passos até o MVP.
 
 O MVP tem **três pilares** (na ordem proposta pelo analista):
 
@@ -13,14 +15,20 @@ O MVP tem **três pilares** (na ordem proposta pelo analista):
 3. **Plataforma + CI/CD via Firebase** — o **painel administrativo** (que substitui o seed como porta de entrada
    do dado) e a distribuição de builds aos testers.
 
+…e **dois eixos que atravessam o Pilar 3**, decididos depois e sem pilar próprio porque não são etapa: são
+mudança de regime. Estão em [§ Os dois eixos transversais](#os-dois-eixos-transversais).
+
 ---
 
 ## Estado atual (a base já pronta)
 
 - Form de passagem **no molde ADR-0006**: validação pura, `runBlocking`→suspenso, UiState puro, UX
-  fail-closed (banner). Emissão governada pelo modelo de preço tabelado do **ADR-0013**.
-- **ADR-0013 fechado + emenda**: tipo tarifário (meia/gratuidade) **só na REDE**; suíte/camarote/veículo
-  sempre inteira.
+  fail-closed (banner). ~~Emissão governada pelo modelo de preço tabelado do **ADR-0013**.~~ **A tabela
+  adormeceu** ([ADR-0016 §7.2](../adr/0016-dominio-da-plataforma.md)): o dado é o **valor informado**, e a
+  base passa a ser **inferida por agregação**. O bloqueio `SemTarifa` morre com ela.
+- **ADR-0013**: sobrevivem os tipos tarifários e as funções puras; a emenda continua valendo — meia e
+  gratuidade **só na REDE** —, agora com a razão certa: **a unidade vendida é o espaço**, e só na rede ela
+  coincide com uma pessoa ([ADR-0018 D7](../adr/0018-agregado-passagem-participantes-modo-e-lancamentos.md)).
 - **Contagem** (`BalancoPassagensMapper`) estudada (`balanco-passagens-mapper.md`): threading já limpo;
   decisões de contagem tomadas (§7).
 - ~~**Agente/agência hoje**: texto livre no bilhete; área de agência do form comentada; `atualizarListaAgente`
@@ -28,9 +36,10 @@ O MVP tem **três pilares** (na ordem proposta pelo analista):
   do bilhete vem do emissor, `Passagem.agente` morreu, a área manual e o último `runBlocking` do form saíram, e
   a marca da agência entrou no bilhete digital. `funcionarioId = uid` congela desde o ADR-0010.
 - **Insight estrutural** (`viagem-vs-trecho.md`): a Viagem de hoje é o Trecho. **Entrou no MVP** pelo
-  [ADR-0016](../adr/0016-dominio-da-plataforma.md) (§7), e em dois níveis em vez de um — **Trecho** (par de
-  cidades, compartilhado) × **Rota** (a viagem de verdade, da agência). A versão pesada da nota (ocorrências
-  persistidas com contador por acomodação) segue fora.
+  [ADR-0016](../adr/0016-dominio-da-plataforma.md) §7 — e o desenho final tem **três** conceitos, não dois:
+  **Rota** (o onde, sem dono), **Viagem** (o quando e em quê — `(rota, navio, diaSemana, hora)`, atômica) e a
+  **ocorrência** `(viagemId, data)`. **O Trecho foi dissolvido** na 7ª rodada: o par de cidades é derivável
+  dos portos. A versão pesada da nota (ocorrências persistidas com contador por acomodação) segue fora.
 
 ---
 
@@ -60,11 +69,12 @@ As fatias do `balanco-passagens-mapper.md §7`, **excluindo a fatia 4** (módulo
 
 **Pilar 1 fechado** com P1.1–P1.4. A fatia 4 (Faturamento) segue fora por definição — é o "sem faturamento".
 
-**Pré-requisito de dado — ✅ RESPONDIDO pelo [ADR-0016](../adr/0016-dominio-da-plataforma.md).** A pergunta era
-se o MVP **semeia tarifas** (o seed não as populava, então a contagem/emissão dependia de viagem criada à mão).
-A resposta veio por outro caminho: **o seed morre** (ADR-0016 §1) e a tarifa entra no **cadastro da rota**
-(§7), pelo supervisor da agência. O app deixa de demonstrar sozinho num projeto novo por decisão, não por
-falta — em troca, todo dado tem autor.
+**Pré-requisito de dado — ✅ RESPONDIDO, e a resposta mudou duas vezes.** A pergunta era se o MVP **semeia
+tarifas** (o seed não as populava, então a contagem/emissão dependia de viagem criada à mão). Primeiro o
+[ADR-0016](../adr/0016-dominio-da-plataforma.md) §1 matou o seed e pôs a tarifa no cadastro da rota; depois a
+9ª rodada (§7.2) **eliminou a pergunta**: não há tarifa a cadastrar nem a semear — o dado é o **valor
+informado** na emissão. O que a instalação nova precisa é do universo compartilhado (rotas e viagens), que a
+agência nova **encontra montado** no primeiro acesso. Em troca, todo dado tem autor.
 
 ## Pilar 2 — Rework de Agente → Equipe ([ADR-0015](../adr/0015-rework-agente-equipe.md))
 
@@ -115,9 +125,13 @@ o app vira uma **plataforma multi-empresa e multi-segmento**.
 
 ### P3.A — Domínio e painel ([ADR-0016](../adr/0016-dominio-da-plataforma.md), fases F1–F8)
 
-`Catalogo` → matar o seed → painel → **capacidades da plataforma** (porto/trecho) → **parte e atuação** (empresa +
-`atuacoes` + concessão de trechos/portos/armadores) → funcionário multi-empresa → rota + tipo de embarcação →
-regras e suíte. É a maior parte do pilar, e é **domínio**, não release.
+`Catalogo` → matar o seed → painel → **capacidades da plataforma** (localidade/porto) → **parte e atuação**
+(empresa + `atuacoes` + concessão de **portos e navios**) → funcionário multi-empresa → **rota e viagem** +
+tipo de embarcação → regras e suíte. É a maior parte do pilar, e é **domínio**, não release.
+
+> **Atualizado em 2026-08-01:** onde este roadmap dizia *trecho*, leia **localidade/porto** — o Trecho foi
+> dissolvido na 7ª rodada. A concessão é por **navio** (`navioIds`), não por armador. E a "rota" desta linha
+> virou **duas** entidades, `rotas` + `viagens` (§7.1), ambas capacidades compartilhadas **sem dono**.
 
 O eixo do domínio é **parte × atuação × ativo** (ADR-0016 §4): agência não é entidade — é uma **atuação** de uma
 empresa (`agenciaId` e `empresaId` são o mesmo id); navio é **ativo** e fica na raiz com `empresaId`, como já está.
@@ -151,6 +165,30 @@ classes e `lintVitalRelease` passando. O que falta não é qualidade de build �
 *P3.B é independente dos pilares 1/2 e pode ser puxado a qualquer momento; **P3.A é que segura o resto**, porque
 sem painel a esteira entrega um app vazio.*
 
+## Os dois eixos transversais
+
+Decididos depois dos três pilares, e sem pilar próprio porque **não são etapa — são mudança de regime**. Os
+dois atravessam o Pilar 3 e se encontram nele.
+
+### Eixo de storage — [ADR-0017](../adr/0017-eixo-de-storage-firestore-only.md) (F1–F6)
+
+O Room deixa de ser datasource: a fonte reativa vira `StateFlow` por coleção, a escrita vai direto ao
+documento e o offline passa a ser o cache do SDK, declarado. **F1 (piloto `Catalogo`) é a mesma fatia da F1
+do ADR-0016** — foi assim que este eixo **destravou** o domínio da plataforma: dois pontos abertos de lá
+deixaram de existir. Depois: F2 resíduo local (rascunho → DataStore, bilhete → galeria), F3 cadastros, F4
+viagem, F5 passagem, F6 remover o Room.
+
+### Eixo do agregado — [ADR-0018](0018-agregado-passagem-participantes-modo-e-lancamentos.md) (F1–F7)
+
+A Passagem reescrita: participantes com identidade (pools `Cliente` e `Veiculo`), **modo** tipado, capacidade
+vinda do navio, numeração por ocorrência, pagamento como **lançamentos**, cancelamento como **estado**.
+Ordem: F1 tipos e regras puras · F1b cancelamento · F2/F3 os pools · F4 pagamento e carimbos · F5 ocorrência,
+numeração e capacidade · F6 forma do documento · F7 a emissão por etapas.
+
+**A dependência entre os dois é de ordem, não de conteúdo:** enquanto o Room existir, cada campo novo na
+`Passagem` é DDL — então **F4 e F6 do ADR-0018 entram depois (ou junto) da F5 do ADR-0017**. As coleções
+novas (F2/F3) não têm esse problema: nascem já no regime Firestore-only.
+
 ## Sequência e dependências (proposta)
 
 ```
@@ -158,11 +196,18 @@ Pilar 1 ✅ (P1.1 → P1.2 → P1.3 → P1.4)
 Pilar 2 ✅ (ADR-0015: P2.0 → P2.1 → P2.2a′ → P2.2b → P2.2c → P2.3 → P2.4 → P2.6)
 Pilar 3   P3.A (ADR-0016: F1 → F2 → F3 → F4 → F5 → F6 → F7, com F8 acompanhando)
           P3.B (P3.4 → P3.1/P3.2/P3.3 → P3.5)      ← P3.4 pode ir já; não depende de nada
+
+eixos     storage  (ADR-0017: F1 = a F1 do ADR-0016 → F2 → F3 → F4 → F5 → F6)
+          agregado (ADR-0018: F1 · F1b → F2 → F3 → F4* → F5 → F6* → F7)   * depois da F5 do storage
 ```
 
 Ordem sugerida: **P3.4 primeiro** (gate das regras: valor alto, zero credencial, independente de tudo), depois
-**P3.A** (o domínio, que é o caminho crítico), e a distribuição por último — não faz sentido distribuir antes de
-haver painel que alimente o app.
+o **piloto do storage, que é a F1 do domínio** — uma fatia que paga dois eixos —, seguindo por **P3.A**, com
+as fatias baratas do agregado (F1 e F1b) encaixadas quando convier: são puras, isoladas e independentes. A
+distribuição por último — não faz sentido distribuir antes de haver painel que alimente o app.
+
+> **F1b tem urgência própria:** enquanto o cancelamento continuar sendo *delete* físico, **cada cancelamento
+> apaga histórico** que o ADR-0018 D17 declarou prioridade.
 
 ## Perguntas abertas (semear os ADRs)
 
@@ -180,14 +225,22 @@ estão registradas no [ADR-0015](../adr/0015-rework-agente-equipe.md) (*Decisõe
 - Distribuir `release` assinado (keystore em secret) ou `debug` (assinado pela debug key)?
 - ~~Grupo de testers manual ou sincronizado dos usuários?~~ **Respondido:** manual (ADR-0016 §10).
 
-**Pilar 3 — domínio (P3.A):** os pontos abertos vivem no
-[ADR-0016](../adr/0016-dominio-da-plataforma.md#pontos-abertos-analista-decide). O que trava o começo: o rename
-`Constante`→`Catalogo` pode **regenerar** o schema do Room (ADR-0015 §9). Os demais são premissas a confirmar, não
-bloqueios — a governança de trecho/porto ficou resolvida na 4ª rodada (são capacidades da plataforma, concedidas à
-agência na abertura); só a **remoção** segue aberta.
+**Pilar 3 — domínio (P3.A):** ~~o que trava o começo é o rename `Constante`→`Catalogo` tocando o Room~~ —
+**não trava mais**: sem espelho, não há entidade a renomear ([ADR-0017](../adr/0017-eixo-de-storage-firestore-only.md)).
+Dos dez pontos abertos do [ADR-0016](../adr/0016-dominio-da-plataforma.md#pontos-abertos-analista-decide),
+**nove estão resolvidos**; resta o **6** — quem cria rota e viagem no pool compartilhado, e se a concessão é
+editável depois do cadastro.
+
+**Fora dos pilares, esperando decisão:** o **método da inferência tarifária** (janela, mínimo de bilhetes,
+viagem sem histórico), situado no **módulo faturamento**; e **DTO por entidade × por caso de uso**, que saiu
+dos pontos abertos do ADR-0016 para estudo e ADR próprios. O índice de vigência dos ADRs
+([`docs/adr/README.md`](../adr/README.md)) mantém essa lista.
 
 ---
 
 > O rework "Viagem vira Trecho" (`viagem-vs-trecho.md`) **entrou no MVP** pelo
-> [ADR-0016](../adr/0016-dominio-da-plataforma.md) §7 — na versão enxuta (dois níveis, ocorrências calculadas).
-> A parte pesada (ocorrências persistidas + contador por acomodação) segue fora.
+> [ADR-0016](../adr/0016-dominio-da-plataforma.md) §7 — e chegou mais longe que a nota previa: **o Trecho foi
+> dissolvido** e o que existe é Rota + Viagem + ocorrência (§7.1). A parte pesada (ocorrências persistidas +
+> contador por acomodação) segue fora — mas a contagem deixou de ser só relatório: com a capacidade no navio
+> ([ADR-0018 D8](../adr/0018-agregado-passagem-participantes-modo-e-lancamentos.md)), ela **barra a emissão**
+> quando a ocorrência lota.

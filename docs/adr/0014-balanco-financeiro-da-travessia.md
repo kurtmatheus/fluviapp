@@ -1,7 +1,25 @@
 # ADR-0014: Balanço financeiro da travessia (receita esperada × real × déficit)
 
 **Status:** Rascunho — Claude rascunhou, revisão do analista pendente. Decisões de escopo **fechadas**
-(ver *Decisões resolvidas*); nenhum código ainda. Incremento pequeno e aditivo.
+(ver *Decisões resolvidas*); nenhum código ainda.
+
+> **A régua e o eixo mudaram antes de este ADR virar código** — o desenho segue de pé, com três correções:
+> - **"Receita esperada" não vem mais de tarifa cadastrada.** A tabela adormeceu
+>   ([ADR-0016 §7.2](0016-dominio-da-plataforma.md)) e a base passa a ser **inferida por agregação** — só das
+>   inteiras, por `(viagem, acomodação)` e `(viagem, classe de veículo)`. As funções puras do ADR-0013
+>   sobrevivem; muda a **fonte** da base. Some também a nota de rodapé do *fallback* `tarifaBase = null`: ele
+>   deixa de ser exceção e passa a ser o **caso normal** — o que o relatório precisa tratar é o **cold start**
+>   (viagem nova ainda sem base inferida).
+> - **O eixo é a ocorrência, não a "viagem" antiga.** Com `(rota, navio, diaSemana, hora)` e a ocorrência
+>   `(viagemId, data)` ([ADR-0016 §7.1](0016-dominio-da-plataforma.md),
+>   [ADR-0018 D9](0018-agregado-passagem-participantes-modo-e-lancamentos.md)), "receita da travessia" passa a
+>   significar exatamente uma partida.
+> - **Passagens canceladas ficam de fora** da esperada e da real, e são **contadas à parte**
+>   ([ADR-0018 D18](0018-agregado-passagem-participantes-modo-e-lancamentos.md)) — mesmo tratamento que este
+>   ADR já dá ao que não entra no esperado: não mascarar.
+>
+> A **receita real** também deixa de ser soma de quatro campos e passa a ser soma dos **lançamentos**
+> (ADR-0018 D11), o que não muda o total, só de onde ele vem.
 
 > Consome o [ADR-0013](0013-tabela-de-tarifa-e-tipo-tarifario.md) (tarifa tabelada, `tarifaBase` congelada,
 > `tarifaDevida`/`desconto` derivados — as regras puras que este balanço reusa). Conversa com o

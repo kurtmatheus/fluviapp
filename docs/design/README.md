@@ -4,6 +4,9 @@ Os documentos desta pasta são **estudos**: mapeiam o código como ele está, ex
 decisão. Quem decide é o analista; o que ele decide vira **ADR** em [`docs/adr/`](../adr/). Um estudo não
 tem autoridade — quando ele e um ADR discordarem, **o ADR vence**.
 
+> O estado de vigência das **decisões** fica no [índice dos ADRs](../adr/README.md) — o que vale, o que caiu
+> e por quem. Este índice cuida dos **estudos**. Ambos foram revisados em **2026-08-01**.
+
 Os estudos estão organizados em **cinco eixos**. O eixo diz de que o documento trata; o **estado** diz
 quanto ele ainda vale:
 
@@ -25,7 +28,7 @@ aqui é mexer no efeito, não na causa.
 |---|---|---|
 | [dominio-da-plataforma.md](dominio-da-plataforma.md) | **base** | **O catálogo completo**: os dois contextos, o mapa de coleções, todas as entidades com seus campos, todos os enums e as regras puras. Marca o que é `[hoje]`, `[alvo]` e `[morre]` |
 | [dominio-passagem.md](dominio-passagem.md) | **base** · §11 fechado → ADR-0018 | O agregado Passagem em detalhe — participantes, snapshot × id, ciclo de vida. O §11 traz a rodada de 2026-08-01 (pools, modo, lançamentos) decisão a decisão |
-| [viagem-vs-trecho.md](viagem-vs-trecho.md) | fechado → ADR-0016 §7 | O insight que separou Trecho (par de cidades) de Rota (a viagem de verdade) |
+| [viagem-vs-trecho.md](viagem-vs-trecho.md) | fechado → ADR-0016 §7.1 | O insight sobre a data. **Vocabulário vencido:** o Trecho foi dissolvido; hoje são Rota, Viagem e ocorrência — o aviso no topo da nota traduz |
 | [dominio-relacionamentos-e-camadas.md](dominio-relacionamentos-e-camadas.md) | **superado** | Visão geral da era do ADR-0008 (ainda fala em `Agente` e relação por nome). Substituído por `dominio-da-plataforma.md` |
 
 ## Eixo 2 — Dados e persistência
@@ -35,8 +38,8 @@ Onde o dado vive, como chega e como se mantém.
 | Documento | Estado | Do que trata |
 |---|---|---|
 | [eixo-de-storage-firestore-only.md](eixo-de-storage-firestore-only.md) | fechado → ADR-0017 | Aposentar o Room como datasource: inventário dos 11 DAOs, os dois caches em disco e o resíduo local |
-| [sincronizacao-firestore-room.md](sincronizacao-firestore-room.md) | fechado → ADR-0009 | O pipeline reativo único, o ciclo de vida do listener e a porta `FonteSnapshots` |
-| [balanco-passagens-mapper.md](balanco-passagens-mapper.md) | aberto | O mapper de ocupação: estrutura, threading e o que ele de fato conta |
+| [sincronizacao-firestore-room.md](sincronizacao-firestore-room.md) | fechado → ADR-0009 · **destino vencido** | O pipeline reativo, o ciclo de vida do listener e a porta `FonteSnapshots` — tudo de pé, menos o destino: não é mais o DAO, é um `StateFlow` (ADR-0017 D1) |
+| [balanco-passagens-mapper.md](balanco-passagens-mapper.md) | aberto | O mapper de ocupação: estrutura, threading e o que ele de fato conta. **A ocupação passa a ter teto** — a capacidade vem do navio e barra a emissão (ADR-0018 D8) |
 
 ## Eixo 3 — Apresentação
 
@@ -44,17 +47,17 @@ Como o app se mostra e por onde o usuário anda.
 
 | Documento | Estado | Do que trata |
 |---|---|---|
-| [camada-de-apresentacao.md](camada-de-apresentacao.md) | **aberto** | A camada inteira: rotas por String, orquestração dentro da navegação, callback drilling, `@RequiresApi(S)` com `minSdk 26`, UiState com lambda |
-| [fluxo-login.md](fluxo-login.md) | base | O fluxo de autenticação implementado |
-| [fluxo-main-screen.md](fluxo-main-screen.md) | base | A Main Screen: bottom bar reduzida e drawer com as seções |
-| [form-passagem-validacao-exibicao.md](form-passagem-validacao-exibicao.md) | aberto | O form de emissão: validação impura, desvios do molde e os bugs detectáveis |
+| [camada-de-apresentacao.md](camada-de-apresentacao.md) | **aberto** | A camada inteira: rotas por String, orquestração dentro da navegação, callback drilling, `@RequiresApi(S)` com `minSdk 26`, UiState com lambda. Ganha um consumidor: a **emissão por etapas** (ADR-0018 F7) é a primeira tela desenhada a partir de um eixo de domínio |
+| [fluxo-login.md](fluxo-login.md) | base · **vocabulário vencido** | O fluxo de autenticação implementado. Cita cargos antigos (`DIRETOR`/`COLABORADOR_MASTER`) e o pacote `model/`; e o login ganha um passo novo — **a escolha do vínculo** (ADR-0016, 8ª rodada) |
+| [fluxo-main-screen.md](fluxo-main-screen.md) | base · **vocabulário vencido** | A Main Screen: bottom bar reduzida e drawer com as seções. Cita `Agente` e cargos antigos; as seções passam a **derivar da atuação** (ADR-0016 §2) |
+| [form-passagem-validacao-exibicao.md](form-passagem-validacao-exibicao.md) | **superado em boa parte** | Descreve o form **antes** do molde. Validação pura, UiState puro e eventos por parâmetro **já foram feitos**; sobrevivem os achados de regra, hoje listados no §9 do estudo do agregado |
 | [cadastro-modulos.md](cadastro-modulos.md) | fechado → ADR-0006 | A análise que virou o molde de cadastro |
 
 ## Eixo 4 — Regra de negócio e relatórios
 
 | Documento | Estado | Do que trata |
 |---|---|---|
-| [balanco-financeiro.md](balanco-financeiro.md) | aberto | Esperada × real × déficit, reusando o modelo de preço do ADR-0013 |
+| [balanco-financeiro.md](balanco-financeiro.md) | aberto · **régua vencida** | Esperada × real × déficit. O modelo de preço mudou: a base **não vem mais de tarifa cadastrada**, e sim de inferência (ADR-0016 §7.2); o eixo é a **ocorrência** e canceladas ficam de fora (ADR-0018 D9/D18) |
 
 ## Eixo 5 — Produto e entrega
 

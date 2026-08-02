@@ -4,6 +4,13 @@
 testabilidade N1/N2), cada fase compilando e com suíte passando. Commits: D1 `56eea5d`, D2+D3
 `c2f5b7d`, observabilidade `ba9a817`, D4 `a7838ef`, D5 `d7b14b2`, testabilidade Nível 2 `52bfae9`.
 
+> **Vigente em parte — o destino mudou.** O [ADR-0017](0017-eixo-de-storage-firestore-only.md) D1 realiza a
+> *Opção 3* que este ADR registrou e adiou: **o DAO deixa de ser a fonte reativa**, e `sincronizarColecao`
+> passa a publicar num `StateFlow` compartilhado por coleção em vez de gravar numa tabela. **O que sobrevive
+> é a maior parte**: o pipeline único, o ciclo de vida do listener (`parar()` no logout), a idempotência, a
+> telemetria `sync_*` e a porta `FonteSnapshots` — que foi criada exatamente para permitir essa troca sem
+> vazar tipo do Firebase para cima. Onde se lê "grava no Room", leia "publica no fluxo".
+
 > Formaliza o [estudo de sincronização](../design/sincronizacao-firestore-room.md) (mapeamento,
 > opções e as decisões D1–D5 + §10). Conversa com o [ADR-0003](0003-modelo-de-memoria-do-dado.md)
 > (Firestore = verdade, Room = espelho vivo), reusa a observabilidade dos
