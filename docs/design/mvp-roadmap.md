@@ -164,22 +164,41 @@ O domínio está fechado — [ADR-0016](../adr/0016-dominio-da-plataforma.md) se
 tela**, e ela vem em três frentes, nesta ordem. Todas com o mesmo crivo: *mínimo para entrega; reaproveitar
 o que existe; o que não servir, descartar e revitalizar.*
 
+> ### A ordem dentro de cada frente, de E2 em diante *(decisão de 2026-08-02)*
+>
+> **domínio → dados → lógica → apresentação.** Nesta ordem, e por frente — não uma vez para o app inteiro.
+> É a forma prática do que o [ADR-0019](../adr/0019-camada-de-dados-dinamica-e-dto-por-caso-de-uso.md) D6
+> fixou: ao definir uma tela, **dela nascem as fronteiras e as camadas**, nunca o contrário.
+>
+> 1. **Domínio** — refazer a entidade e as regras da parte que a frente cobre;
+> 2. **Dados** — a fronteira daquela coleção: `Map` na leitura/escrita, sem `[Entidade]Documento` novo;
+> 3. **Lógica** — mapper do caso de uso + ViewModel, com o DTO que aquela tela precisa;
+> 4. **Apresentação** — a tela, por último, já sabendo o que recebe.
+>
+> **O descarte é progressivo, não um mutirão.** Room, entidade, DTO ou tela que ficar sem uso **sai na fase
+> em que deixou de ser necessário** — não se acumula uma "limpeza final", que é como dívida vira permanente.
+> A frente que tocou o código é a que apaga o que ela tornou obsoleto.
+>
+> **E1 é a exceção deliberada**: é só o caminho de entrada — não tem domínio a refazer, e por isso é a mais
+> barata e vem primeiro.
+
 > **O domínio do login está fechado e estável** — `Usuario` × `Funcionario`, papel × cargo, o elo
 > `funcionarioId` (ADR-0015 §8). **A frente E1 não mexe nessa regra**: mexe em como o app **entra**.
 
 #### E1 — O caminho de entrada: `MainActivity` → Splash → Login → Painel
 
-Correções e melhorias **mínimas**, ancoradas no que o código mostra hoje:
+**E1.1 ✅ feita** (commit `e56150f`): splash e Activity. O que resta da frente depende de decisões que só a
+E2 destrava — está marcado abaixo.
 
-| Achado | Onde | Por que corrigir agora |
+| Achado | Estado | Nota |
 |---|---|---|
-| **`delay(Random.nextLong(300, 1000))`** antes de decidir a rota | `SplashScreenViewModel.kt:33` | espera **artificial** de até 1 s na abertura — é o primeiro contato com o produto |
-| **Splash sem identidade** — só um `CircularProgressIndicator` centralizado | `SplashGraphNavigation.kt` | existe `FluviWordmark`; a marca deve aparecer onde o usuário espera |
-| **Sem splash de sistema** (`core-splashscreen` / tema) | `MainActivity.kt`, `themes.xml` | há **duas esperas**: a janela em branco do sistema e depois o spinner |
-| **`@RequiresApi(S)` com `minSdk 26`** | `MainActivity.kt:26` e no NavHost | herdado do Bluetooth dormente; contamina a Activity inteira |
-| **`FluviApp` duplicado** — uma função chama a outra que só executa `content()` | `MainActivity.kt:47-64` | indireção sem função; some sem custo |
-| **Permissões de Bluetooth pedidas na entrada do painel** | `MainScreenNavComposable.kt:57` | pede permissão para impressora **dormente**, antes de qualquer uso |
-| **Splash resolve só `currentUser != null`** | `SplashScreenViewModel.kt:36` | o ADR-0016 (8ª rodada) põe a **escolha do vínculo no login** — quem entra precisa de contexto, não só de sessão |
+| **`delay(Random.nextLong(300, 1000))`** antes de decidir a rota | ✅ **E1.1** | saiu junto o `viewModelScope.launch`: a decisão é síncrona |
+| **Splash sem identidade** — um `CircularProgressIndicator` solto no grafo | ✅ **E1.1** | virou `ui/screens/SplashScreen.kt` com o `FluviWordmark`; o grafo só decide a saída |
+| **`FluviApp` duplicado** — uma função chama a outra que só executa `content()` | ✅ **E1.1** | — |
+| **Sem splash de sistema** (`core-splashscreen` / tema) | ⏸️ **adiado** | é dependência nova; fora do "mínimo para entrega". A janela em branco antes do Compose continua — escolha, não esquecimento |
+| **Permissão de Bluetooth pedida na entrada do painel** | → **E2** | **correção ao que este roadmap dizia:** a impressora **não é dormente** — `ThermalPrinterConnection` é usada pela tela de detalhes. O certo é pedir **no ponto de uso**, o que toca a impressão |
+| **`@RequiresApi(S)` com `minSdk 26`** | → **E2** | depende do item acima: enquanto `BLUETOOTH_CONNECT` for pedido no painel, a anotação sobe por `MainScreenNavComposable` → `MainScreenGraphNavigation` → `FluviAppNavHost` → `MainActivity` |
+| **Splash resolve só `currentUser != null`** | → **E2/E3** | o ADR-0016 (8ª rodada) põe a **escolha do vínculo no login** — e ela só existe quando houver empresa e atuação cadastradas |
 
 **Reaproveita:** o grafo de navegação, o `LoginScreen`, o fluxo de recuperação/primeiro acesso e a sessão
 (ADR-0005) — tudo isso serve. **Revitaliza:** a splash (visual e temporização) e a organização da Activity.
@@ -284,10 +303,13 @@ novas (F2/F3) não têm esse problema: nascem já no regime Firestore-only.
 ## Sequência e dependências (proposta)
 
 ```
+                              cada frente, de E2 em diante:
+                              domínio → dados → lógica → apresentação
+
 Pilar 1 ✅ (P1.1 → P1.2 → P1.3 → P1.4)
 Pilar 2 ⚠️ (ADR-0015 entregue; o que falta — vínculo, agência por id, lotação — entra em E2/E3+P3.A)
 
-ENTREGA   E1 entrada  (Activity → splash → login → painel)
+ENTREGA   E1 entrada  (Activity → splash → login → painel)   E1.1 ✅
           E2 painel   (MainScreen vira PainelPrincipal; menu deriva da atuação)
           E3 menu + Catálogo  = F1 do ADR-0016 = F1 do ADR-0017 = 1º DTO por caso de uso
 
