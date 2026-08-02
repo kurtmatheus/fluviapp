@@ -82,8 +82,11 @@ por **lançamentos** e transformou o cancelamento em estado, porque **manter his
 
 - **O método da inferência tarifária** — janela, mínimo de bilhetes, viagem sem histórico, cálculo na
   leitura × materializado. Situado no **módulo faturamento** (ADR-0018, *o que não decide*).
-- **DTO por entidade × por caso de uso** — saiu dos pontos abertos do ADR-0016 para **estudo + ADR próprios**
-  (é decisão de camada, não de domínio).
+- **ADR da camada de dados dinâmica** — **decidido em 2026-08-02, falta escrever**: DTO **por caso de uso**,
+  e as classes `[Entidade]Documento` saem dos repositórios em favor de **`Map` na fronteira** (elas ficam
+  como documentação da estrutura). Base medida no
+  [estudo](../design/dto-por-entidade-ou-caso-de-uso.md) §7 — é o "passo 2" que o ADR-0003 previu e não
+  decidiu.
 - **O módulo faturamento** — conciliação, taxa e prazo, conta corrente do pagador, estorno, fechamento de
   caixa.
 

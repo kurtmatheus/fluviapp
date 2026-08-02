@@ -1,22 +1,24 @@
 # Roadmap para o MVP
 
-**Status:** Pilares **1 e 2 completos** (2026-07-27); resta o **3**, que cresceu duas vezes — em 2026-07-28
-ganhou um **domínio de plataforma** por baixo ([ADR-0016](../adr/0016-dominio-da-plataforma.md)), e em
-2026-07-31/08-01 ganhou **dois eixos transversais** que não existiam quando este roadmap foi escrito: o
-[ADR-0017](../adr/0017-eixo-de-storage-firestore-only.md) (o Room sai) e o
-[ADR-0018](../adr/0018-agregado-passagem-participantes-modo-e-lancamentos.md) (o agregado Passagem
-reescrito). **Revisado em 2026-08-01** contra os três. Não é código; é o sequenciamento dos passos até o MVP.
+**Status:** Pilares **1 e 2 completos** (2026-07-27). **Reescrito em 2026-08-02** — o caminho até a entrega
+deixou de ser "o Pilar 3" e virou **três frentes de tela**, decididas pelo analista, com um princípio único:
+**mínimo para entrega, reaproveitando o que existe; o que não servir, descarta-se e revitaliza-se.**
 
-O MVP tem **três pilares** (na ordem proposta pelo analista):
+O MVP teve **três pilares**, e os dois primeiros estão fechados:
 
-1. **Contagem de Passagem** — melhorias no balanço como ele é hoje, **sem faturamento** ainda.
-2. **Rework de Agente → Equipe** — agência/lotação viram capacidades do usuário; a agência vira capacidade
-   transversal à emissão, com identidade visual por agência (multi-agência).
-3. **Plataforma + CI/CD via Firebase** — o **painel administrativo** (que substitui o seed como porta de entrada
-   do dado) e a distribuição de builds aos testers.
+1. ✅ **Contagem de Passagem** — melhorias no balanço, sem faturamento.
+2. ✅ **Rework de Agente → Equipe** — identidade, agência e cargo ([ADR-0015](../adr/0015-rework-agente-equipe.md)).
+3. **Plataforma** — o painel que substitui o seed como porta de entrada do dado, e a distribuição. **É o que
+   este roadmap agora detalha**, na forma que o analista definiu: três frentes de tela (E1, E2, E3), com o
+   domínio já fechado por baixo.
 
-…e **dois eixos que atravessam o Pilar 3**, decididos depois e sem pilar próprio porque não são etapa: são
-mudança de regime. Estão em [§ Os dois eixos transversais](#os-dois-eixos-transversais).
+**O método mudou junto, e é ele que dá a ordem** *(decisão de 2026-08-02)*: **do domínio nascem as
+fronteiras e as camadas.** Ao definir uma tela, dela derivam mapper, ViewModel, camada de dados e
+apresentação — não o contrário. O Firestore é a camada de dados que **reflete** o domínio; **a fronteira
+passa a ser dinâmica (`Map`)** e os DTOs passam a ser **por caso de uso**
+([estudo](dto-por-entidade-ou-caso-de-uso.md) §7). É por isso que o painel da plataforma vem **depois** do
+domínio revisado: **o painel da plataforma é o molde do painel por agência**, e este é o molde dos painéis
+dos outros segmentos.
 
 ---
 
@@ -123,7 +125,66 @@ projeto Firebase novo as regras do ADR-0011 negariam a escrita do seed de qualqu
 [ADR-0016](../adr/0016-dominio-da-plataforma.md): o **painel administrativo** vira a porta de entrada do dado, e
 o app vira uma **plataforma multi-empresa e multi-segmento**.
 
+### As três frentes de entrega *(definidas em 2026-08-02)*
+
+O domínio está fechado — [ADR-0016](../adr/0016-dominio-da-plataforma.md) sem pontos abertos,
+[ADR-0017](../adr/0017-eixo-de-storage-firestore-only.md) e
+[ADR-0018](../adr/0018-agregado-passagem-participantes-modo-e-lancamentos.md) aceitos. **O que falta é
+tela**, e ela vem em três frentes, nesta ordem. Todas com o mesmo crivo: *mínimo para entrega; reaproveitar
+o que existe; o que não servir, descartar e revitalizar.*
+
+> **O domínio do login está fechado e estável** — `Usuario` × `Funcionario`, papel × cargo, o elo
+> `funcionarioId` (ADR-0015 §8). **A frente E1 não mexe nessa regra**: mexe em como o app **entra**.
+
+#### E1 — O caminho de entrada: `MainActivity` → Splash → Login → Painel
+
+Correções e melhorias **mínimas**, ancoradas no que o código mostra hoje:
+
+| Achado | Onde | Por que corrigir agora |
+|---|---|---|
+| **`delay(Random.nextLong(300, 1000))`** antes de decidir a rota | `SplashScreenViewModel.kt:33` | espera **artificial** de até 1 s na abertura — é o primeiro contato com o produto |
+| **Splash sem identidade** — só um `CircularProgressIndicator` centralizado | `SplashGraphNavigation.kt` | existe `FluviWordmark`; a marca deve aparecer onde o usuário espera |
+| **Sem splash de sistema** (`core-splashscreen` / tema) | `MainActivity.kt`, `themes.xml` | há **duas esperas**: a janela em branco do sistema e depois o spinner |
+| **`@RequiresApi(S)` com `minSdk 26`** | `MainActivity.kt:26` e no NavHost | herdado do Bluetooth dormente; contamina a Activity inteira |
+| **`FluviApp` duplicado** — uma função chama a outra que só executa `content()` | `MainActivity.kt:47-64` | indireção sem função; some sem custo |
+| **Permissões de Bluetooth pedidas na entrada do painel** | `MainScreenNavComposable.kt:57` | pede permissão para impressora **dormente**, antes de qualquer uso |
+| **Splash resolve só `currentUser != null`** | `SplashScreenViewModel.kt:36` | o ADR-0016 (8ª rodada) põe a **escolha do vínculo no login** — quem entra precisa de contexto, não só de sessão |
+
+**Reaproveita:** o grafo de navegação, o `LoginScreen`, o fluxo de recuperação/primeiro acesso e a sessão
+(ADR-0005) — tudo isso serve. **Revitaliza:** a splash (visual e temporização) e a organização da Activity.
+
+#### E2 — `MainScreen` vira **PainelPrincipal da Plataforma**
+
+Correções baseadas no domínio + melhorias mínimas. O que o código pede:
+
+- **A política de menu está dentro da navegação.** `MainScreenNavComposable` carrega 13 callbacks e a função
+  `acoesDe(secao)` que decide o que cada seção oferece (`:66-93`) — decisão de domínio morando no grafo. O
+  estudo da [camada de apresentação](camada-de-apresentacao.md) já apontava; agora tem consumidor.
+- **`SecaoMenu` é um enum fixo de cinco seções** (`PASSAGEM, VIAGEM, EQUIPE, EMPRESA, NAVIO`). O ADR-0016 §2
+  diz que as seções **derivam da atuação** — é isso que faz a plataforma ser multi-segmento sem tocar o
+  modelo de permissão.
+- **`DadosBotoesMenus` carrega `onClick`** — DTO com comportamento dentro de `screendata`, exatamente o que
+  a decisão de DTO por caso de uso (§7 do [estudo](dto-por-entidade-ou-caso-de-uso.md)) desfaz.
+- **O painel é o molde.** Este é o ponto do analista: *o painel da plataforma é como o painel por agência vai
+  nascer*, e ele já deixa as bases para os painéis dos outros segmentos. Portanto **a estrutura importa mais
+  que o conteúdo** desta frente.
+
+#### E3 — Menu da Plataforma e as opções, a partir do domínio
+
+Definir a **base estrutural** que as demais entidades vão reusar — e provar essa base numa entidade só:
+**`Catalogo` primeiro, e como *última* opção do menu** (decisão do analista: é a base que sustenta as
+outras, e a que o operador menos abre).
+
+Isso encaixa com o que já estava decidido em outros ADRs, sem contradição:
+- é a **F1 do ADR-0016** (`Constante` → `Catalogo`) e, ao mesmo tempo, a **F1 do ADR-0017** (piloto do
+  Firestore-only) — uma fatia que paga dois eixos;
+- é o primeiro **CRUD só do `ADM`**, com regra no servidor no mesmo incremento (ADR-0011);
+- e é o primeiro caso de **DTO por caso de uso + fronteira `Map`**, no lugar mais barato do app.
+
 ### P3.A — Domínio e painel ([ADR-0016](../adr/0016-dominio-da-plataforma.md), fases F1–F8)
+
+*O plano por fases do ADR-0016 continua válido como sequência de domínio; as frentes E1–E3 acima são a
+**ordem de entrega em tela**, e a F1 de lá é a E3 daqui.*
 
 `Catalogo` → matar o seed → painel → **capacidades da plataforma** (localidade/porto) → **parte e atuação**
 (empresa + `atuacoes` + concessão de **portos e navios**) → funcionário multi-empresa → **rota e viagem** +
@@ -194,17 +255,24 @@ novas (F2/F3) não têm esse problema: nascem já no regime Firestore-only.
 ```
 Pilar 1 ✅ (P1.1 → P1.2 → P1.3 → P1.4)
 Pilar 2 ✅ (ADR-0015: P2.0 → P2.1 → P2.2a′ → P2.2b → P2.2c → P2.3 → P2.4 → P2.6)
-Pilar 3   P3.A (ADR-0016: F1 → F2 → F3 → F4 → F5 → F6 → F7, com F8 acompanhando)
-          P3.B (P3.4 → P3.1/P3.2/P3.3 → P3.5)      ← P3.4 pode ir já; não depende de nada
 
-eixos     storage  (ADR-0017: F1 = a F1 do ADR-0016 → F2 → F3 → F4 → F5 → F6)
+ENTREGA   E1 entrada  (Activity → splash → login → painel)
+          E2 painel   (MainScreen vira PainelPrincipal; menu deriva da atuação)
+          E3 menu + Catálogo  = F1 do ADR-0016 = F1 do ADR-0017 = 1º DTO por caso de uso
+
+domínio   P3.A (ADR-0016: F2 → F3 → … → F8, seguindo a E3)
+esteira   P3.B (P3.4 → P3.1/P3.2/P3.3 → P3.5)      ← P3.4 pode ir já; não depende de nada
+eixos     storage  (ADR-0017: F1 = E3 → F2 → F3 → F4 → F5 → F6)
           agregado (ADR-0018: F1 · F1b → F2 → F3 → F4* → F5 → F6* → F7)   * depois da F5 do storage
 ```
 
-Ordem sugerida: **P3.4 primeiro** (gate das regras: valor alto, zero credencial, independente de tudo), depois
-o **piloto do storage, que é a F1 do domínio** — uma fatia que paga dois eixos —, seguindo por **P3.A**, com
-as fatias baratas do agregado (F1 e F1b) encaixadas quando convier: são puras, isoladas e independentes. A
-distribuição por último — não faz sentido distribuir antes de haver painel que alimente o app.
+**A ordem é E1 → E2 → E3**, e ela não é arbitrária: E1 é o que o usuário vê primeiro e é barato; E2 define a
+**estrutura** que E3 vai instanciar; e E3 é a primeira entidade a nascer pelo método novo — domínio →
+fronteiras → camadas. Fora da fila, dois itens que não dependem de nada e podem entrar quando convier:
+**P3.4** (gate das regras no emulador: valor alto, zero credencial) e as fatias puras do agregado (**F1** e
+**F1b**, esta com urgência própria — enquanto não existir, cada cancelamento apaga histórico).
+
+A distribuição fica por último: não faz sentido distribuir antes de haver painel que alimente o app.
 
 > **F1b tem urgência própria:** enquanto o cancelamento continuar sendo *delete* físico, **cada cancelamento
 > apaga histórico** que o ADR-0018 D17 declarou prioridade.
@@ -232,10 +300,10 @@ Os dez pontos abertos do [ADR-0016](../adr/0016-dominio-da-plataforma.md#pontos-
 no pool comum afeta todas as agências) **e a concessão é editável** depois do cadastro. O domínio do Pilar 3
 não tem mais pergunta pendente; o que falta é execução.
 
-**Fora dos pilares, esperando decisão:** o **método da inferência tarifária** (janela, mínimo de bilhetes,
-viagem sem histórico), situado no **módulo faturamento**; e **DTO por entidade × por caso de uso**, que saiu
-dos pontos abertos do ADR-0016 para estudo e ADR próprios. O índice de vigência dos ADRs
-([`docs/adr/README.md`](../adr/README.md)) mantém essa lista.
+**Fora das frentes, esperando decisão:** o **método da inferência tarifária** (janela, mínimo de bilhetes,
+viagem sem histórico), situado no **módulo faturamento**. O **DTO** deixou de estar aberto — foi decidido em
+2026-08-02 (**por caso de uso**, com a fronteira de dados em `Map`) e **falta o ADR** que registre a mudança
+de regime da camada de dados. O índice de vigência ([`docs/adr/README.md`](../adr/README.md)) mantém a lista.
 
 ---
 
