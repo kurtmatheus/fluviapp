@@ -1,7 +1,32 @@
 # ADR-0013: Tabela de tarifa na Viagem e tipo tarifário da passagem (desconto derivado)
 
-**Status:** Aceita (direção) — decisões de revisão fechadas (ver *Decisões resolvidas*); implementação por
-fase, nenhum código ainda. Claude rascunhou, analista revisou.
+**Status:** **PARCIALMENTE DORMENTE desde 2026-07-31** — ver o aviso abaixo. O que restava de *direção* (a
+tabela cadastrada) não será construído; o que já é **código vivo** (os tipos tarifários e as funções puras)
+continua valendo e ganha uma fonte nova para a base.
+
+> ⚠️ **A tabela de tarifa cadastrada fica dormente** (decisão do analista, [ADR-0016 §7.2](0016-dominio-da-plataforma.md)).
+> A `Rota` passou a ser capacidade compartilhada da plataforma, sem dono — e uma entidade sem dono não tem de
+> quem ter tarifa. **Não se constrói** cadastro de tarifa, célula, mapa `tarifas` no documento nem a guarda
+> `ResultadoEmissao.SemTarifa`.
+>
+> **O que morre é a fonte da base, não a matemática.** O dado passa a ser o **valor informado** na emissão, e
+> base, desconto e resultado são **inferidos por agregação** de passagens por rota e viagem. Sobrevivem
+> intactos: `TipoPassagem` e `TipoGratuidade` (tipos de domínio), `TipoPassagem.tarifaDevida`,
+> `descontoDerivado`, `tarifaMotoBase`, o dinheiro em `BigDecimal` scale 2 e a cota de gratuidade. Muda só de
+> onde vem o argumento `tarifaBase`.
+>
+> E há uma simetria no resultado: para a base inferida significar algo, o agrupamento tem de ser por
+> **(viagem, acomodação)** e **(viagem, classe de veículo)** — **exatamente os dois eixos desta tabela**. Ela
+> não morre: deixa de ser *cadastrada* e passa a ser *observada*.
+>
+> Consequências: **`SemTarifa` deixa de existir** (nada bloqueia a emissão por falta de cadastro — o que
+> dissolve a premissa do ADR-0017 D7); **`MEIA` vira classificação**, e a aritmética migra para a agregação
+> (com o efeito bom de a base ser inferida só das INTEIRAS); e há **cold start** — a primeira passagem de uma
+> viagem nova não tem base, então o balanço só a mostra depois de N bilhetes. `Passagem.tarifaBase` passa a
+> nascer nulo, caso que o `PassagemDadosPassagemMapper` **já trata**.
+
+*Status anterior:* Aceita (direção) — decisões de revisão fechadas (ver *Decisões resolvidas*); implementação
+por fase. Claude rascunhou, analista revisou.
 
 > Conversa com o [ADR-0008](0008-relacionamentos-por-identidade.md) (a tarifa vira **par id+snapshot**: a
 > tabela é master data na Viagem, o valor devido é congelado na Passagem), o

@@ -1,8 +1,28 @@
 # Nota de arquitetura — Viagem × Trecho (a data como questão de Arquitetura da Informação)
 
-**Status:** Rascunho — Claude capturou o insight do analista (2026-07). Semente para o **rework "Viagem vira
-Trecho"** (futuro). Não implementa nada; registra a distinção de domínio e a direção, para não repetir a
-confusão e para o rework nascer com o vocabulário certo.
+**Status:** **Colhida pelo [ADR-0016](../adr/0016-dominio-da-plataforma.md) §7** (2026-07-28) — o rework saiu de
+"futuro" e **entrou no MVP**. Esta nota fica como registro do insight que o originou; **o vocabulário final é o do
+ADR**, e ele difere do desta nota num ponto essencial (ver o aviso abaixo).
+
+> ### ⚠️ Vocabulário: esta nota tem **dois** conceitos; o ADR-0016 tem **três**
+>
+> A nota supôs que a entidade `Viagem` de hoje era o **Trecho** (rota + tarifas) e que faltava só modelar a
+> **Viagem** (Trecho + data). O ADR-0016 encontrou **duas coisas espremidas** no que a nota chamou de Trecho, e
+> separou em dois níveis:
+>
+> | Conceito | No ADR-0016 | Onde vive |
+> |---|---|---|
+> | **Trecho** | Só o **par de cidades** (a linha). Sem tarifa, sem porto, sem data, **sem dono**. | `trechos/{id}` — raiz, superentidade compartilhada |
+> | **Rota** | A **viagem de verdade**: trecho + navio + portos de embarque/desembarque + **tarifas** + agenda semanal. | `empresas/{e}/agenciamento/{a}/rotas/{id}` — da agência |
+>
+> Ou seja: onde esta nota diz "Trecho" com tarifas dentro (§2, §3, §5), leia **Rota**. O "Trecho" do ADR é mais
+> enxuto do que o desta nota. A previsão do §4 — "várias agências operam sobre os mesmos trechos" — foi o que
+> motivou a separação: o trecho subiu para a raiz para ser compartilhado de fato.
+>
+> **Do plano do §3, o que entrou e o que não entrou:** entraram os itens 1 (renomear), 2 (agenda semanal) e 4
+> (a data deixa de nascer no bilhete). **Não entrou o item 3** — as ocorrências da semana são **calculadas**
+> a partir da agenda, não persistidas, então **não existe contador por acomodação** e a ocupação continua sendo
+> contada a partir dos bilhetes. É otimização adiada de propósito (ADR-0016 §7).
 
 > Conversa com o [estudo do domínio da passagem](dominio-passagem.md), o
 > [ADR-0008](../adr/0008-relacionamentos-por-identidade.md) (relacionar por id), o
@@ -68,8 +88,12 @@ se cruzam entre agências**:
 - **Cota de gratuidade por viagem (ADR-0013).** Hoje "por viagem" = por `viagemId` do Trecho; com a Viagem
   datada de verdade, a cota fica mais precisa (por ocorrência).
 
-## 6. Escopo
+## 6. Escopo — ✅ cumprido
 
-Este é um **rework grande e futuro** — não faz parte do incremento atual. A nota existe para: (a) travar o
-vocabulário (Trecho = rota; Viagem = rota datada); (b) evitar decisões que aprofundem a confusão; (c) semear
-o ADR do rework quando ele começar. Nada aqui é código a escrever agora.
+A nota existia para: (a) travar o vocabulário; (b) evitar decisões que aprofundassem a confusão; (c) **semear o
+ADR do rework quando ele começasse**. O (c) aconteceu em 2026-07-28: o rework foi absorvido pelo
+[ADR-0016](../adr/0016-dominio-da-plataforma.md) §7, que é agora a fonte.
+
+Correção do (a), para o registro: o vocabulário que esta nota travou estava **um nível incompleto** — "Trecho =
+rota" juntava a linha (comum) com o preço e o embarque (da agência). O ADR separou os dois, e o nome "Rota"
+passou a designar a viagem concreta. Ver o aviso no topo.

@@ -2,8 +2,9 @@
 
 **Status:** **Aceita (direção)** — decisões do analista, 1ª a 6ª rodada (2026-07-28), **7ª rodada (2026-07-31)**,
 que **dissolveu o Trecho, criou a Localidade e fixou a lei do domínio sobre a persistência**, e **8ª rodada
-(2026-07-31)**, que fez da **atuação o eixo organizador de cargo, permissão e painel**. Sem código: este ADR fixa
-o domínio e o mapa de coleções; a implementação é faseada abaixo. Supera a pergunta de provisionamento que estava
+(2026-07-31)**, que fez da **atuação o eixo organizador de cargo, permissão e painel**, e **9ª rodada
+(2026-07-31)**, que definiu **Rota e Viagem como capacidades compartilhadas da plataforma** e **adormeceu a
+tarifa cadastrada**. Sem código: este ADR fixa o domínio e o mapa de coleções; a implementação é faseada abaixo. Supera a pergunta de provisionamento que estava
 aberta no [roadmap do MVP](../design/mvp-roadmap.md) (Pilar 3) e promove a
 [nota Viagem × Trecho](../design/viagem-vs-trecho.md) de "fora do MVP" para dentro dele, na versão do §7.
 
@@ -185,16 +186,19 @@ preparar agora; é uma linha a acrescentar quando o caso aparecer.
 # PARTES — quem existe
 empresas/{empresaId}                     nome, razaoSocial, cnpj, endereco, telefone1, telefone2
    ├── atuacoes/{ATUACAO}                um doc por atuação; o id É o nome da atuação
-   │        AGENCIAMENTO           → portoIds[], navioIds[]         ← concessões (§7)
-   │        TRANSPORTE             → (dona da frota; cadastra os próprios navios)
-   │        PORTUARIA_OPERACAO     → portoIds[]                     ← dormente (§5)
-   │        PORTUARIA_ARRENDAMENTO → portoIds[]                     ← dormente (§5)
-   └── rotas/{rotaId}                    a oferta — só existe com atuação AGENCIAMENTO (§7)
+            AGENCIAMENTO           → portoIds[], navioIds[]         ← concessões: o que pode VENDER (§7)
+                                     rotasNegadas[], viagensNegadas[]  ← o que escolhe não VER (§7.1)
+            TRANSPORTE             → (dona da frota; cadastra os próprios navios)
+            PORTUARIA_OPERACAO     → portoIds[]                     ← dormente (§5)
+            PORTUARIA_ARRENDAMENTO → portoIds[]                     ← dormente (§5)
 
 # CAPACIDADES DA PLATAFORMA — sem dono
 localidades/{localidadeId}               uf (Catalogo), municipio (Catalogo)   ← embutidos (§5)
 portos/{portoId}                         nome, localidade                      ← referência (§5)
 catalogo/{itemId}                        categoria, descricao
+rotas/{rotaId}                           portoOrigem, portoDestino, distanciaMn, tempoMedioH   (§7)
+viagens/{viagemId}                       rotaId, navioId, diaSemana, hora      ← atômica (§7)
+   ↑ as duas com criadoPor/criadoEm, ativo, e SEM exclusão (§7)
 
 # ATIVOS — dono por campo, endereçáveis globalmente
 navios/{navioId}                         nome, capacidades, tipoEmbarcacao, empresaId   ← como já é hoje
@@ -486,6 +490,115 @@ escrita composta que pode falhar no meio e deixar empresa sem capacidade ou sem 
 transação a orquestrar. E o vínculo do supervisor **já tem casa**: é o `empresaIds` do §6 — a pessoa sabe onde
 atua, a empresa não precisa saber quem a supervisiona.
 
+
+### 7.1 Rota e Viagem — capacidades compartilhadas *(9ª rodada)*
+
+*Esta seção substitui o desenho abaixo, escrito quando a rota era da empresa. O que sobrevive dele está
+marcado; o resto fica como registro do caminho.*
+
+**Primeiro as definições, porque foi a falta delas que atrasou o resto.**
+
+```
+rotas/{rotaId}                       ← o ONDE e o QUANTO LONGE
+    portoOrigem, portoDestino        ← as cidades são inferidas do porto (§5)
+    distanciaMn                      ← milhas náuticas
+    tempoMedioH                      ← tempo médio, em horas
+    criadoPor, criadoEm, ativo
+
+viagens/{viagemId}                   ← o QUANDO e EM QUÊ — ATÔMICA
+    rotaId, navioId, diaSemana, hora
+    criadoPor, criadoEm, ativo
+```
+
+**A Viagem é atômica: uma saída = um documento.** Não é uma rota com uma agenda dentro; é o par
+`(navio, horário)` sobre uma rota. `diaSemana` e `hora` andam juntos porque juntos é que significam alguma
+coisa. A ocorrência concreta passa a ser **`(viagemId, data)`** — e `Passagem.viagemId` **deixa de mentir**:
+hoje ele aponta para uma entidade chamada Viagem que é um trecho, e a viagem concreta é reconstruída de data
+e hora **digitadas no formulário**.
+
+**As duas são capacidades da plataforma, sem dono, universalmente acessíveis.** Não pertencem à agência que
+as criou: quem cria assina (`criadoPor`, `criadoEm`) e o registro fica disponível para todos.
+
+**O que torna o compartilhamento sem dono seguro é a imutabilidade.** Não se exclui e não se reescreve: se a
+saída muda de horário, **desativa-se e cria-se outra**. É versionamento por substituição, e é o que impede
+uma agência de quebrar o que a outra vende. Passagem antiga apontando viagem desativada é o comportamento
+correto — mesma natureza do snapshot (ADR-0008).
+
+**A partida física ganha identidade — e isto resolve o conflito da capacidade.** Duas agências que vendem o
+mesmo navio na mesma saída não têm duas viagens: têm **a mesma**. A ocupação vira
+`count(passagens where viagemId = X and data = D)` — uma consulta simples, que atravessa empresas sem
+*collection group* —, e o faturamento continua por agência filtrando o mesmo conjunto. Ocupação (do navio) e
+faturamento (da agência) deixam de disputar a mesma entidade.
+
+**A tarifa saiu da Rota, e por consequência do próprio princípio:** tarifa é competência da **agência**, e
+uma entidade sem dono não tem de quem ter tarifa. *(O que acontece com ela está no §7.2.)* O faturamento do
+navio é competência do transporte — outro contexto, e é essa fronteira que impede a tarifa de subir para o
+navio.
+
+**Isto não ressuscita o Trecho.** O Trecho morreu por ser **derivável** — o par de cidades já vinha dos
+portos. A Rota carrega `distanciaMn` e `tempoMedioH`, fatos que nenhuma outra entidade tem. Uma entidade
+compartilhada se justifica quando não é derivável; essa é. *(Hoje os dois campos são de exibição; não por
+natureza: hora de chegada estimada é `hora + tempoMedioH`, e distância é a base de qualquer tarifa por
+milha.)*
+
+**A concessão continua valendo, e um passo adiante.** Ela deixa de recortar *o que a agência cria* e passa a
+recortar *o que ela pode vender*: uma viagem é ofertável se o navio está em `navioIds` e os dois portos da
+rota em `portoIds`. Mesmo mecanismo, aplicado na venda.
+
+**O custo do pool sem dono é a proliferação**, e a resposta é unicidade **no servidor**: par de portos na
+Rota, `(rotaId, navioId, diaSemana, hora)` na Viagem. Sem isso o pool compartilhado degrada em pool
+duplicado — e aí a ocupação volta a se fragmentar, que é o ganho principal se perdendo pela porta dos
+fundos.
+
+**A lista de negadas — e o estado vazio deixa de ser problema.** O §1 registrou como custo de matar o seed
+que "toda instalação nova exige alguém cadastrar tudo antes de emitir a primeira passagem". Com rota e
+viagem compartilhadas, **a agência nova encontra o universo montado no primeiro acesso** — o custo do seed
+some sem o seed voltar. O controle é do supervisor da agência, que mantém `rotasNegadas[]` e
+`viagensNegadas[]` na atuação: o que não interessa some da tela.
+
+> **Negada ≠ concessão, e não podem compartilhar mecanismo.** A concessão é *allow-list* e é **segurança** —
+> fail-closed, vale no servidor. A negada é *deny-list* e é **conforto** — fail-open, vale na tela. Tratar a
+> negada como autorização inverteria o default de um sistema que é fail-closed em todo o resto.
+>
+> **Visualização = pool − negadas; venda = concessão.** Filtrar a visualização pela concessão faria a agência
+> nova continuar vendo tela vazia, e o ganho se perderia.
+>
+> **Escala:** a deny-list funciona enquanto o pool é pequeno. Com centenas de viagens, negar uma a uma vira
+> trabalho, e o movimento natural é inverter para adoção explícita ("as minhas rotas"). O gatilho fica
+> registrado para não ser descoberto na primeira agência grande.
+
+### 7.2 A tarifa cadastrada fica dormente *(9ª rodada)*
+
+A tabela de tarifas do [ADR-0013](0013-tabela-de-tarifa-e-tipo-tarifario.md) **não é construída**: nem
+cadastro, nem célula, nem guarda de emissão. No lugar dela, o dado é o **valor informado** na emissão, e a
+base, o desconto e o resultado são **inferidos por agregação** de passagens por rota e viagem.
+
+**O que morre é a fonte da base, não a matemática.** As funções puras do ADR-0013 sobrevivem inteiras —
+`descontoDerivado(base, cobrado)` continua valendo; só que `base` deixa de vir de uma célula cadastrada e
+passa a vir da agregação. E há uma simetria no resultado: para a base inferida significar algo, o
+agrupamento tem de ser por **(viagem, acomodação)** e **(viagem, classe de veículo)** — exatamente os dois
+eixos da tabela. **A tabela não morre: deixa de ser cadastrada e passa a ser observada.**
+
+Três consequências:
+
+- **`ResultadoEmissao.SemTarifa` deixa de existir**, e isso fecha um círculo: o ADR-0017 D7 pôs "emissão
+  rejeitada" fora de escopo porque *"a rejeição real é passagem sem tarifa"*. Essa causa não existe mais —
+  a premissa não é só satisfeita, é dissolvida. Nada bloqueia a emissão por falta de cadastro.
+- **A meia-passagem perde a aritmética no momento da emissão.** `MEIA` vira **classificação**: o agente
+  informa o valor cobrado e marca a categoria. A conta migra inteira para a agregação — com um efeito
+  colateral bom, que a base deve ser inferida **só das INTEIRAS**, então as meias não poluem a inferência.
+- **Cold start:** a primeira passagem de uma viagem nova não tem base inferida; o balanço só mostra base
+  depois de N bilhetes. Aceitável para relatório, inaceitável para guarda bloqueante — mais um motivo para a
+  guarda morrer.
+
+`Passagem.tarifaBase` passa a nascer nulo, e o `PassagemDadosPassagemMapper` **já trata esse caso**
+(`if (entry.tarifaBase != null)`), então nada quebra hoje.
+
+---
+
+*O desenho abaixo é da 7ª rodada, quando a rota era da empresa e carregava a tarifa. Preservado como
+registro; onde conflitar com o §7.1, vale o §7.1.*
+
 **Rota — `empresas/{empresaId}/rotas/{rotaId}`, da empresa que agencia. É a viagem.**
 
 ```
@@ -544,15 +657,20 @@ começo, e eles não são rótulo decorativo: definem **o que a embarcação car
 | **Navio** | sim | sim (limitado) | não |
 | **Lancha** | sim | não | não |
 
-A regra é **pura**: `tipoEmbarcacao` → conjunto de classes de veículo admitidas. Ela governa duas telas, e nas
-duas o efeito é *não oferecer o impossível*:
+A regra é **pura**: `tipoEmbarcacao` → conjunto de classes de veículo admitidas, e o efeito é *não oferecer o
+impossível*.
 
-- **cadastro da rota:** a tabela de tarifa (ADR-0013, eixo acomodação × classe de veículo) só oferece as células
-  admissíveis — não se cadastra tarifa de carreta numa lancha;
-- **emissão:** o form não oferece veículo que a embarcação da rota não leva.
+> **Ajuste de 2026-08-01 — por onde a regra chega.** Escrita na 7ª rodada, esta seção supunha que *a rota
+> sabia o navio* e que existiria um **cadastro de tarifa** por célula. Nenhuma das duas coisas vale mais: o
+> navio é da **Viagem** (§7.1, ponto aberto 4) e a tarifa cadastrada morreu (§7.2 + ADR-0018 D11′). Logo a
+> regra tem **um** ponto de aplicação, e é o que sempre importou: **a emissão** — escolhida a viagem, sabe-se
+> o navio; sabido o navio, sabe-se o tipo; e o form não oferece o veículo que a embarcação não leva. O erro
+> continua morrendo na origem, só que pelo caminho certo.
 
-Isso mata na origem uma classe inteira de erro que hoje seria só validação tardia: com a rota sabendo o navio
-(§7) e o navio sabendo o tipo, o form nunca chega a montar uma passagem que a embarcação não pode cumprir.
+Vale registrar o encaixe com o [ADR-0018](0018-agregado-passagem-participantes-modo-e-lancamentos.md) **D8**
+(a capacidade é do navio e vira controle de estoque na emissão): os campos já previstos aqui —
+`capacidadeVeiculo`, `capacidadeSuite2`, `capacidadeSuite3`, `capacidadeCamarote` — são exatamente onde essa
+decisão pousa. Tipo de embarcação diz **o que** cabe; capacidade diz **quanto**.
 
 **A exceção ao §3, nomeada.** O §3 diz "quem tem regra vira tipo de domínio; quem é só rótulo vira linha de
 catálogo". O tipo de embarcação é **os dois** — vem do catálogo e tem comportamento. A resolução: o catálogo
@@ -643,9 +761,13 @@ As fases são ordenadas por **dependência**, e as duas primeiras não têm pré
   `empresaIds` derivado para consulta; `Cargo` passa a declarar sua atuação; a política ganha a atuação como
   coordenada; seleção de contexto quando houver mais de um vínculo; `EscopoAgencia` recorta por empresa (§6,
   §6.1). *É a fase que mais toca código existente — `PermissoesUsuario`, `ContextoUsuario` e o menu.*
-- **F7 — Rota.** `Viagem` → `Rota` em `empresas/{id}/rotas`, com `navioId`, os dois portos por id, a tabela de
-  tarifa do ADR-0013 e a agenda semanal; ocorrências calculadas (§7). A capacidade por tipo de embarcação (§8)
-  entra aqui, governando as células de tarifa e o form de emissão. As duas validações de coerência da rota também.
+- **F7 — Rota e Viagem** *(reescrita na 9ª rodada)*: `rotas/{id}` e `viagens/{id}` **na raiz**, compartilhadas,
+  imutáveis, com `criadoPor`/`criadoEm`/`ativo` e unicidade no servidor; a `Viagem` atômica
+  `(rota, navio, diaSemana, hora)`; a lista de negadas na atuação; a tarifa cadastrada **não entra** (§7.2). O
+  texto anterior desta fase, preservado: ~~`Viagem` → `Rota` em `empresas/{id}/rotas`, com `navioId`, os dois
+  portos por id, a tabela de tarifa do ADR-0013 e a agenda semanal; ocorrências calculadas (§7). A capacidade por
+  tipo de embarcação (§8) entra aqui, governando as células de tarifa e o form de emissão.~~ **As duas validações
+  de coerência da rota continuam nesta fase** (§7), agora sobre a viagem: concessão e sentido.
 - **F8 — Regras e suíte.** `firestore.rules` para as subcoleções, para o catálogo e para as capacidades da
   plataforma `localidades`/`portos` (escrita **só por papel de plataforma**), a **unicidade de `(uf, municipio)`**
   (§5), mais a regra da rota que confere a concessão (§7); reescrever a suíte de emulador. Esta fase acompanha F3–F7 incrementalmente, não fecha no fim —
@@ -687,7 +809,11 @@ As fases são ordenadas por **dependência**, e as duas primeiras não têm pré
   manifesta no que há **para selecionar**.
 - **O estado vazio passa a ser um estado de primeira classe do painel.** É o efeito direto de matar o seed (§1):
   quem abre o app pela primeira vez encontra vários seletores vazios, e cada um precisa dizer *o que cadastrar
-  antes* em vez de só mostrar uma lista sem itens.
+  antes* em vez de só mostrar uma lista sem itens. *A 9ª rodada tirou rota e viagem dessa lista — o pool
+  compartilhado já chega montado (§7.1); sobram catálogo, localidade, porto, empresa e funcionário.*
+- **O pool compartilhado troca "vazio" por "poluído"** (9ª rodada): a agência nova vê o universo montado, e o
+  preço é duplicata. A unicidade no servidor deixa de ser higiene e vira condição de funcionamento — sem ela a
+  ocupação por partida física volta a se fragmentar (§7.1).
 - **Remover um porto pode invalidar rotas já montadas** — e a *concessão* de quem o referencia. O MVP não remove,
   o que empurra o problema em vez de resolvê-lo. O mesmo vale para uma `Localidade` que portos já usam.
 - ~~**O Room fica um espelho declaradamente parcial.**~~ Superado: o ADR-0017 tirou o Room do caminho, e com ele
@@ -780,29 +906,39 @@ Revisitar quando:
    invalida retroativamente nada — a regra de escrita da rota (F8) barra as escritas seguintes, e as rotas já
    gravadas continuam legíveis até serem reconciliadas. Não há estado a inventar: nem `ativo` no array, nem
    versionamento de rota.
-3. **A agenda semanal fica na Rota** (§7) — assumi, porque a rota é a viagem e a agenda é o *quando*.
-4. **A Rota referencia o navio** (§7) — assumi, porque sem isso o §8 não sabe o tipo de embarcação para filtrar as
-   tarifas. Confirma que a embarcação é definida na rota, e não só na emissão?
+3. ~~**A agenda semanal fica na Rota**~~ — **RESOLVIDO (9ª rodada, confirmado pelo analista em 2026-08-01):**
+   a agenda **não** é da Rota. `diaSemana` e `hora` são da **Viagem** (§7.1), que é atômica no par
+   `(navio, horário)` sobre uma rota. A ocorrência concreta é `(viagemId, data)`.
+4. ~~**A Rota referencia o navio**~~ — **RESOLVIDO (9ª rodada, confirmado em 2026-08-01):** *"a embarcação não
+   é mais definida na rota, desde que a Viagem se tornou o vínculo com dados temporais entre a rota e a
+   embarcação"*. A Rota é só o **onde** (portos, distância, tempo médio); quem amarra rota × navio × horário
+   é a **Viagem** (§7.1). O §8 foi ajustado: o tipo de embarcação chega pela viagem escolhida, não pela rota.
 5. ~~**A Rota precisa de espelho no Room?**~~ **RESOLVIDO pelo ADR-0017 (7ª rodada): não, por construção** — não
    há Room a espelhar. O caminho offline da emissão passa a ser o cache do SDK (ADR-0017 D6).
-6. **`SUPERVISOR` monta a rota, `AGENTE` só emite** (§2) — assumi, porque a rota carrega a tarifa e preço é
-   decisão de quem responde pela operação. Junto: **a concessão é editável depois do cadastro** da atuação, ou só
-   na criação? Assumi editável.
+6. **`SUPERVISOR` monta a rota, `AGENTE` só emite** (§2) — **ainda aberto, e a justificativa original caiu.**
+   Eu tinha assumido isso *porque a rota carregava a tarifa*; com a tarifa dormente (§7.2) e depois **inferida**
+   (ADR-0018 D11′), a rota virou fato geográfico compartilhado, sem preço. Então a pergunta se reduz a: **criar
+   rota e viagem no pool comum é ato de supervisor, ou qualquer agente pode?** (criar afeta todas as agências —
+   §7.1). Junto, e independente: **a concessão é editável depois do cadastro da atuação, ou só na criação?**
+   Assumi editável.
 7. ~~**Cargo por pessoa ou por vínculo**~~ — **RESOLVIDO na 8ª rodada: por vínculo**, e o vínculo é o par
-   **(empresa, atuação)** (§6.1). Continua aberto **onde se escolhe o contexto** quando há mais de um vínculo —
-   login ou emissão. A escolha determina cargo, seções e recorte de uma vez só.
-8. **`GESTOR` cadastra tudo que o `ADM` cadastra**, ou há algo exclusivo do `ADM` no painel (criar empresa, por
-   exemplo)? Hoje `ehPapelPlataforma` trata os dois como um só. *Parcialmente respondido pelo ADR-0017 §7.1: o
-   CRUD do catálogo é **só do `ADM`** — é a primeira vez que os dois papéis se separam. Falta dizer se a regra
-   vale para o resto do painel.*
-9. *(7ª rodada)* **Quanto de rótulo viaja da `Rota` para o `Porto`?** Já está decidido para a `Localidade` (ela
-   embute `id` + `descricao` de cada `Catalogo`, §5) e para `Porto.localidade` (referência). Falta a rota: guarda
-   só `embarquePortoId`, ou guarda `{id, nome, municipio, uf}` para desenhar a linha sem uma segunda leitura?
-   Guardar rótulo é **cache de leitura**, não verdade — e renomear um porto deixa cópias velhas até serem
-   reescritas.
-10. *(7ª rodada)* **O DTO é um por entidade ou um por caso de uso?** (§9) Um por entidade é o que existe hoje —
-    a classe plana do Room vira o DTO; um por caso de uso evita carregar campo que a tela não usa, mas multiplica
-    as classes. Assumi **um por entidade**, especializando só quando doer.
+   **(empresa, atuação)** (§6.1). ~~E onde se escolhe o contexto?~~ **No login** — a escolha determina cargo,
+   seções e recorte de uma vez, então precisa estar feita antes de qualquer tela existir. Trocar de vínculo é
+   trocar de sessão de trabalho, não uma opção dentro da emissão.
+8. ~~**`GESTOR` cadastra tudo que o `ADM` cadastra?**~~ — **RESOLVIDO na 7ª rodada** ("só o catálogo é
+   `ADM`-only; localidade e porto são papel de plataforma"), e **reconfirmado pelo analista em 2026-08-01**:
+   *"o resto do painel é ADM/GESTOR; catálogo são rótulos de sistema, ADM only"*. A separação que o ADR-0017
+   §7.1 abriu **não se generaliza** — é do catálogo e só dele, pelo critério já registrado: quanto mais perto
+   o dado está da **semântica do código**, mais restrito é quem o escreve.
+9. ~~**Quanto de rótulo viaja da `Rota` para o `Porto`?**~~ — **RESOLVIDO em 2026-08-01: "desenhar a linha"**.
+   A Rota guarda `{id, nome, municipio, uf}` dos dois portos, e não só os ids: a lista de rotas e a escolha da
+   viagem precisam mostrar origem → destino **sem uma segunda leitura por item**. Fica assumido o que isso é —
+   **cache de leitura, não verdade**: renomear um porto deixa cópias velhas até serem reescritas, e o valor
+   canônico continua no `Porto`.
+10. **O DTO é um por entidade ou um por caso de uso?** (§9) — **encaminhado em 2026-08-01: vale estudo + ADR
+    próprio.** Não é decisão de domínio, é de camada, e tem alcance sobre todas as coleções — sai da lista
+    daqui em vez de ser resolvido por assunção. Enquanto o estudo não existir, vale o que existe hoje: **um por
+    entidade**.
 
 ## Decisões resolvidas na conversa (analista, 2026-07-28; 7ª rodada em 2026-07-31)
 
@@ -933,4 +1069,27 @@ Revisitar quando:
   atuação em vez de ser enumerada à mão, e é isso que faz a plataforma ser multi-segmento de verdade:
   acrescentar um segmento vira declarar atuação + cargos + seção, sem tocar o modelo de permissão.
 - **O contexto ativo é o vínculo:** escolher o vínculo determina de uma vez o cargo em vigor, as seções do menu e
-  o recorte das listagens (§6).
+  o recorte das listagens (§6). **A escolha é no login** — trocar de vínculo é trocar de sessão de trabalho, não
+  uma opção dentro da emissão.
+
+**9ª rodada — rota e viagem compartilhadas, tarifa dormente (2026-07-31)**
+
+- **Rota é o ONDE:** portos de origem e destino (cidades inferidas deles), `distanciaMn` e `tempoMedioH`
+  (estéticos hoje, base de cálculo depois). **Viagem é o QUANDO e EM QUÊ, e é atômica:** `(rota, navio,
+  diaSemana, hora)`, um documento por saída — dia e hora andam juntos porque juntos é que significam algo (§7.1).
+- **As duas são capacidades da plataforma, sem dono e universalmente acessíveis**, com `criadoPor`/`criadoEm`.
+  **Não se exclui: desativa-se ou cria-se outra** — imutabilidade é o que torna o compartilhamento sem dono
+  seguro, e é versionamento por substituição.
+- **A partida física ganha identidade única**, e com ela some o conflito entre ocupação (do navio) e faturamento
+  (da agência): duas agências no mesmo navio compartilham **a mesma viagem**, e a ocupação é
+  `count(passagens where viagemId = X and data = D)` sem collection group. A ocorrência concreta é
+  **`(viagemId, data)`**, e `Passagem.viagemId` deixa de apontar para um trecho.
+- **A tarifa cadastrada fica dormente** e o dado passa a ser o **valor informado**; base, desconto e resultado são
+  **inferidos por agregação** por rota e viagem. As funções puras do ADR-0013 sobrevivem — muda a **fonte** da
+  base. `SemTarifa` deixa de existir e `MEIA` vira classificação (§7.2).
+- **O pool sem dono troca "vazio" por "poluído":** a agência nova encontra o universo montado no primeiro acesso
+  (resolve o custo do §1 sem trazer o seed de volta), e o preço é duplicata — daí a **unicidade no servidor** ser
+  condição, não higiene.
+- **Lista de negadas por agência**, gerida pelo supervisor: `rotasNegadas[]`/`viagensNegadas[]` na atuação.
+  **Negada ≠ concessão** — deny-list de conforto (fail-open, na tela) contra allow-list de segurança
+  (fail-closed, no servidor). **Visualização = pool − negadas; venda = concessão** (§7.1).

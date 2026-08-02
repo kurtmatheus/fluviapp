@@ -1,7 +1,8 @@
 # ADR-0012: Ciclo de vida da passagem e confirmação de embarque por QR
 
-**Status:** Aceita (direção) — decisões de revisão fechadas (ver *Decisões resolvidas*); implementação por
-fase, nenhum código ainda. Claude rascunhou, analista revisou.
+**Status:** **Aceita e IMPLEMENTADA** — F1 a F5 feitas (o cabeçalho dizia "nenhum código ainda" e contradizia o
+próprio plano; corrigido em 2026-07-31). **Revisado contra o domínio revisado** na mesma data — ver a seção
+*Revisão contra o domínio* no fim: o que foi sanado, o que mudou e o que ficou em aberto.
 
 > Conversa com o [ADR-0010](0010-autorizacao-por-cargo.md) (política única por cargo, eixo de ação —
 > ganha um eixo novo aqui), o [ADR-0011](0011-regras-firestore-por-cargo.md) (a fronteira no servidor,
@@ -233,3 +234,71 @@ do drawer.
   Bluetooth) + declaração no manifesto.
 - Dependências novas: CameraX + ML Kit Barcode (o projeto hoje só **gera** QR via ZXing p/ impressão;
   não lê por câmera).
+
+---
+
+## Revisão contra o domínio revisado (2026-07-31)
+
+Confronto deste ADR com as 7ª, 8ª e 9ª rodadas do [ADR-0016](0016-dominio-da-plataforma.md), o
+[ADR-0017](0017-eixo-de-storage-firestore-only.md) e o [catálogo do domínio](../design/dominio-da-plataforma.md).
+
+### O que foi sanado
+
+- **`Passagem.viagemId` deixa de mentir.** Ele apontava para uma entidade chamada Viagem que era um trecho, e a
+  viagem concreta era reconstruída de **data e hora digitadas no formulário**. Com a `Viagem` atômica
+  (`rota + navio + diaSemana + hora`, ADR-0016 §7.1), ele aponta uma viagem de verdade e a ocorrência passa a ser
+  **`(viagemId, data)`** — selecionada, não digitada. É a maior correção que o domínio traz para este agregado.
+- **A agência congelada tem fonte definida.** `Passagem.agencia` vem do **vínculo ativo**, escolhido no login
+  (ADR-0016 §6.1). Antes vinha do funcionário, o que só era resposta única porque a pessoa tinha uma agência.
+- **A ocupação por partida física deixa de ser problema deste ADR.** Duas agências no mesmo navio compartilham a
+  **mesma** viagem, então a contagem é `count(passagens where viagemId = X and data = D)` (ADR-0016 §7.1).
+- **O `podeConfirmarEmbarque` = qualquer papel conhecido ganha justificativa de domínio.** Era uma decisão
+  pragmática ("quem está na doca valida"); agora tem base estrutural: **quem faz o check-in é a arrendatária**
+  (atuação `PORTUARIA_ARRENDAMENTO`, ADR-0016 §5), que é **outra empresa** e valida bilhetes de várias agências.
+  O embarque cross-empresa deixa de ser generosidade e passa a ser requisito.
+- **O `CHECADA` das *Alternativas futuras* ganha casa.** A evolução prevista aqui (`EMITIDA → CHECADA →
+  EMBARCADA`, reacendendo a impressão física do bilhete de embarque) mora na atuação portuária, que o ADR-0016
+  §5 deixou **dormente** exatamente para isso. Os dois documentos apontam para o mesmo lugar.
+
+### O que mudou e precisa de correção
+
+- **O catálogo deixa de ser fonte das opções de filtro de status.** A Decisão 1 diz que
+  `Constante(STATUS_PASSAGEM)` "fica só como fonte das **opções de filtro** na Pesquisa". A 7ª rodada do ADR-0016
+  **removeu `STATUS_PASSAGEM`** do enum fechado `Categoria` — junto com `CATEGORIA_PASSAGEM` —, porque viraram
+  tipos de domínio. As opções passam a vir de **`StatusPassagem.entries`**, o que é melhor: uma fonte só, sem o
+  risco de o catálogo e a FSM divergirem. *A meia-decisão que restava do vocabulário duplicado cai por completo.*
+
+### O que ficou em aberto — dúvidas atuais
+
+1. **A leitura do embarque é *cache-first*, e o nome do método esconde isso.**
+   `PassagemFirestoreRepository.obterDoServidorPorId` (`:235`) faz `document(id).get()` sem `Source.SERVER` —
+   e `get()` no Firestore é cache-first. O ADR promete "o scanner **lê o doc ao vivo**" (Decisão 3), e isso não
+   se cumpre. **Piora com o ADR-0017**, que promove o cache do SDK a camada offline oficial.
+
+   O efeito exato, conferido contra `firestore.rules`: se o cache disser `EMITIDA` e o servidor já estiver
+   `EMBARCADA`, o cliente não mostra `JaEmbarcada` e tenta gravar. Aí `ehConfirmacaoEmbarque()` é **falso**
+   (exige `statusAtual() == 'EMITIDA'`), então a escrita cai no ramo `podeEditarQualquerPassagem() ||
+   ehDonoPassagem()` — e como `transicaoStatusLegal()` aceita **status inalterado**, ela é **aceita para o dono
+   ou para o supervisor**, sobrescrevendo `embarcadaPor`/`embarcadaEm` do embarque original. Para um operador
+   comum, é negada (vira erro genérico em vez de "bilhete já utilizado").
+   Ou seja: **a idempotência antifraude é só do cliente, e depende de uma leitura que não é garantida**. A
+   correção é uma palavra — `get(Source.SERVER)` —, e a pergunta de verdade é se o embarque deve **falhar sem
+   rede** em vez de aceitar cache. *Inclinação: sim, falhar — é o que a Decisão 3 já queria dizer.*
+
+2. **Delete físico da passagem contra o resto do domínio — e agora com um custo novo.** A Decisão diz "cancelar
+   continua sendo delete físico". Todo o resto do domínio adotou **desativar em vez de remover** (catálogo,
+   localidade, porto) e **imutabilidade** (rota, viagem). Mas o argumento decisivo é outro: com a 9ª rodada, a
+   base tarifária, o desconto e o resultado passam a ser **inferidos por agregação sobre as passagens**
+   (ADR-0016 §7.2). **Apagar um bilhete deixou de ser apagar um registro e passou a alterar o histórico
+   financeiro retroativamente** — algo que era tolerável quando a tarifa era declarada e não é mais.
+   `CANCELADA` sai de "refino futuro" e vira pergunta de agora.
+
+3. **O carimbo do embarque registra o `uid`; deve registrar também a empresa do validador?** Com o vínculo
+   (empresa, atuação), o validador tem contexto além da identidade. *Inclinação: não* — o embarque é ação de
+   doca e a auditoria relevante é de **acesso**, não de venda; é o que o comentário da regra já diz. Mas com o
+   check-in feito por uma arrendatária, saber *qual empresa* validou passa a ter significado operacional.
+
+4. **`Passagem.navioId` e `codigoViagem` mudam de fonte.** Hoje são snapshot congelado da Viagem-trecho. Com a
+   Viagem atômica, `navioId` é derivável dela — o snapshot continua certo (o bilhete é fato histórico), mas
+   `codigoViagem` (`ORI-DES-NAVI`, derivado na escrita) precisa de uma definição nova: deriva da rota + navio,
+   ou some do bilhete?
