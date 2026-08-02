@@ -4,6 +4,13 @@
 *Decisões resolvidas*; o desenho vigente dos dois contextos está no **§8**; o regime de schema, no **§9**,
 hoje superado pelo [ADR-0017](0017-eixo-de-storage-firestore-only.md)).
 
+> **O Pilar 2 do MVP não está fechado** *(verificado em 2026-08-02)*. As fatias P2.0–P2.6 foram entregues,
+> mas sobrou **folga anotada neste próprio ADR** — a agência continua **String livre** com um enum fixo ao
+> lado (`Agencia.kt:10-14`: *"vira coleção cadastrável quando houver cadastro de agência… fechar essa folga
+> é trabalho do P2.2b"*) — e o ADR-0016 reabriu o modelo (abaixo). O inventário do que falta está no
+> [roadmap](../design/mvp-roadmap.md#pilar-2--rework-de-agente--equipe-adr-0015); ele entra nas frentes
+> E2/E3, quando empresa, atuação e agência passarem a existir como cadastro.
+
 > **Vigente em parte — o cargo mudou de dono.** Aqui o cargo é **da pessoa** (`Funcionario.cargo`); o
 > [ADR-0016](0016-dominio-da-plataforma.md) (8ª rodada) o tornou **por vínculo**, e o vínculo é o par
 > `(empresa, atuação)`: `Funcionario.vinculos: [{empresaId, atuacao, cargo}]`. A mesma pessoa pode ser

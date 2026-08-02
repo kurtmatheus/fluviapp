@@ -4,10 +4,14 @@
 deixou de ser "o Pilar 3" e virou **três frentes de tela**, decididas pelo analista, com um princípio único:
 **mínimo para entrega, reaproveitando o que existe; o que não servir, descarta-se e revitaliza-se.**
 
-O MVP teve **três pilares**, e os dois primeiros estão fechados:
+O MVP teve **três pilares**:
 
 1. ✅ **Contagem de Passagem** — melhorias no balanço, sem faturamento.
-2. ✅ **Rework de Agente → Equipe** — identidade, agência e cargo ([ADR-0015](../adr/0015-rework-agente-equipe.md)).
+2. ⚠️ **Rework de Agente → Equipe** — as fatias do
+   [ADR-0015](../adr/0015-rework-agente-equipe.md) foram entregues, mas **o pilar não está completo**: o
+   ADR-0016 (8ª rodada) reabriu o modelo de identidade e há folga anotada no próprio código. O que falta
+   está listado no [§ Pilar 2](#pilar-2--rework-de-agente--equipe-adr-0015) e **entra dentro das frentes
+   E2/E3**, não como frente própria.
 3. **Plataforma** — o painel que substitui o seed como porta de entrada do dado, e a distribuição. **É o que
    este roadmap agora detalha**, na forma que o analista definiu: três frentes de tela (E1, E2, E3), com o
    domínio já fechado por baixo.
@@ -82,7 +86,30 @@ agência nova **encontra montado** no primeiro acesso. Em troca, todo dado tem a
 
 O maior pilar. É a rework de identidade/multi-agência que o §6 do estudo do form já apontava.
 
-> **✅ COMPLETO** (2026-07-27). O [ADR-0015](../adr/0015-rework-agente-equipe.md) é a fonte: ele passou por
+> ### ⚠️ NÃO está completo *(revisto em 2026-08-02)*
+>
+> As fatias P2.0–P2.6 do ADR-0015 foram entregues, mas **o pilar não fechou** — parte por folga que o
+> próprio ADR-0015 deixou anotada, parte porque o **ADR-0016 (8ª rodada) reabriu o modelo de identidade**.
+> O que falta, verificado no código em `2026-08-02`:
+>
+> | Pendência | Estado no código | Origem |
+> |---|---|---|
+> | **Cargo por vínculo `(empresa, atuação)`** | não existe: `Funcionario.cargo` é **um** `String`; não há `vinculos[]` nem `Atuacao` no projeto | ADR-0016, 8ª rodada — **supera** o ADR-0015 |
+> | **Agência por id** | `Agencia` ainda é **enum fixo** (`AUTONOMO`, `MATRIZ`) e `Funcionario.agencia` é **String livre** — o comentário em `Agencia.kt:10-14` admite: *"vira coleção cadastrável quando houver cadastro de agência… fechar essa folga é trabalho do P2.2b"* | folga do próprio ADR-0015 |
+> | **Agência do bilhete por id** | `Passagem.agencia` continua sendo só o nome congelado | ADR-0018 D13 |
+> | **Lotação** | `Funcionario.Lotacao` é enum de três valores fixos | ADR-0016 §5 (localidade é entidade) |
+> | **Escolha do vínculo no login** | não existe — a splash resolve só `currentUser != null` | ADR-0016, 8ª rodada |
+> | **`Funcionario` importa `FuncionarioDocumento`** | vazamento domínio → DTO dentro da entidade | ADR-0019 D2 |
+>
+> **Não é retrabalho: é a segunda metade.** O ADR-0015 fixou *quem é a pessoa na operação*; o ADR-0016 disse
+> *em que empresa e em que atuação* ela é isso. Essas pendências não têm frente própria — elas entram
+> **dentro das frentes E2/E3 e da P3.A**, que é onde empresa, atuação e agência passam a existir como
+> cadastro. Fazê-las antes seria construir vínculo sem ter a que vincular.
+>
+> Segue valendo como decisão, não como pendência: **as strings visíveis não foram renomeadas** — na tela o
+> coletivo é "Equipe" e o indivíduo é "Agente" (`btn_novo_agente`).
+>
+> O [ADR-0015](../adr/0015-rework-agente-equipe.md) é a fonte: ele passou por
 > uma **revisão estrutural** (dois contextos, sistema × negócio) que reescreveu boa parte do plano — o
 > `Agente` não morreu, virou `Funcionario`; nasceram `Usuario.papel` × `Funcionario.cargo`, o elo
 > `funcionarioId` e o regime de schema como DDL (§9). O resumo abaixo é o **plano original**, mantido como
@@ -239,7 +266,7 @@ do ADR-0016** — foi assim que este eixo **destravou** o domínio da plataforma
 deixaram de existir. Depois: F2 resíduo local (rascunho → DataStore, bilhete → galeria), F3 cadastros, F4
 viagem, F5 passagem, F6 remover o Room.
 
-### Eixo do agregado — [ADR-0018](0018-agregado-passagem-participantes-modo-e-lancamentos.md) (F1–F7)
+### Eixo do agregado — [ADR-0018](../adr/0018-agregado-passagem-participantes-modo-e-lancamentos.md) (F1–F7)
 
 A Passagem reescrita: participantes com identidade (pools `Cliente` e `Veiculo`), **modo** tipado, capacidade
 vinda do navio, numeração por ocorrência, pagamento como **lançamentos**, cancelamento como **estado**.
@@ -254,7 +281,7 @@ novas (F2/F3) não têm esse problema: nascem já no regime Firestore-only.
 
 ```
 Pilar 1 ✅ (P1.1 → P1.2 → P1.3 → P1.4)
-Pilar 2 ✅ (ADR-0015: P2.0 → P2.1 → P2.2a′ → P2.2b → P2.2c → P2.3 → P2.4 → P2.6)
+Pilar 2 ⚠️ (ADR-0015 entregue; o que falta — vínculo, agência por id, lotação — entra em E2/E3+P3.A)
 
 ENTREGA   E1 entrada  (Activity → splash → login → painel)
           E2 painel   (MainScreen vira PainelPrincipal; menu deriva da atuação)
@@ -282,9 +309,11 @@ A distribuição fica por último: não faz sentido distribuir antes de haver pa
 **Pilar 1:** nada aberto. A pergunta das tarifas foi respondida pelo [ADR-0016](../adr/0016-dominio-da-plataforma.md)
 (seed morre; tarifa entra no cadastro da rota).
 
-**Pilar 2:** nada aberto — todas as perguntas que estavam aqui (lotação, override de agência, capability,
-logo por agência, isolamento, destino do `Agente`, recorte da contagem) foram respondidas pelo analista e
-estão registradas no [ADR-0015](../adr/0015-rework-agente-equipe.md) (*Decisões resolvidas*, 1ª e 2ª rodada).
+**Pilar 2:** nenhuma **pergunta** aberta — as que estavam aqui (lotação, override de agência, capability,
+logo por agência, isolamento, destino do `Agente`, recorte da contagem) foram respondidas no
+[ADR-0015](../adr/0015-rework-agente-equipe.md). O que resta é **implementação**, não decisão: o vínculo
+`(empresa, atuação)`, a agência por id e a lotação como localidade — tudo já decidido no ADR-0016 e listado
+no §Pilar 2.
 
 **Pilar 3 — esteira (P3.B):**
 - Provedor de CI (GitHub Actions?) e onde ficam os secrets (keystore, service account)? **Não há remoto git
