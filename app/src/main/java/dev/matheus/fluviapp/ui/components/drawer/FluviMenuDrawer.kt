@@ -35,7 +35,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import dev.matheus.fluviapp.R
-import dev.matheus.fluviapp.domain.screendata.DadosBotoesMenus
+import dev.matheus.fluviapp.domain.screendata.AcaoMenu
 import dev.matheus.fluviapp.domain.screendata.SecaoMenu
 import dev.matheus.fluviapp.ui.components.texts.TextTitleBrownItalic
 
@@ -52,10 +52,10 @@ import dev.matheus.fluviapp.ui.components.texts.TextTitleBrownItalic
 fun FluviMenuDrawer(
     userName: String,
     secoes: List<SecaoMenu>,
-    acoesPorSecao: Map<SecaoMenu, List<DadosBotoesMenus>>,
+    acoesPorSecao: Map<SecaoMenu, List<AcaoMenu>>,
     isDarkTheme: Boolean,
     onInicio: () -> Unit,
-    onNavegar: (DadosBotoesMenus) -> Unit,
+    onNavegar: (AcaoMenu) -> Unit,
     onToggleTheme: () -> Unit,
     onDeslogar: () -> Unit,
     modifier: Modifier = Modifier,
@@ -124,11 +124,11 @@ fun FluviMenuDrawer(
                                 icon = {
                                     Icon(
                                         modifier = Modifier.size(24.dp),
-                                        painter = painterResource(id = acao.icon),
+                                        painter = painterResource(id = acao.icone),
                                         contentDescription = null,
                                     )
                                 },
-                                label = { Text(stringResource(acao.title)) },
+                                label = { Text(stringResource(acao.titulo)) },
                                 selected = false,
                                 onClick = { onNavegar(acao) },
                             )

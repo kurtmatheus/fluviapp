@@ -3,6 +3,7 @@ package dev.matheus.fluviapp.domain.operacoes
 import dev.matheus.fluviapp.domain.operacoes.Funcionario.Cargo
 import dev.matheus.fluviapp.domain.operacoes.Usuario.Papel
 import dev.matheus.fluviapp.domain.screendata.SecaoMenu
+import dev.matheus.fluviapp.domain.screendata.secoesDa
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -111,6 +112,61 @@ class PermissoesUsuarioTest {
         )
         assertFalse(PermissoesUsuario.podeAcessar(SecaoMenu.VIAGEM, operador, supervisor))
         assertFalse(PermissoesUsuario.podeAcessar(SecaoMenu.NAVIO, operador, supervisor))
+    }
+
+    // --- Família da atuação × permissão (ADR-0016 §2, ADR-0020 F3) ---
+
+    @Test
+    fun `sem atuacao, o comportamento e o de antes — a familia nao filtra nada`() {
+        // O caminho de compatibilidade: o vínculo só existe a partir da F4. Enquanto não existir,
+        // esta fatia não pode mudar uma linha do que aparece em tela.
+        assertEquals(SecaoMenu.entries, PermissoesUsuario.secoesVisiveis(adm, atuacao = null))
+        assertEquals(
+            listOf(SecaoMenu.PASSAGEM),
+            PermissoesUsuario.secoesVisiveis(operador, agente, atuacao = null),
+        )
+    }
+
+    @Test
+    fun `com atuacao, o papel de plataforma ve o painel — nao a operacao`() {
+        val visiveis = PermissoesUsuario.secoesVisiveis(adm, atuacao = Atuacao.AGENCIAMENTO)
+
+        assertEquals(
+            listOf(SecaoMenu.VIAGEM, SecaoMenu.EQUIPE, SecaoMenu.EMPRESA, SecaoMenu.NAVIO),
+            visiveis,
+        )
+        // ADM administra a plataforma; emitir passagem exige vínculo de funcionário (ADR-0016 §2).
+        assertFalse(SecaoMenu.PASSAGEM in visiveis)
+    }
+
+    @Test
+    fun `com atuacao, o agente do agenciamento ve so a passagem`() {
+        assertEquals(
+            listOf(SecaoMenu.PASSAGEM),
+            PermissoesUsuario.secoesVisiveis(operador, agente, Atuacao.AGENCIAMENTO),
+        )
+    }
+
+    @Test
+    fun `a familia nao concede o que a permissao nega`() {
+        // Equipe está na família do agenciamento, mas o AGENTE não pode cadastrar membro (§2.1):
+        // pertencer à família não basta.
+        assertTrue(SecaoMenu.EQUIPE in secoesDa(Atuacao.AGENCIAMENTO))
+        assertFalse(
+            SecaoMenu.EQUIPE in PermissoesUsuario.secoesVisiveis(operador, agente, Atuacao.AGENCIAMENTO),
+        )
+        assertTrue(
+            SecaoMenu.EQUIPE in
+                PermissoesUsuario.secoesVisiveis(operador, supervisor, Atuacao.AGENCIAMENTO),
+        )
+    }
+
+    @Test
+    fun `atuacao dormente nao mostra secao nenhuma`() {
+        assertEquals(
+            emptyList<SecaoMenu>(),
+            PermissoesUsuario.secoesVisiveis(operador, supervisor, Atuacao.PORTUARIA_OPERACAO),
+        )
     }
 
     // --- Eixo ação sobre a Equipe (§2.1/§2.2/§8.5) ---

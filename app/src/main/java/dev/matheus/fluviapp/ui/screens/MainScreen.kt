@@ -22,7 +22,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import dev.matheus.fluviapp.R
-import dev.matheus.fluviapp.domain.screendata.DadosBotoesMenus
+import dev.matheus.fluviapp.domain.screendata.AcaoMenu
 import dev.matheus.fluviapp.domain.screendata.SecaoMenu
 import dev.matheus.fluviapp.sampledata.listaDadosDadosViagemHomeSampleCards
 import dev.matheus.fluviapp.ui.components.contents.HomeContent
@@ -33,7 +33,8 @@ import dev.matheus.fluviapp.ui.states.MainScreenUiState
 @Composable
 fun MainScreen(
     state: MainScreenUiState,
-    acoesPorSecao: Map<SecaoMenu, List<DadosBotoesMenus>> = emptyMap(),
+    acoesPorSecao: Map<SecaoMenu, List<AcaoMenu>> = emptyMap(),
+    onAcaoMenu: (AcaoMenu) -> Unit = {},
     onClickInicio: () -> Unit = {},
     onClickEmbarque: () -> Unit = {},
     onClickDeslogar: () -> Unit = {},
@@ -65,7 +66,7 @@ fun MainScreen(
                 acoesPorSecao = acoesPorSecao,
                 isDarkTheme = isDarkTheme,
                 onInicio = { onClickInicio(); fechar() },
-                onNavegar = { acao -> acao.onClick(); fechar() },
+                onNavegar = { acao -> onAcaoMenu(acao); fechar() },
                 onToggleTheme = onToggleTheme,
                 onDeslogar = onClickDeslogar,
             )

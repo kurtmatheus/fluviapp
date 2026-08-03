@@ -5,6 +5,8 @@ import dev.matheus.fluviapp.domain.operacoes.Usuario.Papel
 import dev.matheus.fluviapp.domain.operacoes.Usuario.Papel.ADM
 import dev.matheus.fluviapp.domain.operacoes.Usuario.Papel.GESTOR
 import dev.matheus.fluviapp.domain.screendata.SecaoMenu
+import dev.matheus.fluviapp.domain.screendata.secoesDa
+import dev.matheus.fluviapp.domain.screendata.secoesDoPainel
 
 /**
  * Política **única** de autorização — fonte de verdade das permissões (ADR-0010, ADR-0015 §8.2).
@@ -46,8 +48,32 @@ object PermissoesUsuario {
         SecaoMenu.VIAGEM, SecaoMenu.EMPRESA, SecaoMenu.NAVIO -> ehPapelPlataforma(papel)
     }
 
-    fun secoesVisiveis(papel: String?, cargo: String? = null): List<SecaoMenu> =
-        SecaoMenu.entries.filter { podeAcessar(it, papel, cargo) }
+    /**
+     * As seções que este usuário vê, na ordem de [SecaoMenu].
+     *
+     * Dois eixos se compõem aqui, e a ordem importa: a **família** decide *quais seções existem naquele
+     * contexto* (painel da plataforma × a atuação em que a pessoa trabalha — ADR-0016 §2), e a
+     * **permissão** decide *quais delas ela pode abrir* ([podeAcessar]). Família sem permissão não
+     * aparece; permissão sem família também não.
+     *
+     * [atuacao] **nula é o caminho de compatibilidade**, e é por ele que o app anda hoje: o vínculo
+     * `(empresa, atuação)` do logado só passa a existir na F4 do ADR-0020 (contexto e splash). Sem ele,
+     * cai-se no comportamento anterior — todas as seções, filtradas pela permissão —, de modo que esta
+     * fatia **não muda nada em tela**. Quando a F4 passar a atuação, a família entra em vigor sem que esta
+     * função mude.
+     */
+    fun secoesVisiveis(
+        papel: String?,
+        cargo: String? = null,
+        atuacao: Atuacao? = null,
+    ): List<SecaoMenu> {
+        val familia = when {
+            atuacao == null -> SecaoMenu.entries.toSet()
+            ehPapelPlataforma(papel) -> secoesDoPainel()
+            else -> secoesDa(atuacao)
+        }
+        return SecaoMenu.entries.filter { it in familia && podeAcessar(it, papel, cargo) }
+    }
 
     // --- Eixo ação sobre a Equipe (ADR-0015 §2.1/§2.2/§8.5) ---
 

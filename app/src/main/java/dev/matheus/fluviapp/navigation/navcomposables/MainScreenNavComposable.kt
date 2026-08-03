@@ -12,7 +12,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import dev.matheus.fluviapp.R
-import dev.matheus.fluviapp.domain.screendata.DadosBotoesMenus
+import dev.matheus.fluviapp.domain.screendata.AcaoMenu
+import dev.matheus.fluviapp.domain.screendata.acoesPorSecao
 import dev.matheus.fluviapp.domain.screendata.SecaoMenu
 import dev.matheus.fluviapp.navigation.destinations.FluviAppNavComposableDestinations
 import dev.matheus.fluviapp.ui.components.RequestMultiplePermissions
@@ -62,37 +63,27 @@ fun NavGraphBuilder.mainScreenNavComposable(
             )
         )
 
-        // Ações (cadastrar/pesquisar) de cada seção do menu — liga os cards às rotas.
-        fun acoesDe(secao: SecaoMenu): List<DadosBotoesMenus> = when (secao) {
-            SecaoMenu.PASSAGEM -> listOf(
-                DadosBotoesMenus(R.string.btn_pesquisar_passagens, R.drawable.ic_lupa_75, onNavegaParaFormularioPesquisaPassagem),
-                DadosBotoesMenus(R.string.btn_contagem_passagem, R.drawable.ic_relatorio_75, onNavegaParaContagemPassagem),
-            )
-
-            SecaoMenu.VIAGEM -> listOf(
-                DadosBotoesMenus(R.string.btn_nova_viagem, R.drawable.ic_add_75, onNavegaParaFormularioNovaViagem),
-                DadosBotoesMenus(R.string.btn_pesquisar_viagens, R.drawable.ic_lupa_75, onNavegaParaFormularioPesquisaViagem),
-            )
-
-            SecaoMenu.EQUIPE -> listOf(
-                DadosBotoesMenus(R.string.btn_novo_agente, R.drawable.ic_add_75, onNavegaParaFormularioNovoFuncionario),
-                DadosBotoesMenus(R.string.btn_pesquisar_agente, R.drawable.ic_lupa_75, onNavegaParaFormularioPesquisaFuncionario),
-            )
-
-            SecaoMenu.EMPRESA -> listOf(
-                DadosBotoesMenus(R.string.btn_nova_empresa, R.drawable.ic_add_75, onNavegaParaFormularioNovaEmpresa),
-                DadosBotoesMenus(R.string.btn_pesquisar_empresa, R.drawable.ic_lupa_75, onNavegaParaFormularioPesquisaEmpresa),
-            )
-
-            SecaoMenu.NAVIO -> listOf(
-                DadosBotoesMenus(R.string.btn_novo_navio, R.drawable.ic_add_75, onNavegaParaFormularioNovoNavio),
-                DadosBotoesMenus(R.string.btn_pesquisar_navio, R.drawable.ic_lupa_75, onNavegaParaFormularioPesquisaNavio),
-            )
+        // O que sobrou aqui é NAVEGAÇÃO: para onde cada ação vai. Quais ações cada seção oferece é
+        // domínio, e mora em `AcaoMenu` (ADR-0020 F3) — antes as duas coisas viviam juntas no
+        // `acoesDe(secao)`, o que tornava a estrutura do menu impossível de testar sem um NavGraphBuilder.
+        // O `when` é exaustivo sobre o enum: ação nova sem destino não compila.
+        fun navegar(acao: AcaoMenu) = when (acao) {
+            AcaoMenu.PASSAGEM_PESQUISAR -> onNavegaParaFormularioPesquisaPassagem()
+            AcaoMenu.PASSAGEM_CONTAGEM -> onNavegaParaContagemPassagem()
+            AcaoMenu.VIAGEM_NOVA -> onNavegaParaFormularioNovaViagem()
+            AcaoMenu.VIAGEM_PESQUISAR -> onNavegaParaFormularioPesquisaViagem()
+            AcaoMenu.EQUIPE_NOVO -> onNavegaParaFormularioNovoFuncionario()
+            AcaoMenu.EQUIPE_PESQUISAR -> onNavegaParaFormularioPesquisaFuncionario()
+            AcaoMenu.EMPRESA_NOVA -> onNavegaParaFormularioNovaEmpresa()
+            AcaoMenu.EMPRESA_PESQUISAR -> onNavegaParaFormularioPesquisaEmpresa()
+            AcaoMenu.NAVIO_NOVO -> onNavegaParaFormularioNovoNavio()
+            AcaoMenu.NAVIO_PESQUISAR -> onNavegaParaFormularioPesquisaNavio()
         }
 
         MainScreen(
             state = state,
-            acoesPorSecao = state.secoesVisiveis.associateWith(::acoesDe),
+            acoesPorSecao = acoesPorSecao(state.secoesVisiveis),
+            onAcaoMenu = ::navegar,
             onClickInicio = { viewModel.irParaHome() },
             onClickEmbarque = onNavegaParaEmbarque,
             onClickDeslogar = {

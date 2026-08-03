@@ -22,7 +22,6 @@ import dev.matheus.fluviapp.domain.operacoes.Funcionario.Lotacao.PORTO_NORTE
 import dev.matheus.fluviapp.domain.operacoes.Funcionario.Lotacao.PORTO_SUL
 import dev.matheus.fluviapp.domain.operacoes.Usuario
 import dev.matheus.fluviapp.domain.screendata.DadosContagemPassagem
-import dev.matheus.fluviapp.domain.screendata.DadosBotoesMenus
 import dev.matheus.fluviapp.domain.screendata.DadosImpressora
 import dev.matheus.fluviapp.domain.screendata.DadosPassagem
 import dev.matheus.fluviapp.domain.screendata.DadosViagemCard
@@ -68,39 +67,6 @@ val listaDadosDadosViagemHomeSampleCards = listOf(
         capacidadeSuites2Pessoas = "8",
         capacidadeSuites3Pessoas = "1",
         capacidadeCamarotes = "4"
-    )
-)
-
-val listaBotoesMenuPassagensSample = listOf(
-    DadosBotoesMenus(
-        title = R.string.btn_pesquisar_passagens,
-        icon = R.drawable.ic_lupa_75
-    ),
-    DadosBotoesMenus(
-        title = R.string.btn_contagem_passagem,
-        icon = R.drawable.ic_relatorio_75
-    )
-)
-
-val listaBotoesMenuViagensSample = listOf(
-    DadosBotoesMenus(
-        title = R.string.btn_nova_viagem,
-        icon = R.drawable.ic_add_75
-    ),
-    DadosBotoesMenus(
-        title = R.string.btn_pesquisar_viagens,
-        icon = R.drawable.ic_lupa_75
-    )
-)
-
-val listaBotoesMenuEquipeSample = listOf(
-    DadosBotoesMenus(
-        title = R.string.btn_novo_agente,
-        icon = R.drawable.ic_add_75
-    ),
-    DadosBotoesMenus(
-        title = R.string.btn_pesquisar_agente,
-        icon = R.drawable.ic_lupa_75
     )
 )
 
