@@ -1,7 +1,7 @@
 package dev.matheus.fluviapp.services.repository.firebase.documents
 
-import dev.matheus.fluviapp.model.operacoes.Funcionario
-import dev.matheus.fluviapp.model.operacoes.Usuario
+import dev.matheus.fluviapp.domain.operacoes.Funcionario
+import dev.matheus.fluviapp.domain.operacoes.Usuario
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue

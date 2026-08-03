@@ -2,8 +2,8 @@ package dev.matheus.fluviapp.services.repository.cadastro.viagem
 
 import android.util.Log
 import dev.matheus.fluviapp.database.dao.cadastro.viagem.NavioDao
-import dev.matheus.fluviapp.model.viagem.Navio
-import dev.matheus.fluviapp.model.viagem.toDocumento
+import dev.matheus.fluviapp.domain.viagem.Navio
+import dev.matheus.fluviapp.domain.viagem.toDocumento
 import dev.matheus.fluviapp.services.repository.firebase.FonteSnapshots
 import dev.matheus.fluviapp.services.repository.firebase.documents.toNavio
 import dev.matheus.fluviapp.services.repository.firebase.documents.toNavioDocumento

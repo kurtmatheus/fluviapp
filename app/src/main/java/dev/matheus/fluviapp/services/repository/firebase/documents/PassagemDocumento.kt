@@ -1,6 +1,6 @@
 package dev.matheus.fluviapp.services.repository.firebase.documents
 
-import dev.matheus.fluviapp.model.passagem.Passagem
+import dev.matheus.fluviapp.domain.passagem.Passagem
 
 data class PassagemDocumento(
     val numero: String = "",

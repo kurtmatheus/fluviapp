@@ -4,8 +4,8 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.matheus.fluviapp.extensions.filtrarPor
-import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Categoria.MUNICIPIO
-import dev.matheus.fluviapp.model.mappers.ViagemDadosViagemMapper
+import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Categoria.MUNICIPIO
+import dev.matheus.fluviapp.domain.mappers.ViagemDadosViagemMapper
 import dev.matheus.fluviapp.services.repository.cadastro.ConstanteRepository
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.EmpresaRepository
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.NavioRepository

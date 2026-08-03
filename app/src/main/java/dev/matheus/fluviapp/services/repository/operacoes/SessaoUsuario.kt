@@ -1,6 +1,6 @@
 package dev.matheus.fluviapp.services.repository.operacoes
 
-import dev.matheus.fluviapp.model.operacoes.ContextoUsuario
+import dev.matheus.fluviapp.domain.operacoes.ContextoUsuario
 import javax.inject.Inject
 import javax.inject.Singleton
 

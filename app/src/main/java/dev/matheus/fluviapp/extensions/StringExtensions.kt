@@ -1,10 +1,10 @@
 package dev.matheus.fluviapp.extensions
 
-import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.CNH
-import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.CNPJ
-import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.CPF
-import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.PASSAPORTE
-import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.RG
+import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.CNH
+import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.CNPJ
+import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.CPF
+import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.PASSAPORTE
+import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.RG
 
 fun String.formatarCampoCPF(): String {
     val aux = length.dec()

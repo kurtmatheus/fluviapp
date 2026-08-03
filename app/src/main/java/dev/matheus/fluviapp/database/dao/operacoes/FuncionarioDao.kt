@@ -4,7 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import dev.matheus.fluviapp.model.operacoes.Funcionario
+import dev.matheus.fluviapp.domain.operacoes.Funcionario
 import kotlinx.coroutines.flow.Flow
 
 @Dao

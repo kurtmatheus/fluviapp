@@ -2,7 +2,7 @@ package dev.matheus.fluviapp.extensions
 
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.VisualTransformation
-import dev.matheus.fluviapp.model.cadastro.constantes.Constante
+import dev.matheus.fluviapp.domain.cadastro.constantes.Constante
 import dev.matheus.fluviapp.util.visualtransformation.CnpjVisualTransformation
 import dev.matheus.fluviapp.util.visualtransformation.CpfVisualTransformation
 import dev.matheus.fluviapp.util.visualtransformation.PassaporteVisualTransformation

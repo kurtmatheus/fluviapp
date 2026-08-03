@@ -1,7 +1,7 @@
 package dev.matheus.fluviapp.ui.states
 
 import dev.matheus.fluviapp.R
-import dev.matheus.fluviapp.model.viagem.Empresa
+import dev.matheus.fluviapp.domain.viagem.Empresa
 
 /**
  * Estado do formulário de navio — puro (só dados + flags). Sem lambdas embutidas: os eventos são

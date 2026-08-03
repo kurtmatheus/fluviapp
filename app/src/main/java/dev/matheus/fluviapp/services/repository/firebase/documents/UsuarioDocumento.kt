@@ -1,6 +1,6 @@
 package dev.matheus.fluviapp.services.repository.firebase.documents
 
-import dev.matheus.fluviapp.model.operacoes.Usuario
+import dev.matheus.fluviapp.domain.operacoes.Usuario
 
 data class UsuarioDocumento(
     val email: String = "",

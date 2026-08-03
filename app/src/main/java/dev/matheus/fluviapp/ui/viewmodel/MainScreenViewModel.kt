@@ -5,8 +5,8 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import dev.matheus.fluviapp.model.mappers.ViagemDadosViagemMapper
-import dev.matheus.fluviapp.model.operacoes.PermissoesUsuario
+import dev.matheus.fluviapp.domain.mappers.ViagemDadosViagemMapper
+import dev.matheus.fluviapp.domain.operacoes.PermissoesUsuario
 import dev.matheus.fluviapp.preferences.PreferencesKey
 import dev.matheus.fluviapp.services.repository.operacoes.FuncionarioRepository
 import com.google.firebase.auth.FirebaseAuth

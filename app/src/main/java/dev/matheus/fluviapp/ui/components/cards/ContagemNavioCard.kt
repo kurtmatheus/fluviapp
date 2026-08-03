@@ -13,7 +13,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import dev.matheus.fluviapp.R
-import dev.matheus.fluviapp.model.screendata.DadosContagemPassagem
+import dev.matheus.fluviapp.domain.screendata.DadosContagemPassagem
 import dev.matheus.fluviapp.sampledata.listaDadosContagemPassagems
 import dev.matheus.fluviapp.ui.components.contents.CommonRowDetalhamento
 import dev.matheus.fluviapp.ui.components.texts.TextTitleWhiteItalic

@@ -1,6 +1,6 @@
 package dev.matheus.fluviapp.services.repository.firebase.documents
 
-import dev.matheus.fluviapp.model.viagem.Navio
+import dev.matheus.fluviapp.domain.viagem.Navio
 
 data class NavioDocumento(
     val nome: String = "",

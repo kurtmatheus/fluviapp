@@ -1,6 +1,6 @@
 package dev.matheus.fluviapp.services.repository.cadastro
 
-import dev.matheus.fluviapp.model.cadastro.constantes.Constante
+import dev.matheus.fluviapp.domain.cadastro.constantes.Constante
 
 /**
  * Porta do repositório de constantes (DIP). Testes usam um fake; produção usa

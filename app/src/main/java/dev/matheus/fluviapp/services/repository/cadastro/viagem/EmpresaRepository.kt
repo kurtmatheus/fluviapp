@@ -1,6 +1,6 @@
 package dev.matheus.fluviapp.services.repository.cadastro.viagem
 
-import dev.matheus.fluviapp.model.viagem.Empresa
+import dev.matheus.fluviapp.domain.viagem.Empresa
 
 /**
  * Porta do repositório de empresas (DIP) — os ViewModels dependem desta interface, não da impl

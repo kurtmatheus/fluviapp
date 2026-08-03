@@ -10,8 +10,8 @@ import android.util.Log
 import dev.matheus.fluviapp.R
 import dev.matheus.fluviapp.business.ImpressaoPassagem
 import dev.matheus.fluviapp.extensions.toastMessage
-import dev.matheus.fluviapp.model.passagem.StatusPassagem
-import dev.matheus.fluviapp.model.screendata.DadosImpressora
+import dev.matheus.fluviapp.domain.passagem.StatusPassagem
+import dev.matheus.fluviapp.domain.screendata.DadosImpressora
 import dev.matheus.fluviapp.services.printerservice.PrinterService
 import dev.matheus.fluviapp.services.printerservice.printer.ThermalPrinterConnection
 import dev.matheus.fluviapp.services.repository.firebase.PassagemFirestoreRepository

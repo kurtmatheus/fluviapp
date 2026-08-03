@@ -1,6 +1,6 @@
 package dev.matheus.fluviapp.fakes
 
-import dev.matheus.fluviapp.model.cadastro.constantes.Constante
+import dev.matheus.fluviapp.domain.cadastro.constantes.Constante
 import dev.matheus.fluviapp.services.repository.cadastro.ConstanteRepository
 
 /** Fake da porta [ConstanteRepository] para testes de ViewModel. */

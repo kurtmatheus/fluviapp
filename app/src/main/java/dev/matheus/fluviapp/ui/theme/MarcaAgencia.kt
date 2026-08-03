@@ -2,7 +2,7 @@ package dev.matheus.fluviapp.ui.theme
 
 import androidx.annotation.DrawableRes
 import dev.matheus.fluviapp.R
-import dev.matheus.fluviapp.model.operacoes.Agencia
+import dev.matheus.fluviapp.domain.operacoes.Agencia
 
 /**
  * Identidade visual da agência emissora no bilhete (ADR-0015 §5).

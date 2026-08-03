@@ -4,7 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy.Companion.REPLACE
 import androidx.room.Query
-import dev.matheus.fluviapp.model.operacoes.Usuario
+import dev.matheus.fluviapp.domain.operacoes.Usuario
 import kotlinx.coroutines.flow.Flow
 
 @Dao

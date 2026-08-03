@@ -1,10 +1,10 @@
 package dev.matheus.fluviapp.ui.states
 
 import dev.matheus.fluviapp.R
-import dev.matheus.fluviapp.model.cadastro.constantes.Constante
-import dev.matheus.fluviapp.model.screendata.DadosViagemCard
-import dev.matheus.fluviapp.model.viagem.Empresa
-import dev.matheus.fluviapp.model.viagem.Navio
+import dev.matheus.fluviapp.domain.cadastro.constantes.Constante
+import dev.matheus.fluviapp.domain.screendata.DadosViagemCard
+import dev.matheus.fluviapp.domain.viagem.Empresa
+import dev.matheus.fluviapp.domain.viagem.Navio
 
 /**
  * Estado da pesquisa de viagem — puro (só dados/flags), sem lambdas. Eventos são métodos no

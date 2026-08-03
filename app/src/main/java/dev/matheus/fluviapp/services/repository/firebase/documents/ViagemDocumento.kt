@@ -1,6 +1,6 @@
 package dev.matheus.fluviapp.services.repository.firebase.documents
 
-import dev.matheus.fluviapp.model.viagem.Viagem
+import dev.matheus.fluviapp.domain.viagem.Viagem
 
 data class ViagemDocumento(
     val codigo: String = "",

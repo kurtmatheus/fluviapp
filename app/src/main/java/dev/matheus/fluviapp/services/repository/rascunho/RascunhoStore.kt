@@ -1,6 +1,6 @@
 package dev.matheus.fluviapp.services.repository.rascunho
 
-import dev.matheus.fluviapp.model.rascunho.RascunhoPassagemSnapshot
+import dev.matheus.fluviapp.domain.rascunho.RascunhoPassagemSnapshot
 
 /**
  * Porta do rascunho de passagem (ADR-0004). DIP: o fluxo não conhece o mecanismo de persistência

@@ -3,7 +3,7 @@ package dev.matheus.fluviapp.ui.viewmodel.passagem
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dev.matheus.fluviapp.model.passagem.ResultadoEmbarque
+import dev.matheus.fluviapp.domain.passagem.ResultadoEmbarque
 import dev.matheus.fluviapp.services.repository.firebase.PassagemFirestoreRepository
 import dev.matheus.fluviapp.services.repository.operacoes.SessaoUsuario
 import dev.matheus.fluviapp.ui.states.passagem.EmbarqueUiState

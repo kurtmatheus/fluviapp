@@ -2,8 +2,8 @@ package dev.matheus.fluviapp.ui.viewmodel.navio
 
 import dev.matheus.fluviapp.fakes.FakeEmpresaRepository
 import dev.matheus.fluviapp.fakes.FakeNavioRepository
-import dev.matheus.fluviapp.model.viagem.Empresa
-import dev.matheus.fluviapp.model.viagem.Navio
+import dev.matheus.fluviapp.domain.viagem.Empresa
+import dev.matheus.fluviapp.domain.viagem.Navio
 import dev.matheus.fluviapp.util.MainDispatcherRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle

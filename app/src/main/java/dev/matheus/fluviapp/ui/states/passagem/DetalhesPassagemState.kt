@@ -1,6 +1,6 @@
 package dev.matheus.fluviapp.ui.states.passagem
 
-import dev.matheus.fluviapp.model.screendata.DadosPassagem
+import dev.matheus.fluviapp.domain.screendata.DadosPassagem
 
 data class DetalhesPassagemState(
     val dadosPassagem: DadosPassagem = DadosPassagem(),

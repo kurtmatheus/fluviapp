@@ -5,8 +5,8 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.matheus.fluviapp.R
-import dev.matheus.fluviapp.model.operacoes.Funcionario
-import dev.matheus.fluviapp.model.operacoes.Usuario
+import dev.matheus.fluviapp.domain.operacoes.Funcionario
+import dev.matheus.fluviapp.domain.operacoes.Usuario
 import dev.matheus.fluviapp.navigation.destinations.ARG_EMAIL_PRIMEIRO_ACESSO
 import dev.matheus.fluviapp.services.repository.firebase.autenticacao.AutenticacaoRepository
 import dev.matheus.fluviapp.services.repository.firebase.autenticacao.ResultadoAutenticacao

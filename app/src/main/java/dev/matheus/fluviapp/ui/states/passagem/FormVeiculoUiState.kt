@@ -1,6 +1,6 @@
 package dev.matheus.fluviapp.ui.states.passagem
 
-import dev.matheus.fluviapp.model.cadastro.constantes.Constante
+import dev.matheus.fluviapp.domain.cadastro.constantes.Constante
 
 /**
  * Estado puro do sub-form de veículo (molde ADR-0006): só dados + flags + listas. Os eventos são métodos

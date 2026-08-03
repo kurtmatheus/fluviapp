@@ -1,7 +1,7 @@
 package dev.matheus.fluviapp.ui.states.contagem
 
 import dev.matheus.fluviapp.extensions.formatarDataBarrasBr
-import dev.matheus.fluviapp.model.screendata.DadosContagemPassagem
+import dev.matheus.fluviapp.domain.screendata.DadosContagemPassagem
 import java.time.LocalDate
 
 data class ContagemPassagemUiState(

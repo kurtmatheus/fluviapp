@@ -1,6 +1,6 @@
 package dev.matheus.fluviapp.fakes
 
-import dev.matheus.fluviapp.model.operacoes.Funcionario
+import dev.matheus.fluviapp.domain.operacoes.Funcionario
 import dev.matheus.fluviapp.services.repository.operacoes.FuncionarioRepository
 
 /** Fake da porta [FuncionarioRepository] para testes de ViewModel (sem Firestore/Room). */

@@ -5,10 +5,10 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.matheus.fluviapp.R
-import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Categoria.MUNICIPIO
-import dev.matheus.fluviapp.model.operacoes.Funcionario
-import dev.matheus.fluviapp.model.operacoes.PermissoesUsuario
-import dev.matheus.fluviapp.model.mapDescricao
+import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Categoria.MUNICIPIO
+import dev.matheus.fluviapp.domain.operacoes.Funcionario
+import dev.matheus.fluviapp.domain.operacoes.PermissoesUsuario
+import dev.matheus.fluviapp.domain.mapDescricao
 import dev.matheus.fluviapp.navigation.navcomposables.funcionario.ID_FUNCIONARIO_ARGUMENT
 import dev.matheus.fluviapp.services.repository.cadastro.ConstanteRepository
 import dev.matheus.fluviapp.services.repository.operacoes.FuncionarioRepository

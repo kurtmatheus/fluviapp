@@ -1,6 +1,6 @@
 package dev.matheus.fluviapp.ui.states
 
-import dev.matheus.fluviapp.model.screendata.DadosBotoesMenus
+import dev.matheus.fluviapp.domain.screendata.DadosBotoesMenus
 
 data class MenuState(
     val userName: String = "",

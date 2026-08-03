@@ -1,7 +1,7 @@
 package dev.matheus.fluviapp.ui.states
 
-import dev.matheus.fluviapp.model.screendata.DadosViagemCard
-import dev.matheus.fluviapp.model.screendata.SecaoMenu
+import dev.matheus.fluviapp.domain.screendata.DadosViagemCard
+import dev.matheus.fluviapp.domain.screendata.SecaoMenu
 
 data class MainScreenUiState(
     val userName: String = "",

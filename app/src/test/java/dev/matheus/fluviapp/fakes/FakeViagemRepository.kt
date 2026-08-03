@@ -1,7 +1,7 @@
 package dev.matheus.fluviapp.fakes
 
-import dev.matheus.fluviapp.model.viagem.TarifaViagem
-import dev.matheus.fluviapp.model.viagem.Viagem
+import dev.matheus.fluviapp.domain.viagem.TarifaViagem
+import dev.matheus.fluviapp.domain.viagem.Viagem
 import dev.matheus.fluviapp.services.repository.firebase.ViagemRepository
 import kotlinx.coroutines.flow.flowOf
 

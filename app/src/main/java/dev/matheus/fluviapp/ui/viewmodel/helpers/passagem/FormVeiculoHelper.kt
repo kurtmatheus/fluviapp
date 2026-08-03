@@ -2,11 +2,11 @@ package dev.matheus.fluviapp.ui.viewmodel.helpers.passagem
 
 import dev.matheus.fluviapp.extensions.extrairLetrasOuNumeros
 import dev.matheus.fluviapp.extensions.extrairNumeros
-import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Categoria.VEICULO
-import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.CNPJ
-import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.CPF
-import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.PASSAPORTE
-import dev.matheus.fluviapp.model.passagem.Passagem
+import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Categoria.VEICULO
+import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.CNPJ
+import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.CPF
+import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.PASSAPORTE
+import dev.matheus.fluviapp.domain.passagem.Passagem
 import dev.matheus.fluviapp.services.repository.cadastro.ConstanteRepository
 import dev.matheus.fluviapp.services.repository.firebase.PassagemFirestoreRepository
 import dev.matheus.fluviapp.ui.states.passagem.FormVeiculoUiState

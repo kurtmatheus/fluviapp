@@ -1,7 +1,7 @@
 package dev.matheus.fluviapp.ui.states.passagem
 
-import dev.matheus.fluviapp.model.passagem.Passagem
-import dev.matheus.fluviapp.model.passagem.ResultadoEmbarque
+import dev.matheus.fluviapp.domain.passagem.Passagem
+import dev.matheus.fluviapp.domain.passagem.ResultadoEmbarque
 
 /**
  * Estado da tela de validação de embarque (ADR-0012). Três fases derivadas dos campos:

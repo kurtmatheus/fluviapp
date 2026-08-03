@@ -1,6 +1,6 @@
 package dev.matheus.fluviapp.extensions
 
-import dev.matheus.fluviapp.model.passagem.Passagem
+import dev.matheus.fluviapp.domain.passagem.Passagem
 import dev.matheus.fluviapp.services.repository.firebase.documents.PassageiroDocumento
 import dev.matheus.fluviapp.services.repository.firebase.documents.PassagemDocumento
 import dev.matheus.fluviapp.services.repository.firebase.documents.VeiculoDocumento

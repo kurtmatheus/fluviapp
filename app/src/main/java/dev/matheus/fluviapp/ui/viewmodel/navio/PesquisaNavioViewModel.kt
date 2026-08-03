@@ -2,8 +2,8 @@ package dev.matheus.fluviapp.ui.viewmodel.navio
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import dev.matheus.fluviapp.model.viagem.Empresa
-import dev.matheus.fluviapp.model.viagem.Navio
+import dev.matheus.fluviapp.domain.viagem.Empresa
+import dev.matheus.fluviapp.domain.viagem.Navio
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.EmpresaRepository
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.NavioRepository
 import dev.matheus.fluviapp.ui.states.NavioResultado

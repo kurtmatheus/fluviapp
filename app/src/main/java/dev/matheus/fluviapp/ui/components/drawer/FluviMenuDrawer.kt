@@ -35,8 +35,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import dev.matheus.fluviapp.R
-import dev.matheus.fluviapp.model.screendata.DadosBotoesMenus
-import dev.matheus.fluviapp.model.screendata.SecaoMenu
+import dev.matheus.fluviapp.domain.screendata.DadosBotoesMenus
+import dev.matheus.fluviapp.domain.screendata.SecaoMenu
 import dev.matheus.fluviapp.ui.components.texts.TextTitleBrownItalic
 
 /**

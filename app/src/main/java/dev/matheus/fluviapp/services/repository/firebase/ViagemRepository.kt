@@ -1,7 +1,7 @@
 package dev.matheus.fluviapp.services.repository.firebase
 
-import dev.matheus.fluviapp.model.viagem.TarifaViagem
-import dev.matheus.fluviapp.model.viagem.Viagem
+import dev.matheus.fluviapp.domain.viagem.TarifaViagem
+import dev.matheus.fluviapp.domain.viagem.Viagem
 import kotlinx.coroutines.flow.Flow
 
 /**

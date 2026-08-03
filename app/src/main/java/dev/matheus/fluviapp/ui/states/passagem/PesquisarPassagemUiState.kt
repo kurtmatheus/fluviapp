@@ -2,9 +2,9 @@ package dev.matheus.fluviapp.ui.states.passagem
 
 import androidx.room.Ignore
 import dev.matheus.fluviapp.extensions.formatarDataBarrasBr
-import dev.matheus.fluviapp.model.cadastro.constantes.Constante
-import dev.matheus.fluviapp.model.operacoes.Usuario
-import dev.matheus.fluviapp.model.screendata.DadosPassagem
+import dev.matheus.fluviapp.domain.cadastro.constantes.Constante
+import dev.matheus.fluviapp.domain.operacoes.Usuario
+import dev.matheus.fluviapp.domain.screendata.DadosPassagem
 import java.time.LocalDate
 
 data class PesquisarPassagemUiState(

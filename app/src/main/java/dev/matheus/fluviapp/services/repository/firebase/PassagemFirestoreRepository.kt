@@ -6,11 +6,11 @@ import dev.matheus.fluviapp.database.dao.passagem.PassagemDao
 import dev.matheus.fluviapp.exceptions.EmissaoException
 import dev.matheus.fluviapp.extensions.isTextoNaoNulo
 import dev.matheus.fluviapp.extensions.toPassagemDocumento
-import dev.matheus.fluviapp.model.ContadorBilhete
-import dev.matheus.fluviapp.model.operacoes.Usuario
-import dev.matheus.fluviapp.model.passagem.Passagem
-import dev.matheus.fluviapp.model.passagem.ResultadoEmbarque
-import dev.matheus.fluviapp.model.passagem.StatusPassagem
+import dev.matheus.fluviapp.domain.ContadorBilhete
+import dev.matheus.fluviapp.domain.operacoes.Usuario
+import dev.matheus.fluviapp.domain.passagem.Passagem
+import dev.matheus.fluviapp.domain.passagem.ResultadoEmbarque
+import dev.matheus.fluviapp.domain.passagem.StatusPassagem
 import dev.matheus.fluviapp.services.repository.firebase.documents.PassagemDocumento
 import dev.matheus.fluviapp.services.repository.firebase.documents.toContadorBilhete
 import dev.matheus.fluviapp.services.repository.firebase.documents.toContadorDocumento

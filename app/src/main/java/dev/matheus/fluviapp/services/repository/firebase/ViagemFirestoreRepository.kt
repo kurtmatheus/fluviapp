@@ -6,9 +6,9 @@ import dev.matheus.fluviapp.database.dao.cadastro.viagem.ViagemDao
 import dev.matheus.fluviapp.extensions.formatarCodigoViagemNavioFB
 import dev.matheus.fluviapp.extensions.paraMapaTarifas
 import dev.matheus.fluviapp.extensions.tarifasParaLinhas
-import dev.matheus.fluviapp.model.viagem.TarifaViagem
-import dev.matheus.fluviapp.model.viagem.Viagem
-import dev.matheus.fluviapp.model.viagem.toDocumento
+import dev.matheus.fluviapp.domain.viagem.TarifaViagem
+import dev.matheus.fluviapp.domain.viagem.Viagem
+import dev.matheus.fluviapp.domain.viagem.toDocumento
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.NavioRepository
 import dev.matheus.fluviapp.services.repository.firebase.documents.toViagem
 import dev.matheus.fluviapp.services.repository.firebase.documents.toViagemDocumento

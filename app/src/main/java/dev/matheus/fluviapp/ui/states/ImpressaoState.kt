@@ -1,6 +1,6 @@
 package dev.matheus.fluviapp.ui.states
 
-import dev.matheus.fluviapp.model.screendata.DadosImpressora
+import dev.matheus.fluviapp.domain.screendata.DadosImpressora
 
 data class ImpressaoState(
     val isPrinting: Boolean = false,

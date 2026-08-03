@@ -3,7 +3,7 @@ package dev.matheus.fluviapp.services.repository.firebase
 import android.util.Log
 import com.google.firebase.firestore.FirebaseFirestore
 import dev.matheus.fluviapp.BuildConfig
-import dev.matheus.fluviapp.model.operacoes.toDocumento
+import dev.matheus.fluviapp.domain.operacoes.toDocumento
 import dev.matheus.fluviapp.sampledata.listaAcomodacaoSample
 import dev.matheus.fluviapp.sampledata.listaFuncionarioSample
 import dev.matheus.fluviapp.sampledata.listaEmpresaSample

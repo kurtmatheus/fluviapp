@@ -5,7 +5,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.matheus.fluviapp.R
-import dev.matheus.fluviapp.model.viagem.Navio
+import dev.matheus.fluviapp.domain.viagem.Navio
 import dev.matheus.fluviapp.navigation.navcomposables.navio.ID_NAVIO_ARGUMENT
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.EmpresaRepository
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.NavioRepository

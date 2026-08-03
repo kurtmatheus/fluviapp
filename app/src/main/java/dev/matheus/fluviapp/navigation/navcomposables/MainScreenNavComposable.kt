@@ -12,8 +12,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import dev.matheus.fluviapp.R
-import dev.matheus.fluviapp.model.screendata.DadosBotoesMenus
-import dev.matheus.fluviapp.model.screendata.SecaoMenu
+import dev.matheus.fluviapp.domain.screendata.DadosBotoesMenus
+import dev.matheus.fluviapp.domain.screendata.SecaoMenu
 import dev.matheus.fluviapp.navigation.destinations.FluviAppNavComposableDestinations
 import dev.matheus.fluviapp.ui.components.RequestMultiplePermissions
 import dev.matheus.fluviapp.ui.screens.MainScreen

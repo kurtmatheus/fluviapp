@@ -33,8 +33,8 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import dev.matheus.fluviapp.R
-import dev.matheus.fluviapp.model.operacoes.Agencia
-import dev.matheus.fluviapp.model.screendata.DadosPassagem
+import dev.matheus.fluviapp.domain.operacoes.Agencia
+import dev.matheus.fluviapp.domain.screendata.DadosPassagem
 import dev.matheus.fluviapp.sampledata.dadosPassagemSample
 import dev.matheus.fluviapp.sampledata.dadosPassagemVeiculoSample
 import dev.matheus.fluviapp.ui.components.contents.CommonRowDetalhamento

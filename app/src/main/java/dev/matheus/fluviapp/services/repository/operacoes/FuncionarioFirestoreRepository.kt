@@ -2,8 +2,8 @@ package dev.matheus.fluviapp.services.repository.operacoes
 
 import android.util.Log
 import dev.matheus.fluviapp.database.dao.operacoes.FuncionarioDao
-import dev.matheus.fluviapp.model.operacoes.Funcionario
-import dev.matheus.fluviapp.model.operacoes.toDocumento
+import dev.matheus.fluviapp.domain.operacoes.Funcionario
+import dev.matheus.fluviapp.domain.operacoes.toDocumento
 import dev.matheus.fluviapp.services.repository.operacoes.FuncionarioRepository.Companion.COLLECTION_FUNCIONARIOS
 import dev.matheus.fluviapp.services.repository.firebase.FonteSnapshots
 import dev.matheus.fluviapp.services.repository.firebase.documents.FuncionarioDocumento

@@ -13,16 +13,16 @@ import dev.matheus.fluviapp.database.dao.operacoes.UsuarioDao
 import dev.matheus.fluviapp.database.dao.passagem.PassagemDao
 import dev.matheus.fluviapp.database.dao.passagem.PassagemDigitalDao
 import dev.matheus.fluviapp.database.dao.passagem.RascunhoPassagemDao
-import dev.matheus.fluviapp.model.ContadorBilhete
-import dev.matheus.fluviapp.model.cadastro.constantes.Constante
-import dev.matheus.fluviapp.model.operacoes.Funcionario
-import dev.matheus.fluviapp.model.operacoes.Usuario
-import dev.matheus.fluviapp.model.passagem.Passagem
-import dev.matheus.fluviapp.model.passagem.PassagemDigital
-import dev.matheus.fluviapp.model.viagem.Empresa
-import dev.matheus.fluviapp.model.viagem.Navio
-import dev.matheus.fluviapp.model.viagem.TarifaViagem
-import dev.matheus.fluviapp.model.viagem.Viagem
+import dev.matheus.fluviapp.domain.ContadorBilhete
+import dev.matheus.fluviapp.domain.cadastro.constantes.Constante
+import dev.matheus.fluviapp.domain.operacoes.Funcionario
+import dev.matheus.fluviapp.domain.operacoes.Usuario
+import dev.matheus.fluviapp.domain.passagem.Passagem
+import dev.matheus.fluviapp.domain.passagem.PassagemDigital
+import dev.matheus.fluviapp.domain.viagem.Empresa
+import dev.matheus.fluviapp.domain.viagem.Navio
+import dev.matheus.fluviapp.domain.viagem.TarifaViagem
+import dev.matheus.fluviapp.domain.viagem.Viagem
 
 @Database(
     entities = [

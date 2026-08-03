@@ -1,10 +1,10 @@
 package dev.matheus.fluviapp.ui.states.passagem
 
 import androidx.room.Ignore
-import dev.matheus.fluviapp.model.cadastro.constantes.Constante
-import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.GRATUIDADE
-import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.MEIA
-import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.REDE
+import dev.matheus.fluviapp.domain.cadastro.constantes.Constante
+import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.GRATUIDADE
+import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.MEIA
+import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.REDE
 
 data class FormPassageiroUiState(
     val listaNomePassageiro: List<String> = emptyList(),

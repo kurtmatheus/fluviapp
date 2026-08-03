@@ -2,7 +2,7 @@ package dev.matheus.fluviapp.services.repository.operacoes
 
 import android.util.Log
 import dev.matheus.fluviapp.database.dao.operacoes.UsuarioDao
-import dev.matheus.fluviapp.model.operacoes.Usuario
+import dev.matheus.fluviapp.domain.operacoes.Usuario
 import dev.matheus.fluviapp.services.repository.firebase.documents.UsuarioDocumento
 import dev.matheus.fluviapp.services.repository.firebase.documents.toUsuario
 import com.google.firebase.firestore.FirebaseFirestore

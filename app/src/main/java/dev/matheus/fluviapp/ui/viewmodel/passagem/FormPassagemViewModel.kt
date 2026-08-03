@@ -7,11 +7,11 @@ import androidx.lifecycle.viewModelScope
 import dev.matheus.fluviapp.R
 import dev.matheus.fluviapp.extensions.isTextoNaoNulo
 import dev.matheus.fluviapp.extensions.toastMessage
-import dev.matheus.fluviapp.model.passagem.Passagem
-import dev.matheus.fluviapp.model.passagem.ResultadoEmissao
-import dev.matheus.fluviapp.model.mappers.ViagemDadosViagemMapper
-import dev.matheus.fluviapp.model.rascunho.aplicarEm
-import dev.matheus.fluviapp.model.rascunho.montarRascunho
+import dev.matheus.fluviapp.domain.passagem.Passagem
+import dev.matheus.fluviapp.domain.passagem.ResultadoEmissao
+import dev.matheus.fluviapp.domain.mappers.ViagemDadosViagemMapper
+import dev.matheus.fluviapp.domain.rascunho.aplicarEm
+import dev.matheus.fluviapp.domain.rascunho.montarRascunho
 import dev.matheus.fluviapp.navigation.navcomposables.passagem.EDIT_PASSAGEM_ARGUMENT
 import dev.matheus.fluviapp.navigation.navcomposables.passagem.FORM_PASSAGEM_ARGUMENT
 import dev.matheus.fluviapp.services.repository.cadastro.ConstanteRepository

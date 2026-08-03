@@ -6,9 +6,9 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.matheus.fluviapp.business.ImpressaoPassagem
-import dev.matheus.fluviapp.model.mappers.PassagemDadosPassagemMapper
-import dev.matheus.fluviapp.model.operacoes.PermissoesUsuario
-import dev.matheus.fluviapp.model.screendata.DadosPassagem
+import dev.matheus.fluviapp.domain.mappers.PassagemDadosPassagemMapper
+import dev.matheus.fluviapp.domain.operacoes.PermissoesUsuario
+import dev.matheus.fluviapp.domain.screendata.DadosPassagem
 import dev.matheus.fluviapp.navigation.navcomposables.passagem.DETALHES_PASSAGEM_ARGUMENT
 import dev.matheus.fluviapp.preferences.PreferencesKey
 import dev.matheus.fluviapp.services.repository.cadastro.passagem.PassagemDigitalRepository

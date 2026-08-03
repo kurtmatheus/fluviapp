@@ -1,6 +1,6 @@
 package dev.matheus.fluviapp.services.repository.cadastro.viagem
 
-import dev.matheus.fluviapp.model.viagem.Navio
+import dev.matheus.fluviapp.domain.viagem.Navio
 
 /**
  * Porta do repositório de navios (DIP). Testes usam um fake; produção usa

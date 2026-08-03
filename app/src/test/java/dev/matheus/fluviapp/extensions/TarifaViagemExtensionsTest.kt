@@ -1,6 +1,6 @@
 package dev.matheus.fluviapp.extensions
 
-import dev.matheus.fluviapp.model.viagem.TarifaViagem
+import dev.matheus.fluviapp.domain.viagem.TarifaViagem
 import dev.matheus.fluviapp.services.repository.firebase.documents.ViagemDocumento
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue

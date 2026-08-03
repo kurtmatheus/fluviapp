@@ -12,7 +12,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import dev.matheus.fluviapp.model.passagem.StatusPassagem
+import dev.matheus.fluviapp.domain.passagem.StatusPassagem
 import dev.matheus.fluviapp.ui.theme.AbyssNavy
 import dev.matheus.fluviapp.ui.theme.AquaAccent
 import dev.matheus.fluviapp.ui.theme.Brown

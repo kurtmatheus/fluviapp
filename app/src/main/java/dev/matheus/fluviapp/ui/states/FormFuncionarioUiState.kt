@@ -1,7 +1,7 @@
 package dev.matheus.fluviapp.ui.states
 
 import dev.matheus.fluviapp.R
-import dev.matheus.fluviapp.model.operacoes.Funcionario
+import dev.matheus.fluviapp.domain.operacoes.Funcionario
 
 /**
  * Estado do formulário de funcionário — puro (só dados + flags), sem lambdas. Eventos são métodos no

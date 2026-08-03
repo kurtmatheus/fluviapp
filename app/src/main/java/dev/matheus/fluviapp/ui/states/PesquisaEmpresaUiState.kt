@@ -1,6 +1,6 @@
 package dev.matheus.fluviapp.ui.states
 
-import dev.matheus.fluviapp.model.viagem.Empresa
+import dev.matheus.fluviapp.domain.viagem.Empresa
 
 /**
  * Estado da busca de empresas (molde: busca separada do formulário). Filtro é o campo `nome`, que

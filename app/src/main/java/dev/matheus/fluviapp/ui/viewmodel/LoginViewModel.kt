@@ -9,7 +9,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.matheus.fluviapp.R
 import dev.matheus.fluviapp.extensions.toastMessage
-import dev.matheus.fluviapp.model.operacoes.Usuario
+import dev.matheus.fluviapp.domain.operacoes.Usuario
 import dev.matheus.fluviapp.preferences.PreferencesKey.CARGO_ATUAL
 import dev.matheus.fluviapp.preferences.PreferencesKey.PAPEL_ATUAL
 import dev.matheus.fluviapp.preferences.PreferencesKey.LOGADO

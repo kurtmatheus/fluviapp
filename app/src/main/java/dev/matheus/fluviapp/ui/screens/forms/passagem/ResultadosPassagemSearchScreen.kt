@@ -11,7 +11,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import dev.matheus.fluviapp.R
-import dev.matheus.fluviapp.model.screendata.DadosPassagem
+import dev.matheus.fluviapp.domain.screendata.DadosPassagem
 import dev.matheus.fluviapp.sampledata.dadosPassagemSample
 import dev.matheus.fluviapp.ui.components.cards.PassagemPreviewCard
 import dev.matheus.fluviapp.ui.components.contents.CommonTopRow

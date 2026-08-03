@@ -6,9 +6,7 @@ import dev.matheus.fluviapp.extensions.extrairNumeros
 import dev.matheus.fluviapp.extensions.formatarCNPJ
 import dev.matheus.fluviapp.extensions.formatarCampoCPF
 import dev.matheus.fluviapp.extensions.preencherCampo
-import dev.matheus.fluviapp.model.cadastro.constantes.Constante
-import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao
-import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.*
+import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.*
 import org.junit.Assert.assertEquals
 import org.junit.Test
 

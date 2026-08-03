@@ -1,6 +1,6 @@
 package dev.matheus.fluviapp.services.repository.operacoes
 
-import dev.matheus.fluviapp.model.operacoes.Funcionario
+import dev.matheus.fluviapp.domain.operacoes.Funcionario
 
 /**
  * Porta do repositório de funcionários (DIP) — os ViewModels dependem desta interface, não da impl

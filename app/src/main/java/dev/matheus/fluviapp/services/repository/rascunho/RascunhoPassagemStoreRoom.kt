@@ -3,7 +3,7 @@ package dev.matheus.fluviapp.services.repository.rascunho
 import com.google.gson.Gson
 import dev.matheus.fluviapp.database.RascunhoPassagemEntity
 import dev.matheus.fluviapp.database.dao.passagem.RascunhoPassagemDao
-import dev.matheus.fluviapp.model.rascunho.RascunhoPassagemSnapshot
+import dev.matheus.fluviapp.domain.rascunho.RascunhoPassagemSnapshot
 import javax.inject.Inject
 
 /**

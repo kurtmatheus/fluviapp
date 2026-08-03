@@ -1,6 +1,6 @@
 package dev.matheus.fluviapp.ui.viewmodel.helpers.contagem
 
-import dev.matheus.fluviapp.model.screendata.DadosContagemPassagem
+import dev.matheus.fluviapp.domain.screendata.DadosContagemPassagem
 import dev.matheus.fluviapp.ui.states.contagem.ContagemPassagemUiState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update

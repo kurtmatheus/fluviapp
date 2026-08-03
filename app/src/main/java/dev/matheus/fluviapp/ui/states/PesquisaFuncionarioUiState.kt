@@ -1,6 +1,6 @@
 package dev.matheus.fluviapp.ui.states
 
-import dev.matheus.fluviapp.model.operacoes.Funcionario
+import dev.matheus.fluviapp.domain.operacoes.Funcionario
 
 /**
  * Estado da busca de funcionários — separado do formulário (molde: form e busca não compartilham

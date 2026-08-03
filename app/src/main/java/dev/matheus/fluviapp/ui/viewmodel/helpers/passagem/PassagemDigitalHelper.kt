@@ -8,7 +8,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.core.content.FileProvider
 import dev.matheus.fluviapp.extensions.formatarTimeStamp
-import dev.matheus.fluviapp.model.passagem.PassagemDigital
+import dev.matheus.fluviapp.domain.passagem.PassagemDigital
 import dev.matheus.fluviapp.services.repository.cadastro.passagem.PassagemDigitalRepository
 import dev.matheus.fluviapp.ui.states.passagem.DetalhesPassagemState
 import kotlinx.coroutines.flow.MutableStateFlow

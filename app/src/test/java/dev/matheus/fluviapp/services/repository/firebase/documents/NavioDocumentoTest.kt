@@ -1,6 +1,6 @@
 package dev.matheus.fluviapp.services.repository.firebase.documents
 
-import dev.matheus.fluviapp.model.viagem.toDocumento
+import dev.matheus.fluviapp.domain.viagem.toDocumento
 import org.junit.Assert.assertEquals
 import org.junit.Test
 

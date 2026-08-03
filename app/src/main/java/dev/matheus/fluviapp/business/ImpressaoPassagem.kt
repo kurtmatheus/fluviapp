@@ -1,7 +1,7 @@
 package dev.matheus.fluviapp.business
 
 import dev.matheus.fluviapp.extensions.formatarDataHoraBarrasBr
-import dev.matheus.fluviapp.model.screendata.DadosPassagem
+import dev.matheus.fluviapp.domain.screendata.DadosPassagem
 import dev.matheus.fluviapp.services.printerservice.TXT_2HEIGHT
 import dev.matheus.fluviapp.services.printerservice.TXT_ALIGN_CT
 import dev.matheus.fluviapp.services.printerservice.TXT_ALIGN_LT

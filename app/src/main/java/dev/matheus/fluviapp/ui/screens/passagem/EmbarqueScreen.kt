@@ -34,9 +34,9 @@ import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
 import dev.matheus.fluviapp.R
-import dev.matheus.fluviapp.model.passagem.Passagem
-import dev.matheus.fluviapp.model.passagem.ResultadoEmbarque
-import dev.matheus.fluviapp.model.passagem.StatusPassagem
+import dev.matheus.fluviapp.domain.passagem.Passagem
+import dev.matheus.fluviapp.domain.passagem.ResultadoEmbarque
+import dev.matheus.fluviapp.domain.passagem.StatusPassagem
 import dev.matheus.fluviapp.ui.components.RequestPermission
 import dev.matheus.fluviapp.ui.components.contents.CommonTopRow
 import dev.matheus.fluviapp.ui.components.forms.buttons.CommonIconButton

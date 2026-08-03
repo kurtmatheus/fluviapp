@@ -2,7 +2,7 @@ package dev.matheus.fluviapp.ui.viewmodel.funcionario
 
 import dev.matheus.fluviapp.fakes.FakeFuncionarioRepository
 import dev.matheus.fluviapp.fakes.FakeSessaoUsuario
-import dev.matheus.fluviapp.model.operacoes.Funcionario
+import dev.matheus.fluviapp.domain.operacoes.Funcionario
 import dev.matheus.fluviapp.util.MainDispatcherRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle

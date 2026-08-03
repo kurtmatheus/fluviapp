@@ -1,8 +1,8 @@
 package dev.matheus.fluviapp.fakes
 
-import dev.matheus.fluviapp.model.operacoes.ContextoUsuario
-import dev.matheus.fluviapp.model.operacoes.Funcionario
-import dev.matheus.fluviapp.model.operacoes.Usuario
+import dev.matheus.fluviapp.domain.operacoes.ContextoUsuario
+import dev.matheus.fluviapp.domain.operacoes.Funcionario
+import dev.matheus.fluviapp.domain.operacoes.Usuario
 import dev.matheus.fluviapp.services.repository.operacoes.SessaoUsuario
 
 /**

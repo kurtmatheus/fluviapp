@@ -22,8 +22,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import dev.matheus.fluviapp.R
-import dev.matheus.fluviapp.model.screendata.DadosBotoesMenus
-import dev.matheus.fluviapp.model.screendata.SecaoMenu
+import dev.matheus.fluviapp.domain.screendata.DadosBotoesMenus
+import dev.matheus.fluviapp.domain.screendata.SecaoMenu
 import dev.matheus.fluviapp.sampledata.listaDadosDadosViagemHomeSampleCards
 import dev.matheus.fluviapp.ui.components.contents.HomeContent
 import dev.matheus.fluviapp.ui.components.drawer.FluviMenuDrawer

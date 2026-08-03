@@ -17,7 +17,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import dev.matheus.fluviapp.R
-import dev.matheus.fluviapp.model.screendata.DadosViagemCard
+import dev.matheus.fluviapp.domain.screendata.DadosViagemCard
 import dev.matheus.fluviapp.sampledata.listaDadosDadosViagemHomeSampleCards
 import dev.matheus.fluviapp.ui.components.texts.TextSubTitleBrownItalic
 import dev.matheus.fluviapp.ui.components.texts.TextTitleBrownRegular

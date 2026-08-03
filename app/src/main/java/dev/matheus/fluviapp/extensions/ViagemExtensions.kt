@@ -1,6 +1,6 @@
 package dev.matheus.fluviapp.extensions
 
-import dev.matheus.fluviapp.model.viagem.Viagem
+import dev.matheus.fluviapp.domain.viagem.Viagem
 
 /**
  * Deriva o código da viagem. O nome do navio vem por parâmetro (ADR-0008 Fase 3: a Viagem não guarda

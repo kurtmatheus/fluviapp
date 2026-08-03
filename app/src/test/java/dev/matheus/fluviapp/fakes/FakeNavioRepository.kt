@@ -1,6 +1,6 @@
 package dev.matheus.fluviapp.fakes
 
-import dev.matheus.fluviapp.model.viagem.Navio
+import dev.matheus.fluviapp.domain.viagem.Navio
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.NavioRepository
 
 /** Fake da porta [NavioRepository] para testes de ViewModel (sem Firestore/Room). */

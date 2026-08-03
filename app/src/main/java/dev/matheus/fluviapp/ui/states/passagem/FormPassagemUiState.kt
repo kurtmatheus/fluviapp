@@ -2,7 +2,7 @@ package dev.matheus.fluviapp.ui.states.passagem
 
 import dev.matheus.fluviapp.R
 import dev.matheus.fluviapp.extensions.formatarDataBarrasBr
-import dev.matheus.fluviapp.model.cadastro.constantes.Constante
+import dev.matheus.fluviapp.domain.cadastro.constantes.Constante
 import java.time.LocalDate
 
 data class FormPassagemUiState(

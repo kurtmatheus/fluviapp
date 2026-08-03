@@ -4,7 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy.Companion.REPLACE
 import androidx.room.Query
-import dev.matheus.fluviapp.model.viagem.TarifaViagem
+import dev.matheus.fluviapp.domain.viagem.TarifaViagem
 import kotlinx.coroutines.flow.Flow
 
 /**

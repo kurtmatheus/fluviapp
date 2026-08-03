@@ -1,6 +1,6 @@
 package dev.matheus.fluviapp.services.repository.rascunho
 
-import dev.matheus.fluviapp.model.rascunho.RascunhoPassagemSnapshot
+import dev.matheus.fluviapp.domain.rascunho.RascunhoPassagemSnapshot
 
 /** Store em memória para testes de VM do flip (slot único). */
 class FakeRascunhoStore : RascunhoStore {

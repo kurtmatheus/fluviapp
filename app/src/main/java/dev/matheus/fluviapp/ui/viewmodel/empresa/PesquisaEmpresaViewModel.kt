@@ -2,7 +2,7 @@ package dev.matheus.fluviapp.ui.viewmodel.empresa
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import dev.matheus.fluviapp.model.viagem.Empresa
+import dev.matheus.fluviapp.domain.viagem.Empresa
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.EmpresaRepository
 import dev.matheus.fluviapp.ui.states.PesquisaEmpresaUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
