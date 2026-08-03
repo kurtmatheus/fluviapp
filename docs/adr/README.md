@@ -41,10 +41,11 @@ o antigo passa a valer como história. Este índice existe para responder, sem a
 | [0013](0013-tabela-de-tarifa-e-tipo-tarifario.md) | Tarifa tabelada e tipo tarifário | **dormente (a tabela) · vigente (as funções)** | a **tabela cadastrada não será construída** e `SemTarifa` morre — ADR-0016 §7.2. As funções puras vivem: muda a **fonte** da base |
 | [0014](0014-balanco-financeiro-da-travessia.md) | Balanço financeiro | **vigente · parcial** | a **régua** muda (esperada vem da inferência, não do tabelado — ADR-0016 §7.2); agrega por **ocorrência** e exclui canceladas — ADR-0018 D9/D18 |
 | [0015](0015-rework-agente-equipe.md) | Equipe, agência, cargo | **vigente · parcial** | o cargo passa a ser **por vínculo `(empresa, atuação)`**, não por pessoa — ADR-0016 (8ª rodada) |
-| [0016](0016-dominio-da-plataforma.md) | Domínio da plataforma | **vigente** | — 9 rodadas; **sem pontos abertos** desde 2026-08-01 |
-| [0017](0017-eixo-de-storage-firestore-only.md) | Firestore-only | **vigente** | — |
-| [0018](0018-agregado-passagem-participantes-modo-e-lancamentos.md) | O agregado Passagem | **vigente** | — |
-| [0019](0019-camada-de-dados-dinamica-e-dto-por-caso-de-uso.md) | `Map` na fronteira, DTO por caso de uso | **vigente** | — realiza o *passo 2* que o ADR-0003 previu |
+| [0016](0016-dominio-da-plataforma.md) | Domínio da plataforma | **vigente · parcial** | **o `Catalogo` não nasce** — ADR-0020 D1: caem §3 inteiro, a exceção do tipo de embarcação (§8), a coleção `catalogo/` do mapa (§4), o catálogo embutido na `Localidade` (§5), a linha "Catálogo — só `ADM`" (§6) e a **F1** do plano. O eixo, o critério de colocação e as 9 rodadas seguem |
+| [0017](0017-eixo-de-storage-firestore-only.md) | Firestore-only | **vigente · parcial** | o **piloto** deixa de ser `Catalogo` e passa a ser **Empresa** — ADR-0020 D10. F1 vira "coleção que *perde* o espelho", não "que nasce sem" |
+| [0018](0018-agregado-passagem-participantes-modo-e-lancamentos.md) | O agregado Passagem | **vigente** | — e **confirmado**: o `forma` do lançamento (D11) vira tipo — ADR-0020 D3 |
+| [0019](0019-camada-de-dados-dinamica-e-dto-por-caso-de-uso.md) | `Map` na fronteira, DTO por caso de uso | **vigente · parcial** | a **F1** deixa de ser `Catalogo` e passa a ser Empresa — ADR-0020 D10. O regime não muda. Realiza o *passo 2* que o ADR-0003 previu |
+| [0020](0020-fim-do-catalogo-e-o-contexto-do-painel.md) | O fim do Catálogo; o painel deriva da atuação | **vigente** | — novo (2026-08-03) |
 
 ---
 
@@ -57,7 +58,10 @@ A maior fonte de confusão ao ler um ADR antigo não é a decisão — é a **pa
 | `Agente` (entidade) | `Funcionario`; e o "agente do bilhete" é o **emissor** (`funcionarioId`) | ADR-0015 |
 | `DIRETOR`, `COLABORADOR_MASTER`, `OPERADOR` (como cargos) | **papel** `ADM`/`GESTOR`/`OPERADOR` × **cargo** `SUPERVISOR`/`AGENTE` | ADR-0015 |
 | `agencia` como texto do formulário | derivada do **emissor**, e por **id** | ADR-0015 P2.3 · ADR-0018 D13 |
-| `Constante` | `Catalogo` (e `IObjetoSimplificado` fica só nele) | ADR-0016 §3 |
+| `Constante` (a tabela de rótulos) | **tipos de domínio** — o `Catalogo` **não chega a nascer**. A palavra volta a significar *invariante de sistema* (extensão de arquivo, MIME) | ADR-0020 D1 |
+| `Constante.Categoria.DOCUMENTO` / `PAGAMENTO` / `TIPO_EMBARCACAO` / `MUNICIPIO`+UF | `TipoDocumento` · `FormaPagamento` · `TipoEmbarcacao` · `Localidade`+`Uf` | ADR-0020 D2/D3/D4/D6 |
+| `Navio` (a entidade) | **`Embarcacao`** — decidido, **rename ainda não feito**: entra com a estrutura de embarcações | ADR-0020 D4 |
+| "atuação é categoria do catálogo" | `Atuacao` é **tipo**; a atuação *da empresa* continua **cadastrada** (`atuacoes/{ATUACAO}`) | ADR-0020 D5 |
 | `Viagem` (a entidade antiga) | **Rota** (o onde) + **Viagem** (o quando e em quê, atômica) + **ocorrência** `(viagemId, data)` | ADR-0016 §7.1 |
 | `Trecho` | **dissolvido** — o par de cidades é derivável dos portos | ADR-0016 (7ª rodada) |
 | `model/` (pacote) | `domain/` | rename de 2026-07-31 |

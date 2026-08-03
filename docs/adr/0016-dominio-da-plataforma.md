@@ -117,7 +117,35 @@ que atravessa. `VIAGEM` sai do menu — o nome estava errado desde o começo (§
 A divisão em duas famílias era o que se enxergava quando havia um segmento operante só; com o cargo qualificado
 pela atuação (§6.1), a família **deriva da atuação** em vez de ser enumerada à mão.
 
-### 3. `Constante` vira `Catalogo`, e `IObjetoSimplificado` fica só nele
+ ### 3. ~~`Constante` vira `Catalogo`~~ — **superada pelo ADR-0020**
+
+> **SUPERADA (2026-08-03).** O [ADR-0020 D1](0020-fim-do-catalogo-e-o-contexto-do-painel.md) **não renomeia
+> `Constante`: elimina a categoria.** Aplicada sem exceção, a régua desta seção — *quem tem regra vira tipo de
+> domínio; quem é só rótulo vira linha de catálogo* — não deixa **nenhuma** categoria de pé, e a coleção
+> nasceria vazia. `domain/catalogo/Catalogo.kt` nunca chegou a ser escrito.
+>
+> **A régua continua valendo, e é ela que produz esse resultado.** O que muda é a conclusão: a regra final é
+> *vocabulário que o código consome é **tipo**; dado que o negócio cria é **entidade**; não há terceira
+> categoria.* As três exceções que este ADR precisou nomear para sustentar o catálogo — a `Categoria` que
+> *"continua tipo fechado porque o código depende dela"* (aqui), o tipo de embarcação que é *"os dois"* (§8) e
+> os dois `Catalogo` embutidos na `Localidade` (§5) — eram o modelo avisando que a categoria não fechava.
+>
+> Destino de cada linha: `DOCUMENTO` → `TipoDocumento` (máscara/teclado/validação/exibição — **é regra, e por
+> LGPD é tratamento de dado pessoal**, D2) · `PAGAMENTO` → `FormaPagamento` no lançamento (D3) ·
+> `TIPO_EMBARCACAO` → `TipoEmbarcacao` (D4, ver §8) · `ATUACAO` → `Atuacao` (D5) · `MUNICIPIO`/UF →
+> `Localidade` + enum `Uf` (D6, ver §5).
+>
+> **Duas precisões, para não ler o ADR-0020 além do que ele diz:**
+> - **A atuação *da empresa* continua sendo cadastrada** (`empresas/{id}/atuacoes/{ATUACAO}`, criada no
+>   painel). O que virou tipo é o **conjunto de valores possíveis** — D5.
+> - **`IObjetoSimplificado` sai de uso, não de existência** (D7): a forma "id + descrição" é value object de
+>   rótulo legítimo e pode voltar se houver dado dessa natureza. Hoje não há. O parágrafo abaixo sobre
+>   `Funcionario` e `Navio` deixarem de implementá-la **continua certo** — e agora não sobra implementador.
+>
+> Some junto a linha *"Catálogo — só `ADM`"* do §6: era a única superfície `ADM`-only, e **nada a substitui**
+> (D8). O critério do §6 não é revogado — fica disponível.
+>
+> **O texto abaixo fica como história.**
 
 `Constante` passa a se chamar **`Catalogo`** e tem, além do id: **`categoria`**, **`descricao`** e — desde a 7ª
 rodada — **`ordem`** (Int) e **`ativo`** (Boolean). `ordem` existe porque hoje o item nasce por `.add()` com id
@@ -646,7 +674,32 @@ Restam duas, ambas puras e testáveis sem device, no molde do ADR-0006:
 rota guarda `navioId`, não o dono, então descobrir o armador exigia ler `navios/{id}.empresaId` para só então
 comparar. Um lookup a mais na UI, um `get()` a mais por escrita na regra. Concedendo o navio, some.*
 
-### 8. O tipo de embarcação decide o que a rota pode vender
+### 8. O tipo de embarcação decide o que a rota pode vender — **a fonte mudou (ADR-0020)**
+
+> **REVISADA (2026-08-03).** O [ADR-0020 D4](0020-fim-do-catalogo-e-o-contexto-do-painel.md) mantém tudo o que
+> esta seção decide — a tabela `tipo → o que carrega`, a regra **pura**, o efeito de *não oferecer o
+> impossível* e o ponto de aplicação (a emissão, conforme o ajuste de 2026-08-01). **Muda de onde o tipo vem:**
+> `tipoEmbarcacao` deixa de ser String do Catálogo e vira **enum da embarcação**, com o conjunto de
+> `ClasseVeiculo` admitida como propriedade sua.
+>
+> **A "exceção nomeada" abaixo era o sintoma, não a solução.** Ela resolve o desconforto com *"o catálogo
+> guarda a lista, a capacidade é código"* e assume que um valor novo **nasce inerte** — só-passageiro até o
+> código dizer. Esse é justamente o argumento contra: **se o código precisa falar antes de o valor significar
+> alguma coisa, a lista não é a fonte — o tipo é.** Um "Catamarã" cadastrado que só produz oferta vazia não é
+> extensibilidade; é uma linha inerte com aparência de configuração. Na formulação do analista: **não se vende
+> veículo para uma lancha se a cadastrarmos.**
+>
+> O parágrafo final da seção — *"o mesmo vale para a **atuação** (§4): valor novo no catálogo não ganha painel
+> sozinho"* — cai pela mesma razão, e vira o ADR-0020 D5.
+>
+> **Consequência de vocabulário, decidida junto:** ***"navio" é semântica muito limitada — a entidade deve ser
+> `Embarcacao`.*** Lancha não é navio e balsa não é navio; o que hoje se chama `Navio` é a generalização, e o
+> nome está errado desde o começo, como `Viagem` estava (§7). **O rename está decidido e ainda não feito** —
+> entra quando a estrutura de embarcações for mexida, e o `TipoEmbarcacao` nasce dentro dela já com o nome
+> certo.
+>
+> Segue de pé, sem alteração: o encaixe com o **ADR-0018 D8** (tipo diz *o que* cabe; capacidade diz *quanto*)
+> e a evolução para limites por quantidade, que aí sim vira dado no documento.
 
 `Navio` ganha **`tipoEmbarcacao`** — String do Catálogo, categoria nova `TIPO_EMBARCACAO`. Três valores no
 começo, e eles não são rótulo decorativo: definem **o que a embarcação carrega**.

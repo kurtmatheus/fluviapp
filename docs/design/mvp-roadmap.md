@@ -198,7 +198,7 @@ E2 destrava — está marcado abaixo.
 | **Sem splash de sistema** (`core-splashscreen` / tema) | ⏸️ **adiado** | é dependência nova; fora do "mínimo para entrega". A janela em branco antes do Compose continua — escolha, não esquecimento |
 | **Permissão de Bluetooth pedida na entrada do painel** | → **E2** | **correção ao que este roadmap dizia:** a impressora **não é dormente** — `ThermalPrinterConnection` é usada pela tela de detalhes. O certo é pedir **no ponto de uso**, o que toca a impressão |
 | **`@RequiresApi(S)` com `minSdk 26`** | → **E2** | depende do item acima: enquanto `BLUETOOTH_CONNECT` for pedido no painel, a anotação sobe por `MainScreenNavComposable` → `MainScreenGraphNavigation` → `FluviAppNavHost` → `MainActivity` |
-| **Splash resolve só `currentUser != null`** | → **E2/E3** | o ADR-0016 (8ª rodada) põe a **escolha do vínculo no login** — e ela só existe quando houver empresa e atuação cadastradas |
+| **Splash resolve só `currentUser != null`** | → **E2** (F4) | **respondido pelo [ADR-0020 D9](../adr/0020-fim-do-catalogo-e-o-contexto-do-painel.md):** a splash passa a **carregar o contexto** (usuário → funcionário → vínculo → empresa → atuações) e ganha estado de `Erro`. Não contradiz a E1.1 — o que saiu ali foi espera **artificial**; esta é real, e é a primeira que existe. Com mais de um vínculo, ela carrega e **apresenta a escolha** (ADR-0016, 8ª rodada) |
 
 **Reaproveita:** o grafo de navegação, o `LoginScreen`, o fluxo de recuperação/primeiro acesso e a sessão
 (ADR-0005) — tudo isso serve. **Revitaliza:** a splash (visual e temporização) e a organização da Activity.
@@ -212,7 +212,13 @@ Correções baseadas no domínio + melhorias mínimas. O que o código pede:
   estudo da [camada de apresentação](camada-de-apresentacao.md) já apontava; agora tem consumidor.
 - **`SecaoMenu` é um enum fixo de cinco seções** (`PASSAGEM, VIAGEM, EQUIPE, EMPRESA, NAVIO`). O ADR-0016 §2
   diz que as seções **derivam da atuação** — é isso que faz a plataforma ser multi-segmento sem tocar o
-  modelo de permissão.
+  modelo de permissão. **Com o [ADR-0020 D5](../adr/0020-fim-do-catalogo-e-o-contexto-do-painel.md), "derivar"
+  vira função pura** `Atuacao → Set<SecaoMenu>`: testável em JVM, sem Firestore e **sem esperar cadastro
+  nenhum** — a E2 deixa de depender da E3.
+- **O painel muda conforme a atuação, e a splash carrega o contexto** ([D9](../adr/0020-fim-do-catalogo-e-o-contexto-do-painel.md)).
+  `SplashScreenViewModel.kt:32` pergunta ao `FirebaseAuth` direto e ignora a porta `SessaoUsuario.atual()`, que
+  já existe e é `suspend`. Passa a usá-la, `ContextoUsuario` ganha o vínculo ativo e `SplashScreenState` ganha
+  `Erro` — sem ele, falha de rede prende a splash em `Carregando` para sempre.
 - **`DadosBotoesMenus` carrega `onClick`** — DTO com comportamento dentro de `screendata`, exatamente o que
   a decisão de DTO por caso de uso (§7 do [estudo](dto-por-entidade-ou-caso-de-uso.md)) desfaz.
 - **O painel é o molde.** Este é o ponto do analista: *o painel da plataforma é como o painel por agência vai
@@ -221,24 +227,39 @@ Correções baseadas no domínio + melhorias mínimas. O que o código pede:
 
 #### E3 — Menu da Plataforma e as opções, a partir do domínio
 
+> **Reescrita em 2026-08-03 pelo [ADR-0020](../adr/0020-fim-do-catalogo-e-o-contexto-do-painel.md).** Onde
+> esta frente dizia **`Catalogo`**, leia **`Empresa`**: o catálogo **não nasce** — nenhuma das suas categorias
+> sobreviveu à régua do próprio ADR-0016 §3, e todas viraram tipo de domínio (D1). O CRUD `ADM`-only some
+> junto, e nada o substitui (D8).
+
 Definir a **base estrutural** que as demais entidades vão reusar — e provar essa base numa entidade só:
-**`Catalogo` primeiro, e como *última* opção do menu** (decisão do analista: é a base que sustenta as
-outras, e a que o operador menos abre).
+**`Empresa` primeiro, como a *primeira* seção depois do Painel Principal**.
 
 Isso encaixa com o que já estava decidido em outros ADRs, sem contradição:
-- é a **F1 do ADR-0016** (`Constante` → `Catalogo`) e, ao mesmo tempo, a **F1 do ADR-0017** (piloto do
-  Firestore-only) — uma fatia que paga dois eixos;
-- é o primeiro **CRUD só do `ADM`**, com regra no servidor no mesmo incremento (ADR-0011);
-- e é o primeiro caso de **DTO por caso de uso + fronteira `Map`**, no lugar mais barato do app.
+- é a **F1 do ADR-0017** (piloto do Firestore-only) e a **F1 do ADR-0019** (primeiro DTO por caso de uso),
+  agora realocadas pelo [ADR-0020 D10](../adr/0020-fim-do-catalogo-e-o-contexto-do-painel.md);
+- é onde a **atuação da empresa** é cadastrada (D5) — e é a atuação que faz o menu da E2 existir, o que torna
+  a ordem E2 → E3 autoconsistente;
+- traz a regra no servidor no mesmo incremento (ADR-0011) e o primeiro **teste Android observável**.
+
+**Trade-off assumido:** Empresa é mais cara que o catálogo seria — tem espelho Room a remover e subcoleção a
+criar. Em compensação é representativa: todas as coleções restantes têm espelho a remover, e nenhuma nasce do
+nada. Um piloto barato que não prova o caso geral custa mais do que economiza.
 
 ### P3.A — Domínio e painel ([ADR-0016](../adr/0016-dominio-da-plataforma.md), fases F1–F8)
 
 *O plano por fases do ADR-0016 continua válido como sequência de domínio; as frentes E1–E3 acima são a
 **ordem de entrega em tela**, e a F1 de lá é a E3 daqui.*
 
-`Catalogo` → matar o seed → painel → **capacidades da plataforma** (localidade/porto) → **parte e atuação**
-(empresa + `atuacoes` + concessão de **portos e navios**) → funcionário multi-empresa → **rota e viagem** +
-tipo de embarcação → regras e suíte. É a maior parte do pilar, e é **domínio**, não release.
+~~`Catalogo`~~ → **os tipos do domínio** ([ADR-0020](../adr/0020-fim-do-catalogo-e-o-contexto-do-painel.md) F1/F2)
+→ matar o seed → painel → **parte e atuação** (empresa + `atuacoes` + concessão de **portos e navios**) →
+**capacidades da plataforma** (localidade/porto) → funcionário multi-empresa → **rota e viagem** → regras e
+suíte. É a maior parte do pilar, e é **domínio**, não release.
+
+> **Duas trocas de ordem em 2026-08-03 (ADR-0020):** o catálogo saiu da cabeça da fila porque **não existe**
+> — no lugar dele entram os tipos, que são JVM puro; e **empresa/atuação passa à frente de localidade/porto**,
+> porque é a atuação que faz o painel derivar (D5/D9). O **tipo de embarcação** sai desta cadeia: virou enum
+> (D4) e entra com o rename `Navio` → `Embarcacao`.
 
 > **Atualizado em 2026-08-01:** onde este roadmap dizia *trecho*, leia **localidade/porto** — o Trecho foi
 > dissolvido na 7ª rodada. A concessão é por **navio** (`navioIds`), não por armador. E a "rota" desta linha
@@ -310,8 +331,10 @@ Pilar 1 ✅ (P1.1 → P1.2 → P1.3 → P1.4)
 Pilar 2 ⚠️ (ADR-0015 entregue; o que falta — vínculo, agência por id, lotação — entra em E2/E3+P3.A)
 
 ENTREGA   E1 entrada  (Activity → splash → login → painel)   E1.1 ✅
-          E2 painel   (MainScreen vira PainelPrincipal; menu deriva da atuação)
-          E3 menu + Catálogo  = F1 do ADR-0016 = F1 do ADR-0017 = 1º DTO por caso de uso
+          E2 painel   (os tipos do domínio → menu deriva da atuação → splash carrega o contexto)
+                      = ADR-0020 F1 · F2 · F3 · F4
+          E3 menu + EMPRESA   = F1 do ADR-0017 = F1 do ADR-0019 = 1º DTO por caso de uso
+                      (era Catálogo; o catálogo não nasce — ADR-0020 D1/D10)
 
 domínio   P3.A (ADR-0016: F2 → F3 → … → F8, seguindo a E3)
 esteira   P3.B (P3.4 → P3.1/P3.2/P3.3 → P3.5)      ← P3.4 pode ir já; não depende de nada
@@ -351,7 +374,10 @@ etapas (§Pilar 2).
 - ~~Grupo de testers manual ou sincronizado dos usuários?~~ **Respondido:** manual (ADR-0016 §10).
 
 **Pilar 3 — domínio (P3.A):** ~~o que trava o começo é o rename `Constante`→`Catalogo` tocando o Room~~ —
-**não trava mais**: sem espelho, não há entidade a renomear ([ADR-0017](../adr/0017-eixo-de-storage-firestore-only.md)).
+**não trava mais, e o rename nem acontece**: sem espelho não há entidade a renomear
+([ADR-0017](../adr/0017-eixo-de-storage-firestore-only.md)), e sem catálogo não há para onde renomear
+([ADR-0020 D1](../adr/0020-fim-do-catalogo-e-o-contexto-do-painel.md)) — `Constante` sai, e os valores viram
+tipo.
 Os dez pontos abertos do [ADR-0016](../adr/0016-dominio-da-plataforma.md#pontos-abertos-analista-decide)
 **estão todos resolvidos** desde 2026-08-01 — o último foi o 6: **o `SUPERVISOR` cria rota e viagem** (criar
 no pool comum afeta todas as agências) **e a concessão é editável** depois do cadastro. O domínio do Pilar 3

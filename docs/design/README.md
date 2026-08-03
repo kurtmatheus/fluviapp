@@ -27,6 +27,8 @@ aqui é mexer no efeito, não na causa.
 | Documento | Estado | Do que trata |
 |---|---|---|
 | [dominio-da-plataforma.md](dominio-da-plataforma.md) | **base** | **O catálogo completo**: os dois contextos, o mapa de coleções, todas as entidades com seus campos, todos os enums e as regras puras. Marca o que é `[hoje]`, `[alvo]` e `[morre]` |
+| [e2-painel-e-fim-do-catalogo.md](e2-painel-e-fim-do-catalogo.md) | **em execução** | A E2 refeita: aplicando a régua do ADR-0016 §3 sem exceção, **nenhuma categoria do catálogo sobrevive** — máscara de documento é regra (LGPD), forma de pagamento é do lançamento, atuação é da empresa. O `Catalogo` não nasce, o domínio fecha em tipos e a primeira seção depois do Painel é **Empresa** |
+| [e3-catalogo.md](e3-catalogo.md) | **superado** | O mapa da frente E3: o que do catálogo já virou domínio (quase tudo), o resíduo REST do `IObjetoSimplificado` e o contador de bilhete defasado. **É a prova do doc acima** — que levou a mesma conta até o fim |
 | [dominio-passagem.md](dominio-passagem.md) | **base** · §11 fechado → ADR-0018 | O agregado Passagem em detalhe — participantes, snapshot × id, ciclo de vida. O §11 traz a rodada de 2026-08-01 (pools, modo, lançamentos) decisão a decisão |
 | [viagem-vs-trecho.md](viagem-vs-trecho.md) | fechado → ADR-0016 §7.1 | O insight sobre a data. **Vocabulário vencido:** o Trecho foi dissolvido; hoje são Rota, Viagem e ocorrência — o aviso no topo da nota traduz |
 | [dominio-relacionamentos-e-camadas.md](dominio-relacionamentos-e-camadas.md) | **superado** | Visão geral da era do ADR-0008 (ainda fala em `Agente` e relação por nome). Substituído por `dominio-da-plataforma.md` |
