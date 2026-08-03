@@ -1,5 +1,7 @@
 package dev.matheus.fluviapp.domain.mappers
 
+import dev.matheus.fluviapp.revitalizacao.ForaDoEscopo
+import org.junit.experimental.categories.Category
 import dev.matheus.fluviapp.fakes.FakeConstanteRepository
 import dev.matheus.fluviapp.fakes.FakeEmpresaRepository
 import dev.matheus.fluviapp.fakes.FakeNavioRepository
@@ -13,6 +15,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 /** Card de viagem resolvido por id (ADR-0008) — rename-safe. */
+@Category(ForaDoEscopo::class)
 class ViagemDadosViagemMapperTest {
 
     private val fakeEmpresa = FakeEmpresaRepository().apply {

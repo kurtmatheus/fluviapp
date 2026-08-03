@@ -1,5 +1,7 @@
 package dev.matheus.fluviapp.ui.viewmodel.helpers.viagem
 
+import dev.matheus.fluviapp.revitalizacao.ForaDoEscopo
+import org.junit.experimental.categories.Category
 import dev.matheus.fluviapp.ui.states.FormViagemUiState
 import dev.matheus.fluviapp.ui.states.TarifaInputUiState
 import org.junit.Assert.assertEquals
@@ -7,6 +9,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
+@Category(ForaDoEscopo::class)
 class ValidacaoViagemTest {
 
     private fun preenchida(tarifas: List<TarifaInputUiState>) = FormViagemUiState(

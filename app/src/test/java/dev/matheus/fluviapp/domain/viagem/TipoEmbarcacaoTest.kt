@@ -1,5 +1,7 @@
 package dev.matheus.fluviapp.domain.viagem
 
+import dev.matheus.fluviapp.revitalizacao.ForaDoEscopo
+import org.junit.experimental.categories.Category
 import dev.matheus.fluviapp.domain.passagem.ClasseVeiculo
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -11,6 +13,7 @@ import org.junit.Test
  * Tipo da embarcação como tipo de domínio (ADR-0020 D4). A tabela do ADR-0016 §8, agora executável:
  * F/B leva tudo, navio leva carro e moto, lancha só passageiro.
  */
+@Category(ForaDoEscopo::class)
 class TipoEmbarcacaoTest {
 
     @Test

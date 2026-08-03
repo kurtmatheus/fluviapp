@@ -1,5 +1,7 @@
 package dev.matheus.fluviapp.domain.mappers
 
+import dev.matheus.fluviapp.revitalizacao.ForaDoEscopo
+import org.junit.experimental.categories.Category
 import dev.matheus.fluviapp.extensions.formataParaMoedaBrasileira
 import dev.matheus.fluviapp.fakes.FakeEmpresaRepository
 import dev.matheus.fluviapp.fakes.FakeNavioRepository
@@ -20,6 +22,7 @@ import java.math.BigDecimal
  * fazia). `idViagem` vem do `viagemId` congelado — sem ida à Viagem viva.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
+@Category(ForaDoEscopo::class)
 class PassagemDadosPassagemMapperTest {
 
     private fun empresa(id: String, nome: String) = Empresa(

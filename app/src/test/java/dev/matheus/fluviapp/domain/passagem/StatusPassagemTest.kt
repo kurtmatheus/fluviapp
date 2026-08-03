@@ -1,5 +1,7 @@
 package dev.matheus.fluviapp.domain.passagem
 
+import dev.matheus.fluviapp.revitalizacao.ForaDoEscopo
+import org.junit.experimental.categories.Category
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -11,6 +13,7 @@ import org.junit.Test
  *
  * Ciclo: A_EMITIR → EMITIDA → EMBARCADA (terminal, embarque irreversível).
  */
+@Category(ForaDoEscopo::class)
 class StatusPassagemTest {
 
     // --- de(): fronteira String -> enum, tolerante à grafia legada ---

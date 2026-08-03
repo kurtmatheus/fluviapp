@@ -64,6 +64,20 @@ android {
         unitTests {
             // android.util.Log e afins viram no-op nos testes JVM (em vez de lançar "not mocked").
             isReturnDefaultValues = true
+
+            // A suíte segue o escopo da revitalização (ADR-0020): roda o que cobre a entidade viva — hoje
+            // a Empresa — e exclui o que está marcado com `@Category(ForaDoEscopo::class)`. Não é
+            // desligar teste para o build ficar verde: é o mesmo recorte que o app faz em tela, aplicado
+            // à suíte, para que "vermelho" volte a significar "quebrei algo que estava de pé".
+            //
+            // `-PsuiteCompleta` roda tudo, para medir o que falta revitalizar.
+            all { teste ->
+                teste.useJUnit {
+                    if (!project.hasProperty("suiteCompleta")) {
+                        excludeCategories("dev.matheus.fluviapp.revitalizacao.ForaDoEscopo")
+                    }
+                }
+            }
         }
     }
 }

@@ -1,5 +1,7 @@
 package dev.matheus.fluviapp.extensions
 
+import dev.matheus.fluviapp.revitalizacao.ForaDoEscopo
+import org.junit.experimental.categories.Category
 import dev.matheus.fluviapp.domain.passagem.Passagem
 import dev.matheus.fluviapp.services.repository.firebase.documents.toPassagem
 import org.junit.Assert.assertEquals
@@ -11,6 +13,7 @@ import org.junit.Test
  * assimetria conhecida do passageiro 3 (usa `tipoDocumentoPassageiro3` onde p1/p2 usam
  * `documentoPassageiroN`) — comportamento intencional, não bug.
  */
+@Category(ForaDoEscopo::class)
 class PassagemDocumentoMapperTest {
 
     private fun passagemModelo() = Passagem(

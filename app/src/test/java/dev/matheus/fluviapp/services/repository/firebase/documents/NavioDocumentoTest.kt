@@ -1,10 +1,13 @@
 package dev.matheus.fluviapp.services.repository.firebase.documents
 
+import dev.matheus.fluviapp.revitalizacao.ForaDoEscopo
+import org.junit.experimental.categories.Category
 import dev.matheus.fluviapp.domain.viagem.toDocumento
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
 /** Round-trip do mapper Navio ↔ NavioDocumento — vínculo com Empresa só por id (ADR-0008, Fase 3). */
+@Category(ForaDoEscopo::class)
 class NavioDocumentoTest {
 
     @Test

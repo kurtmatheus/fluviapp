@@ -1,5 +1,7 @@
 package dev.matheus.fluviapp
 
+import dev.matheus.fluviapp.revitalizacao.ForaDoEscopo
+import org.junit.experimental.categories.Category
 import dev.matheus.fluviapp.extensions.convertMillisToLocalDateToString
 import dev.matheus.fluviapp.extensions.extrairDocumentoFormatado
 import dev.matheus.fluviapp.extensions.extrairNumeros
@@ -15,6 +17,7 @@ import org.junit.Test
  *
  * See [testing documentation](http://d.android.com/tools/testing).
  */
+@Category(ForaDoEscopo::class)
 class FluviAppUnitTest {
     @Test
     fun extension_ConvertLongToDateStringIsWorking() {

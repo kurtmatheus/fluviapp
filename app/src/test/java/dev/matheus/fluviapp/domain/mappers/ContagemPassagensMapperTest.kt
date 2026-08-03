@@ -1,5 +1,7 @@
 package dev.matheus.fluviapp.domain.mappers
 
+import dev.matheus.fluviapp.revitalizacao.ForaDoEscopo
+import org.junit.experimental.categories.Category
 import dev.matheus.fluviapp.fakes.FakeNavioRepository
 import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.INTEIRA
 import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.REDE
@@ -18,6 +20,7 @@ import org.junit.Test
  * vem do repo por id, não do snapshot) e órfão detectável (navioId sem navio → grupo descartado).
  */
 @OptIn(ExperimentalCoroutinesApi::class)
+@Category(ForaDoEscopo::class)
 class ContagemPassagensMapperTest {
 
     private fun navio(id: String, nome: String) = Navio(

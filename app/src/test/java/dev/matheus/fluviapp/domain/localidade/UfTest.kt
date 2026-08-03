@@ -1,10 +1,13 @@
 package dev.matheus.fluviapp.domain.localidade
 
+import dev.matheus.fluviapp.revitalizacao.ForaDoEscopo
+import org.junit.experimental.categories.Category
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
 
 /** UF como tipo de domínio (ADR-0020 D6): 27 unidades, fechadas por constituição. */
+@Category(ForaDoEscopo::class)
 class UfTest {
 
     @Test

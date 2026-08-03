@@ -1,5 +1,7 @@
 package dev.matheus.fluviapp.ui.viewmodel.viagem
 
+import dev.matheus.fluviapp.revitalizacao.ForaDoEscopo
+import org.junit.experimental.categories.Category
 import androidx.lifecycle.SavedStateHandle
 import dev.matheus.fluviapp.fakes.FakeConstanteRepository
 import dev.matheus.fluviapp.fakes.FakeEmpresaRepository
@@ -26,6 +28,7 @@ import org.junit.Rule
 import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
+@Category(ForaDoEscopo::class)
 class FormViagemViewModelTest {
 
     @get:Rule

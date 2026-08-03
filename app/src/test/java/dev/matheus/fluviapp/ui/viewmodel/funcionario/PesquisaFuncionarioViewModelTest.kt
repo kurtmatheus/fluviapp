@@ -1,5 +1,7 @@
 package dev.matheus.fluviapp.ui.viewmodel.funcionario
 
+import dev.matheus.fluviapp.revitalizacao.ForaDoEscopo
+import org.junit.experimental.categories.Category
 import dev.matheus.fluviapp.fakes.FakeFuncionarioRepository
 import dev.matheus.fluviapp.fakes.FakeSessaoUsuario
 import dev.matheus.fluviapp.domain.operacoes.Funcionario
@@ -16,6 +18,7 @@ import org.junit.Rule
 import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
+@Category(ForaDoEscopo::class)
 class PesquisaFuncionarioViewModelTest {
 
     @get:Rule

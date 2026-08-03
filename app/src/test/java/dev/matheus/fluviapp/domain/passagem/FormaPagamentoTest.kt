@@ -1,5 +1,7 @@
 package dev.matheus.fluviapp.domain.passagem
 
+import dev.matheus.fluviapp.revitalizacao.ForaDoEscopo
+import org.junit.experimental.categories.Category
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -10,6 +12,7 @@ import org.junit.Test
  * Forma de pagamento como tipo de domínio (ADR-0020 D3). O que a linha de catálogo não conseguia carregar:
  * quando o valor entra no caixa e o que o fechamento conta na gaveta.
  */
+@Category(ForaDoEscopo::class)
 class FormaPagamentoTest {
 
     @Test

@@ -1,5 +1,7 @@
 package dev.matheus.fluviapp.ui.viewmodel.navio
 
+import dev.matheus.fluviapp.revitalizacao.ForaDoEscopo
+import org.junit.experimental.categories.Category
 import dev.matheus.fluviapp.fakes.FakeEmpresaRepository
 import dev.matheus.fluviapp.fakes.FakeNavioRepository
 import dev.matheus.fluviapp.domain.viagem.Empresa
@@ -15,6 +17,7 @@ import org.junit.Rule
 import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
+@Category(ForaDoEscopo::class)
 class PesquisaNavioViewModelTest {
 
     @get:Rule

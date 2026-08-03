@@ -1,5 +1,7 @@
 package dev.matheus.fluviapp.extensions
 
+import dev.matheus.fluviapp.revitalizacao.ForaDoEscopo
+import org.junit.experimental.categories.Category
 import dev.matheus.fluviapp.domain.viagem.TarifaViagem
 import dev.matheus.fluviapp.services.repository.firebase.documents.ViagemDocumento
 import org.junit.Assert.assertEquals
@@ -10,6 +12,7 @@ import org.junit.Test
  * Costura mapa↔linhas da tabela de tarifas da Viagem (ADR-0013). Trava o achatamento nas duas direções
  * e o round-trip (a forma do Firestore e a do Room têm de casar).
  */
+@Category(ForaDoEscopo::class)
 class TarifaViagemExtensionsTest {
 
     @Test

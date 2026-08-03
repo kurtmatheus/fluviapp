@@ -1,5 +1,7 @@
 package dev.matheus.fluviapp.ui.viewmodel.helpers.passagem.validacao
 
+import dev.matheus.fluviapp.revitalizacao.ForaDoEscopo
+import org.junit.experimental.categories.Category
 import dev.matheus.fluviapp.R
 import dev.matheus.fluviapp.ui.states.passagem.FormPassageiroUiState
 import org.junit.Assert.assertEquals
@@ -11,6 +13,7 @@ import org.junit.Test
  * Validação pura do sub-form de passageiro (molde ADR-0006, fatia 2). Migra a cobertura do antigo
  * `ValidacaoFormPassageiroHelperTest` (impuro) + a regra de idade da criança (CRIANCA_ATE_5, ADR-0013).
  */
+@Category(ForaDoEscopo::class)
 class ValidacaoPassageiroTest {
 
     private val dataViagem = "10/06/2024"

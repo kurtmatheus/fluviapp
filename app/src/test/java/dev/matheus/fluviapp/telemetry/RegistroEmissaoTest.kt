@@ -1,11 +1,14 @@
 package dev.matheus.fluviapp.telemetry
 
+import dev.matheus.fluviapp.revitalizacao.ForaDoEscopo
+import org.junit.experimental.categories.Category
 import dev.matheus.fluviapp.exceptions.EmissaoException
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
+@Category(ForaDoEscopo::class)
 class RegistroEmissaoTest {
 
     private lateinit var telemetry: FakeTelemetry

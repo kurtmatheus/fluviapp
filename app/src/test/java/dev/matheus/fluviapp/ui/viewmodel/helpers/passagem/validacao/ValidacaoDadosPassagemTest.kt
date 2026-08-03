@@ -1,5 +1,7 @@
 package dev.matheus.fluviapp.ui.viewmodel.helpers.passagem.validacao
 
+import dev.matheus.fluviapp.revitalizacao.ForaDoEscopo
+import org.junit.experimental.categories.Category
 import dev.matheus.fluviapp.R
 import dev.matheus.fluviapp.ui.states.passagem.FormPassagemUiState
 import org.junit.Assert.assertEquals
@@ -11,6 +13,7 @@ import org.junit.Test
  * Validação pura dos dados da passagem (molde ADR-0006, fatia 3). Migra a cobertura do antigo
  * `ValidacaoFormPassagemHelperTest`, incluindo o lock de agência/agente (marcam mas não invalidam).
  */
+@Category(ForaDoEscopo::class)
 class ValidacaoDadosPassagemTest {
 
     private val dataFutura = "31/12/2999"

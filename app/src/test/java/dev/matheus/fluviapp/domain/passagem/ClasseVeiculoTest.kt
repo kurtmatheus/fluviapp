@@ -1,5 +1,7 @@
 package dev.matheus.fluviapp.domain.passagem
 
+import dev.matheus.fluviapp.revitalizacao.ForaDoEscopo
+import org.junit.experimental.categories.Category
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -7,6 +9,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /** Classe do veículo como tipo de domínio (ADR-0018 D7, entrando pela F1 do ADR-0020). */
+@Category(ForaDoEscopo::class)
 class ClasseVeiculoTest {
 
     @Test

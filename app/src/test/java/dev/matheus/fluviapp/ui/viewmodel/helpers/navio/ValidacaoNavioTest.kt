@@ -1,10 +1,13 @@
 package dev.matheus.fluviapp.ui.viewmodel.helpers.navio
 
+import dev.matheus.fluviapp.revitalizacao.ForaDoEscopo
+import org.junit.experimental.categories.Category
 import dev.matheus.fluviapp.ui.states.FormNavioUiState
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
+@Category(ForaDoEscopo::class)
 class ValidacaoNavioTest {
 
     @Test

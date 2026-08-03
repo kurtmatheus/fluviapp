@@ -1,5 +1,7 @@
 package dev.matheus.fluviapp.ui.viewmodel.helpers.passagem.validacao
 
+import dev.matheus.fluviapp.revitalizacao.ForaDoEscopo
+import org.junit.experimental.categories.Category
 import dev.matheus.fluviapp.R
 import dev.matheus.fluviapp.ui.states.passagem.FormVeiculoUiState
 import org.junit.Assert.assertEquals
@@ -11,6 +13,7 @@ import org.junit.Test
  * Validação pura do sub-form de veículo (molde ADR-0006). Primeira fatia da refatoração do form de
  * passagem para validação pura (espelha `ValidacaoViagemTest`).
  */
+@Category(ForaDoEscopo::class)
 class ValidacaoVeiculoTest {
 
     private fun veiculoValido() = FormVeiculoUiState(

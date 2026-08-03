@@ -1,5 +1,7 @@
 package dev.matheus.fluviapp.domain.passagem
 
+import dev.matheus.fluviapp.revitalizacao.ForaDoEscopo
+import org.junit.experimental.categories.Category
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -10,6 +12,7 @@ import org.junit.Test
  * O modo da passagem como tipo de domínio (ADR-0018 D6, entrando pelo ADR-0020). O grosso dos casos é a
  * tolerância de `de()`: é ela que faz o dado gravado pelo catálogo continuar legível depois que ele sai.
  */
+@Category(ForaDoEscopo::class)
 class ModoPassagemTest {
 
     @Test

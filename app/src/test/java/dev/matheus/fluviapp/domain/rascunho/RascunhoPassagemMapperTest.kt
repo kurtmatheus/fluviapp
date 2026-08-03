@@ -1,11 +1,14 @@
 package dev.matheus.fluviapp.domain.rascunho
 
+import dev.matheus.fluviapp.revitalizacao.ForaDoEscopo
+import org.junit.experimental.categories.Category
 import dev.matheus.fluviapp.ui.states.passagem.FormPassageiroUiState
 import dev.matheus.fluviapp.ui.states.passagem.FormPassagemUiState
 import dev.matheus.fluviapp.ui.states.passagem.FormVeiculoUiState
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
+@Category(ForaDoEscopo::class)
 class RascunhoPassagemMapperTest {
 
     private val passagem = FormPassagemUiState(

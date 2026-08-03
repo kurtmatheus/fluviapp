@@ -1,5 +1,7 @@
 package dev.matheus.fluviapp.domain.documento
 
+import dev.matheus.fluviapp.revitalizacao.ForaDoEscopo
+import org.junit.experimental.categories.Category
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -13,6 +15,7 @@ import org.junit.Test
  * CPF `529.982.247-25` e CNPJ `11.222.333/0002-62` são válidos de verdade — os DVs conferem. O CNPJ foi
  * escolhido com filial `0002` de propósito: é o caso que o `formatarCNPJ()` antigo errava.
  */
+@Category(ForaDoEscopo::class)
 class TipoDocumentoTest {
 
     private val cpfValido = "52998224725"

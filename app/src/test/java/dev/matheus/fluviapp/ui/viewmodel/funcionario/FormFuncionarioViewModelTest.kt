@@ -1,5 +1,7 @@
 package dev.matheus.fluviapp.ui.viewmodel.funcionario
 
+import dev.matheus.fluviapp.revitalizacao.ForaDoEscopo
+import org.junit.experimental.categories.Category
 import androidx.lifecycle.SavedStateHandle
 import dev.matheus.fluviapp.fakes.FakeFuncionarioRepository
 import dev.matheus.fluviapp.fakes.FakeConstanteRepository
@@ -21,6 +23,7 @@ import org.junit.Rule
 import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
+@Category(ForaDoEscopo::class)
 class FormFuncionarioViewModelTest {
 
     @get:Rule

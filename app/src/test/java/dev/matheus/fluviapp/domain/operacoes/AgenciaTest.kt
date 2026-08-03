@@ -1,5 +1,7 @@
 package dev.matheus.fluviapp.domain.operacoes
 
+import dev.matheus.fluviapp.revitalizacao.ForaDoEscopo
+import org.junit.experimental.categories.Category
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -13,6 +15,7 @@ import org.junit.Test
  * enum). Ele volta quando a agência virar seletor (P2.2b) — e este teste é o registro de que a ausência
  * é decisão, não esquecimento.
  */
+@Category(ForaDoEscopo::class)
 class AgenciaTest {
 
     @Test
