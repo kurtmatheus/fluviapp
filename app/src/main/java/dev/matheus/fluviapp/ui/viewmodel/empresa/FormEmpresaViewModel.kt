@@ -5,6 +5,8 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.matheus.fluviapp.R
+import dev.matheus.fluviapp.domain.operacoes.Atuacao
+import dev.matheus.fluviapp.domain.viagem.AtuacaoDaEmpresa
 import dev.matheus.fluviapp.domain.viagem.Empresa
 import dev.matheus.fluviapp.navigation.navcomposables.empresa.ID_EMPRESA_ARGUMENT
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.EmpresaRepository
@@ -51,9 +53,20 @@ class FormEmpresaViewModel @Inject constructor(
     fun onTelefone1Change(v: String) = _uiState.update { it.copy(telefone1 = v) }
     fun onTelefone2Change(v: String) = _uiState.update { it.copy(telefone2 = v) }
 
+    /** Liga/desliga uma atuação. Marcar e desmarcar são o mesmo gesto: o conjunto muda nos dois sentidos. */
+    fun onAtuacaoToggle(atuacao: Atuacao) = _uiState.update { estado ->
+        val atuacoes = if (atuacao in estado.atuacoes) {
+            estado.atuacoes - atuacao
+        } else {
+            estado.atuacoes + atuacao
+        }
+        estado.copy(atuacoes = atuacoes)
+    }
+
     private fun carregar() {
         viewModelScope.launch {
             empresaRepository.obterPorId(idEmpresa)?.let { empresa ->
+                val atuacoes = empresaRepository.obterAtuacoes(idEmpresa).map { it.atuacao }.toSet()
                 _uiState.update {
                     it.copy(
                         titulo = R.string.subtitle_editar_empresa,
@@ -63,6 +76,7 @@ class FormEmpresaViewModel @Inject constructor(
                         endereco = empresa.endereco,
                         telefone1 = empresa.telefone1,
                         telefone2 = empresa.telefone2,
+                        atuacoes = atuacoes,
                     )
                 }
             }
@@ -86,7 +100,9 @@ class FormEmpresaViewModel @Inject constructor(
         viewModelScope.launch {
             val s = _uiState.value
             try {
-                empresaRepository.salvar(
+                // A parte primeiro: é ela que gera o id, e as atuações penduram nele (ADR-0016 §4).
+                // A ordem não é preferência — sem id não há subcoleção onde escrever.
+                val id = empresaRepository.salvar(
                     Empresa(
                         id = idEmpresa,
                         nome = s.nome,
@@ -96,6 +112,14 @@ class FormEmpresaViewModel @Inject constructor(
                         telefone1 = s.telefone1,
                         telefone2 = s.telefone2,
                     )
+                )
+                // As concessões (navioIds) não são editadas aqui — o que este form decide é QUAIS
+                // atuações a parte exerce. Preservam-se as que já existem, para que salvar a empresa
+                // não apague concessão concedida noutro lugar.
+                val concessoes = empresaRepository.obterAtuacoes(id).associateBy { it.atuacao }
+                empresaRepository.salvarAtuacoes(
+                    empresaId = id,
+                    atuacoes = s.atuacoes.map { concessoes[it] ?: AtuacaoDaEmpresa(it) },
                 )
                 _sucesso.send(Unit)
             } catch (e: Exception) {

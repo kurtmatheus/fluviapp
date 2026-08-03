@@ -43,6 +43,7 @@ fun NavGraphBuilder.formEmpresaNavComposable(
             onEnderecoChange = viewModel::onEnderecoChange,
             onTelefone1Change = viewModel::onTelefone1Change,
             onTelefone2Change = viewModel::onTelefone2Change,
+            onAtuacaoToggle = viewModel::onAtuacaoToggle,
             onClickSalvar = viewModel::salvar,
             onClickVoltar = onClickVoltar,
         )

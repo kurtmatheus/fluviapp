@@ -131,8 +131,10 @@ class PermissoesUsuarioTest {
     fun `com atuacao, o papel de plataforma ve o painel — nao a operacao`() {
         val visiveis = PermissoesUsuario.secoesVisiveis(adm, atuacao = Atuacao.AGENCIAMENTO)
 
+        // A ordem é a do enum, e desde o ADR-0020 D10 ela começa pela EMPRESA: é a parte, e dela
+        // dependem as outras — navio tem dono, funcionário tem vínculo.
         assertEquals(
-            listOf(SecaoMenu.VIAGEM, SecaoMenu.EQUIPE, SecaoMenu.EMPRESA, SecaoMenu.NAVIO),
+            listOf(SecaoMenu.EMPRESA, SecaoMenu.NAVIO, SecaoMenu.VIAGEM, SecaoMenu.EQUIPE),
             visiveis,
         )
         // ADM administra a plataforma; emitir passagem exige vínculo de funcionário (ADR-0016 §2).

@@ -2,6 +2,8 @@ package dev.matheus.fluviapp.ui.viewmodel.empresa
 
 import androidx.lifecycle.SavedStateHandle
 import dev.matheus.fluviapp.fakes.FakeEmpresaRepository
+import dev.matheus.fluviapp.domain.operacoes.Atuacao
+import dev.matheus.fluviapp.domain.viagem.AtuacaoDaEmpresa
 import dev.matheus.fluviapp.domain.viagem.Empresa
 import dev.matheus.fluviapp.util.MainDispatcherRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -86,4 +88,106 @@ class FormEmpresaViewModelTest {
         assertEquals("ACME LTDA", s.razaoSocial)
         assertEquals("11222333000181", s.cnpj)
     }
+
+    // --- Atuações: a subcoleção `empresas/{id}/atuacoes` (ADR-0016 §4, ADR-0020 F5c) ---
+
+    @Test
+    fun `atuacao marcada e salva na subcolecao, pendurada no id gerado`() = runTest(mainRule.dispatcher) {
+        val fake = FakeEmpresaRepository()
+        val vm = FormEmpresaViewModel(fake, SavedStateHandle())
+
+        preencherObrigatorios(vm)
+        vm.onAtuacaoToggle(Atuacao.AGENCIAMENTO)
+        vm.salvar()
+        advanceUntilIdle()
+
+        val id = fake.salvos.single().id.ifBlank { "id-gerado-1" }
+        assertEquals(
+            listOf(AtuacaoDaEmpresa(Atuacao.AGENCIAMENTO)),
+            fake.atuacoesPorEmpresa[id],
+        )
+    }
+
+    @Test
+    fun `o toggle liga e desliga — desmarcar deixa a parte sem aquela atuacao`() {
+        val vm = FormEmpresaViewModel(FakeEmpresaRepository(), SavedStateHandle())
+
+        vm.onAtuacaoToggle(Atuacao.TRANSPORTE)
+        assertEquals(setOf(Atuacao.TRANSPORTE), vm.uiState.value.atuacoes)
+
+        vm.onAtuacaoToggle(Atuacao.TRANSPORTE)
+        assertTrue(vm.uiState.value.atuacoes.isEmpty())
+    }
+
+    @Test
+    fun `uma parte exerce varias atuacoes ao mesmo tempo`() {
+        val vm = FormEmpresaViewModel(FakeEmpresaRepository(), SavedStateHandle())
+
+        vm.onAtuacaoToggle(Atuacao.AGENCIAMENTO)
+        vm.onAtuacaoToggle(Atuacao.TRANSPORTE)
+
+        assertEquals(setOf(Atuacao.AGENCIAMENTO, Atuacao.TRANSPORTE), vm.uiState.value.atuacoes)
+    }
+
+    @Test
+    fun `salvar preserva a concessao ja concedida em vez de zera-la`() = runTest(mainRule.dispatcher) {
+        // O form decide QUAIS atuações a parte exerce, não os navios concedidos. Salvar a empresa não
+        // pode apagar concessão feita noutro lugar.
+        val fake = FakeEmpresaRepository()
+        fake.empresas = listOf(empresaValida("e1"))
+        fake.atuacoesPorEmpresa["e1"] =
+            listOf(AtuacaoDaEmpresa(Atuacao.AGENCIAMENTO, navioIds = setOf("navio-7")))
+        val vm = FormEmpresaViewModel(fake, SavedStateHandle(mapOf("idEmpresa" to "e1")))
+        advanceUntilIdle()
+
+        vm.salvar()
+        advanceUntilIdle()
+
+        assertEquals(
+            setOf("navio-7"),
+            fake.atuacoesPorEmpresa["e1"]?.single()?.navioIds,
+        )
+    }
+
+    @Test
+    fun `edicao carrega as atuacoes ja gravadas`() = runTest(mainRule.dispatcher) {
+        val fake = FakeEmpresaRepository()
+        fake.empresas = listOf(empresaValida("e1"))
+        fake.atuacoesPorEmpresa["e1"] = listOf(AtuacaoDaEmpresa(Atuacao.TRANSPORTE))
+        val vm = FormEmpresaViewModel(fake, SavedStateHandle(mapOf("idEmpresa" to "e1")))
+
+        advanceUntilIdle()
+
+        assertEquals(setOf(Atuacao.TRANSPORTE), vm.uiState.value.atuacoes)
+    }
+
+    @Test
+    fun `parte sem atuacao nenhuma e salva — cadastrada e sem operacao e estado valido`() =
+        runTest(mainRule.dispatcher) {
+            val fake = FakeEmpresaRepository()
+            val vm = FormEmpresaViewModel(fake, SavedStateHandle())
+
+            preencherObrigatorios(vm)
+            vm.salvar()
+            advanceUntilIdle()
+
+            assertEquals(1, fake.salvos.size)
+            assertTrue(fake.atuacoesPorEmpresa.values.single().isEmpty())
+        }
+
+    private fun preencherObrigatorios(vm: FormEmpresaViewModel) {
+        vm.onNomeChange("EMPRESA MODELO")
+        vm.onRazaoSocialChange("EMPRESA MODELO LTDA")
+        vm.onCnpjChange("11222333000181")
+    }
+
+    private fun empresaValida(id: String) = Empresa(
+        id = id,
+        nome = "EMPRESA MODELO",
+        razaoSocial = "EMPRESA MODELO LTDA",
+        cnpj = "11222333000181",
+        endereco = "",
+        telefone1 = "",
+        telefone2 = "",
+    )
 }

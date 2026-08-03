@@ -16,6 +16,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import dev.matheus.fluviapp.R
+import dev.matheus.fluviapp.domain.operacoes.Atuacao
 import dev.matheus.fluviapp.ui.components.forms.areas.CommonAreaForm
 import dev.matheus.fluviapp.ui.components.forms.areas.empresa.ContentEmpresaAreaForm
 import dev.matheus.fluviapp.ui.components.forms.buttons.CommonIconButton
@@ -31,6 +32,7 @@ fun FormEmpresaScreen(
     onEnderecoChange: (String) -> Unit = {},
     onTelefone1Change: (String) -> Unit = {},
     onTelefone2Change: (String) -> Unit = {},
+    onAtuacaoToggle: (Atuacao) -> Unit = {},
     onClickSalvar: () -> Unit = {},
     onClickVoltar: () -> Unit = {},
 ) {
@@ -61,6 +63,7 @@ fun FormEmpresaScreen(
                     onEnderecoChange = onEnderecoChange,
                     onTelefone1Change = onTelefone1Change,
                     onTelefone2Change = onTelefone2Change,
+                    onAtuacaoToggle = onAtuacaoToggle,
                 )
             }
             Column(

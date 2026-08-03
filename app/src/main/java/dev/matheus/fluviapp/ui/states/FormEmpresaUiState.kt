@@ -1,6 +1,7 @@
 package dev.matheus.fluviapp.ui.states
 
 import dev.matheus.fluviapp.R
+import dev.matheus.fluviapp.domain.operacoes.Atuacao
 
 /**
  * Estado do formulário de empresa — puro (só dados + flags). Sem lambdas embutidas: os eventos são
@@ -18,5 +19,10 @@ data class FormEmpresaUiState(
     val endereco: String = "",
     val telefone1: String = "",
     val telefone2: String = "",
+    /**
+     * O que esta parte FAZ (ADR-0016 §4). Conjunto porque uma empresa exerce várias atuações ao mesmo
+     * tempo — não é escolha única, e não é subtipo.
+     */
+    val atuacoes: Set<Atuacao> = emptySet(),
     val isProcessing: Boolean = false,
 )

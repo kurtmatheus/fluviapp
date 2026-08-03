@@ -3,6 +3,8 @@ package dev.matheus.fluviapp.services.repository.cadastro.viagem
 import android.util.Log
 import com.google.firebase.firestore.FirebaseFirestore
 import dev.matheus.fluviapp.di.module.SyncScope
+import dev.matheus.fluviapp.domain.operacoes.Atuacao
+import dev.matheus.fluviapp.domain.viagem.AtuacaoDaEmpresa
 import dev.matheus.fluviapp.domain.viagem.Empresa
 import dev.matheus.fluviapp.services.repository.firebase.FonteSnapshots
 import dev.matheus.fluviapp.services.repository.firebase.documents.paraMapa
@@ -73,7 +75,7 @@ class EmpresaFirestoreRepository @Inject constructor(
         )
     }
 
-    override suspend fun salvar(empresa: Empresa) {
+    override suspend fun salvar(empresa: Empresa): String {
         val documento = if (empresa.id.isBlank()) {
             firestore.collection(COLLECTION_EMPRESAS).document()
         } else {
@@ -90,7 +92,54 @@ class EmpresaFirestoreRepository @Inject constructor(
         } catch (e: Exception) {
             registroCadastro.pendenteDeSync(ENTIDADE, comId.id, e)
         }
+        return comId.id
     }
+
+    override suspend fun obterAtuacoes(empresaId: String): List<AtuacaoDaEmpresa> {
+        if (empresaId.isBlank()) return emptyList()
+        return try {
+            atuacoesDe(empresaId).get().await().documents.mapNotNull { doc ->
+                // O id do documento É o nome da atuação (ADR-0016 §4). Valor que o código não conhece
+                // é descartado — fail-closed: não se inventa atuação a partir de um id qualquer.
+                Atuacao.de(doc.id)?.let { atuacao ->
+                    AtuacaoDaEmpresa(
+                        atuacao = atuacao,
+                        navioIds = (doc.get(CAMPO_NAVIO_IDS) as? List<*>)
+                            ?.filterIsInstance<String>()
+                            .orEmpty()
+                            .toSet(),
+                    )
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "obterAtuacoes($empresaId): ${e.message}", e)
+            emptyList()
+        }
+    }
+
+    override suspend fun salvarAtuacoes(empresaId: String, atuacoes: List<AtuacaoDaEmpresa>) {
+        if (empresaId.isBlank()) return
+        val colecao = atuacoesDe(empresaId)
+        try {
+            val existentes = colecao.get().await().documents.map { it.id }.toSet()
+            val desejadas = atuacoes.associateBy { it.atuacao.name }
+
+            // Uma escrita em lote: acrescentar e REMOVER no mesmo ato. Sem a remoção, deixar de exercer
+            // uma atuação seria inexprimível — o documento antigo sobreviveria à edição.
+            firestore.runBatch { lote ->
+                desejadas.forEach { (id, atuacao) ->
+                    lote.set(colecao.document(id), mapOf(CAMPO_NAVIO_IDS to atuacao.navioIds.toList()))
+                }
+                (existentes - desejadas.keys).forEach { lote.delete(colecao.document(it)) }
+            }.await()
+            registroCadastro.salvou(ENTIDADE_ATUACAO, empresaId)
+        } catch (e: Exception) {
+            registroCadastro.pendenteDeSync(ENTIDADE_ATUACAO, empresaId, e)
+        }
+    }
+
+    private fun atuacoesDe(empresaId: String) =
+        firestore.collection(COLLECTION_EMPRESAS).document(empresaId).collection(SUBCOLECAO_ATUACOES)
 
     override suspend fun obterTodas(): List<Empresa> {
         sincronizar()
@@ -113,5 +162,8 @@ class EmpresaFirestoreRepository @Inject constructor(
         const val TAG = "empresaRepository"
         const val COLLECTION_EMPRESAS = "empresas"
         const val ENTIDADE = "empresa"
+        const val ENTIDADE_ATUACAO = "empresa.atuacoes"
+        const val SUBCOLECAO_ATUACOES = "atuacoes"
+        const val CAMPO_NAVIO_IDS = "navioIds"
     }
 }

@@ -1,5 +1,6 @@
 package dev.matheus.fluviapp.fakes
 
+import dev.matheus.fluviapp.domain.viagem.AtuacaoDaEmpresa
 import dev.matheus.fluviapp.domain.viagem.Empresa
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.EmpresaRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,9 +22,19 @@ class FakeEmpresaRepository : EmpresaRepository {
 
     override fun sincronizar() = Unit
     override fun observarTodas(): StateFlow<List<Empresa>> = _empresas.asStateFlow()
-    override suspend fun salvar(empresa: Empresa) {
+    override suspend fun salvar(empresa: Empresa): String {
         if (falharAoSalvar) throw RuntimeException("falha simulada")
         salvos += empresa
+        return empresa.id.ifBlank { "id-gerado-${salvos.size}" }
+    }
+
+    val atuacoesPorEmpresa = mutableMapOf<String, List<AtuacaoDaEmpresa>>()
+
+    override suspend fun obterAtuacoes(empresaId: String): List<AtuacaoDaEmpresa> =
+        atuacoesPorEmpresa[empresaId].orEmpty()
+
+    override suspend fun salvarAtuacoes(empresaId: String, atuacoes: List<AtuacaoDaEmpresa>) {
+        atuacoesPorEmpresa[empresaId] = atuacoes
     }
     override suspend fun obterTodas(): List<Empresa> = empresas
     override suspend fun obterPorId(id: String): Empresa? = empresas.find { it.id == id }
