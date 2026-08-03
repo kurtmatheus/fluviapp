@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
@@ -13,6 +14,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
@@ -147,10 +149,24 @@ private fun AreaAtuacoes(
         }
 
         Atuacao.entries.forEach { atuacao ->
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            // O toque é da LINHA, não da caixinha: `toggleable` no Row (com `onCheckedChange = null` no
+            // Checkbox, que passa a delegar) funde caixa e rótulo num nó só. Sem isso, cada Checkbox é um
+            // nó anônimo sem vínculo com o texto ao lado — o leitor de tela anuncia quatro "caixa de
+            // seleção, não marcada" indistinguíveis, e o alvo de toque é do tamanho da caixinha.
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .toggleable(
+                        value = atuacao in selecionadas,
+                        enabled = atuacao.operante,
+                        role = Role.Checkbox,
+                        onValueChange = { onAtuacaoToggle(atuacao) },
+                    ),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 Checkbox(
                     checked = atuacao in selecionadas,
-                    onCheckedChange = { onAtuacaoToggle(atuacao) },
+                    onCheckedChange = null,
                     enabled = atuacao.operante,
                 )
                 Text(
