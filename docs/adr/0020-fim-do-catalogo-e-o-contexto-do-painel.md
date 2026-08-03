@@ -1,6 +1,7 @@
 # ADR-0020: O fim do Catálogo — vocabulário é tipo, e o painel carrega o contexto
 
-**Status:** Aceita (direção), sem código · `2026-08-03`
+**Status:** Aceita · **F1 feita, F2 parcial** (`2026-08-03`) — ver [§ Estado da execução](#estado-da-execução-2026-08-03).
+F3–F5 pendentes.
 **Supera:** [ADR-0016](0016-dominio-da-plataforma.md) §3, §8 e parte de §4/§5/§6 · o piloto do
 [ADR-0017](0017-eixo-de-storage-firestore-only.md) (F1) · a F1 do
 [ADR-0019](0019-camada-de-dados-dinamica-e-dto-por-caso-de-uso.md)
@@ -267,13 +268,14 @@ do nada. Um piloto barato que não prova o caso geral custa mais do que economiz
 Segue a ordem das frentes (*domínio → dados → lógica → apresentação*), e o descarte é **progressivo**: cada
 fase apaga o que ela tornou obsoleto.
 
-- **F1 — Os tipos** (JVM puro): `TipoDocumento` (com máscara/teclado/validação/exibição), `FormaPagamento`,
-  `TipoEmbarcacao`, `Atuacao`, `Uf`; `visualTransformation`/`keyboardType` saem de `UtilExtensions` para o
-  tipo; testes por valor.
-- **F2 — A saída de `Constante`**: as 16 chamadas viram `.entries`; saem `ConstanteDao`,
-  `ConstanteRepository`, `ConstanteFirestoreRepository`, `ConstanteDocumento`, a coleção `constants`, a regra
-  em `firestore.rules:183` e os casos correspondentes em `firestore-tests/`; `IObjetoSimplificado` perde os
-  implementadores (D7).
+- **F1 — Os tipos** (JVM puro) — ✅ **FEITA** (`5580b48`, `d4ff6a5`). `TipoDocumento`, `FormaPagamento`,
+  `TipoEmbarcacao`, `Atuacao`, `Uf`, mais **`ClasseVeiculo`** (ADR-0018 D7) e **`ModoPassagem`**
+  (ADR-0018 D6), que não estavam nesta lista — ver §*Estado da execução*.
+- **F2 — A saída de `Constante`** — ⚠️ **PARCIAL** (`c5023d7`, `10dc514`): **12 das 16** chamadas saíram e o
+  form de passagem deixou de ler o catálogo. `ConstanteDao`, o repositório, o `ConstanteDocumento`, a coleção
+  `constants`, a regra em `firestore.rules:183` e o `IObjetoSimplificado` (D7) **não saíram** — as quatro
+  chamadas restantes são de `MUNICIPIO`, e município não vira `.entries`: vira `Localidade` (D6). A fase só
+  fecha com as capacidades da plataforma.
 - **F3 — A derivação do menu** (E2): `Atuacao → Set<SecaoMenu>` como função pura; `acoesDe` sai do grafo;
   `DadosBotoesMenus` perde o `onClick` (ADR-0019 §7).
 - **F4 — O contexto e a splash** (D9): `ContextoUsuario` ganha o vínculo ativo; `SplashScreenViewModel` passa
@@ -285,6 +287,55 @@ fase apaga o que ela tornou obsoleto.
 a estrutura de embarcações. **O contador de bilhete** não precisa de fase: ele já é substituído por
 `count(passagens where viagemId = X and data = D)` (ADR-0016 §7.1, ADR-0018 D10) — não é um contador melhor, é
 uma contagem, e sai com a numeração por ocorrência. Junto sai `ViagemDao.obterContagem()`, sem chamador.
+
+## Estado da execução *(2026-08-03)*
+
+F1 e F2 entregues; a suíte foi de **238 para 316 testes**, verde, com `assembleRelease` verde. O que a
+execução acrescentou ou corrigiu em relação ao que este ADR previu:
+
+### O que entrou além do previsto
+
+| Peça | Por quê |
+|---|---|
+| **`ClasseVeiculo`** (ADR-0018 D7) | sem ela `TipoEmbarcacao` não tem o que admitir — a regra do D4 **é** um conjunto de classes |
+| **`ModoPassagem`** (ADR-0018 D6) | a acomodação era a última lista de vocabulário do form de passagem; sem o tipo, `Constante` sobreviveria servindo duas categorias em vez de uma |
+| **A validação ligada** | o D2 criava o *lugar* da validação; ligá-la foi decisão do analista na mesma leva, com `validarDocumento(tipo, numero)` como regra pura e mensagem própria para "inválido" × "obrigatório" |
+| **`limitarDocumento()`** | ao migrar apareceu um **quarto** `when` sobre `Constante.Descricao` — o que limita o tamanho do campo —, duplicado idêntico em dois helpers |
+
+### Emenda ao D2 — a política de ocultação do CPF
+
+O D2 dizia que as formas de ocultação replicariam o que o app já imprimia, "para que a F2 não mude nada
+visível", e registrava que valia apertá-las. **O analista apertou na mesma leva:** o CPF passa a esconder os
+**6 primeiros** dígitos e mostrar os 5 últimos (`###.###.247-25`), no lugar da forma herdada, que escondia as
+pontas e expunha os 6 do meio. As demais formas seguem como eram.
+
+### Precisão sobre o D2 — o tipo é puro; o Compose fica no adaptador
+
+O D2 diz que `TipoDocumento` "carrega máscara, teclado, validação e política de exibição". `VisualTransformation`
+e `KeyboardType` são **Compose**, e pô-los no enum meteria framework dentro do domínio — exatamente a dívida
+que o ADR-0019 D2 quer pagar. O tipo carrega **o formato e a política**, puros; a tradução para Compose mora
+em `util/visualtransformation/DocumentoVisual.kt`. O ganho não muda: o `when` passa a ser exaustivo sobre o
+enum, e o `else` silencioso deixa de existir.
+
+### Os defeitos que a tipificação revelou
+
+Nenhum deles era conhecido quando este ADR foi escrito. Todos são a mesma falha — **um vocabulário em duas
+fontes que divergiram em silêncio** — e é a evidência mais forte a favor do D1:
+
+1. **A acomodação nunca casava.** O catálogo semeava `"Rede"`, `"Suíte p/ 2 Pessoas"`, `"Camarote"`; o código
+   comparava com `"REDE"`, `"SUITE"`, `"CAMAROTE"`. Efeito: `ehAcomodacaoRede` sempre falso — a regra "tipo
+   tarifário e gratuidade só na REDE" (ADR-0013) **nunca disparava** — e `contarOcupacaoNavio` classificava
+   tudo no `else`, ou seja, **rede, suíte e camarote saíam zerados na Contagem de Passagem**.
+2. **O filtro de status oferecia três buscas impossíveis** (`EM TRANSITO`, `FINALIZADA`, `EM ANÁLISE`, que não
+   existem na FSM do ADR-0012) e **omitia `EMBARCADA`**, que existe.
+3. **A gratuidade oferecia oito opções** contra as quatro legais do ADR-0013, incluindo `CORTESIA`, que aquele
+   ADR aposentou.
+4. **`formatarCNPJ()` fixava `/0001-`** e ignorava os dígitos 8..11: toda filial era impressa como matriz.
+5. **`extrairDocumentoFormatado` devolvia `""` no `else`**: documento de tipo desconhecido **sumia do
+   bilhete**, sem erro e sem log.
+6. **RG e CNH não tinham limite de digitação** — caíam no `else` do quarto `when`.
+
+Os seis estão corrigidos. O item 1 é o que mais pesa: era regra de negócio e relatório, não cosmética.
 
 ## Alternativas consideradas
 

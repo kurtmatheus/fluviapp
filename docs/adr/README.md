@@ -43,9 +43,9 @@ o antigo passa a valer como história. Este índice existe para responder, sem a
 | [0015](0015-rework-agente-equipe.md) | Equipe, agência, cargo | **vigente · parcial** | o cargo passa a ser **por vínculo `(empresa, atuação)`**, não por pessoa — ADR-0016 (8ª rodada) |
 | [0016](0016-dominio-da-plataforma.md) | Domínio da plataforma | **vigente · parcial** | **o `Catalogo` não nasce** — ADR-0020 D1: caem §3 inteiro, a exceção do tipo de embarcação (§8), a coleção `catalogo/` do mapa (§4), o catálogo embutido na `Localidade` (§5), a linha "Catálogo — só `ADM`" (§6) e a **F1** do plano. O eixo, o critério de colocação e as 9 rodadas seguem |
 | [0017](0017-eixo-de-storage-firestore-only.md) | Firestore-only | **vigente · parcial** | o **piloto** deixa de ser `Catalogo` e passa a ser **Empresa** — ADR-0020 D10. F1 vira "coleção que *perde* o espelho", não "que nasce sem" |
-| [0018](0018-agregado-passagem-participantes-modo-e-lancamentos.md) | O agregado Passagem | **vigente** | — e **confirmado**: o `forma` do lançamento (D11) vira tipo — ADR-0020 D3 |
+| [0018](0018-agregado-passagem-participantes-modo-e-lancamentos.md) | O agregado Passagem | **vigente** · D6/D7 já em código | **D6 (`ModoPassagem`) e D7 (`ClasseVeiculo`) foram implementados** junto do ADR-0020, antes das fases do próprio 0018 — os tipos vieram primeiro porque o catálogo dependia deles. O `forma` do lançamento (D11) fica confirmado como tipo (ADR-0020 D3), sem código ainda |
 | [0019](0019-camada-de-dados-dinamica-e-dto-por-caso-de-uso.md) | `Map` na fronteira, DTO por caso de uso | **vigente · parcial** | a **F1** deixa de ser `Catalogo` e passa a ser Empresa — ADR-0020 D10. O regime não muda. Realiza o *passo 2* que o ADR-0003 previu |
-| [0020](0020-fim-do-catalogo-e-o-contexto-do-painel.md) | O fim do Catálogo; o painel deriva da atuação | **vigente** | — novo (2026-08-03) |
+| [0020](0020-fim-do-catalogo-e-o-contexto-do-painel.md) | O fim do Catálogo; o painel deriva da atuação | **vigente** · F1 feita, F2 parcial | — o **D2 foi emendado** na execução: a máscara do CPF esconde os 6 primeiros dígitos, não as pontas |
 
 ---
 
@@ -60,6 +60,8 @@ A maior fonte de confusão ao ler um ADR antigo não é a decisão — é a **pa
 | `agencia` como texto do formulário | derivada do **emissor**, e por **id** | ADR-0015 P2.3 · ADR-0018 D13 |
 | `Constante` (a tabela de rótulos) | **tipos de domínio** — o `Catalogo` **não chega a nascer**. A palavra volta a significar *invariante de sistema* (extensão de arquivo, MIME) | ADR-0020 D1 |
 | `Constante.Categoria.DOCUMENTO` / `PAGAMENTO` / `TIPO_EMBARCACAO` / `MUNICIPIO`+UF | `TipoDocumento` · `FormaPagamento` · `TipoEmbarcacao` · `Localidade`+`Uf` | ADR-0020 D2/D3/D4/D6 |
+| `ACOMODACAO` (catálogo) + `isVeiculoChecked` + `CATEGORIA_PASSAGEM` | **`ModoPassagem`** — um eixo de quatro valores (rede/suíte/camarote/veículo) | ADR-0018 D6, implementado em `10dc514` |
+| `Constante.Categoria.VEICULO` | **`ClasseVeiculo`** | ADR-0018 D7, implementado em `5580b48` |
 | `Navio` (a entidade) | **`Embarcacao`** — decidido, **rename ainda não feito**: entra com a estrutura de embarcações | ADR-0020 D4 |
 | "atuação é categoria do catálogo" | `Atuacao` é **tipo**; a atuação *da empresa* continua **cadastrada** (`atuacoes/{ATUACAO}`) | ADR-0020 D5 |
 | `Viagem` (a entidade antiga) | **Rota** (o onde) + **Viagem** (o quando e em quê, atômica) + **ocorrência** `(viagemId, data)` | ADR-0016 §7.1 |

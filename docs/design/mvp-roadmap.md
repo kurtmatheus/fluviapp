@@ -205,6 +205,28 @@ E2 destrava — está marcado abaixo.
 
 #### E2 — `MainScreen` vira **PainelPrincipal da Plataforma**
 
+> **O passo *domínio* da E2 está FEITO** *(2026-08-03)*. Ele era o fechamento do domínio inteiro pelo
+> [ADR-0020](../adr/0020-fim-do-catalogo-e-o-contexto-do-painel.md), e saiu em quatro commits:
+>
+> | Commit | O que entregou |
+> |---|---|
+> | `5580b48` | **F1 — os tipos**: `TipoDocumento`, `FormaPagamento`, `TipoEmbarcacao`, `Atuacao`, `Uf` (+ `ClasseVeiculo`) |
+> | `d4ff6a5` | validação de documento ligada; máscara do CPF apertada (esconde os 6 primeiros) |
+> | `c5023d7` | **F2** — 12 das 16 chamadas de catálogo saíram |
+> | `10dc514` | `ModoPassagem`; o **form de passagem deixa de ler o catálogo** |
+>
+> Suíte de **238 → 316 testes**, verde. Sobram **quatro** chamadas ao catálogo, todas de `MUNICIPIO`, que
+> espera a `Localidade` — por isso a `Constante` ainda não morre.
+>
+> **Seis defeitos apareceram no caminho**, todos da mesma natureza (vocabulário em duas fontes, divergindo em
+> silêncio). O mais grave: o catálogo semeava `"Rede"`/`"Suíte p/ 2 Pessoas"` e o código comparava com
+> `"REDE"`/`"SUITE"` — **nunca casavam**, então a regra "tipo tarifário só na rede" nunca disparava e a
+> Contagem de Passagem saía **zerada** para rede, suíte e camarote. Lista completa no
+> [§ Estado da execução](../adr/0020-fim-do-catalogo-e-o-contexto-do-painel.md#estado-da-execução-2026-08-03)
+> do ADR.
+>
+> **O que resta da E2 é tela:** a derivação do menu (F3) e o contexto/splash (F4).
+
 Correções baseadas no domínio + melhorias mínimas. O que o código pede:
 
 - **A política de menu está dentro da navegação.** `MainScreenNavComposable` carrega 13 callbacks e a função
@@ -331,8 +353,8 @@ Pilar 1 ✅ (P1.1 → P1.2 → P1.3 → P1.4)
 Pilar 2 ⚠️ (ADR-0015 entregue; o que falta — vínculo, agência por id, lotação — entra em E2/E3+P3.A)
 
 ENTREGA   E1 entrada  (Activity → splash → login → painel)   E1.1 ✅
-          E2 painel   (os tipos do domínio → menu deriva da atuação → splash carrega o contexto)
-                      = ADR-0020 F1 · F2 · F3 · F4
+          E2 painel   domínio ✅ (ADR-0020 F1 ✅ · F2 ⚠️ parcial — falta MUNICIPIO)
+                      tela    ⬜ (F3 menu deriva da atuação · F4 splash carrega o contexto)
           E3 menu + EMPRESA   = F1 do ADR-0017 = F1 do ADR-0019 = 1º DTO por caso de uso
                       (era Catálogo; o catálogo não nasce — ADR-0020 D1/D10)
 
