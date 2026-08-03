@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.matheus.fluviapp.domain.mappers.ViagemDadosViagemMapper
+import dev.matheus.fluviapp.domain.operacoes.Funcionario
 import dev.matheus.fluviapp.domain.operacoes.PermissoesUsuario
 import dev.matheus.fluviapp.preferences.PreferencesKey
 import dev.matheus.fluviapp.services.repository.operacoes.FuncionarioRepository
@@ -67,10 +68,14 @@ class MainScreenViewModel @Inject constructor(
                 // existe para o supervisor gerir a própria agência (ADR-0015 §2.2/§8.2).
                 val papel = prefs[PreferencesKey.PAPEL_ATUAL]
                 val cargo = prefs[PreferencesKey.CARGO_ATUAL]
+                // A **família** do menu deriva da atuação (ADR-0016 §2, ADR-0020 F3/F4), e a atuação vem
+                // do cargo, que já a declara. Papel puro de plataforma não tem cargo — e aí `null` é a
+                // informação, não a falta dela: quem administra a plataforma não atua num segmento.
+                val atuacao = Funcionario.Cargo.de(cargo)?.atuacao
                 _uiState.update { state ->
                     state.copy(
                         userName = username ?: state.userName,
-                        secoesVisiveis = PermissoesUsuario.secoesVisiveis(papel, cargo),
+                        secoesVisiveis = PermissoesUsuario.secoesVisiveis(papel, cargo, atuacao),
                     )
                 }
             }

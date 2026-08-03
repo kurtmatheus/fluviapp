@@ -40,10 +40,18 @@ data class Funcionario(
      * [Usuario.Papel], que é fechado por natureza.
      *
      * Sem default na fronteira, de propósito: cargo desconhecido → sem permissão (fail-closed, ADR-0010).
+     *
+     * **Cada valor declara a sua [Atuacao]** (ADR-0016, 8ª rodada): `SUPERVISOR` e `AGENTE` não são
+     * cargos "do sistema" — são cargos **do agenciamento**. O transporte terá os seus, a portuária terá
+     * os dela quando acordar, e é por isso que o cargo é o eixo aberto e o papel não.
+     *
+     * É também daqui que sai a atuação de quem está logado (ADR-0020 F4): enquanto o vínculo
+     * `(empresa, atuação)` não existir como dado, **o cargo já a determina** — e determina de forma
+     * exata, porque o conjunto de cargos de cada atuação é disjunto por construção.
      */
-    enum class Cargo {
-        SUPERVISOR,
-        AGENTE;
+    enum class Cargo(val atuacao: Atuacao) {
+        SUPERVISOR(Atuacao.AGENCIAMENTO),
+        AGENTE(Atuacao.AGENCIAMENTO);
 
         companion object {
             /** Converte o cargo persistido (String) no enum canônico; null se desconhecido. */

@@ -21,14 +21,19 @@ fun NavGraphBuilder.splashGraph(
         val viewModel = hiltViewModel<SplashScreenViewModel>()
         val state by viewModel.uiState.collectAsState()
 
-        // A tela é sempre a mesma — a marca enquanto se resolve a sessão; o estado só decide a saída.
-        SplashScreen()
+        // A tela é a marca enquanto o contexto carrega; o estado decide a saída — e, no erro, ela para
+        // de ser só decorativa: mostra o que houve e oferece repetir (ADR-0020 D9).
+        SplashScreen(
+            houveErro = state.splashScreenState == SplashScreenState.Erro,
+            onTentarNovamente = viewModel::tentarNovamente,
+        )
 
         LaunchedEffect(state.splashScreenState) {
             when (state.splashScreenState) {
                 SplashScreenState.Deslogado -> onNavegaParaLogin()
                 SplashScreenState.Logado -> onNavegaParaHome()
-                SplashScreenState.Carregando -> Unit
+                // Os dois ficam na splash: um espera, o outro pede ação. Nenhum navega sozinho.
+                SplashScreenState.Carregando, SplashScreenState.Erro -> Unit
             }
         }
     }
