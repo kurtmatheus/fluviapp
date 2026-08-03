@@ -5,7 +5,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.matheus.fluviapp.R
-import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Categoria.ACOMODACAO
+import dev.matheus.fluviapp.domain.passagem.ModoPassagem
 import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Categoria.MUNICIPIO
 import dev.matheus.fluviapp.domain.passagem.ClasseVeiculo
 import dev.matheus.fluviapp.domain.extrairPorDescricao
@@ -66,8 +66,8 @@ class FormViagemViewModel @Inject constructor(
     private suspend fun carregarFontes() {
         // Um input de tarifa por célula do catálogo (ADR-0013): acomodação (passageiro) + classe de veículo.
         // Moto sai da lista — sua tarifa é a regra por cilindrada (Fase 3), não uma célula cadastrada.
-        val acomodacoes = constanteRepository.obterTodosPorCategoria(ACOMODACAO.name)
-            .map { TarifaInputUiState(chave = it.descricaoNome, grupoTitulo = R.string.label_grupo_tarifa_acomodacao) }
+        val acomodacoes = ModoPassagem.acomodacoes()
+            .map { TarifaInputUiState(chave = it.name, grupoTitulo = R.string.label_grupo_tarifa_acomodacao) }
         val veiculos = ClasseVeiculo.entries
             .filterNot { it == ClasseVeiculo.MOTO }
             .map { TarifaInputUiState(chave = it.name, grupoTitulo = R.string.label_grupo_tarifa_veiculo) }

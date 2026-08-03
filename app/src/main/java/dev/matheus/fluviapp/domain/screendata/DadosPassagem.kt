@@ -1,6 +1,6 @@
 package dev.matheus.fluviapp.domain.screendata
 
-import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.REDE
+import dev.matheus.fluviapp.domain.passagem.ModoPassagem
 
 data class DadosPassagem(
     val idPassagem: String = "",
@@ -66,5 +66,5 @@ data class DadosPassagem(
 
     val temGratuidade = tipoGratuidade.isNotBlank()
 
-    val ehRede = acomodacao == REDE.name
+    val ehRede = ModoPassagem.de(acomodacao) == ModoPassagem.REDE
 }

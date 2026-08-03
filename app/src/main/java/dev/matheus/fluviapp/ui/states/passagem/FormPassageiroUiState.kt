@@ -4,7 +4,7 @@ import androidx.room.Ignore
 import dev.matheus.fluviapp.domain.cadastro.constantes.Constante
 import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.GRATUIDADE
 import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.MEIA
-import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.REDE
+import dev.matheus.fluviapp.domain.passagem.ModoPassagem
 import dev.matheus.fluviapp.domain.passagem.TipoGratuidade
 import dev.matheus.fluviapp.domain.passagem.TipoPassagem
 
@@ -55,7 +55,7 @@ data class FormPassageiroUiState(
     val dataNascimentoPassageiro3: String = "",
     val isDataNascimentoPassageiro3Error: Boolean = false,
 
-    val listaAcomodacao: List<Constante> = emptyList(),
+    val listaAcomodacao: List<String> = ModoPassagem.acomodacoes().map { it.name },
     val acomodacao: String = "",
     val isAcomodacaoError: Boolean = false,
 
@@ -70,7 +70,7 @@ data class FormPassageiroUiState(
     val isTipoGratuidadeError: Boolean = false,
 ) {
     @Ignore
-    val ehAcomodacaoRede = acomodacao == REDE.name
+    val ehAcomodacaoRede = ModoPassagem.de(acomodacao) == ModoPassagem.REDE
 
     @Ignore
     val isGratuidade = tipoPassagem == GRATUIDADE.name

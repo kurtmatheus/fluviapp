@@ -1,6 +1,6 @@
 package dev.matheus.fluviapp.domain.mappers
 
-import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.CAMAROTE
+import dev.matheus.fluviapp.domain.passagem.ModoPassagem
 import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.CAMINHAO
 import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.CARRETA
 import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.CARRO
@@ -8,8 +8,6 @@ import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.GRATU
 import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.INTEIRA
 import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.MEIA
 import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.MOTO
-import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.REDE
-import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.SUITE
 import dev.matheus.fluviapp.domain.passagem.Passagem
 import dev.matheus.fluviapp.domain.screendata.DadosContagemPassagem
 import dev.matheus.fluviapp.domain.viagem.Navio
@@ -67,8 +65,11 @@ internal fun contarOcupacaoNavio(
 
     listaPassagem.forEach { passagem ->
         if (!passagem.ehVeiculo) {
-            when (passagem.acomodacao) {
-                REDE.name -> {
+            // Comparação pelo TIPO, não pela String (ADR-0018 D6). Antes era `acomodacao == "REDE"`
+            // contra um catálogo que gravava "Rede" e "Suíte p/ 2 Pessoas": **nada casava**, e a
+            // contagem inteira caía no `else` — zerada, em silêncio.
+            when (ModoPassagem.de(passagem.acomodacao)) {
+                ModoPassagem.REDE -> {
                     preenchidasRede = preenchidasRede.inc()
 
                     when (passagem.tipoPassagem) {
@@ -79,7 +80,7 @@ internal fun contarOcupacaoNavio(
                     }
                 }
 
-                SUITE.name -> {
+                ModoPassagem.SUITE -> {
                     // Uma suíte por bilhete; trio (p3) → bucket 3 pessoas, senão 2 (inclui o titular-solo).
                     preenchidasSuite = preenchidasSuite.inc()
                     if (passagem.temPassageiro3) {
@@ -89,7 +90,7 @@ internal fun contarOcupacaoNavio(
                     }
                 }
 
-                CAMAROTE.name -> preenchidasCamarote = preenchidasCamarote.inc()
+                ModoPassagem.CAMAROTE -> preenchidasCamarote = preenchidasCamarote.inc()
 
                 else -> {}
             }

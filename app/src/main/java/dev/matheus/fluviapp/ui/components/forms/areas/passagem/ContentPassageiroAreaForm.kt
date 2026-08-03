@@ -28,7 +28,6 @@ import dev.matheus.fluviapp.util.visualtransformation.visualTransformation
 import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.GRATUIDADE
 import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.REDE
 import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.SUITE
-import dev.matheus.fluviapp.domain.mapDescricao
 import dev.matheus.fluviapp.ui.components.forms.areas.CommonAreaForm
 import dev.matheus.fluviapp.ui.components.forms.buttons.CommonCheckboxField
 import dev.matheus.fluviapp.ui.components.forms.dropdowns.DropDownFormField
@@ -68,7 +67,7 @@ fun ContentPassageiroAreaForm(
 ) {
     DropDownFormField(
         modifier = modifier.fillMaxWidth(),
-        listaItens = statePassageiro.listaAcomodacao.mapDescricao(),
+        listaItens = statePassageiro.listaAcomodacao,
         value = statePassageiro.acomodacao,
         onValueChange = onAcomodacaoChange,
         label = R.string.label_acomodacao,

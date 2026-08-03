@@ -134,10 +134,9 @@ class FormViagemViewModelTest {
         advanceUntilIdle()
 
         val chaves = vm.uiState.value.tarifas.map { it.chave }.toSet()
-        // Acomodações (ainda do catálogo, via fake) + classes de veículo, que desde o ADR-0020 F2 vêm do
-        // tipo `ClasseVeiculo` e não do que o fake tiver semeado — daí CAMINHAO entrar na conta.
-        // MOTO fora: tarifa por cilindrada, não célula.
-        assertEquals(setOf("REDE", "SUITE", "CARRO", "CAMINHAO", "CARRETA"), chaves)
+        // As duas fontes agora são TIPOS, não o que o fake semeou: `ModoPassagem.acomodacoes()` (daí
+        // CAMAROTE) e `ClasseVeiculo` (daí CAMINHAO). MOTO fora: tarifa por cilindrada, não célula.
+        assertEquals(setOf("REDE", "SUITE", "CAMAROTE", "CARRO", "CAMINHAO", "CARRETA"), chaves)
         assertTrue(vm.uiState.value.tarifas.all { it.valor.isBlank() }) // nova viagem: tudo em branco
     }
 

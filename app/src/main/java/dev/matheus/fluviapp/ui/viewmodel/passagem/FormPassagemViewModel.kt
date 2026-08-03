@@ -14,7 +14,6 @@ import dev.matheus.fluviapp.domain.rascunho.aplicarEm
 import dev.matheus.fluviapp.domain.rascunho.montarRascunho
 import dev.matheus.fluviapp.navigation.navcomposables.passagem.EDIT_PASSAGEM_ARGUMENT
 import dev.matheus.fluviapp.navigation.navcomposables.passagem.FORM_PASSAGEM_ARGUMENT
-import dev.matheus.fluviapp.services.repository.cadastro.ConstanteRepository
 import dev.matheus.fluviapp.services.repository.operacoes.SessaoUsuario
 import dev.matheus.fluviapp.services.repository.firebase.PassagemFirestoreRepository
 import dev.matheus.fluviapp.services.repository.firebase.ViagemFirestoreRepository
@@ -47,7 +46,6 @@ import javax.inject.Inject
 
 @HiltViewModel
 class FormPassagemViewModel @Inject constructor(
-    private val constanteRepository: ConstanteRepository,
     private val viagemRepository: ViagemFirestoreRepository,
     private val sessaoUsuario: SessaoUsuario,
     private val passagemRepository: PassagemFirestoreRepository,
@@ -79,7 +77,6 @@ class FormPassagemViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             inicializarHelpers()
-            carregarListas()
             preencherViagem()
             inicializarEditor()
             // Rascunho (ADR-0004) só no fluxo de NOVA passagem; editar carrega a verdade do repo.
@@ -134,7 +131,6 @@ class FormPassagemViewModel @Inject constructor(
         )
         formPassageiroHelper = FormPassageiroHelper(
             uiState = _uiStatePassageiro,
-            constanteRepository = constanteRepository,
             passagemRepository = passagemRepository
         )
         formVeiculoHelper = FormVeiculoHelper(
@@ -143,15 +139,9 @@ class FormPassagemViewModel @Inject constructor(
         )
     }
 
-    /**
-     * Carga suspensa das listas dos sub-forms (molde ADR-0006) — tira o runBlocking do init.
-     *
-     * Sobrou **uma**: a acomodação, única lista de vocabulário que ainda vem do catálogo (ADR-0020 F2).
-     * As outras seis viraram tipos do domínio, e o UiState já nasce com elas.
-     */
-    private suspend fun carregarListas() {
-        formPassageiroHelper.carregarListas()
-    }
+    // `carregarListas()` desapareceu: as sete listas de vocabulário do form de passagem viraram tipos do
+    // domínio (ADR-0020 F2 + ModoPassagem), então **não há mais lista a carregar**. Com ela some a última
+    // leitura de catálogo desta tela — e a emissão passa a abrir sem depender de nenhuma coleção.
 
     private suspend fun preencherViagem() {
         formPassagemHelper.atualizarDadosViagemPorId(idViagem)

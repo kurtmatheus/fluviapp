@@ -2,10 +2,8 @@ package dev.matheus.fluviapp.ui.viewmodel.helpers.passagem
 
 import dev.matheus.fluviapp.extensions.extrairLetrasOuNumeros
 import dev.matheus.fluviapp.extensions.extrairNumeros
-import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Categoria.ACOMODACAO
-import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.REDE
+import dev.matheus.fluviapp.domain.passagem.ModoPassagem
 import dev.matheus.fluviapp.domain.passagem.Passagem
-import dev.matheus.fluviapp.services.repository.cadastro.ConstanteRepository
 import dev.matheus.fluviapp.services.repository.firebase.PassagemFirestoreRepository
 import dev.matheus.fluviapp.ui.states.passagem.FormPassageiroUiState
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -13,7 +11,6 @@ import kotlinx.coroutines.flow.update
 
 class FormPassageiroHelper(
     private val uiState: MutableStateFlow<FormPassageiroUiState>,
-    private val constanteRepository: ConstanteRepository,
     private val passagemRepository: PassagemFirestoreRepository
 ) {
 
@@ -29,19 +26,8 @@ class FormPassageiroHelper(
         }
     }
 
-    /**
-     * Carga suspensa das listas (molde ADR-0006): sem `runBlocking` na thread principal no init.
-     *
-     * Tipo tarifário e gratuidade **saíram daqui** (ADR-0020 F2): são tipos do domínio, e o estado já
-     * nasce com eles. Sobra a acomodação, que ainda vem do catálogo até virar `ModoPassagem`.
-     */
-    suspend fun carregarListas() {
-        uiState.update {
-            it.copy(
-                listaAcomodacao = constanteRepository.obterTodosPorCategoria(ACOMODACAO.name),
-            )
-        }
-    }
+    // `carregarListas()` saiu inteira: a acomodação foi a última lista de vocabulário deste sub-form a
+    // virar tipo (`ModoPassagem`, ADR-0018 D6). Com ela, o form de passagem deixou de ler o catálogo.
 
     internal fun atualizarAcomodacao(acomodacao: String) {
         uiState.update { state ->
@@ -50,8 +36,8 @@ class FormPassageiroHelper(
                 isAcomodacaoError = false,
                 // Tipo tarifário só na REDE (ADR-0013): ao sair da rede, limpa tipo/gratuidade — senão fica
                 // valor obsoleto que precificaria errado (ex.: suíte herdando GRATUIDADE de uma rede anterior).
-                tipoPassagem = if (acomodacao == REDE.name) state.tipoPassagem else "",
-                tipoGratuidade = if (acomodacao == REDE.name) state.tipoGratuidade else "",
+                tipoPassagem = if (ModoPassagem.de(acomodacao) == ModoPassagem.REDE) state.tipoPassagem else "",
+                tipoGratuidade = if (ModoPassagem.de(acomodacao) == ModoPassagem.REDE) state.tipoGratuidade else "",
                 isTipoPassagemError = false,
                 isTipoGratuidadeError = false,
             )
