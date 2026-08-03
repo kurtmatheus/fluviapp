@@ -5,7 +5,6 @@ import androidx.room.RoomDatabase
 import dev.matheus.fluviapp.database.dao.ContadorDao
 import dev.matheus.fluviapp.database.dao.cadastro.ConstanteDao
 import dev.matheus.fluviapp.database.dao.operacoes.FuncionarioDao
-import dev.matheus.fluviapp.database.dao.cadastro.viagem.EmpresaDao
 import dev.matheus.fluviapp.database.dao.cadastro.viagem.NavioDao
 import dev.matheus.fluviapp.database.dao.cadastro.viagem.TarifaViagemDao
 import dev.matheus.fluviapp.database.dao.cadastro.viagem.ViagemDao
@@ -19,7 +18,6 @@ import dev.matheus.fluviapp.domain.operacoes.Funcionario
 import dev.matheus.fluviapp.domain.operacoes.Usuario
 import dev.matheus.fluviapp.domain.passagem.Passagem
 import dev.matheus.fluviapp.domain.passagem.PassagemDigital
-import dev.matheus.fluviapp.domain.viagem.Empresa
 import dev.matheus.fluviapp.domain.viagem.Navio
 import dev.matheus.fluviapp.domain.viagem.TarifaViagem
 import dev.matheus.fluviapp.domain.viagem.Viagem
@@ -28,7 +26,6 @@ import dev.matheus.fluviapp.domain.viagem.Viagem
     entities = [
         Usuario::class,
         Constante::class,
-        Empresa::class,
         Navio::class,
         Funcionario::class,
         Viagem::class,
@@ -38,13 +35,13 @@ import dev.matheus.fluviapp.domain.viagem.Viagem
         PassagemDigital::class,
         RascunhoPassagemEntity::class
     ],
-    version = 2,
+    // v3: a tabela Empresa saiu — a coleção passou a viver só no Firestore (ADR-0017 D1, ADR-0020 F5).
+    version = 3,
     exportSchema = true
 )
 abstract class FluviAppDatabase : RoomDatabase() {
     abstract fun usuarioDao(): UsuarioDao
     abstract fun constanteDao(): ConstanteDao
-    abstract fun empresaDao(): EmpresaDao
     abstract fun navioDao(): NavioDao
     abstract fun viagemDao(): ViagemDao
     abstract fun tarifaViagemDao(): TarifaViagemDao

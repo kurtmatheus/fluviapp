@@ -1,0 +1,751 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 3,
+    "identityHash": "3aef9047d6472006d64bb70d2bd8063f",
+    "entities": [
+      {
+        "tableName": "Usuario",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `email` TEXT NOT NULL, `username` TEXT NOT NULL, `papel` TEXT NOT NULL, `funcionarioId` TEXT NOT NULL, `ultimoUsuarioLogado` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "email",
+            "columnName": "email",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "username",
+            "columnName": "username",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "papel",
+            "columnName": "papel",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "funcionarioId",
+            "columnName": "funcionarioId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ultimoUsuarioLogado",
+            "columnName": "ultimoUsuarioLogado",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_Usuario_id",
+            "unique": false,
+            "columnNames": [
+              "id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_Usuario_id` ON `${TABLE_NAME}` (`id`)"
+          }
+        ],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "Constante",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `descricaoNome` TEXT NOT NULL, `categoria` TEXT NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "descricaoNome",
+            "columnName": "descricaoNome",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "categoria",
+            "columnName": "categoria",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_Constante_id",
+            "unique": false,
+            "columnNames": [
+              "id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_Constante_id` ON `${TABLE_NAME}` (`id`)"
+          }
+        ],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "Navio",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `descricaoNome` TEXT NOT NULL, `capacidadeVeiculo` INTEGER NOT NULL, `capacidadeSuite2` INTEGER NOT NULL, `capacidadeSuite3` INTEGER NOT NULL, `capacidadeCamarote` INTEGER NOT NULL, `empresaId` TEXT NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "descricaoNome",
+            "columnName": "descricaoNome",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "capacidadeVeiculo",
+            "columnName": "capacidadeVeiculo",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "capacidadeSuite2",
+            "columnName": "capacidadeSuite2",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "capacidadeSuite3",
+            "columnName": "capacidadeSuite3",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "capacidadeCamarote",
+            "columnName": "capacidadeCamarote",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "empresaId",
+            "columnName": "empresaId",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_Navio_id",
+            "unique": false,
+            "columnNames": [
+              "id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_Navio_id` ON `${TABLE_NAME}` (`id`)"
+          }
+        ],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "Funcionario",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `descricaoNome` TEXT NOT NULL, `agencia` TEXT NOT NULL, `lotacao` TEXT NOT NULL, `cargo` TEXT NOT NULL, `email` TEXT NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "descricaoNome",
+            "columnName": "descricaoNome",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "agencia",
+            "columnName": "agencia",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lotacao",
+            "columnName": "lotacao",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "cargo",
+            "columnName": "cargo",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "email",
+            "columnName": "email",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_Funcionario_id",
+            "unique": false,
+            "columnNames": [
+              "id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_Funcionario_id` ON `${TABLE_NAME}` (`id`)"
+          }
+        ],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "Viagem",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `codigo` TEXT NOT NULL, `origem` TEXT NOT NULL, `destino` TEXT NOT NULL, `empresaId` TEXT NOT NULL, `navioId` TEXT NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "codigo",
+            "columnName": "codigo",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "origem",
+            "columnName": "origem",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "destino",
+            "columnName": "destino",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "empresaId",
+            "columnName": "empresaId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "navioId",
+            "columnName": "navioId",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_Viagem_id",
+            "unique": false,
+            "columnNames": [
+              "id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_Viagem_id` ON `${TABLE_NAME}` (`id`)"
+          }
+        ],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "TarifaViagem",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`viagemId` TEXT NOT NULL, `chave` TEXT NOT NULL, `valor` REAL NOT NULL, PRIMARY KEY(`viagemId`, `chave`))",
+        "fields": [
+          {
+            "fieldPath": "viagemId",
+            "columnName": "viagemId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "chave",
+            "columnName": "chave",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "valor",
+            "columnName": "valor",
+            "affinity": "REAL",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "viagemId",
+            "chave"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "Passagem",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `numero` TEXT NOT NULL, `viagemId` TEXT NOT NULL, `navioId` TEXT NOT NULL, `empresaId` TEXT NOT NULL, `codigoViagem` TEXT NOT NULL, `empresa` TEXT NOT NULL, `navio` TEXT NOT NULL, `origem` TEXT NOT NULL, `destino` TEXT NOT NULL, `dataViagem` TEXT NOT NULL, `horaViagem` TEXT NOT NULL, `agencia` TEXT NOT NULL, `valorPix` REAL, `valorDinheiro` REAL, `valorDebito` REAL, `valorCredito` REAL, `tarifaBase` REAL, `observacao` TEXT, `tipoPassagem` TEXT, `gratuidade` TEXT, `acomodacao` TEXT, `nomePassageiro1` TEXT, `documentoPassageiro1` TEXT, `numeroDocumentoPassageiro1` TEXT, `dataNascimentoPassageiro1` TEXT, `nomePassageiro2` TEXT, `documentoPassageiro2` TEXT, `numeroDocumentoPassageiro2` TEXT, `dataNascimentoPassageiro2` TEXT, `nomePassageiro3` TEXT, `tipoDocumentoPassageiro3` TEXT, `numeroDocumentoPassageiro3` TEXT, `dataNascimentoPassageiro3` TEXT, `nomeResponsavelRetirada` TEXT, `documentoResponsavelRetirada` TEXT, `numeroDocumentoResponsavelRetirada` TEXT, `tipoVeiculo` TEXT, `modeloVeiculo` TEXT, `placaVeiculo` TEXT, `corVeiculo` TEXT, `cilindrada` TEXT, `funcionarioResponsavel` TEXT NOT NULL, `funcionarioId` TEXT NOT NULL, `status` TEXT NOT NULL, `embarcadaPorId` TEXT NOT NULL, `embarcadaPor` TEXT NOT NULL, `embarcadaEm` TEXT NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "numero",
+            "columnName": "numero",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "viagemId",
+            "columnName": "viagemId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "navioId",
+            "columnName": "navioId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "empresaId",
+            "columnName": "empresaId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "codigoViagem",
+            "columnName": "codigoViagem",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "empresa",
+            "columnName": "empresa",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "navio",
+            "columnName": "navio",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "origem",
+            "columnName": "origem",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "destino",
+            "columnName": "destino",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "dataViagem",
+            "columnName": "dataViagem",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "horaViagem",
+            "columnName": "horaViagem",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "agencia",
+            "columnName": "agencia",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "valorPix",
+            "columnName": "valorPix",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "valorDinheiro",
+            "columnName": "valorDinheiro",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "valorDebito",
+            "columnName": "valorDebito",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "valorCredito",
+            "columnName": "valorCredito",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "tarifaBase",
+            "columnName": "tarifaBase",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "observacao",
+            "columnName": "observacao",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "tipoPassagem",
+            "columnName": "tipoPassagem",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "gratuidade",
+            "columnName": "gratuidade",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "acomodacao",
+            "columnName": "acomodacao",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "nomePassageiro1",
+            "columnName": "nomePassageiro1",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "documentoPassageiro1",
+            "columnName": "documentoPassageiro1",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "numeroDocumentoPassageiro1",
+            "columnName": "numeroDocumentoPassageiro1",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "dataNascimentoPassageiro1",
+            "columnName": "dataNascimentoPassageiro1",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "nomePassageiro2",
+            "columnName": "nomePassageiro2",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "documentoPassageiro2",
+            "columnName": "documentoPassageiro2",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "numeroDocumentoPassageiro2",
+            "columnName": "numeroDocumentoPassageiro2",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "dataNascimentoPassageiro2",
+            "columnName": "dataNascimentoPassageiro2",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "nomePassageiro3",
+            "columnName": "nomePassageiro3",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "tipoDocumentoPassageiro3",
+            "columnName": "tipoDocumentoPassageiro3",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "numeroDocumentoPassageiro3",
+            "columnName": "numeroDocumentoPassageiro3",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "dataNascimentoPassageiro3",
+            "columnName": "dataNascimentoPassageiro3",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "nomeResponsavelRetirada",
+            "columnName": "nomeResponsavelRetirada",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "documentoResponsavelRetirada",
+            "columnName": "documentoResponsavelRetirada",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "numeroDocumentoResponsavelRetirada",
+            "columnName": "numeroDocumentoResponsavelRetirada",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "tipoVeiculo",
+            "columnName": "tipoVeiculo",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "modeloVeiculo",
+            "columnName": "modeloVeiculo",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "placaVeiculo",
+            "columnName": "placaVeiculo",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "corVeiculo",
+            "columnName": "corVeiculo",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "cilindrada",
+            "columnName": "cilindrada",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "funcionarioResponsavel",
+            "columnName": "funcionarioResponsavel",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "funcionarioId",
+            "columnName": "funcionarioId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "embarcadaPorId",
+            "columnName": "embarcadaPorId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "embarcadaPor",
+            "columnName": "embarcadaPor",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "embarcadaEm",
+            "columnName": "embarcadaEm",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_Passagem_id",
+            "unique": false,
+            "columnNames": [
+              "id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_Passagem_id` ON `${TABLE_NAME}` (`id`)"
+          }
+        ],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "ContadorBilhete",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `contagem` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "contagem",
+            "columnName": "contagem",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_ContadorBilhete_id",
+            "unique": false,
+            "columnNames": [
+              "id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_ContadorBilhete_id` ON `${TABLE_NAME}` (`id`)"
+          }
+        ],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "PassagemDigital",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `idPassagem` TEXT NOT NULL, `caminho` TEXT NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "idPassagem",
+            "columnName": "idPassagem",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "caminho",
+            "columnName": "caminho",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_PassagemDigital_id",
+            "unique": false,
+            "columnNames": [
+              "id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_PassagemDigital_id` ON `${TABLE_NAME}` (`id`)"
+          }
+        ],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "rascunho_passagem",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `json` TEXT NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "json",
+            "columnName": "json",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      }
+    ],
+    "views": [],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '3aef9047d6472006d64bb70d2bd8063f')"
+    ]
+  }
+}

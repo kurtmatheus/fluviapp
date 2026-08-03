@@ -9,7 +9,6 @@ import dev.matheus.fluviapp.database.FluviAppDatabase
 import dev.matheus.fluviapp.database.dao.ContadorDao
 import dev.matheus.fluviapp.database.dao.cadastro.ConstanteDao
 import dev.matheus.fluviapp.database.dao.operacoes.FuncionarioDao
-import dev.matheus.fluviapp.database.dao.cadastro.viagem.EmpresaDao
 import dev.matheus.fluviapp.database.dao.cadastro.viagem.NavioDao
 import dev.matheus.fluviapp.database.dao.cadastro.viagem.TarifaViagemDao
 import dev.matheus.fluviapp.database.dao.cadastro.viagem.ViagemDao
@@ -88,6 +87,10 @@ class DatabaseModule {
         ).addMigrations(
             MIGRATION_1_2,
         )
+            // Sem distribuição, não há base instalada cujo dado se possa perder: a v3 recria em vez de
+            // migrar (decisão do analista). Este argumento VENCE na P3.5 — a partir da primeira entrega
+            // a testers, sair de uma versão publicada exige migração escrita.
+            .fallbackToDestructiveMigration()
             // O banco ANDOU até a v20 nas máquinas de desenvolvimento e agora volta para a v2 — abrir um
             // arquivo mais novo que o schema é *downgrade*, e o Room lança por padrão. Sem dado real a
             // proteger, recriar é a resposta certa (e a única disponível: não existe caminho 20 → 2).
@@ -105,10 +108,6 @@ class DatabaseModule {
         return db.constanteDao()
     }
 
-    @Provides
-    fun provideEmpresaDao(db: FluviAppDatabase): EmpresaDao {
-        return db.empresaDao()
-    }
 
     @Provides
     fun provideNavioDao(db: FluviAppDatabase): NavioDao {
