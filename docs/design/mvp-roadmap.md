@@ -54,21 +54,21 @@ dos outros segmentos.
 As fatias do `balanco-passagens-mapper.md §7`, **excluindo a fatia 4** (módulo Faturamento) — que é o
 "por enquanto sem faturamento". Ordem:
 
-- **P1.1 — FORM: tipo tarifário só-rede. ✅ FEITO (commit 4e62067).** `ValidacaoPassageiro` só exige tipo/
+- **P1.1 — FORM: tipo tarifário só-rede. ✅ FEITO (commit 8e69002).** `ValidacaoPassageiro` só exige tipo/
   gratuidade na rede (+2 testes); `ContentPassageiroAreaForm` só exibe os dropdowns na rede (filtro de MEIA
   removido); `atualizarAcomodacao` limpa tipo/gratuidade ao sair da rede + reabilita pagamento. Fora da rede
   = inteira (vazio → mapper/preview tratam como INTEIRA).
-- **P1.2 — Contagem: suíte por bilhete + `associateBy`. ✅ FEITO (commit d118021).** 1 suíte por bilhete
+- **P1.2 — Contagem: suíte por bilhete + `associateBy`. ✅ FEITO (commit c6f2b43).** 1 suíte por bilhete
   (`temPassageiro3`→3p, senão 2p; solo conta); `contador` extraído p/ função pura `contarOcupacaoNavio` +
   `associateBy` no lookup; +4 testes por caso. Breakdown segue no ramo REDE (coerente com P1.1).
-- **P1.3 — Renomear módulo → "Contagem de Passagem". ✅ FEITO (commit 6014b5a).** As telas já diziam
+- **P1.3 — Renomear módulo → "Contagem de Passagem". ✅ FEITO (commit 74c0d36).** As telas já diziam
   "Contagem de Passagem"; o **código** ainda dizia Balanço — e morava no pacote `faturamento`.
   `Balanco*` → `ContagemPassagem*`, pacote `faturamento` → `contagem`, rota `listaRelatorios` →
   `contagemPassagem`, chaves de string. Não foi só cosmético: o ADR-0015 §6 separa Contagem (ocupação,
   **cross-agência**, recurso compartilhado) de Faturamento (financeiro, **isolado por agência**) — a
   contagem morando dentro de `faturamento` convidava a confusão que o desenho evita. **Sem filtro por
   cargo**, como decidido: a Contagem vive na seção Passagem, visível a todos.
-- **P1.4 — Threading. ✅ FEITO (commit 6014b5a).** `obterTodasPorDataStatus` gravava no Room com um
+- **P1.4 — Threading. ✅ FEITO (commit 74c0d36).** `obterTodasPorDataStatus` gravava no Room com um
   `runBlocking { dao.salvar(it) }` **por documento**, dentro do listener de sucesso — N bloqueios de
   thread por consulta —, e a travessia acontecia **duas vezes** (o ViewModel remapeava o mesmo snapshot).
   Agora é `suspend`, devolve a lista mapeada e grava em **uma** transação (`salvarTodas`).
@@ -187,7 +187,7 @@ o que existe; o que não servir, descartar e revitalizar.*
 
 #### E1 — O caminho de entrada: `MainActivity` → Splash → Login → Painel
 
-**E1.1 ✅ feita** (commit `e56150f`): splash e Activity. O que resta da frente depende de decisões que só a
+**E1.1 ✅ feita** (commit `8316f54`): splash e Activity. O que resta da frente depende de decisões que só a
 E2 destrava — está marcado abaixo.
 
 | Achado | Estado | Nota |
