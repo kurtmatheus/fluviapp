@@ -24,9 +24,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import dev.matheus.fluviapp.R
 import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.MOTO
-import dev.matheus.fluviapp.extensions.keyboardType
-import dev.matheus.fluviapp.extensions.visualTransformation
-import dev.matheus.fluviapp.domain.mapDescricao
+import dev.matheus.fluviapp.domain.documento.TipoDocumento
+import dev.matheus.fluviapp.util.visualtransformation.keyboardType
+import dev.matheus.fluviapp.util.visualtransformation.visualTransformation
 import dev.matheus.fluviapp.ui.components.forms.areas.CommonAreaForm
 import dev.matheus.fluviapp.ui.components.forms.dropdowns.DropDownFormField
 import dev.matheus.fluviapp.ui.components.forms.dropdowns.FilterDropDownForm
@@ -68,7 +68,7 @@ fun ContentAreaVeiculoForm(
         verticalAlignment = Alignment.CenterVertically
     ) {
         DropDownFormField(
-            listaItens = statePassagem.listaTipoDocumento.mapDescricao(),
+            listaItens = statePassagem.listaTipoDocumento,
             label = R.string.label_documento_responsavel,
             modifier = modifier,
             value = stateVeiculo.tipoDocumentoResponsavelRetirada,
@@ -93,11 +93,11 @@ fun ContentAreaVeiculoForm(
         readOnly = stateVeiculo.isDocumentoResponsavelRetiradaReadOnly,
         isError = stateVeiculo.isDocumentoResponsavelRetiradaError,
         onValueChange = onDocumentoResponsavelRetiradaChange,
-        visualTransformation = visualTransformation(stateVeiculo.tipoDocumentoResponsavelRetirada),
+        visualTransformation = TipoDocumento.de(stateVeiculo.tipoDocumentoResponsavelRetirada).visualTransformation(),
         keyboardOptions = KeyboardOptions(
             capitalization = KeyboardCapitalization.Characters,
             imeAction = ImeAction.Next,
-            keyboardType = keyboardType(stateVeiculo.tipoDocumentoResponsavelRetirada)
+            keyboardType = TipoDocumento.de(stateVeiculo.tipoDocumentoResponsavelRetirada).keyboardType()
         )
     )
     SupportingText(
@@ -108,7 +108,7 @@ fun ContentAreaVeiculoForm(
     )
 
     DropDownFormField(
-        listaItens = stateVeiculo.listaTipoVeiculo.mapDescricao(),
+        listaItens = stateVeiculo.listaTipoVeiculo,
         label = R.string.label_tipo_veiculo,
         modifier = modifier.fillMaxWidth(),
         value = stateVeiculo.tipoVeiculo,

@@ -3,10 +3,6 @@ package dev.matheus.fluviapp.ui.viewmodel.helpers.passagem
 import dev.matheus.fluviapp.R
 import dev.matheus.fluviapp.extensions.isTextoNaoNulo
 import dev.matheus.fluviapp.extensions.preencherCampo
-import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Categoria.CATEGORIA_PASSAGEM
-import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Categoria.DOCUMENTO
-import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Categoria.PAGAMENTO
-import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Categoria.STATUS_PASSAGEM
 import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.MOTO
 import dev.matheus.fluviapp.domain.mappers.ViagemDadosViagemMapper
 import dev.matheus.fluviapp.domain.passagem.Passagem
@@ -14,7 +10,6 @@ import dev.matheus.fluviapp.domain.passagem.ResultadoEmissao
 import dev.matheus.fluviapp.domain.passagem.StatusPassagem
 import dev.matheus.fluviapp.domain.passagem.tarifaMotoBase
 import dev.matheus.fluviapp.domain.viagem.Viagem
-import dev.matheus.fluviapp.services.repository.cadastro.ConstanteRepository
 import dev.matheus.fluviapp.services.repository.firebase.PassagemFirestoreRepository
 import dev.matheus.fluviapp.services.repository.firebase.ViagemFirestoreRepository
 import dev.matheus.fluviapp.ui.states.passagem.FormPassageiroUiState
@@ -27,7 +22,6 @@ class FormPassagemHelper(
     private val uiStatePassagem: MutableStateFlow<FormPassagemUiState>,
     private val uiStatePassageiro: MutableStateFlow<FormPassageiroUiState>,
     private val uiStateVeiculo: MutableStateFlow<FormVeiculoUiState>,
-    private val constanteRepository: ConstanteRepository,
     private val viagemRepository: ViagemFirestoreRepository,
     private val passagemRepository: PassagemFirestoreRepository,
     private val viagemDadosViagemMapper: ViagemDadosViagemMapper,
@@ -35,20 +29,9 @@ class FormPassagemHelper(
 
     lateinit var viagem: Viagem
 
-    /**
-     * Carga suspensa das listas (molde ADR-0006). O último `runBlocking` deste arquivo saiu em P2.3 com
-     * a lista de agentes: ela existia para o dropdown da área de agência, que não existe mais.
-     */
-    suspend fun carregarListas() {
-        uiStatePassagem.update {
-            it.copy(
-                listaTipoDocumento = constanteRepository.obterTodosPorCategoria(DOCUMENTO.name),
-                listaFormaPagamento = constanteRepository.obterTodosPorCategoria(PAGAMENTO.name),
-                listaSituacaoPassagem = constanteRepository.obterTodosPorCategoria(STATUS_PASSAGEM.name),
-                listaCategoriaPassagem = constanteRepository.obterTodosPorCategoria(CATEGORIA_PASSAGEM.name),
-            )
-        }
-    }
+    // `carregarListas()` saiu inteira (ADR-0020 F2): as quatro listas que ela buscava — documento,
+    // pagamento, status e categoria — são tipos do domínio, e o UiState já nasce com elas. A carga
+    // existia só porque o vocabulário morava numa coleção.
 
     internal fun checkVeiculo() {
         uiStatePassagem.update {

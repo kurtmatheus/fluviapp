@@ -44,9 +44,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-internal const val TAMANHO_CPF = 11
-internal const val TAMANHO_CNPJ = 14
-internal const val TAMANHO_PASS = 8
 
 @HiltViewModel
 class FormPassagemViewModel @Inject constructor(
@@ -131,7 +128,6 @@ class FormPassagemViewModel @Inject constructor(
             uiStatePassagem = _uiStatePassagem,
             uiStatePassageiro = _uiStatePassageiro,
             uiStateVeiculo = _uiStateVeiculo,
-            constanteRepository = constanteRepository,
             viagemRepository = viagemRepository,
             passagemRepository = passagemRepository,
             viagemDadosViagemMapper = viagemDadosViagemMapper,
@@ -143,16 +139,18 @@ class FormPassagemViewModel @Inject constructor(
         )
         formVeiculoHelper = FormVeiculoHelper(
             uiState = _uiStateVeiculo,
-            constanteRepository = constanteRepository,
             passagemRepository = passagemRepository
         )
     }
 
-    /** Carga suspensa das listas dos sub-forms (molde ADR-0006) — tira o runBlocking do init. */
+    /**
+     * Carga suspensa das listas dos sub-forms (molde ADR-0006) — tira o runBlocking do init.
+     *
+     * Sobrou **uma**: a acomodação, única lista de vocabulário que ainda vem do catálogo (ADR-0020 F2).
+     * As outras seis viraram tipos do domínio, e o UiState já nasce com elas.
+     */
     private suspend fun carregarListas() {
-        formPassagemHelper.carregarListas()
         formPassageiroHelper.carregarListas()
-        formVeiculoHelper.carregarListas()
     }
 
     private suspend fun preencherViagem() {

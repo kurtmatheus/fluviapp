@@ -1,7 +1,5 @@
 package dev.matheus.fluviapp.ui.viewmodel.helpers.passagem
 
-import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Categoria.STATUS_PASSAGEM
-import dev.matheus.fluviapp.services.repository.cadastro.ConstanteRepository
 import dev.matheus.fluviapp.services.repository.operacoes.FuncionarioRepository
 import dev.matheus.fluviapp.ui.states.passagem.PesquisarPassagemUiState
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -10,7 +8,6 @@ import kotlinx.coroutines.runBlocking
 
 class FormPesquisarPassagemHelper(
     private val uiState: MutableStateFlow<PesquisarPassagemUiState>,
-    private val constanteRepository: ConstanteRepository,
     private val funcionarioRepository: FuncionarioRepository,
     /** Recorte da listagem (ADR-0015 §4.1): em branco = todas as agências. */
     private val agenciaDoEscopo: String = "",
@@ -41,7 +38,8 @@ class FormPesquisarPassagemHelper(
                 onPesquisaChange = {
                     atualizarBarraPesquisa(it)
                 },
-                listaSituacaoPassagem = runBlocking { constanteRepository.obterTodosPorCategoria(STATUS_PASSAGEM.name) },
+                // A lista de status saiu daqui com o `runBlocking` que a buscava (ADR-0020 F2): são os
+                // três estados da FSM, e o UiState já nasce com eles.
                 // O dropdown de operador acompanha o escopo: o supervisor filtra pelos nomes da
                 // PRÓPRIA agência — oferecer nomes de fora seria oferecer uma busca que volta vazia.
                 listaOperadores = runBlocking {

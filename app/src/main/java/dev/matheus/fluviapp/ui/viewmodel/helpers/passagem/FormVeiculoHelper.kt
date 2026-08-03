@@ -2,23 +2,14 @@ package dev.matheus.fluviapp.ui.viewmodel.helpers.passagem
 
 import dev.matheus.fluviapp.extensions.extrairLetrasOuNumeros
 import dev.matheus.fluviapp.extensions.extrairNumeros
-import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Categoria.VEICULO
-import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.CNPJ
-import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.CPF
-import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.PASSAPORTE
 import dev.matheus.fluviapp.domain.passagem.Passagem
-import dev.matheus.fluviapp.services.repository.cadastro.ConstanteRepository
 import dev.matheus.fluviapp.services.repository.firebase.PassagemFirestoreRepository
 import dev.matheus.fluviapp.ui.states.passagem.FormVeiculoUiState
-import dev.matheus.fluviapp.ui.viewmodel.passagem.TAMANHO_CNPJ
-import dev.matheus.fluviapp.ui.viewmodel.passagem.TAMANHO_CPF
-import dev.matheus.fluviapp.ui.viewmodel.passagem.TAMANHO_PASS
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 
 class FormVeiculoHelper(
     private val uiState: MutableStateFlow<FormVeiculoUiState>,
-    private val constanteRepository: ConstanteRepository,
     private val passagemRepository: PassagemFirestoreRepository
 ) {
 
@@ -31,13 +22,6 @@ class FormVeiculoHelper(
             stateVeiculo.copy(
                 listaNomeResponsavelRetirada = passagemRepository.getListaNome(),
             )
-        }
-    }
-
-    /** Carga suspensa das listas (molde ADR-0006): sem `runBlocking` na thread principal no init. */
-    suspend fun carregarListas() {
-        uiState.update {
-            it.copy(listaTipoVeiculo = constanteRepository.obterTodosPorCategoria(VEICULO.name))
         }
     }
 
@@ -80,29 +64,7 @@ class FormVeiculoHelper(
         tipoDocumento: String,
         uiState: FormVeiculoUiState,
         onAtualizarDocumento: (FormVeiculoUiState, String) -> FormVeiculoUiState,
-    ): FormVeiculoUiState {
-        return when (tipoDocumento) {
-            CPF.name -> {
-                if (documento.extrairNumeros().length <= TAMANHO_CPF) {
-                    onAtualizarDocumento(uiState, documento.extrairNumeros())
-                } else uiState
-            }
-
-            CNPJ.name -> {
-                if ((documento.extrairNumeros().length <= TAMANHO_CNPJ)) {
-                    onAtualizarDocumento(uiState, documento.extrairNumeros())
-                } else uiState
-            }
-
-            PASSAPORTE.name -> {
-                if (documento.length <= TAMANHO_PASS) {
-                    onAtualizarDocumento(uiState, documento)
-                } else uiState
-            }
-
-            else -> onAtualizarDocumento(uiState, documento.extrairNumeros())
-        }
-    }
+    ): FormVeiculoUiState = limitarDocumento(documento, tipoDocumento, uiState, onAtualizarDocumento)
 
     internal fun limparCamposDocumento() {
         uiState.update {

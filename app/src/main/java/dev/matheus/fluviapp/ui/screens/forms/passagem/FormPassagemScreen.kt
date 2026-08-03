@@ -33,7 +33,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import dev.matheus.fluviapp.R
 import dev.matheus.fluviapp.sampledata.listaAcomodacaoSample
-import dev.matheus.fluviapp.sampledata.listaFormaPagamentoSample
+import dev.matheus.fluviapp.domain.passagem.FormaPagamento
 import dev.matheus.fluviapp.ui.components.cards.ViagemCard
 import dev.matheus.fluviapp.ui.components.contents.CommonTopRow
 import dev.matheus.fluviapp.ui.components.forms.areas.CommonAreaForm
@@ -363,7 +363,7 @@ private fun NovaPassagemFormScreenPreview() {
             horaViagem = "18:00",
             origemViagem = "Belém - Santana",
             codigoViagem = "BEL-SAN-101",
-            listaFormaPagamento = listaFormaPagamentoSample
+            listaFormaPagamento = FormaPagamento.entries.map { it.name }
         ),
         statePassageiro = FormPassageiroUiState(
             listaAcomodacao = listaAcomodacaoSample,
@@ -383,7 +383,7 @@ private fun NovaPassagemFormScreenLoadingPreview() {
             horaViagem = "18:00",
             origemViagem = "Belém - Santana",
             codigoViagem = "BEL-SAN-101",
-            listaFormaPagamento = listaFormaPagamentoSample,
+            listaFormaPagamento = FormaPagamento.entries.map { it.name },
             isLoading = true
         ),
         statePassageiro = FormPassageiroUiState(

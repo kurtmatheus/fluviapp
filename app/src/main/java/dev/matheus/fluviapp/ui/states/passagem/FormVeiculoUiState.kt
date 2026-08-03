@@ -1,6 +1,6 @@
 package dev.matheus.fluviapp.ui.states.passagem
 
-import dev.matheus.fluviapp.domain.cadastro.constantes.Constante
+import dev.matheus.fluviapp.domain.passagem.ClasseVeiculo
 
 /**
  * Estado puro do sub-form de veículo (molde ADR-0006): só dados + flags + listas. Os eventos são métodos
@@ -19,7 +19,7 @@ data class FormVeiculoUiState(
     val isNomeResponsavelRetiradaError: Boolean = false,
 
     val tipoVeiculo: String = "",
-    val listaTipoVeiculo: List<Constante> = emptyList(),
+    val listaTipoVeiculo: List<String> = ClasseVeiculo.entries.map { it.name },
     val isTipoVeiculoError: Boolean = false,
 
     val modeloVeiculo: String = "",

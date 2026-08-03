@@ -50,7 +50,7 @@ import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.PIX
 import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.REDE
 import dev.matheus.fluviapp.domain.passagem.TipoPassagem
 import dev.matheus.fluviapp.domain.passagem.tarifaMotoBase
-import dev.matheus.fluviapp.sampledata.listaFormaPagamentoSample
+import dev.matheus.fluviapp.domain.passagem.FormaPagamento
 import dev.matheus.fluviapp.ui.components.cards.CommonCard
 import dev.matheus.fluviapp.ui.components.forms.areas.CommonAreaForm
 import dev.matheus.fluviapp.ui.components.forms.buttons.CommonCheckboxField
@@ -296,7 +296,7 @@ private fun AreaFormaPagamento(
 ) {
     Row {
         state.listaFormaPagamento.forEach {
-            when (it.descricaoNome) {
+            when (it) {
                 PIX.name -> {
                     CommonCheckboxField(
                         modifier = modifier,
@@ -424,7 +424,8 @@ private fun ContentViagemAreaFormAgenciaFluviPreview() {
         ContentPagamentoAreaForm(
             modifier = it,
             state = FormPassagemUiState(
-                listaFormaPagamento = listaFormaPagamentoSample,
+                // O preview usa o próprio tipo: a lista deixou de vir do catálogo (ADR-0020 F2).
+                listaFormaPagamento = FormaPagamento.entries.map { it.name },
                 isPixChecked = true,
                 isDinheiroChecked = true
             ),

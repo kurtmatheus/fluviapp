@@ -55,7 +55,8 @@ class FluviAppUnitTest {
     fun extension_ExtrairDocumentoFormatadoCpfComMascara() {
         val cpf = "12345678912".extrairDocumentoFormatado(comMascara = true, tipoDocumento = CPF.name)
 
-        assertEquals("###.456.789-##", cpf)
+        // ADR-0020 F1: esconde os 6 primeiros digitos, mostra os 5 ultimos.
+        assertEquals("###.###.789-12", cpf)
     }
 
     @Test

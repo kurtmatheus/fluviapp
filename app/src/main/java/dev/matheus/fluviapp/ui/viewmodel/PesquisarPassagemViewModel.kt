@@ -7,7 +7,6 @@ import dev.matheus.fluviapp.extensions.filtrarPor
 import dev.matheus.fluviapp.domain.mappers.PassagemDadosPassagemMapper
 import dev.matheus.fluviapp.domain.operacoes.ContextoUsuario
 import dev.matheus.fluviapp.domain.operacoes.PermissoesUsuario
-import dev.matheus.fluviapp.services.repository.cadastro.ConstanteRepository
 import dev.matheus.fluviapp.services.repository.firebase.PassagemFirestoreRepository
 import dev.matheus.fluviapp.services.repository.operacoes.FuncionarioRepository
 import dev.matheus.fluviapp.services.repository.operacoes.SessaoUsuario
@@ -24,7 +23,6 @@ import javax.inject.Inject
 
 @HiltViewModel
 class PesquisarPassagemViewModel @Inject constructor(
-    private val constanteRepository: ConstanteRepository,
     private val passagemRepository: PassagemFirestoreRepository,
     private val dadosPassagemMapper: PassagemDadosPassagemMapper,
     private val funcionarioRepository: FuncionarioRepository,
@@ -59,7 +57,6 @@ class PesquisarPassagemViewModel @Inject constructor(
         contexto = sessaoUsuario.atual()
         formPesquisarPassagemHelper = FormPesquisarPassagemHelper(
             uiState = _uiState,
-            constanteRepository = constanteRepository,
             funcionarioRepository = funcionarioRepository,
             agenciaDoEscopo = agenciaDoEscopoDoContexto(),
         )

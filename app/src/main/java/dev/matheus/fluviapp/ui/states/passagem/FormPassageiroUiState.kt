@@ -5,6 +5,8 @@ import dev.matheus.fluviapp.domain.cadastro.constantes.Constante
 import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.GRATUIDADE
 import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.MEIA
 import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.REDE
+import dev.matheus.fluviapp.domain.passagem.TipoGratuidade
+import dev.matheus.fluviapp.domain.passagem.TipoPassagem
 
 data class FormPassageiroUiState(
     val listaNomePassageiro: List<String> = emptyList(),
@@ -57,11 +59,13 @@ data class FormPassageiroUiState(
     val acomodacao: String = "",
     val isAcomodacaoError: Boolean = false,
 
-    val listaTipoPassagem: List<Constante> = emptyList(),
+    val listaTipoPassagem: List<String> = TipoPassagem.entries.map { it.name },
     val tipoPassagem: String = "",
     val isTipoPassagemError: Boolean = false,
 
-    val listaTipoGratuidade: List<Constante> = emptyList(),
+    // Quatro gratuidades legais (ADR-0013). O catálogo semeado oferecia oito, incluindo `CORTESIA`, que o
+    // ADR-0013 aposentou, e rótulos sem tipo nenhum atrás ("SEM GRATUIDADE", "ACOMPANHANTE - PeM").
+    val listaTipoGratuidade: List<String> = TipoGratuidade.entries.map { it.name },
     val tipoGratuidade: String = "",
     val isTipoGratuidadeError: Boolean = false,
 ) {

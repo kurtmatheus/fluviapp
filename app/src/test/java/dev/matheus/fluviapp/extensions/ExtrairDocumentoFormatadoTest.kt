@@ -33,8 +33,9 @@ class ExtrairDocumentoFormatadoTest {
     @Test
     fun `CPF completo continua sendo formatado`() {
         // regressao: dado valido (11 digitos) mantem a formatacao com mascara.
+        // A politica mudou no ADR-0020 F1: esconde os 6 primeiros digitos e mostra os 5 ultimos.
         val formatado = "12345678901".extrairDocumentoFormatado(comMascara = true, tipoDocumento = CPF.name)
-        assertEquals("###.456.789-##", formatado)
+        assertEquals("###.###.789-01", formatado)
     }
 
     @Test

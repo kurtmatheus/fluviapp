@@ -7,8 +7,7 @@ import androidx.lifecycle.viewModelScope
 import dev.matheus.fluviapp.R
 import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Categoria.ACOMODACAO
 import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Categoria.MUNICIPIO
-import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Categoria.VEICULO
-import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.MOTO
+import dev.matheus.fluviapp.domain.passagem.ClasseVeiculo
 import dev.matheus.fluviapp.domain.extrairPorDescricao
 import dev.matheus.fluviapp.domain.mappers.ViagemDadosViagemMapper
 import dev.matheus.fluviapp.domain.viagem.Navio
@@ -69,9 +68,9 @@ class FormViagemViewModel @Inject constructor(
         // Moto sai da lista — sua tarifa é a regra por cilindrada (Fase 3), não uma célula cadastrada.
         val acomodacoes = constanteRepository.obterTodosPorCategoria(ACOMODACAO.name)
             .map { TarifaInputUiState(chave = it.descricaoNome, grupoTitulo = R.string.label_grupo_tarifa_acomodacao) }
-        val veiculos = constanteRepository.obterTodosPorCategoria(VEICULO.name)
-            .filterNot { it.descricaoNome == MOTO.name }
-            .map { TarifaInputUiState(chave = it.descricaoNome, grupoTitulo = R.string.label_grupo_tarifa_veiculo) }
+        val veiculos = ClasseVeiculo.entries
+            .filterNot { it == ClasseVeiculo.MOTO }
+            .map { TarifaInputUiState(chave = it.name, grupoTitulo = R.string.label_grupo_tarifa_veiculo) }
         _uiState.update {
             it.copy(
                 listaEmpresas = empresaRepository.obterTodas(),

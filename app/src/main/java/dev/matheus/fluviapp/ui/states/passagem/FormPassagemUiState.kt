@@ -2,7 +2,9 @@ package dev.matheus.fluviapp.ui.states.passagem
 
 import dev.matheus.fluviapp.R
 import dev.matheus.fluviapp.extensions.formatarDataBarrasBr
-import dev.matheus.fluviapp.domain.cadastro.constantes.Constante
+import dev.matheus.fluviapp.domain.documento.TipoDocumento
+import dev.matheus.fluviapp.domain.passagem.FormaPagamento
+import dev.matheus.fluviapp.domain.passagem.StatusPassagem
 import java.time.LocalDate
 
 data class FormPassagemUiState(
@@ -10,7 +12,9 @@ data class FormPassagemUiState(
 
     val isVeiculoChecked: Boolean = false,
 
-    val listaTipoDocumento: List<Constante> = emptyList(),
+    // As listas de vocabulário deixaram de ser carregadas (ADR-0020 F2): são os tipos do domínio, não
+    // linhas de uma coleção. Sem I/O, sem espelho e sem o estado "lista vazia porque não sincronizou".
+    val listaTipoDocumento: List<String> = TipoDocumento.entries.map { it.name },
 
     val viagemId: String = "",
     val navioId: String = "",
@@ -33,7 +37,7 @@ data class FormPassagemUiState(
 
 
 
-    val listaFormaPagamento: List<Constante> = emptyList(),
+    val listaFormaPagamento: List<String> = FormaPagamento.entries.map { it.name },
     val isPixChecked: Boolean = false,
     val isDinheiroChecked: Boolean = false,
     val isDebitoChecked: Boolean = false,
@@ -59,8 +63,9 @@ data class FormPassagemUiState(
     val emissaoBloqueadaMsg: Int = 0,
     val emissaoBloqueadaArg: String = "",
 
-    val listaSituacaoPassagem: List<Constante> = emptyList(),
-    val listaCategoriaPassagem: List<Constante> = emptyList(),
+    val listaSituacaoPassagem: List<String> = StatusPassagem.entries.map { it.name },
+    // `listaCategoriaPassagem` saiu: era a categoria VEICULO/PASSAGEIRO, o modo embrionário
+    // (ADR-0018 §11.3), e não tinha um único consumidor de UI.
 
     val isSaving: Boolean = false,
     val isLoading: Boolean = false,

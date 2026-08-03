@@ -1,10 +1,6 @@
 package dev.matheus.fluviapp.extensions
 
-import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.CNH
-import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.CNPJ
-import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.CPF
-import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.PASSAPORTE
-import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.RG
+import dev.matheus.fluviapp.domain.documento.TipoDocumento
 
 fun String.formatarCampoCPF(): String {
     val aux = length.dec()
@@ -84,38 +80,22 @@ fun String.mascararPassaporte(): String {
 
 fun String?.isTextoNaoNulo(): Boolean = this != null && this != "null"
 
+/**
+ * Exibição do documento, delegando ao [TipoDocumento] (ADR-0020 F2).
+ *
+ * Era o terceiro `when` sobre `Constante.Descricao` do app, e carregava dois defeitos que a delegação
+ * resolve: o `else` devolvia **string vazia**, ou seja, um tipo que o código não conhecesse fazia o
+ * documento **sumir do bilhete** sem erro e sem log; e os formatadores fatiavam por índice fixo, o que
+ * exigiu os guardas de tamanho espalhados por cada ramo.
+ *
+ * A política de ocultação também passou a ser uma só — e é lá que ela muda: o CPF agora esconde os **6
+ * primeiros** dígitos e mostra os 5 últimos.
+ */
 fun String.extrairDocumentoFormatado(
     comMascara: Boolean = false,
     tipoDocumento: String?
 ): String {
-    // Robustez: os formatadores abaixo fatiam por índice fixo (slice/replaceRange) e estouram
-    // StringIndexOutOfBounds em documento vazio/incompleto. Uma passagem com dado ruim não pode
-    // derrubar toda a listagem/detalhe — então só formata quando há tamanho suficiente; senão,
-    // devolve o valor cru.
     if (isBlank()) return ""
-    return when (tipoDocumento) {
-        CPF.name -> {
-            if (length >= 11) formatarCPF(comMascara) else this
-        }
-
-        CNPJ.name -> {
-            if (length >= 14) formatarCNPJ() else this
-        }
-
-        CNH.name -> {
-            if (comMascara && length >= 8) this.mascararCNH() else this
-        }
-
-        PASSAPORTE.name -> {
-            if (length >= 8) formatarPassaporte(comMascara) else this
-        }
-
-        RG.name -> {
-            if (comMascara && length >= 4) this.mascararRG() else this
-        }
-
-        else -> {
-            ""
-        }
-    }
+    val tipo = TipoDocumento.de(tipoDocumento) ?: return this
+    return tipo.exibir(this, ocultar = comMascara)
 }

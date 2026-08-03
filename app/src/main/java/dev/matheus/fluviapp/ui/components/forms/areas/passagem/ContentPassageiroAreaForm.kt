@@ -22,8 +22,9 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import dev.matheus.fluviapp.R
-import dev.matheus.fluviapp.extensions.keyboardType
-import dev.matheus.fluviapp.extensions.visualTransformation
+import dev.matheus.fluviapp.domain.documento.TipoDocumento
+import dev.matheus.fluviapp.util.visualtransformation.keyboardType
+import dev.matheus.fluviapp.util.visualtransformation.visualTransformation
 import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.GRATUIDADE
 import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.REDE
 import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.SUITE
@@ -80,7 +81,7 @@ fun ContentPassageiroAreaForm(
         if (statePassageiro.ehAcomodacaoRede) {
             DropDownFormField(
                 modifier = modifier,
-                listaItens = statePassageiro.listaTipoPassagem.mapDescricao(),
+                listaItens = statePassageiro.listaTipoPassagem,
                 label = R.string.label_tipo_passagem,
                 value = statePassageiro.tipoPassagem,
                 onValueChange = onTipoPassagemChange,
@@ -90,7 +91,7 @@ fun ContentPassageiroAreaForm(
             if (statePassageiro.isGratuidade) {
                 DropDownFormField(
                     modifier = modifier,
-                    listaItens = statePassageiro.listaTipoGratuidade.mapDescricao(),
+                    listaItens = statePassageiro.listaTipoGratuidade,
                     label = R.string.label_tipo_gratuidade,
                     value = statePassageiro.tipoGratuidade,
                     onValueChange = onTipoGratuidadeChange,
@@ -102,7 +103,7 @@ fun ContentPassageiroAreaForm(
         PassageirosFormField(
             modifier = modifier,
             focusManager = focusManager,
-            listaTipoDocumentos = statePassagem.listaTipoDocumento.mapDescricao(),
+            listaTipoDocumentos = statePassagem.listaTipoDocumento,
             labelTipoDocumento = R.string.label_documento,
             valueTipoDocumento = statePassageiro.tipoDocumentoPassageiro1,
             onValueChangeTipoDocumento = onTipoDocumentoPassageiro1Change,
@@ -137,7 +138,7 @@ fun ContentPassageiroAreaForm(
             PassageirosFormField(
                 modifier = modifier,
                 focusManager = focusManager,
-                listaTipoDocumentos = statePassagem.listaTipoDocumento.mapDescricao(),
+                listaTipoDocumentos = statePassagem.listaTipoDocumento,
                 labelTipoDocumento = R.string.label_documento,
                 valueTipoDocumento = statePassageiro.tipoDocumentoPassageiro2,
                 onValueChangeTipoDocumento = onTipoDocumentoPassageiro2Change,
@@ -171,7 +172,7 @@ fun ContentPassageiroAreaForm(
             PassageirosFormField(
                 modifier = modifier,
                 focusManager = focusManager,
-                listaTipoDocumentos = statePassagem.listaTipoDocumento.mapDescricao(),
+                listaTipoDocumentos = statePassagem.listaTipoDocumento,
                 labelTipoDocumento = R.string.label_documento,
                 valueTipoDocumento = statePassageiro.tipoDocumentoPassageiro3,
                 onValueChangeTipoDocumento = onTipoDocumentoPassageiro3Change,
@@ -263,11 +264,11 @@ private fun PassageirosFormField(
         readOnly = readOnlyDocumento,
         isError = isErrorDocumento,
         onValueChange = onValueChangeDocumento,
-        visualTransformation = visualTransformation(valueTipoDocumento),
+        visualTransformation = TipoDocumento.de(valueTipoDocumento).visualTransformation(),
         keyboardOptions = KeyboardOptions(
             capitalization = KeyboardCapitalization.Characters,
             imeAction = ImeAction.Next,
-            keyboardType = keyboardType(valueTipoDocumento)
+            keyboardType = TipoDocumento.de(valueTipoDocumento).keyboardType()
         )
     )
     SupportingText(

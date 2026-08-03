@@ -3,19 +3,11 @@ package dev.matheus.fluviapp.ui.viewmodel.helpers.passagem
 import dev.matheus.fluviapp.extensions.extrairLetrasOuNumeros
 import dev.matheus.fluviapp.extensions.extrairNumeros
 import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Categoria.ACOMODACAO
-import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Categoria.GRATUIDADE
-import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Categoria.TIPO_PASSAGEM
-import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.CNPJ
-import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.CPF
-import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.PASSAPORTE
 import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.REDE
 import dev.matheus.fluviapp.domain.passagem.Passagem
 import dev.matheus.fluviapp.services.repository.cadastro.ConstanteRepository
 import dev.matheus.fluviapp.services.repository.firebase.PassagemFirestoreRepository
 import dev.matheus.fluviapp.ui.states.passagem.FormPassageiroUiState
-import dev.matheus.fluviapp.ui.viewmodel.passagem.TAMANHO_CNPJ
-import dev.matheus.fluviapp.ui.viewmodel.passagem.TAMANHO_CPF
-import dev.matheus.fluviapp.ui.viewmodel.passagem.TAMANHO_PASS
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 
@@ -37,13 +29,16 @@ class FormPassageiroHelper(
         }
     }
 
-    /** Carga suspensa das listas (molde ADR-0006): sem `runBlocking` na thread principal no init. */
+    /**
+     * Carga suspensa das listas (molde ADR-0006): sem `runBlocking` na thread principal no init.
+     *
+     * Tipo tarifário e gratuidade **saíram daqui** (ADR-0020 F2): são tipos do domínio, e o estado já
+     * nasce com eles. Sobra a acomodação, que ainda vem do catálogo até virar `ModoPassagem`.
+     */
     suspend fun carregarListas() {
         uiState.update {
             it.copy(
                 listaAcomodacao = constanteRepository.obterTodosPorCategoria(ACOMODACAO.name),
-                listaTipoPassagem = constanteRepository.obterTodosPorCategoria(TIPO_PASSAGEM.name),
-                listaTipoGratuidade = constanteRepository.obterTodosPorCategoria(GRATUIDADE.name),
             )
         }
     }
@@ -250,29 +245,7 @@ class FormPassageiroHelper(
         tipoDocumento: String,
         uiState: FormPassageiroUiState,
         onAtualizarDocumento: (FormPassageiroUiState, String) -> FormPassageiroUiState,
-    ): FormPassageiroUiState {
-        return when (tipoDocumento) {
-            CPF.name -> {
-                if (documento.extrairNumeros().length <= TAMANHO_CPF) {
-                    onAtualizarDocumento(uiState, documento.extrairNumeros())
-                } else uiState
-            }
-
-            CNPJ.name -> {
-                if ((documento.extrairNumeros().length <= TAMANHO_CNPJ)) {
-                    onAtualizarDocumento(uiState, documento.extrairNumeros())
-                } else uiState
-            }
-
-            PASSAPORTE.name -> {
-                if (documento.length <= TAMANHO_PASS) {
-                    onAtualizarDocumento(uiState, documento)
-                } else uiState
-            }
-
-            else -> onAtualizarDocumento(uiState, documento.extrairNumeros())
-        }
-    }
+    ): FormPassageiroUiState = limitarDocumento(documento, tipoDocumento, uiState, onAtualizarDocumento)
 
     fun preencherDadosPassageiros(passagem: Passagem) {
         val temPassageiro2 = passagem.temPassageiro2
