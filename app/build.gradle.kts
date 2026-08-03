@@ -1,3 +1,6 @@
+import java.io.FileInputStream
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -6,6 +9,19 @@ plugins {
     id("com.google.devtools.ksp")
     id("com.google.gms.google-services")
     id("com.google.firebase.crashlytics")
+}
+
+/**
+ * Credenciais de assinatura, fora do versionamento (`keystore.properties` e `*.jks` são gitignored).
+ * Ver `keystore.properties.example` para o formato e para como gerar o keystore.
+ *
+ * Ausente o arquivo, o `release` continua saindo **sem assinatura** — que é o comportamento de antes e o
+ * que permite compilar o projeto sem ter a chave. Quem não assina, não distribui; quem só quer compilar,
+ * compila.
+ */
+val arquivoDeAssinatura = rootProject.file("keystore.properties")
+val credenciaisDeAssinatura = Properties().apply {
+    if (arquivoDeAssinatura.exists()) FileInputStream(arquivoDeAssinatura).use { load(it) }
 }
 
 android {
@@ -22,8 +38,10 @@ android {
         applicationId = "br.com.fluviapp"
         minSdk = 26
         targetSdk = 34
-        versionCode = 9
-        versionName = "0.0.1-alpha03"
+        // Sobe a cada artefato distribuído: dois builds com o mesmo `versionCode` são indistinguíveis na
+        // lista do tester, e nenhum crash no Crashlytics correlaciona com "qual build" (P3.3).
+        versionCode = 10
+        versionName = "0.0.2-alpha01"
 
         testInstrumentationRunner = "dev.matheus.fluviapp.CustomTestRunner"
         vectorDrawables {
@@ -31,8 +49,22 @@ android {
         }
     }
 
+    signingConfigs {
+        create("release") {
+            if (arquivoDeAssinatura.exists()) {
+                storeFile = file(credenciaisDeAssinatura.getProperty("storeFile"))
+                storePassword = credenciaisDeAssinatura.getProperty("storePassword")
+                keyAlias = credenciaisDeAssinatura.getProperty("keyAlias")
+                keyPassword = credenciaisDeAssinatura.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
+            // Só assina se houver chave. O APK de release sem assinatura não instala em lugar nenhum —
+            // era o P3.1 do roadmap, e é o que separava "o build passa" de "dá para entregar a alguém".
+            if (arquivoDeAssinatura.exists()) signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }

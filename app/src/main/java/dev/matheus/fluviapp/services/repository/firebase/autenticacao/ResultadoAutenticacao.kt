@@ -1,5 +1,7 @@
 package dev.matheus.fluviapp.services.repository.firebase.autenticacao
 
+import dev.matheus.fluviapp.domain.operacoes.Usuario
+
 /**
  * Resultado de autenticação em termos de DOMÍNIO (ADR-0005, item 2 / "apartar a regra da rede").
  * A borda (impl Firebase) traduz `Task`/exceções para isto; o ViewModel decide sobre um valor
@@ -70,4 +72,20 @@ data class PerfilAutenticado(
     /** Do `Funcionario` ligado (§8.3). Vazios quando o papel é puro de plataforma. */
     val cargo: String = "",
     val nome: String = "",
+)
+
+/**
+ * Perfil → [Usuario] de domínio, para o espelho local de quem entrou.
+ *
+ * O `cargo` e o `nome` **não** vêm: eles são do `Funcionario` (ADR-0015 §8.1), e o `Usuario` responde só
+ * pelo contexto de sistema. O [emailAutenticado] é o do Firebase Auth, que é a autoridade sobre a
+ * credencial — o documento pode ter o campo vazio ou desatualizado, e é por ele que o próximo login
+ * pré-preenche o campo.
+ */
+fun PerfilAutenticado.toUsuario(emailAutenticado: String): Usuario = Usuario(
+    id = id,
+    email = email.ifBlank { emailAutenticado },
+    username = username,
+    papel = papel,
+    funcionarioId = funcionarioId,
 )

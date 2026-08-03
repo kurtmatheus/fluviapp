@@ -83,13 +83,9 @@ class LoginFormHelper(
         }
     }
 
-    fun atualizarCarregandoUsuarios() {
-        uiState.update {
-            it.copy(
-                carregandoUsuarios = !it.carregandoUsuarios
-            )
-        }
-    }
+    // `atualizarCarregandoUsuarios` saiu com o espelho da coleção `users`: não há mais carga de usuários
+    // para esperar antes de mostrar o formulário. O `carregandoUsuarios` do estado fica em `false`, e o
+    // ramo de spinner da LoginScreen virou resíduo — some quando aquela tela for revitalizada.
 
     fun isFormularioValido(): Boolean {
         uiState.update { validarCamposLogin(it) }

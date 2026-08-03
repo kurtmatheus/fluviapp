@@ -1,61 +1,51 @@
 package dev.matheus.fluviapp.services.repository.operacoes
 
-import android.util.Log
 import dev.matheus.fluviapp.database.dao.operacoes.UsuarioDao
 import dev.matheus.fluviapp.domain.operacoes.Usuario
-import dev.matheus.fluviapp.services.repository.firebase.documents.UsuarioDocumento
-import dev.matheus.fluviapp.services.repository.firebase.documents.toUsuario
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.toObject
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.runBlocking
 import javax.inject.Inject
 import javax.inject.Singleton
 
-/** Perfil/leitura do usuário (Room + espelho Firestore). Autenticação vive na porta
- *  [dev.matheus.fluviapp.services.repository.firebase.autenticacao.AutenticacaoRepository]. */
+/**
+ * Quem está logado, **localmente**. Autenticação vive na porta
+ * [dev.matheus.fluviapp.services.repository.firebase.autenticacao.AutenticacaoRepository], e é de lá que
+ * vem o perfil autoritativo.
+ *
+ * ### O que saiu, e por que era uma bomba-relógio
+ *
+ * Este repositório espelhava a coleção `users` inteira com um `addSnapshotListener` disparado **antes do
+ * login**, e o login então procurava o autenticado nesse espelho (`obterPorEmail`). Dois problemas, um
+ * deles fatal:
+ *
+ *  - a regra do servidor é `allow read: if autenticado()` — uma leitura pré-login é **negada**. Enquanto
+ *    o `firestore.rules` do repo não foi deployado, isso passou; no dia do deploy, o espelho ficaria
+ *    vazio e **o login pararia de funcionar**, com "Falha na Autenticação" e nenhuma pista do porquê;
+ *  - o app baixava o perfil de *todo mundo* para conferir o de *uma* pessoa.
+ *
+ * Agora é o contrário: o perfil vem do servidor já autenticado (`perfilAutenticado()`), e o Room recebe
+ * **só o usuário logado**, por [registrarLogin]. O espelho deixa de ser condição para entrar e volta a
+ * ser o que devia: cache de quem já entrou, que é o que a [SessaoUsuario] lê depois.
+ */
 @Singleton
 class UsuarioRepository @Inject constructor(
     private val dao: UsuarioDao,
-    private val firestore: FirebaseFirestore,
 ) {
     suspend fun salvar(usuario: Usuario) = dao.salvar(usuario)
 
-    suspend fun carregarUsuarios() {
-        firestore.collection(COLLECTION_USERS)
-            .addSnapshotListener { value, error ->
-                value?.documents?.mapNotNull { document ->
-                    document.toObject<UsuarioDocumento>()?.toUsuario(document.id)
-                }?.forEach { usuario ->
-                    runBlocking {
-                        dao.salvar(usuario)
-                    }
-                }
-
-                if (error != null) {
-                    Log.e(TAG, "carregarUsuarios: Exception: ${error.message}")
-                    throw RuntimeException("Falha na Requisicao: ${error.message}", error)
-                }
-            }
+    /**
+     * Grava o usuário que acabou de entrar e o marca como o último — a origem é o perfil lido do
+     * servidor, não uma busca no espelho. Devolve o que ficou gravado.
+     */
+    suspend fun registrarLogin(usuario: Usuario): Usuario {
+        dao.limparUltimoUsuarioLogado()
+        val logado = usuario.copy(ultimoUsuarioLogado = true)
+        dao.salvar(logado)
+        return logado
     }
-
-    suspend fun salvarUsuarioAutenticado(email: String): Usuario? {
-        limparUltimoUsuarioLogado()
-        val usuarioAutenticado = dao.obterPorEmail(email = email).first()
-        if (usuarioAutenticado != null) {
-            dao.salvar(usuarioAutenticado.copy(ultimoUsuarioLogado = true))
-        }
-        return usuarioAutenticado
-    }
-
-    private suspend fun limparUltimoUsuarioLogado() = dao.limparUltimoUsuarioLogado()
 
     suspend fun obterUltimoUsuarioLogado() = dao.obterUltimoUsuarioLogado().first()
 
-    suspend fun obterTodos() = dao.obterTodos().first()
-
     companion object {
-        private const val TAG = "usuarioRepository"
         const val COLLECTION_USERS = "users"
     }
 }

@@ -24,6 +24,7 @@ import dev.matheus.fluviapp.services.repository.firebase.autenticacao.Autenticac
 import dev.matheus.fluviapp.services.repository.firebase.autenticacao.PerfilAutenticado
 import dev.matheus.fluviapp.services.repository.firebase.autenticacao.ResultadoAutenticacao
 import dev.matheus.fluviapp.services.repository.firebase.autenticacao.ResultadoPerfil
+import dev.matheus.fluviapp.services.repository.firebase.autenticacao.toUsuario
 import dev.matheus.fluviapp.services.repository.operacoes.UsuarioRepository
 import dev.matheus.fluviapp.ui.states.LoginUiState
 import dev.matheus.fluviapp.ui.viewmodel.helpers.login.LoginFormHelper
@@ -65,18 +66,7 @@ class LoginViewModel @Inject constructor(
      * essa dependência de ambiente em vez de mostrá-la.
      */
     init {
-        viewModelScope.launch {
-            initializeHelper()
-            carregarUsuarios()
-        }
-    }
-
-    private fun carregarUsuarios() {
-        loginFormHelper.atualizarCarregandoUsuarios()
-        viewModelScope.launch {
-            usuarioRepository.carregarUsuarios()
-            loginFormHelper.atualizarCarregandoUsuarios()
-        }
+        viewModelScope.launch { initializeHelper() }
     }
 
     private fun initializeHelper() {
@@ -118,8 +108,7 @@ class LoginViewModel @Inject constructor(
 
         when (val resultado = autenticacaoRepository.autenticar(email, senha)) {
             is ResultadoAutenticacao.Sucesso -> when (val perfil = autenticacaoRepository.perfilAutenticado()) {
-                is ResultadoPerfil.Encontrado ->
-                    logarUsuario(usuarioRepository.salvarUsuarioAutenticado(email), perfil.perfil)
+                is ResultadoPerfil.Encontrado -> logarUsuario(perfil.perfil, email)
 
                 is ResultadoPerfil.Ausente -> deduzirPrimeiroAcesso(email)
 
@@ -161,28 +150,25 @@ class LoginViewModel @Inject constructor(
 
     /**
      * Abre a sessão com os DOIS contextos (ADR-0015 §8.2): o papel vem do perfil de sistema, o cargo do
-     * funcionário ligado. O [perfil] é resolvido na porta de autenticação — quando ele não vem (login
-     * por e-mail/senha lendo o espelho Room), a sessão nasce **sem cargo**, que é fail-closed: o membro
-     * enxerga só o que o papel concede até o próximo login com rede.
+     * funcionário ligado. Ambos saem do [perfil] que a porta de autenticação leu **do servidor**.
+     *
+     * O espelho Room é escrito aqui, e não consultado: antes o login procurava o autenticado num espelho
+     * que um listener pré-login populava — e esse listener é negado pela regra `allow read: if
+     * autenticado()`. O login passou a *ser a origem* do espelho em vez de depender dele, e é isso que a
+     * [SessaoUsuario] lê depois.
      *
      * O que se exibe é o **nome do funcionário**; sem funcionário (papel puro de plataforma), o
      * `username` — o `Usuario` não tem nome (§8.1).
      */
-    private suspend fun logarUsuario(usuarioLogado: Usuario?, perfil: PerfilAutenticado? = null) {
-        usuarioLogado?.run {
-            dataStore.edit { preferences ->
-                preferences[LOGADO] = true
-                preferences[USUARIO_ATUAL] = perfil?.nome?.ifBlank { null } ?: usuarioLogado.username
-                preferences[PAPEL_ATUAL] = usuarioLogado.papel
-                preferences[CARGO_ATUAL] = perfil?.cargo.orEmpty()
-            }
-            _uiState.value = _uiState.value.copy(logado = true)
-        } ?: run {
-            Log.e(TAG, "logarUsuario: autenticado no Firebase, mas perfil ausente (users vazio no Firestore/Room?)")
-            _uiState.value = _uiState.value.copy(logando = false)
-            loginFormHelper.exibeErro()
-            loginFormHelper.setMensagemErro(R.string.error_falha_auth)
+    private suspend fun logarUsuario(perfil: PerfilAutenticado, emailAutenticado: String) {
+        val usuario = usuarioRepository.registrarLogin(perfil.toUsuario(emailAutenticado))
+        dataStore.edit { preferences ->
+            preferences[LOGADO] = true
+            preferences[USUARIO_ATUAL] = perfil.nome.ifBlank { usuario.username }
+            preferences[PAPEL_ATUAL] = usuario.papel
+            preferences[CARGO_ATUAL] = perfil.cargo
         }
+        _uiState.value = _uiState.value.copy(logado = true)
     }
 
     fun sincronizar(context: Context) {
