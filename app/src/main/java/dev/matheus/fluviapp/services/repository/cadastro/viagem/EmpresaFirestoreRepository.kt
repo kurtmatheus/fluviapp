@@ -3,7 +3,7 @@ package dev.matheus.fluviapp.services.repository.cadastro.viagem
 import android.util.Log
 import dev.matheus.fluviapp.database.dao.cadastro.viagem.EmpresaDao
 import dev.matheus.fluviapp.domain.viagem.Empresa
-import dev.matheus.fluviapp.domain.viagem.toDocumento
+import dev.matheus.fluviapp.services.repository.firebase.documents.toDocumento
 import dev.matheus.fluviapp.services.repository.firebase.FonteSnapshots
 import dev.matheus.fluviapp.services.repository.firebase.documents.toEmpresa
 import dev.matheus.fluviapp.services.repository.firebase.documents.toEmpresaDocumento
