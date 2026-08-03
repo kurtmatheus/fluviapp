@@ -20,7 +20,11 @@ class FakeEmpresaRepository : EmpresaRepository {
     val deletados = mutableListOf<String>()
     var falharAoSalvar = false
 
-    override fun sincronizar() = Unit
+    /** Quem observa tem de ligar o listener: sem isto o StateFlow do repositório real fica vazio. */
+    var sincronizou = false
+        private set
+
+    override fun sincronizar() { sincronizou = true }
     override fun observarTodas(): StateFlow<List<Empresa>> = _empresas.asStateFlow()
     override suspend fun salvar(empresa: Empresa): String {
         if (falharAoSalvar) throw RuntimeException("falha simulada")
