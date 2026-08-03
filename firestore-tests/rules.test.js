@@ -47,6 +47,7 @@ const F_ADM = 'func-adm';
 // Funcionário de OUTRA agência: é ele que prova o isolamento do supervisor (ADR-0015 §2.1).
 const F_OUTRA_AGENCIA = 'func-outra';
 // Pré-cadastrado que ainda não fez o primeiro acesso: tem funcionário, não tem users/{uid}.
+const EMPRESA = "empresa-modelo";
 const F_NOVO = 'func-novo';
 const EMAIL_F_NOVO = 'novo@x.com';
 
@@ -102,6 +103,9 @@ beforeEach(async () => {
       embarcadaEm: '01/07/2026 08:00',
     });
     await setDoc(doc(db, 'passagens', 'aemitir-a'), { funcionarioId: F_A, status: 'A_EMITIR' });
+    // A PARTE e o que ela FAZ (ADR-0016 §4): a subcoleção de atuações, com a concessão pendurada.
+    await setDoc(doc(db, "empresas", EMPRESA), { nome: "EMPRESA MODELO", cnpj: "11222333000181" });
+    await setDoc(doc(db, "empresas", EMPRESA, "atuacoes", "AGENCIAMENTO"), { navioIds: ["navio-1"] });
   });
 });
 
@@ -407,5 +411,57 @@ describe('passagens — arestas legais da FSM (avança, nunca retrocede nem pula
 
   test('retrocesso EMITIDA→A_EMITIR → NEGADO', async () => {
     await assertFails(updateDoc(doc(asAdm(), 'passagens', 'emitida-b'), { status: 'A_EMITIR' }));
+  });
+});
+// --- empresas/{id}/atuacoes/{ATUACAO}: o que a PARTE faz (ADR-0016 §4, ADR-0020 F5d) ---
+describe('empresas/atuacoes — cadastro de plataforma, id fechado', () => {
+  const atuacao = (db, id) => doc(db, 'empresas', EMPRESA, 'atuacoes', id);
+
+  test('operador LÊ as atuações → OK (é daqui que a família do menu deriva)', async () => {
+    await assertSucceeds(getDoc(atuacao(asAgenteA(), 'AGENCIAMENTO')));
+  });
+
+  test('anônimo lê → NEGADO', async () => {
+    await assertFails(getDoc(atuacao(asAnon(), 'AGENCIAMENTO')));
+  });
+
+  test('ADM declara que a parte passa a TRANSPORTAR → OK', async () => {
+    await assertSucceeds(setDoc(atuacao(asAdm(), 'TRANSPORTE'), { navioIds: [] }));
+  });
+
+  test('GESTOR também cadastra → OK (painel é dos dois papéis de plataforma)', async () => {
+    await assertSucceeds(setDoc(atuacao(asGestor(), 'TRANSPORTE'), { navioIds: [] }));
+  });
+
+  test('operador cadastra atuação → NEGADO (quem monta a parte é o painel)', async () => {
+    await assertFails(setDoc(atuacao(asAgenteA(), 'TRANSPORTE'), { navioIds: [] }));
+  });
+
+  test('SUPERVISOR cadastra atuação → NEGADO (ele opera a agência, não cria a parte)', async () => {
+    await assertFails(setDoc(atuacao(asSupervisor(), 'TRANSPORTE'), { navioIds: [] }));
+  });
+
+  test('ADM concede um navio à atuação existente → OK', async () => {
+    await assertSucceeds(updateDoc(atuacao(asAdm(), 'AGENCIAMENTO'), { navioIds: ['navio-1', 'navio-2'] }));
+  });
+
+  test('operador se autoconcede um navio → NEGADO (concessão é allow-list de segurança)', async () => {
+    await assertFails(updateDoc(atuacao(asAgenteA(), 'AGENCIAMENTO'), { navioIds: ['navio-9'] }));
+  });
+
+  test('ADM cria atuação com id DESCONHECIDO → NEGADO (fail-closed na origem)', async () => {
+    await assertFails(setDoc(atuacao(asAdm(), 'ARMAZENAGEM'), { navioIds: [] }));
+  });
+
+  test('ADM cria atuação com id em caixa errada → NEGADO (o id é o name canônico)', async () => {
+    await assertFails(setDoc(atuacao(asAdm(), 'agenciamento'), { navioIds: [] }));
+  });
+
+  test('ADM remove a atuação (a parte deixa de exercê-la) → OK', async () => {
+    await assertSucceeds(deleteDoc(atuacao(asAdm(), 'AGENCIAMENTO')));
+  });
+
+  test('operador remove atuação → NEGADO', async () => {
+    await assertFails(deleteDoc(atuacao(asAgenteA(), 'AGENCIAMENTO')));
   });
 });

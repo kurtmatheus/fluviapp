@@ -34,6 +34,12 @@ service cloud.firestore {
       return papel() in ['ADM', 'GESTOR'];
     }
 
+    // Espelha o enum Atuacao (ADR-0020 D5). Conjunto FECHADO: valor novo aqui exige deploy dos dois
+    // lados, e é essa exigência que impede alguém cadastrar uma atuação que nenhum código sabe operar.
+    function atuacaoConhecida(id) {
+      return id in ['AGENCIAMENTO', 'TRANSPORTE', 'PORTUARIA_OPERACAO', 'PORTUARIA_ARRENDAMENTO'];
+    }
+
     // Elo 1-1 com a operação (ADR-0015 §8.3). Vazio = papel puro de plataforma, que é estado VÁLIDO.
     function funcionarioIdDoAutor() {
       return perfil().get('funcionarioId', '');
@@ -184,9 +190,29 @@ service cloud.firestore {
       allow read: if autenticado();
       allow write: if autenticado() && ehPapelPlataforma();
     }
-    match /empresas/{doc} {
+    match /empresas/{empresaId} {
       allow read: if autenticado();
       allow write: if autenticado() && ehPapelPlataforma();
+
+      // A PARTE exerce ATUAÇÕES (ADR-0016 §4). Subcoleção porque o conjunto muda ao longo do tempo e
+      // porque **o id do documento é o nome da atuação** — o que só é possível desde que `Atuacao`
+      // virou tipo fechado (ADR-0020 D5). O `{empresaId}` acima é wildcard de UM segmento e não
+      // alcança filhos: sem este bloco, a subcoleção ficaria SEM REGRA (ou seja, negada por omissão).
+      match /atuacoes/{atuacao} {
+        // Leitura para todo autenticado: a operação precisa saber em que a empresa atua — é disso que
+        // a família do menu deriva (§2) e é contra a concessão daqui que a venda é conferida (§7).
+        allow read: if autenticado();
+
+        // Escrita é do painel (§2/§6): quem cadastra parte e atuação é papel de plataforma.
+        // `atuacaoConhecida` é o mesmo fail-closed do cliente, que descarta id desconhecido na
+        // leitura — aqui ele é imposto na ORIGEM: não se cria atuação que o código não sabe operar.
+        allow create, update: if autenticado() && ehPapelPlataforma() && atuacaoConhecida(atuacao);
+
+        // Delete NÃO exige id conhecido, de propósito: se um documento inválido existir (semeado à
+        // mão, migração antiga), tem de haver caminho para removê-lo. Regra que impede a limpeza do
+        // próprio lixo vira lixo permanente.
+        allow delete: if autenticado() && ehPapelPlataforma();
+      }
     }
     match /navios/{doc} {
       allow read: if autenticado();
