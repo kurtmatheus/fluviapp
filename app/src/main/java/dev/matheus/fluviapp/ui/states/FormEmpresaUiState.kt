@@ -24,5 +24,6 @@ data class FormEmpresaUiState(
      * tempo — não é escolha única, e não é subtipo.
      */
     val atuacoes: Set<Atuacao> = emptySet(),
+    val isAtuacoesError: Boolean = false,
     val isProcessing: Boolean = false,
 )

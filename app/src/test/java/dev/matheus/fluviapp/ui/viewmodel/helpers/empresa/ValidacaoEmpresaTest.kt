@@ -1,5 +1,6 @@
 package dev.matheus.fluviapp.ui.viewmodel.helpers.empresa
 
+import dev.matheus.fluviapp.domain.operacoes.Atuacao
 import dev.matheus.fluviapp.ui.states.FormEmpresaUiState
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -19,7 +20,12 @@ class ValidacaoEmpresaTest {
     @Test
     fun `estado completo e valido`() {
         val erros = validarEmpresa(
-            FormEmpresaUiState(nome = "ACME", razaoSocial = "ACME LTDA", cnpj = "11222333000181"),
+            FormEmpresaUiState(
+                nome = "ACME",
+                razaoSocial = "ACME LTDA",
+                cnpj = "11222333000181",
+                atuacoes = setOf(Atuacao.AGENCIAMENTO),
+            ),
         )
         assertTrue(erros.valido)
     }

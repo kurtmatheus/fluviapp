@@ -60,7 +60,7 @@ class FormEmpresaViewModel @Inject constructor(
         } else {
             estado.atuacoes + atuacao
         }
-        estado.copy(atuacoes = atuacoes)
+        estado.copy(atuacoes = atuacoes, isAtuacoesError = false)
     }
 
     private fun carregar() {
@@ -91,6 +91,7 @@ class FormEmpresaViewModel @Inject constructor(
                     isNomeError = erros.nome,
                     isRazaoSocialError = erros.razaoSocial,
                     isCnpjError = erros.cnpj,
+                    isAtuacoesError = erros.atuacoes,
                 )
             }
             return

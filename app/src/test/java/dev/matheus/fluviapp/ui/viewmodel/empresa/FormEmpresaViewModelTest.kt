@@ -48,6 +48,7 @@ class FormEmpresaViewModelTest {
         vm.onNomeChange("ACME")
         vm.onRazaoSocialChange("ACME LTDA")
         vm.onCnpjChange("11.222.333/0001-81") // com máscara → guarda só dígitos
+        vm.onAtuacaoToggle(Atuacao.AGENCIAMENTO) // obrigatória (domínio §3.1)
         vm.salvar()
         advanceUntilIdle()
 
@@ -162,8 +163,10 @@ class FormEmpresaViewModelTest {
     }
 
     @Test
-    fun `parte sem atuacao nenhuma e salva — cadastrada e sem operacao e estado valido`() =
+    fun `parte sem atuacao nenhuma NAO e salva — o que a empresa faz vive nas atuacoes`() =
         runTest(mainRule.dispatcher) {
+            // Domínio §3.1: a empresa não tem campo de segmento nem de tipo. Sem atuação ela não pode
+            // ser escolhida em lugar nenhum — não tem cargo, não abre seção, não recebe concessão.
             val fake = FakeEmpresaRepository()
             val vm = FormEmpresaViewModel(fake, SavedStateHandle())
 
@@ -171,8 +174,8 @@ class FormEmpresaViewModelTest {
             vm.salvar()
             advanceUntilIdle()
 
-            assertEquals(1, fake.salvos.size)
-            assertTrue(fake.atuacoesPorEmpresa.values.single().isEmpty())
+            assertTrue(vm.uiState.value.isAtuacoesError)
+            assertTrue(fake.salvos.isEmpty())
         }
 
     private fun preencherObrigatorios(vm: FormEmpresaViewModel) {

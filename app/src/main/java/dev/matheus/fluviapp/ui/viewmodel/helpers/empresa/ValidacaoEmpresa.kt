@@ -12,14 +12,20 @@ data class ErrosEmpresa(
     val nome: Boolean = false,
     val razaoSocial: Boolean = false,
     val cnpj: Boolean = false,
+    val atuacoes: Boolean = false,
 ) {
-    val valido: Boolean get() = !nome && !razaoSocial && !cnpj
+    val valido: Boolean get() = !nome && !razaoSocial && !cnpj && !atuacoes
 }
 
 fun validarEmpresa(state: FormEmpresaUiState): ErrosEmpresa = ErrosEmpresa(
     nome = state.nome.isBlank(),
     razaoSocial = state.razaoSocial.isBlank(),
     cnpj = !cnpjValido(state.cnpj),
+    // **Ao menos uma atuação** — o domínio (§3.1) diz que a empresa não tem campo de segmento nem de
+    // tipo: *o que ela faz vive nas atuações*. Uma parte sem nenhuma não é cadastro incompleto por
+    // capricho — ela não pode ser escolhida em lugar nenhum: não tem cargo (§6.1), não abre seção
+    // (ADR-0016 §2) e não recebe concessão (§7). Cadastrá-la seria criar uma parte que não age.
+    atuacoes = state.atuacoes.isEmpty(),
 )
 
 /**
