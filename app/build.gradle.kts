@@ -13,7 +13,13 @@ android {
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "dev.matheus.fluviapp"
+        // Identidade instalada do app, e a ÚNICA coisa aqui que a Play congela para sempre: publicado
+        // uma vez, mudar o applicationId cria outro app (listing nova, base zerada). Por isso ele é
+        // decidido antes do primeiro upload, e não acompanha o `namespace` acima — que é só o pacote do
+        // código e pode ser refatorado quando convier.
+        // `br.com.fluviapp` é reverse-DNS de domínio próprio; `dev.matheus` presumia um `matheus.dev`
+        // que não existe, e `com.fluviapp` colidiria com um `fluviapp.com` de terceiros.
+        applicationId = "br.com.fluviapp"
         minSdk = 26
         targetSdk = 34
         versionCode = 9
