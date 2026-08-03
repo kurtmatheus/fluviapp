@@ -298,6 +298,7 @@
     <string name="msg_transmissao_passagem">Passagem Salva com Sucesso.</string>
     <string name="msg_emissao_bem_sucedida">Emissão Bem sucedida.</string>
     <string name="msg_sincronizacao_offline">Sem conexão — mostrando dados salvos.</string>
+    <string name="msg_painel_sem_secao">Abra o menu para começar.</string>
     <string name="msg_carreg_usuarios">Carregando Usuários…</string>
     <string name="msg_carreg_info">Carregando Informações…</string>
     <string name="msg_salva_agent">Agente salvo com Sucesso.</string>

@@ -85,17 +85,19 @@ fun NavGraphBuilder.mainScreenNavComposable(
             acoesPorSecao = acoesPorSecao(state.secoesVisiveis),
             onAcaoMenu = ::navegar,
             onClickInicio = { viewModel.irParaHome() },
-            onClickEmbarque = onNavegaParaEmbarque,
             onClickDeslogar = {
                 coroutineScope.launch {
                     viewModel.deslogar()
                     onNavegaParaLogin()
                 }
             },
-            onClickAdicionarPassagem = onNavegaParaFormularioNovaPassagemComViagem,
-            onRefresh = { viewModel.refresh() },
             isDarkTheme = escuro,
             onToggleTheme = { themeViewModel.alternarTema(escuro) },
+            // REVITALIZAÇÃO: embarque, nova passagem e pull-to-refresh saíram do painel com os domínios
+            // que os alimentam (ADR-0020). Os destinos continuam no grafo, sem entrada pela Main Screen.
+            // onClickEmbarque = onNavegaParaEmbarque,
+            // onClickAdicionarPassagem = onNavegaParaFormularioNovaPassagemComViagem,
+            // onRefresh = { viewModel.refresh() },
         )
     }
 }

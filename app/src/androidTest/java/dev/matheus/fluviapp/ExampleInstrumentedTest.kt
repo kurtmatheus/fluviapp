@@ -19,6 +19,8 @@ class ExampleInstrumentedTest {
     fun useAppContext() {
         // Context of the app under test.
         val appContext = InstrumentationRegistry.getInstrumentation().targetContext
-        assertEquals("dev.matheus.fluviapp", appContext.packageName)
+        // O `applicationId` (identidade instalada), e não o `namespace` do código — os dois divergiram no
+        // rename para FluviApp, e este teste ficou afirmando o pacote errado desde então.
+        assertEquals("br.com.fluviapp", appContext.packageName)
     }
 }

@@ -9,11 +9,23 @@ import androidx.compose.ui.test.printToLog
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 
 private const val TAG = "fluvi app"
 
+/**
+ * **Suspenso pela revitalização (ADR-0020).** Este é um teste ponta a ponta do app inteiro: sobe a
+ * `MainActivity` com o grafo real do Hilt, entra pelo login e navega até "Nova Viagem" — dois domínios
+ * (sessão e viagem) que ainda não foram refeitos, e um caminho de login que deixou de existir como está
+ * desde que o provisionamento fechou (ADR-0015 §2.1: só e-mail e senha pré-cadastrados).
+ *
+ * Fica no lugar, e não apagado, porque a jornada que ele descreve é a que deve voltar a valer quando as
+ * seções correspondentes entrarem em `SECOES_REVITALIZADAS`. Enquanto isso, quem cobre a apresentação são
+ * os testes de tela — sem Hilt, sem Activity e sem login.
+ */
+@Ignore("Revitalização ADR-0020: só a Empresa está viva; login e viagem voltam com as seções delas.")
 @HiltAndroidTest
 class FluviAppNavigationTest {
 
