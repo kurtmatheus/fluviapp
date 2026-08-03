@@ -27,6 +27,49 @@ class ValidacaoPassageiroTest {
         assertTrue(validarPassageiro(p1Valido(), dataViagem).valido)
     }
 
+    // --- documento: validade, não só presença (ADR-0020 D2) ---
+
+    @Test
+    fun `cpf valido do titular passa`() {
+        val e = validarPassageiro(
+            p1Valido().copy(
+                tipoDocumentoPassageiro1 = "CPF",
+                documentoPassageiro1 = "529.982.247-25",
+            ),
+            dataViagem,
+        )
+        assertFalse(e.documentoP1)
+        assertTrue(e.valido)
+    }
+
+    @Test
+    fun `cpf invalido do titular acusa, com a mensagem de invalido`() {
+        val e = validarPassageiro(
+            p1Valido().copy(
+                tipoDocumentoPassageiro1 = "CPF",
+                documentoPassageiro1 = "000.000.000-00",
+            ),
+            dataViagem,
+        )
+        assertTrue(e.documentoP1)
+        assertEquals(R.string.error_documento_invalido, e.textDocumentoP1)
+        assertFalse(e.valido)
+    }
+
+    @Test
+    fun `documento de acompanhante nao marcado nao e validado`() {
+        val e = validarPassageiro(
+            p1Valido().copy(
+                isPassageiro2Checked = false,
+                tipoDocumentoPassageiro2 = "CPF",
+                documentoPassageiro2 = "000.000.000-00",
+            ),
+            dataViagem,
+        )
+        assertFalse(e.documentoP2)
+        assertTrue(e.valido)
+    }
+
     @Test
     fun `obrigatorios em branco invalidam com msg de obrigatorio na data`() {
         val e = validarPassageiro(FormPassageiroUiState(), dataViagem)

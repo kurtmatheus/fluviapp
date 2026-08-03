@@ -255,6 +255,7 @@
     <string name="error_senha_curta">Senha deve ter ao menos 6 caracteres.</string>
     <string name="error_senhas_diferentes">As senhas não conferem.</string>
     <string name="error_camp_obrig">Campo Obrigatório</string>
+    <string name="error_documento_invalido">Documento inválido para o tipo selecionado.</string>
     <string name="error_valor_invalido">Informe um valor maior que zero</string>
     <string name="error_emissao_sem_tarifa">Sem tarifa cadastrada para esta viagem. Cadastre a tarifa na viagem antes de emitir.</string>
     <string name="error_emissao_cota_gratuidade">Cota de gratuidade atingida nesta viagem para: %1$s (máx. 2 por categoria).</string>

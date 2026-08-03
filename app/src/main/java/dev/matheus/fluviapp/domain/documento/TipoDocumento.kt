@@ -74,10 +74,12 @@ enum class TipoDocumento(
      * Exibição com **ocultação parcial** (LGPD): mantém o documento reconhecível para conferência de
      * balcão e esconde o suficiente para que a tela/o bilhete não sejam uma cópia do identificador.
      *
-     * As formas replicam exatamente o que o app já imprimia (`mascararCPF`/`mascararRG`/`mascararCNH`/
-     * `mascararPassaporte`), para que a migração da F2 não mude nada visível. Agora que a política está
-     * num lugar só, **apertá-la é uma decisão só** — e vale apertar: a forma do CPF ainda expõe 6 dos 11
-     * dígitos.
+     * **O CPF esconde os 6 primeiros dígitos e mostra os 5 últimos** (`###.###.247-25`). A forma anterior
+     * — herdada de `mascararCPF`, que escondia as pontas — expunha os 6 do meio; esta expõe 5 e é a que o
+     * balcão precisa para conferir contra o documento físico. Foi a primeira vez que essa política pôde
+     * ser decidida numa linha: antes ela estava espalhada por quatro funções de extensão.
+     *
+     * As demais formas replicam o que o app já imprimia, para que a F2 não mude nada visível nelas.
      *
      * O **CNPJ não é ocultado**: identifica pessoa jurídica, é público por natureza e não é dado pessoal.
      */
@@ -85,7 +87,7 @@ enum class TipoDocumento(
         val d = normalizar(valor)
         if (d.length !in comprimento) return d
         return when (this) {
-            CPF -> "###.${d.substring(3, 6)}.${d.substring(6, 9)}-##"
+            CPF -> "###.###.${d.substring(6, 9)}-${d.substring(9, 11)}"
             CNPJ -> formatar(d)
             RG -> d.replaceRange(1, 4, "###")
             CNH -> d.replaceRange(2, 8, "######")

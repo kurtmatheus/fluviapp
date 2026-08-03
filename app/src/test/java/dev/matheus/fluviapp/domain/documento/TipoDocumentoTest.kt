@@ -115,8 +115,15 @@ class TipoDocumentoTest {
     // --- mascarar(): a politica de exibicao (LGPD) ---
 
     @Test
-    fun `mascarar o cpf esconde o inicio e o fim, preservando a forma que o bilhete ja imprimia`() {
-        assertEquals("###.982.247-##", TipoDocumento.CPF.mascarar(cpfValido))
+    fun `mascarar o cpf esconde os 6 primeiros e mostra os 5 ultimos`() {
+        assertEquals("###.###.247-25", TipoDocumento.CPF.mascarar(cpfValido))
+    }
+
+    @Test
+    fun `a mascara do cpf expoe 5 digitos, nao 6 — e nenhum dos 6 primeiros`() {
+        val mascarado = TipoDocumento.CPF.mascarar(cpfValido)
+        assertEquals(5, mascarado.count { it.isDigit() })
+        assertEquals(cpfValido.takeLast(5), mascarado.filter { it.isDigit() })
     }
 
     @Test
@@ -141,7 +148,7 @@ class TipoDocumentoTest {
     @Test
     fun `exibir escolhe entre formatar e mascarar`() {
         assertEquals("529.982.247-25", TipoDocumento.CPF.exibir(cpfValido, ocultar = false))
-        assertEquals("###.982.247-##", TipoDocumento.CPF.exibir(cpfValido, ocultar = true))
+        assertEquals("###.###.247-25", TipoDocumento.CPF.exibir(cpfValido, ocultar = true))
     }
 
     // --- validar(): o lugar que nao existia ---

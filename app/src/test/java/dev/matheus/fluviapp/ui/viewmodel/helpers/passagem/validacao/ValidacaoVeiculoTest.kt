@@ -1,6 +1,8 @@
 package dev.matheus.fluviapp.ui.viewmodel.helpers.passagem.validacao
 
+import dev.matheus.fluviapp.R
 import dev.matheus.fluviapp.ui.states.passagem.FormVeiculoUiState
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -21,6 +23,47 @@ class ValidacaoVeiculoTest {
     @Test
     fun `veiculo completo e valido`() {
         assertTrue(validarVeiculo(veiculoValido()).valido)
+    }
+
+    // --- documento do responsável: validade, não só presença (ADR-0020 D2) ---
+
+    @Test
+    fun `documento do responsavel com cpf valido passa`() {
+        val erros = validarVeiculo(
+            veiculoValido().copy(
+                isDocumentoResponsavelRetiradaReadOnly = false,
+                tipoDocumentoResponsavelRetirada = "CPF",
+                documentoResponsavelRetirada = "529.982.247-25",
+            ),
+        )
+        assertFalse(erros.documentoResponsavel)
+        assertTrue(erros.valido)
+    }
+
+    @Test
+    fun `documento do responsavel com cpf invalido acusa`() {
+        val erros = validarVeiculo(
+            veiculoValido().copy(
+                isDocumentoResponsavelRetiradaReadOnly = false,
+                tipoDocumentoResponsavelRetirada = "CPF",
+                documentoResponsavelRetirada = "000.000.000-00",
+            ),
+        )
+        assertTrue(erros.documentoResponsavel)
+        assertEquals(R.string.error_documento_invalido, erros.textDocumentoResponsavel)
+        assertFalse(erros.valido)
+    }
+
+    @Test
+    fun `documento herdado do titular (somente-leitura) nao e revalidado`() {
+        val erros = validarVeiculo(
+            veiculoValido().copy(
+                isDocumentoResponsavelRetiradaReadOnly = true,
+                tipoDocumentoResponsavelRetirada = "CPF",
+                documentoResponsavelRetirada = "000.000.000-00",
+            ),
+        )
+        assertFalse(erros.documentoResponsavel)
     }
 
     @Test

@@ -2,32 +2,32 @@ package dev.matheus.fluviapp.sampledata
 
 import dev.matheus.fluviapp.R
 import dev.matheus.fluviapp.extensions.formataParaMoedaBrasileira
-import dev.matheus.fluviapp.model.cadastro.constantes.Constante
-import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Categoria.ACOMODACAO
-import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Categoria.DOCUMENTO
-import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Categoria.GRATUIDADE
-import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Categoria.MUNICIPIO
-import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Categoria.PAGAMENTO
-import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Categoria.STATUS_PASSAGEM
-import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Categoria.TIPO_PASSAGEM
-import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Categoria.VEICULO
-import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.CREDITO
-import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.DEBITO
-import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.DINHEIRO
-import dev.matheus.fluviapp.model.cadastro.constantes.Constante.Descricao.PIX
-import dev.matheus.fluviapp.model.operacoes.Funcionario
-import dev.matheus.fluviapp.model.operacoes.Agencia.MATRIZ
-import dev.matheus.fluviapp.model.operacoes.Funcionario.Lotacao.ILHA_CENTRAL
-import dev.matheus.fluviapp.model.operacoes.Funcionario.Lotacao.PORTO_NORTE
-import dev.matheus.fluviapp.model.operacoes.Funcionario.Lotacao.PORTO_SUL
-import dev.matheus.fluviapp.model.operacoes.Usuario
-import dev.matheus.fluviapp.model.screendata.DadosContagemPassagem
-import dev.matheus.fluviapp.model.screendata.DadosBotoesMenus
-import dev.matheus.fluviapp.model.screendata.DadosImpressora
-import dev.matheus.fluviapp.model.screendata.DadosPassagem
-import dev.matheus.fluviapp.model.screendata.DadosViagemCard
-import dev.matheus.fluviapp.model.viagem.Empresa
-import dev.matheus.fluviapp.model.viagem.Navio
+import dev.matheus.fluviapp.domain.cadastro.constantes.Constante
+import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Categoria.ACOMODACAO
+import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Categoria.DOCUMENTO
+import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Categoria.GRATUIDADE
+import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Categoria.MUNICIPIO
+import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Categoria.PAGAMENTO
+import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Categoria.STATUS_PASSAGEM
+import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Categoria.TIPO_PASSAGEM
+import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Categoria.VEICULO
+import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.CREDITO
+import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.DEBITO
+import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.DINHEIRO
+import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.PIX
+import dev.matheus.fluviapp.domain.operacoes.Funcionario
+import dev.matheus.fluviapp.domain.operacoes.Agencia.MATRIZ
+import dev.matheus.fluviapp.domain.operacoes.Funcionario.Lotacao.ILHA_CENTRAL
+import dev.matheus.fluviapp.domain.operacoes.Funcionario.Lotacao.PORTO_NORTE
+import dev.matheus.fluviapp.domain.operacoes.Funcionario.Lotacao.PORTO_SUL
+import dev.matheus.fluviapp.domain.operacoes.Usuario
+import dev.matheus.fluviapp.domain.screendata.DadosContagemPassagem
+import dev.matheus.fluviapp.domain.screendata.DadosBotoesMenus
+import dev.matheus.fluviapp.domain.screendata.DadosImpressora
+import dev.matheus.fluviapp.domain.screendata.DadosPassagem
+import dev.matheus.fluviapp.domain.screendata.DadosViagemCard
+import dev.matheus.fluviapp.domain.viagem.Empresa
+import dev.matheus.fluviapp.domain.viagem.Navio
 import java.math.BigDecimal
 
 val listaDadosDadosViagemHomeSampleCards = listOf(
@@ -231,10 +231,12 @@ val dadosPassagemSample = DadosPassagem(
     situacao = "PENDENTE",
     funcionario = "ADMINISTRADOR",
     nomePassageiro1 = "JOAO DA SILVA",
-    documentoPassageiro1 = "000.000.000-00",
+    // CPFs de mock com dígito verificador válido (ADR-0020 D2): desde que a validação entrou, o
+    // "000.000.000-00" de antes seria recusado no form — mock inválido vira demo quebrada.
+    documentoPassageiro1 = "529.982.247-25",
     dataNascimento1 = "30/01/1996",
     nomePassageiro2 = "MARIA OLIVEIRA",
-    documentoPassageiro2 = "000.000.000-00",
+    documentoPassageiro2 = "123.456.789-09",
     dataNascimento2 = "10/01/1975",
     acomodacao = "SUITE"
 )
@@ -259,7 +261,7 @@ val dadosPassagemVeiculoSample = DadosPassagem(
     situacao = "PENDENTE",
     funcionario = "ADMINISTRADOR",
     nomeResponsavelRetirada = "JOAO DA SILVA",
-    numeroDocumentoResponsavelRetirada = "000.000.000-00",
+    numeroDocumentoResponsavelRetirada = "111.444.777-35",
     idVeiculo = "2",
     tipoVeiculo = "MOTO",
     modeloVeiculo = "MOTO 150CC MODELO",
@@ -348,7 +350,7 @@ val listaEmpresaSample = listOf(
         id = "1",
         nome = "NAVEGACAO MODELO",
         razaoSocial = "MODELO NAVEGACAO FLUVIAL LTDA",
-        cnpj = "00.000.000/0001-00",
+        cnpj = "11.222.333/0001-81",
         endereco = "Av. Central, nº 100 - Centro - Porto Sul",
         telefone1 = "(00) 90000-0001",
         telefone2 = "(00) 90000-0002"

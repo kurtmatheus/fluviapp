@@ -17,13 +17,17 @@ data class ErrosPassageiro(
     val tipoGratuidade: Boolean = false,
     val nomeP1: Boolean = false,
     val documentoP1: Boolean = false,
+    /** @StringRes da mensagem do documento do titular: obrigatório × inválido (0 = sem erro). */
+    val textDocumentoP1: Int = 0,
     val dataNascimentoP1: Boolean = false,
     /** @StringRes da mensagem do campo data de nascimento do titular (0 = sem erro). */
     val textDataNascimentoP1: Int = 0,
     val nomeP2: Boolean = false,
     val documentoP2: Boolean = false,
+    val textDocumentoP2: Int = 0,
     val dataNascimentoP2: Boolean = false,
     val documentoP3: Boolean = false,
+    val textDocumentoP3: Int = 0,
     val nomeP3: Boolean = false,
     val dataNascimentoP3: Boolean = false,
 ) {
@@ -45,25 +49,39 @@ fun validarPassageiro(state: FormPassageiroUiState, dataViagem: String): ErrosPa
         else -> false to 0
     }
 
+    // Documento: obrigatório quando um tipo foi escolhido e, desde o ADR-0020 D2, **válido para aquele
+    // tipo** — CPF e CNPJ com dígito verificador conferido. Acompanhantes só valem quando marcados.
+    val doc1 = validarDocumento(state.tipoDocumentoPassageiro1, state.documentoPassageiro1)
+    val doc2 = if (state.isPassageiro2Checked) {
+        validarDocumento(state.tipoDocumentoPassageiro2, state.documentoPassageiro2)
+    } else {
+        ErroDocumento()
+    }
+    val doc3 = if (state.isPassageiro3Checked) {
+        validarDocumento(state.tipoDocumentoPassageiro3, state.documentoPassageiro3)
+    } else {
+        ErroDocumento()
+    }
+
     return ErrosPassageiro(
         acomodacao = state.acomodacao.isBlank(),
         // Tipo tarifário só existe na REDE (ADR-0013): fora dela não se exige tipo nem gratuidade (inteira).
         tipoPassagem = state.ehAcomodacaoRede && state.tipoPassagem.isBlank(),
         tipoGratuidade = state.ehAcomodacaoRede && state.isGratuidade && state.tipoGratuidade.isBlank(),
-        // doc do titular: número exigido quando um tipo de documento foi escolhido.
-        documentoP1 = state.tipoDocumentoPassageiro1.isNotBlank() && state.documentoPassageiro1.isBlank(),
+        documentoP1 = doc1.erro,
+        textDocumentoP1 = doc1.texto,
         nomeP1 = state.nomePassageiro1.isBlank(),
         dataNascimentoP1 = dataNasc1Erro,
         textDataNascimentoP1 = textDataNasc1,
         // Passageiro 2 (opcional): só valida quando marcado.
         nomeP2 = state.isPassageiro2Checked &&
             state.nomePassageiro2.isBlank() && state.documentoPassageiro2.isBlank(),
-        documentoP2 = state.isPassageiro2Checked &&
-            state.tipoDocumentoPassageiro2.isNotBlank() && state.documentoPassageiro2.isBlank(),
+        documentoP2 = doc2.erro,
+        textDocumentoP2 = doc2.texto,
         dataNascimentoP2 = state.isPassageiro2Checked && state.dataNascimentoPassageiro2.isBlank(),
         // Passageiro 3 (opcional): só valida quando marcado.
-        documentoP3 = state.isPassageiro3Checked &&
-            state.tipoDocumentoPassageiro3.isNotBlank() && state.documentoPassageiro3.isBlank(),
+        documentoP3 = doc3.erro,
+        textDocumentoP3 = doc3.texto,
         nomeP3 = state.isPassageiro3Checked && state.nomePassageiro3.isBlank(),
         dataNascimentoP3 = state.isPassageiro3Checked && state.dataNascimentoPassageiro3.isBlank(),
     )
