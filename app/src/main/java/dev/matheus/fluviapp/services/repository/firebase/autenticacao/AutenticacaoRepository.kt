@@ -24,10 +24,14 @@ interface AutenticacaoRepository {
     suspend fun alterarSenha(novaSenha: String): ResultadoAutenticacao
 
     /**
-     * Perfil autoritativo do usuário autenticado (`users/{uid}` + o `funcionarios/{id}` ligado);
-     * null se o perfil de sistema estiver ausente — que é justamente o sinal do primeiro acesso.
+     * Perfil autoritativo do usuário autenticado (`users/{uid}` + o `funcionarios/{id}` ligado).
+     *
+     * **Lido do servidor, nunca do cache** ([ResultadoPerfil.Indisponivel] quando não dá): é este perfil
+     * que decide papel e cargo, e responder isso com o que sobrou da última sessão é decidir permissão
+     * por memória. O ADR-0005 já dizia que o primeiro login exige rede; aqui isso deixa de ser aviso e
+     * passa a ser tipo.
      */
-    suspend fun perfilAutenticado(): PerfilAutenticado?
+    suspend fun perfilAutenticado(): ResultadoPerfil
 
     /** Nasce o `users/{uid}` do autenticado, já vinculado ao funcionário que o pré-cadastro criou. */
     suspend fun criarPerfil(email: String, username: String, papel: String, funcionarioId: String)

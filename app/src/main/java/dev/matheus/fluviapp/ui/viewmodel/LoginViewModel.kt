@@ -19,11 +19,11 @@ import dev.matheus.fluviapp.services.repository.operacoes.FuncionarioRepository
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.EmpresaRepository
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.NavioRepository
 import dev.matheus.fluviapp.services.repository.firebase.PassagemFirestoreRepository
-import dev.matheus.fluviapp.services.repository.firebase.SeedFirestore
 import dev.matheus.fluviapp.services.repository.firebase.ViagemFirestoreRepository
 import dev.matheus.fluviapp.services.repository.firebase.autenticacao.AutenticacaoRepository
 import dev.matheus.fluviapp.services.repository.firebase.autenticacao.PerfilAutenticado
 import dev.matheus.fluviapp.services.repository.firebase.autenticacao.ResultadoAutenticacao
+import dev.matheus.fluviapp.services.repository.firebase.autenticacao.ResultadoPerfil
 import dev.matheus.fluviapp.services.repository.operacoes.UsuarioRepository
 import dev.matheus.fluviapp.ui.states.LoginUiState
 import dev.matheus.fluviapp.ui.viewmodel.helpers.login.LoginFormHelper
@@ -47,7 +47,6 @@ class LoginViewModel @Inject constructor(
     private val funcionarioRepository: FuncionarioRepository,
     private val viagemRepository: ViagemFirestoreRepository,
     private val passagemRepository: PassagemFirestoreRepository,
-    private val seedFirestore: SeedFirestore,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(LoginUiState())
@@ -58,10 +57,16 @@ class LoginViewModel @Inject constructor(
 
     lateinit var onNavegaParaMainScreen: () -> Unit
 
+    /**
+     * O `SeedFirestore` saiu daqui (ADR-0016: *o seed morre*, e quem alimenta o app é o painel).
+     * Ele já era contraditório: prometia provisionar via "cadastro in-app com perfil auto-criado", um
+     * mecanismo removido na P2.2c — e nunca criou `users`, de modo que a primeira conta sempre dependeu
+     * do console. Mantê-lo era manter uma porta de escrita em massa que só rodava em debug, escondendo
+     * essa dependência de ambiente em vez de mostrá-la.
+     */
     init {
         viewModelScope.launch {
             initializeHelper()
-            seedFirestore.semearSeVazio()
             carregarUsuarios()
         }
     }
@@ -95,7 +100,7 @@ class LoginViewModel @Inject constructor(
     }
 
     /**
-     * Autentica e decide entre TRÊS desfechos, nesta ordem (ADR-0015 §2.1):
+     * Autentica e decide entre QUATRO desfechos, nesta ordem (ADR-0015 §2.1):
      *
      *  1. **Tem perfil** (`users/{uid}`) → sessão aberta, caminho normal.
      *  2. **Não tem perfil, mas existe funcionário com este e-mail** → é o **primeiro acesso**. Não é um
@@ -103,18 +108,27 @@ class LoginViewModel @Inject constructor(
      *     autenticou e o pré-cadastro está lá.
      *  3. **Não tem nem um nem outro** → autenticou, mas não é da casa. A conta existe no Auth e não
      *     tem registro na operação; quem resolve isso é a gestão, não o app.
+     *  4. **Não deu para perguntar** → problema de conexão, e nada se conclui sobre o cadastro. Este
+     *     desfecho *existia* antes escondido dentro do 3º: sem rede, o app dizia à pessoa que ela não
+     *     era da casa e a deslogava.
      */
     private suspend fun autenticarUsuario() {
         val email = _uiState.value.email
         val senha = _uiState.value.senha
 
         when (val resultado = autenticacaoRepository.autenticar(email, senha)) {
-            is ResultadoAutenticacao.Sucesso -> {
-                val perfil = autenticacaoRepository.perfilAutenticado()
-                if (perfil != null) {
-                    logarUsuario(usuarioRepository.salvarUsuarioAutenticado(email), perfil)
-                } else {
-                    deduzirPrimeiroAcesso(email)
+            is ResultadoAutenticacao.Sucesso -> when (val perfil = autenticacaoRepository.perfilAutenticado()) {
+                is ResultadoPerfil.Encontrado ->
+                    logarUsuario(usuarioRepository.salvarUsuarioAutenticado(email), perfil.perfil)
+
+                is ResultadoPerfil.Ausente -> deduzirPrimeiroAcesso(email)
+
+                is ResultadoPerfil.Indisponivel -> {
+                    // A credencial continua válida: não se desloga por falha de rede.
+                    Log.e(TAG, "perfil indisponível (sem rede?) para $email")
+                    loginFormHelper.exibeErro()
+                    loginFormHelper.setMensagemErro(R.string.error_perfil_indisponivel)
+                    _uiState.value = _uiState.value.copy(logando = false)
                 }
             }
 

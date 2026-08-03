@@ -238,6 +238,7 @@
     <string name="error_emissor_sem_funcionario">Seu acesso não está vinculado a um agente. Procure a gestão para emitir passagens.</string>
     <string name="error_email_invalido">Informe um e-mail válido.</string>
     <string name="error_sem_cadastro_na_equipe">Seu e-mail não está cadastrado na equipe. Procure a gestão.</string>
+    <string name="error_perfil_indisponivel">Sem conexão para confirmar seu acesso. Verifique a internet e tente de novo.</string>
     <string name="btn_esqueci_senha">Esqueci a senha</string>
     <string name="msg_recuperacao_enviada">E-mail de recuperação enviado.</string>
     <string name="title_recuperar_senha">Recuperar senha</string>

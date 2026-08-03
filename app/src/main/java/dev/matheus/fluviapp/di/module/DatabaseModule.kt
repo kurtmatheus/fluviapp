@@ -30,7 +30,7 @@ private const val DATABASE_NAME = "fluviApp.db"
 /**
  * **Migração única — o schema nasce pronto (ADR-0015 §9).**
  *
- * O app não tem versão publicada, homologação nem dado real (o conteúdo vem do `SeedFirestore`), então
+ * O app não tem versão publicada, homologação nem dado real (o conteúdo é cadastrado pelo painel), então
  * manter 19 migrações históricas era guardar o caminho para um estado por onde ninguém passou. Elas foram
  * **colapsadas** neste DDL, que cria as tabelas já na forma final.
  *

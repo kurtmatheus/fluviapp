@@ -16,8 +16,19 @@ class FakeAutenticacaoRepository : AutenticacaoRepository {
     var saiuVezes = 0
         private set
 
-    /** Perfil devolvido por [perfilAutenticado] — `null` é o sinal do primeiro acesso. */
-    var perfil: PerfilAutenticado? = null
+    /**
+     * O que [perfilAutenticado] devolve. O default é [ResultadoPerfil.Ausente] — o sinal do primeiro
+     * acesso —, e [ResultadoPerfil.Indisponivel] permite exercitar o que antes não tinha como ser
+     * exercitado: o login sem conseguir falar com o servidor.
+     */
+    var resultadoPerfil: ResultadoPerfil = ResultadoPerfil.Ausente
+
+    /** Atalho: define o perfil encontrado sem montar o [ResultadoPerfil] à mão. */
+    var perfil: PerfilAutenticado?
+        get() = (resultadoPerfil as? ResultadoPerfil.Encontrado)?.perfil
+        set(valor) {
+            resultadoPerfil = valor?.let { ResultadoPerfil.Encontrado(it) } ?: ResultadoPerfil.Ausente
+        }
 
     /** Faz [criarPerfil] falhar, para cobrir o meio-caminho (senha trocada, perfil não criado). */
     var falharAoCriarPerfil = false
@@ -32,7 +43,7 @@ class FakeAutenticacaoRepository : AutenticacaoRepository {
         return r
     }
 
-    override suspend fun perfilAutenticado() = perfil
+    override suspend fun perfilAutenticado() = resultadoPerfil
 
     override suspend fun criarPerfil(email: String, username: String, papel: String, funcionarioId: String) {
         if (falharAoCriarPerfil) throw RuntimeException("falha simulada ao criar perfil")

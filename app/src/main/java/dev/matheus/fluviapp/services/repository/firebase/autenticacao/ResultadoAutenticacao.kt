@@ -35,6 +35,32 @@ enum class MotivoFalhaAuth {
  * (papel + cargo) e o que **identifica na tela** (nome/username); agência e lotação não vêm — quem
  * precisa delas resolve pelo funcionário, que já está espelhado no Room (§8.1).
  */
+/**
+ * O que se sabe sobre o perfil de quem acabou de autenticar — **três estados, não dois**.
+ *
+ * Antes isto era um `PerfilAutenticado?`, e o `null` fundia duas coisas de naturezas opostas: *não há
+ * perfil* (fato sobre o cadastro) e *não deu para perguntar* (fato sobre a rede). Quem recebia o `null`
+ * seguia para o primeiro acesso, não achava funcionário — offline, também não acharia —, concluía que a
+ * pessoa não é da casa e a **deslogava**. Um problema de conexão virava acusação ao usuário.
+ *
+ * É a mesma distinção que o `EmpresaFirestoreRepository` guarda em `_recebeuSnapshot` para não
+ * confundir "coleção vazia" com "ainda não chegou".
+ */
+sealed interface ResultadoPerfil {
+
+    data class Encontrado(val perfil: PerfilAutenticado) : ResultadoPerfil
+
+    /** Autenticou e **não existe** `users/{uid}`: é o sinal do primeiro acesso (ADR-0015 §2.1). */
+    data object Ausente : ResultadoPerfil
+
+    /**
+     * Não deu para falar com o servidor. Não se conclui nada sobre o cadastro a partir daqui — e é por
+     * isso que o login **exige rede** (ADR-0005): decidir quem é a pessoa a partir de cache é decidir
+     * com o que sobrou da última vez.
+     */
+    data object Indisponivel : ResultadoPerfil
+}
+
 data class PerfilAutenticado(
     val id: String,
     val email: String,
