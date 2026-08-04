@@ -54,10 +54,22 @@ jobs:
       # O plugin `com.google.gms.google-services` FALHA O BUILD sem este arquivo — inclusive no job de
       # testes, não só no de release. Ele é gitignored porque o repositório é público (portfólio), então
       # a esteira o recria a partir do secret.
+      # `tr -d` porque o valor colado quase sempre traz quebra de linha ou espaço, e o `base64 -d` recusa
+      # a entrada inteira por causa disso. A validação existe para o erro apontar o secret, e não um
+      # "plugin falhou" três passos adiante.
       - name: Restaurar google-services.json
         env:
           GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
-        run: echo "$GOOGLE_SERVICES_JSON" | base64 -d > app/google-services.json
+        run: |
+          if [ -z "$GOOGLE_SERVICES_JSON" ]; then
+            echo "::error::secret GOOGLE_SERVICES_JSON não está definido no repositório"
+            exit 1
+          fi
+          printf '%s' "$GOOGLE_SERVICES_JSON" | tr -d '[:space:]' | base64 -d > app/google-services.json
+          if ! grep -q '"project_id"' app/google-services.json; then
+            echo "::error::GOOGLE_SERVICES_JSON decodificou para algo que não é o google-services.json"
+            exit 1
+          fi
 
       - name: Testes JVM (escopo)
         run: ./gradlew :app:testDebugUnitTest --no-daemon
