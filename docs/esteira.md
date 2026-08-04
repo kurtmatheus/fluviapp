@@ -65,12 +65,38 @@ Console do Google Cloud do projeto `fluvi-app-dev` → *IAM → Contas de servi�
 Gere uma chave JSON e cole o conteúdo inteiro em `FIREBASE_SERVICE_ACCOUNT`. Ela substitui o
 `firebase login` interativo, que não existe num runner.
 
+## Homologação e produção
+
+Não há dois ambientes: há **um projeto Firebase e dois grupos de testers**. O que separa os canais é a
+**forma da tag**, na convenção do SemVer — pré-lançamento tem hífen:
+
+| Tag | Canal | Grupo |
+|---|---|---|
+| `v0.0.3-rc.1` | homologação | `homologacao` |
+| `v0.0.3` | produção | `producao` |
+| (workflow_dispatch) | ensaio | `homologacao` |
+
+**Aprovar é criar a tag sem sufixo apontando para o commit já homologado.** Não existe promoção do
+binário: o `google-services.json` fica embutido no APK, então o que se promove é o commit, e a esteira
+recompila. Como projeto e configuração são os mesmos, o artefato de produção difere apenas em versão — o
+`versionCode` (número do run) e o `versionName` (a tag) sobem sozinhos, que é o "bump" da aprovação.
+
+A audiência é administrada por **grupos no console**, não por lista de e-mails em secret: quem entra ou
+sai da homologação não exige mexer no repositório.
+
+> **Quando isto deixar de bastar.** No dia em que o dado passar a importar, homologação e produção
+> compartilhando o mesmo Firestore vira problema — um tester apagando uma empresa apaga a de todos. A
+> saída é um segundo projeto (`fluvi-app-prod`) com *product flavors* e `applicationIdSuffix`, ao custo
+> de outro bootstrap de admin, outro deploy de regras e secrets duplicados. Enquanto não há usuário nem
+> dado que doa perder, isso é complexidade paga por um risco que ainda não existe.
+
 ## Distribuir
 
 Pela esteira, criando uma tag:
 
 ```
-git tag v0.0.2-alpha02 && git push origin v0.0.2-alpha02
+git tag v0.0.3-rc.1 && git push origin v0.0.3-rc.1     # homologação
+git tag v0.0.3      && git push origin v0.0.3          # produção, depois de aprovada
 ```
 
 À mão, da máquina (foi assim que a primeira entrega saiu):

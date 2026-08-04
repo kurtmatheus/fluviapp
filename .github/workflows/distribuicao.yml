@@ -19,6 +19,35 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # **Homologação × produção pela forma da tag** (SemVer): pré-lançamento tem hífen.
+      #
+      #   v0.0.3-rc.1  → grupo `homologacao`
+      #   v0.0.3       → grupo `producao`
+      #
+      # Aprovar é um ato explícito e rastreável: criar a tag SEM sufixo apontando para o mesmo commit
+      # que já foi homologado. Não há promoção de binário — o `google-services.json` fica embutido no
+      # APK, então o que se promove é o commit, e a esteira recompila. Como código e configuração são os
+      # mesmos (projeto único, por ora), o artefato de produção difere só em versão.
+      #
+      # `workflow_dispatch` nunca vai para produção: build de botão é ensaio, e ensaio não estreia.
+      - name: Definir destino
+        id: destino
+        run: |
+          TAG="${{ github.ref_name }}"
+          if [[ "${{ github.ref }}" != refs/tags/* ]]; then
+            echo "grupo=homologacao" >> "$GITHUB_OUTPUT"
+            echo "canal=ensaio (workflow_dispatch)" >> "$GITHUB_OUTPUT"
+          elif [[ "$TAG" == *-* ]]; then
+            echo "grupo=homologacao" >> "$GITHUB_OUTPUT"
+            echo "canal=homologação" >> "$GITHUB_OUTPUT"
+          else
+            echo "grupo=producao" >> "$GITHUB_OUTPUT"
+            echo "canal=produção" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Resumo
+        run: echo "### ${{ steps.destino.outputs.canal }} → grupo \`${{ steps.destino.outputs.grupo }}\`" >> "$GITHUB_STEP_SUMMARY"
+
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -83,19 +112,21 @@ jobs:
           "$APKSIGNER" verify --print-certs app/build/outputs/apk/release/app-release.apk
 
       # A CLI se autentica pela service account (não há `firebase login` interativo num runner).
+      # `--groups` e não `--testers`: quem administra a audiência é o console, não um secret com lista de
+      # e-mails que ninguém lembra de atualizar quando alguém entra ou sai.
       - name: Distribuir
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/service-account.json
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           APP_ID: ${{ secrets.FIREBASE_APP_ID }}
-          TESTERS: ${{ secrets.FIREBASE_TESTERS }}
+          GRUPO: ${{ steps.destino.outputs.grupo }}
           NOTAS: ${{ github.event.inputs.notas || github.ref_name }}
         run: |
           echo "$FIREBASE_SERVICE_ACCOUNT" > "$GOOGLE_APPLICATION_CREDENTIALS"
           npx --yes firebase-tools appdistribution:distribute \
             app/build/outputs/apk/release/app-release.apk \
             --app "$APP_ID" \
-            --testers "$TESTERS" \
+            --groups "$GRUPO" \
             --release-notes "$NOTAS"
 
       - name: Guardar o APK do run
