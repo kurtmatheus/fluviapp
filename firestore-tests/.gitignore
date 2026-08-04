@@ -1,5 +1,7 @@
 node_modules/
-package-lock.json
+# O package-lock.json É VERSIONADO: sem ele o `npm ci` da esteira não roda, e a suíte que serve de gate
+# das regras passaria a instalar versões diferentes das testadas aqui. Gate com dependência flutuante
+# não é gate.
 *.log
 firestore-debug.log
 ui-debug.log

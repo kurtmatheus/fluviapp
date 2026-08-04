@@ -1,0 +1,95 @@
+name: Distribuição
+
+# Empacota assinado e entrega aos testers. Disparado por TAG (`v0.0.2-alpha02`, por exemplo) e não por
+# push: distribuir é ato deliberado, e a tag é o registro de qual commit virou qual build.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      notas:
+        description: 'Notas da versão para o tester'
+        required: false
+        default: 'Build manual da esteira.'
+
+jobs:
+  distribuir:
+    name: APK assinado → App Distribution
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: firestore-tests/package-lock.json
+
+      # Gate: não se distribui o que não passou. Repetido aqui de propósito — a tag pode apontar para um
+      # commit que nunca passou pelo CI (tag em commit antigo, tag criada à mão).
+      - name: Suíte de regras (escopo)
+        working-directory: firestore-tests
+        run: npm ci && npm test
+
+      - name: Restaurar google-services.json
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: echo "$GOOGLE_SERVICES_JSON" | base64 -d > app/google-services.json
+
+      - name: Testes JVM (escopo)
+        run: ./gradlew :app:testDebugUnitTest --no-daemon
+
+      # A chave nunca fica no repositório: chega como secret, vira arquivo no runner e morre com ele.
+      - name: Restaurar keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/fluviapp-release.jks"
+          cat > keystore.properties <<EOF
+          storeFile=$RUNNER_TEMP/fluviapp-release.jks
+          storePassword=$KEYSTORE_PASSWORD
+          keyAlias=$KEY_ALIAS
+          keyPassword=$KEY_PASSWORD
+          EOF
+
+      # `github.run_number` cresce sozinho e é rastreável até a execução que gerou o artefato (P3.3).
+      - name: Montar APK assinado
+        env:
+          VERSION_CODE: ${{ github.run_number }}
+        run: ./gradlew :app:assembleRelease --no-daemon
+
+      - name: Conferir que saiu mesmo assinado
+        run: |
+          APKSIGNER=$(find "$ANDROID_HOME/build-tools" -name apksigner | sort -r | head -n1)
+          "$APKSIGNER" verify --print-certs app/build/outputs/apk/release/app-release.apk
+
+      # A CLI se autentica pela service account (não há `firebase login` interativo num runner).
+      - name: Distribuir
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/service-account.json
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          APP_ID: ${{ secrets.FIREBASE_APP_ID }}
+          TESTERS: ${{ secrets.FIREBASE_TESTERS }}
+          NOTAS: ${{ github.event.inputs.notas || github.ref_name }}
+        run: |
+          echo "$FIREBASE_SERVICE_ACCOUNT" > "$GOOGLE_APPLICATION_CREDENTIALS"
+          npx --yes firebase-tools appdistribution:distribute \
+            app/build/outputs/apk/release/app-release.apk \
+            --app "$APP_ID" \
+            --testers "$TESTERS" \
+            --release-notes "$NOTAS"
+
+      - name: Guardar o APK do run
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release
+          path: app/build/outputs/apk/release/app-release.apk

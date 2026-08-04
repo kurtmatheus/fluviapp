@@ -1,0 +1,73 @@
+name: CI
+
+# Roda no que já está de pé: a suíte recortada ao escopo da revitalização (ADR-0020). Vermelho aqui
+# significa "quebrei algo que estava funcionando", e não "existe passado" — que é justamente o que o
+# recorte comprou.
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  regras:
+    name: Regras do Firestore (emulador)
+    runs-on: ubuntu-latest
+    # Primeiro por ser o mais barato e o mais independente: roda no projeto `demo-fluviapp`, SEM
+    # credencial nenhuma. É o gate que o P3.4 pedia — e as regras deste repo nunca foram deployadas,
+    # então é aqui que se descobre o que elas quebram, antes de um usuário descobrir.
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: firestore-tests/package-lock.json
+
+      # O emulador do Firestore é um processo Java.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Instalar dependências
+        working-directory: firestore-tests
+        run: npm ci
+
+      - name: Suíte de regras (escopo)
+        working-directory: firestore-tests
+        run: npm test
+
+  jvm:
+    name: Testes JVM + build debug
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      # O plugin `com.google.gms.google-services` FALHA O BUILD sem este arquivo — inclusive no job de
+      # testes, não só no de release. Ele é gitignored porque o repositório é público (portfólio), então
+      # a esteira o recria a partir do secret.
+      - name: Restaurar google-services.json
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: echo "$GOOGLE_SERVICES_JSON" | base64 -d > app/google-services.json
+
+      - name: Testes JVM (escopo)
+        run: ./gradlew :app:testDebugUnitTest --no-daemon
+
+      - name: Build debug
+        run: ./gradlew :app:assembleDebug --no-daemon
+
+      - name: Guardar relatórios em caso de falha
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: relatorios-teste
+          path: app/build/reports/tests/

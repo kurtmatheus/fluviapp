@@ -109,6 +109,23 @@ beforeEach(async () => {
   });
 });
 
+/**
+ * **Recorte da revitalização** (ADR-0020), gêmeo do `@Category(ForaDoEscopo)` da suíte JVM: roda o que
+ * cobre a entidade viva — hoje a Empresa — e pula o resto.
+ *
+ * O critério é o mesmo: um bloco está dentro quando a regra que ele exercita é atravessada por alguma
+ * parte da jornada da Empresa. Por isso `users/{uid}` fica: o login lê `users/{uid}` para resolver papel
+ * e cargo, e foi justamente uma leitura dessa coleção que quebrou o acesso nesta sessão. Já `funcionarios`
+ * sai — a jornada só **lê** de lá, e o que o bloco cobre é a escrita e o cargo, que são da Equipe.
+ *
+ * Vale mais aqui do que na suíte JVM, e por uma razão específica: estas regras **nunca foram deployadas**.
+ * Uma suíte que só fala do que está vivo é a que dá coragem de finalmente subir `firestore.rules`.
+ *
+ *   npm test                    → só o escopo
+ *   SUITE_COMPLETA=1 npm test   → tudo, para medir o que falta revitalizar
+ */
+const foraDoEscopo = process.env.SUITE_COMPLETA ? describe : describe.skip;
+
 // Atalhos para os bancos autenticados por persona.
 const asAgenteA = () => testEnv.authenticatedContext(AGENTE_A).firestore();
 const asAgenteB = () => testEnv.authenticatedContext(AGENTE_B).firestore();
@@ -183,7 +200,7 @@ describe('users/{uid} — anti-escalonamento', () => {
 });
 
 // --- funcionarios/{id}: a Equipe (ADR-0015 §8.5) ---
-describe('funcionarios — escrita de plataforma e cargo não-autoescalável', () => {
+foraDoEscopo('funcionarios — escrita de plataforma e cargo não-autoescalável', () => {
   test('operador LÊ funcionário (a UI resolve nome/agência por aqui) → OK', async () => {
     await assertSucceeds(getDoc(doc(asAgenteA(), 'funcionarios', F_B)));
   });
@@ -250,7 +267,7 @@ describe('funcionarios — escrita de plataforma e cargo não-autoescalável', (
 });
 
 // --- Catálogos (navio como representante): ler todos autenticados, escrever só papel de plataforma ---
-describe('catálogo (navios) — leitura ampla, escrita só papel de plataforma', () => {
+foraDoEscopo('catálogo (navios) — leitura ampla, escrita só papel de plataforma', () => {
   test('operador LÊ navio (a venda precisa) → OK', async () => {
     await assertSucceeds(getDoc(doc(asAgenteA(), 'navios', 'navio-1')));
   });
@@ -273,7 +290,7 @@ describe('catálogo (navios) — leitura ampla, escrita só papel de plataforma'
 });
 
 // --- Passagens: emissão, posse e imutabilidade do dono ---
-describe('passagens — emissão sem forjar dono', () => {
+foraDoEscopo('passagens — emissão sem forjar dono', () => {
   test('agente cria passagem com funcionarioId = o do próprio perfil → OK', async () => {
     await assertSucceeds(setDoc(doc(asAgenteA(), 'passagens', 'p1'), { funcionarioId: F_A, valor: 5 }));
   });
@@ -293,7 +310,7 @@ describe('passagens — emissão sem forjar dono', () => {
 });
 
 // --- Isolamento por agência: por UI, NÃO pelo servidor (ADR-0015 §3, débito registrado) ---
-describe('passagens — o servidor NÃO isola por agência (lock do débito)', () => {
+foraDoEscopo('passagens — o servidor NÃO isola por agência (lock do débito)', () => {
   test('agente lê passagem de OUTRA agência → OK, e isso é o débito, não um bug', async () => {
     // O recorte por agência da listagem (P2.6) vive na consulta do app. Um cliente adulterado ainda
     // lê a passagem de outra agência — aceitável enquanto todas são do mesmo operador (§3). Este teste
@@ -307,7 +324,7 @@ describe('passagens — o servidor NÃO isola por agência (lock do débito)', (
   });
 });
 
-describe('passagens — editar/deletar por posse', () => {
+foraDoEscopo('passagens — editar/deletar por posse', () => {
   test('agente edita a PRÓPRIA passagem → OK', async () => {
     await assertSucceeds(setDoc(doc(asAgenteB(), 'passagens', 'alheia'), { funcionarioId: F_B, valor: 20 }));
   });
@@ -342,7 +359,7 @@ describe('passagens — editar/deletar por posse', () => {
 });
 
 // --- Contador (passagens/contador): monotônico, sem delete (endurecimento ADR-0011) ---
-describe('passagens/contador — incremento monotônico e indestrutível', () => {
+foraDoEscopo('passagens/contador — incremento monotônico e indestrutível', () => {
   test('papel conhecido incrementa (100 → 101) → OK', async () => {
     await assertSucceeds(updateDoc(doc(asAgenteA(), 'passagens', 'contador'), { numeroBilhete: 101 }));
   });
@@ -366,7 +383,7 @@ const carimboEmbarque = (uid, nome) => ({
   embarcadaEm: '02/07/2026 09:30',
 });
 
-describe('passagens — confirmação de embarque (eixo novo, qualquer papel)', () => {
+foraDoEscopo('passagens — confirmação de embarque (eixo novo, qualquer papel)', () => {
   test('agente NÃO-dono confirma embarque (EMITIDA→EMBARCADA) carimbando o próprio uid → OK', async () => {
     // AGENTE_A embarca a passagem 'emitida-b' (dono = funcionário B): quem está na doca valida.
     await assertSucceeds(updateDoc(doc(asAgenteA(), 'passagens', 'emitida-b'), carimboEmbarque(AGENTE_A, 'Agente A')));
@@ -392,7 +409,7 @@ describe('passagens — confirmação de embarque (eixo novo, qualquer papel)', 
   });
 });
 
-describe('passagens — arestas legais da FSM (avança, nunca retrocede nem pula)', () => {
+foraDoEscopo('passagens — arestas legais da FSM (avança, nunca retrocede nem pula)', () => {
   test('dono emite a própria passagem (A_EMITIR→EMITIDA) → OK', async () => {
     await assertSucceeds(updateDoc(doc(asAgenteA(), 'passagens', 'aemitir-a'), { status: 'EMITIDA' }));
   });

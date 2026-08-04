@@ -1,0 +1,71 @@
+name: Regras do Firestore
+
+# O P3.4 do roadmap: a suíte deixa de ser algo que se roda quando lembra e passa a ser **gate do deploy**.
+# Hoje `firestore.rules` sobe à mão — e, na prática, nunca subiu: o servidor ainda está em regras
+# permissivas, o que já escondeu um bug real (o app lia a coleção `users` inteira antes do login, coisa
+# que a regra nega). Automatizar o deploy sem gate seria trocar um risco por outro maior.
+on:
+  push:
+    branches: [main, master]
+    paths: ['firestore.rules', 'firestore-tests/**', '.github/workflows/regras.yml']
+  pull_request:
+    paths: ['firestore.rules', 'firestore-tests/**']
+  workflow_dispatch:
+    inputs:
+      publicar:
+        description: 'Publicar as regras no projeto (senão, só testa)'
+        type: boolean
+        default: false
+
+jobs:
+  testar:
+    name: Suíte completa
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: firestore-tests/package-lock.json
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Instalar dependências
+        working-directory: firestore-tests
+        run: npm ci
+
+      # SUITE_COMPLETA, e não o recorte da revitalização: a regra publicada vale para o banco INTEIRO,
+      # inclusive para as coleções cujo app ainda não foi refeito. O recorte diz o que o aplicativo
+      # exercita hoje; o servidor não tem esse luxo.
+      - name: Todos os casos
+        working-directory: firestore-tests
+        env:
+          SUITE_COMPLETA: '1'
+        run: npm test
+
+  publicar:
+    name: Deploy das regras
+    needs: testar
+    # Só publica quando pedido explicitamente. Regra de segurança que sobe sozinha a cada push é como
+    # deploy de produção sem ninguém olhando.
+    if: github.event_name == 'workflow_dispatch' && inputs.publicar
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Publicar
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/service-account.json
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          echo "$FIREBASE_SERVICE_ACCOUNT" > "$GOOGLE_APPLICATION_CREDENTIALS"
+          npx --yes firebase-tools deploy --only firestore:rules

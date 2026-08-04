@@ -40,7 +40,11 @@ android {
         targetSdk = 34
         // Sobe a cada artefato distribuído: dois builds com o mesmo `versionCode` são indistinguíveis na
         // lista do tester, e nenhum crash no Crashlytics correlaciona com "qual build" (P3.3).
-        versionCode = 10
+        //
+        // Na esteira quem manda é o número da execução (`VERSION_CODE`), que cresce sozinho e é
+        // rastreável até o run que o gerou. Localmente cai no valor fixo — build de máquina não compete
+        // com build de esteira, e não faz sentido exigir variável de ambiente para compilar.
+        versionCode = System.getenv("VERSION_CODE")?.toIntOrNull() ?: 10
         versionName = "0.0.2-alpha01"
 
         testInstrumentationRunner = "dev.matheus.fluviapp.CustomTestRunner"
