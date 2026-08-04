@@ -86,9 +86,18 @@ Localmente exige `keystore.properties` preenchido (veja `keystore.properties.exa
 feito. Sem o `keystore.properties`, o release ainda compila — só sai sem assinatura, e APK sem assinatura
 não instala em lugar nenhum.
 
-O `versionCode` vem de `VERSION_CODE` quando a esteira o define (o número da execução), e cai num valor
-fixo localmente. Dois artefatos com o mesmo código são indistinguíveis na lista do tester e no
-Crashlytics.
+**A identidade do artefato sai da esteira, não do arquivo:**
+
+| Campo | Na esteira | Local |
+|---|---|---|
+| `versionCode` | `VERSION_CODE` = número da execução | valor fixo do `build.gradle.kts` |
+| `versionName` | `VERSION_NAME` = a tag, sem o `v` | valor fixo do `build.gradle.kts` |
+
+Dois artefatos com o mesmo `versionCode` são indistinguíveis na lista do tester e no Crashlytics. E o
+nome vir da tag evita a divergência silenciosa que existia antes: bastava esquecer de subir a linha do
+`versionName` para o APK dizer `alpha01` numa entrega marcada como `alpha02`, e o tester relatar um bug
+numa versão que não existe. Num `workflow_dispatch` (sem tag) o nome cai no fallback — o `ref_name` ali é
+o nome da branch, e um APK chamado "master" não diz nada a ninguém.
 
 ## O que continua manual, e não é pendência de build
 

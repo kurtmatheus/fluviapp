@@ -45,7 +45,15 @@ android {
         // rastreável até o run que o gerou. Localmente cai no valor fixo — build de máquina não compete
         // com build de esteira, e não faz sentido exigir variável de ambiente para compilar.
         versionCode = System.getenv("VERSION_CODE")?.toIntOrNull() ?: 10
-        versionName = "0.0.2-alpha01"
+
+        // O nome da versão sai da TAG que disparou a distribuição (`v0.0.3-alpha01` → `0.0.3-alpha01`).
+        // Antes ele vivia aqui, fixo, e divergia da tag em silêncio: bastava esquecer de subir a linha
+        // para o APK dizer `alpha01` numa entrega marcada como `alpha02` — e o tester relatar um bug
+        // numa versão que não existe. A tag é o que aponta para o commit, então é ela que nomeia.
+        //
+        // O valor abaixo é o fallback de build local, onde não há tag nenhuma.
+        versionName = System.getenv("VERSION_NAME")?.removePrefix("v")?.takeIf { it.isNotBlank() }
+            ?: "0.0.2-alpha01"
 
         testInstrumentationRunner = "dev.matheus.fluviapp.CustomTestRunner"
         vectorDrawables {

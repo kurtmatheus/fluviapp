@@ -69,9 +69,12 @@ jobs:
           EOF
 
       # `github.run_number` cresce sozinho e é rastreável até a execução que gerou o artefato (P3.3).
+      # O nome vem da tag — e só dela: num `workflow_dispatch` o `ref_name` é o nome da branch, e um APK
+      # chamado "master" não diz nada a ninguém. Vazio faz o Gradle cair no fallback local.
       - name: Montar APK assinado
         env:
           VERSION_CODE: ${{ github.run_number }}
+          VERSION_NAME: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || '' }}
         run: ./gradlew :app:assembleRelease --no-daemon
 
       - name: Conferir que saiu mesmo assinado
