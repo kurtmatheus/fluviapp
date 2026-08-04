@@ -116,8 +116,13 @@ não instala em lugar nenhum.
 
 | Campo | Na esteira | Local |
 |---|---|---|
-| `versionCode` | `VERSION_CODE` = número da execução | valor fixo do `build.gradle.kts` |
+| `versionCode` | `git rev-list --count HEAD` (contagem de commits) | valor fixo do `build.gradle.kts` |
 | `versionName` | `VERSION_NAME` = a tag, sem o `v` | valor fixo do `build.gradle.kts` |
+
+> **Por que não `github.run_number`.** Ele é um contador *por workflow* e começa em 1 — a primeira
+> distribuição saiu com `versionCode=1` e o Android recusou a instalação por downgrade, porque o aparelho
+> já tinha o 10 de um build local. Também zera se o workflow for renomeado. A contagem de commits é
+> monotônica pela natureza do histórico e igual em qualquer máquina (exige `fetch-depth: 0` no checkout).
 
 Dois artefatos com o mesmo `versionCode` são indistinguíveis na lista do tester e no Crashlytics. E o
 nome vir da tag evita a divergência silenciosa que existia antes: bastava esquecer de subir a linha do
