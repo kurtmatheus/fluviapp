@@ -1,8 +1,37 @@
 # ADR-0021: Usuários da plataforma — seção `ADM`-only, somente leitura
 
-**Status:** Aceita (decisão do analista em 2026-08-04)
+**Status:** Aceita em direção · **fora do MVP** (decisões do analista em 2026-08-04)
 
 **Estudo que preparou:** [`docs/design/painel-administrativo.md`](../design/painel-administrativo.md)
+
+---
+
+## D0 — A seção não entra no MVP, e o cadastro manual vira princípio
+
+Decidido no mesmo dia, depois de dimensionar o custo: **implementar a seção não se paga agora**. Ela
+atravessa domínio, regras, uma fonte de dados nova, lógica e tela — e o que entrega é uma listagem que
+responde uma pergunta hoje respondida pelo console, para um sistema que tem um administrador.
+
+O que muda não é só a ordem. **O provisionamento no console deixa de ser dívida e passa a ser princípio:
+a administração da plataforma vive fora do aplicativo.** Criar conta e criar `users/{uid}` são atos de
+ambiente, executados por quem administra a plataforma — hoje, uma pessoa.
+
+Isso não é conveniência disfarçada de decisão; é a leitura correta do que o sistema **já** faz por escolha:
+
+- o autocadastro saiu na P2.2c (ADR-0015 §2.1) — ninguém ganha conta por conta própria;
+- as regras impedem que qualquer cliente crie ou promova um `ADM`, inclusive um `ADM` (anti-escalonamento);
+- o `SeedFirestore` foi removido (ADR-0016 F2) — não há mais escrita em massa a partir do app;
+- o bootstrap do primeiro administrador já era passo de ambiente (ADR-0016 §10).
+
+Somadas, essas quatro decisões dizem a mesma coisa: **não existe caminho, dentro do app, para fabricar
+quem administra.** O ADR-0021 apenas para de tratar isso como buraco a tapar.
+
+O resto deste documento (D1–D4) permanece **válido como direção**: quando a seção existir, é assim que
+ela nasce. Nada dele foi implementado.
+
+**Quando revisitar:** quando houver mais de um administrador, ou quando convidar operadores deixar de
+caber no console — aí o custo muda de lado. O caso do operador é diferente do caso do administrador (o
+primeiro acesso já o deduz pelo funcionário de mesmo e-mail), e pode ser resolvido sozinho.
 
 ---
 

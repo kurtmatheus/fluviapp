@@ -141,5 +141,11 @@ removido:
 O `uid` é **por projeto**: um documento trazido de outro projeto Firebase não casa, e o sintoma é o app
 autenticar e dizer que a pessoa não está cadastrada. Foi exatamente o que travou o acesso em 2026-08-03.
 
-Isso deixa de ser manual quando o painel administrativo existir (ADR-0016) — é a razão de ele ser o
-Pilar 3.A, e de a distribuição vir depois dele no roadmap.
+**E continua manual por decisão** (ADR-0021 D0): a administração da plataforma vive **fora do aplicativo**.
+Não é lacuna a tapar — é o mesmo princípio que tirou o autocadastro (P2.2c), impede qualquer cliente de
+criar ou promover um `ADM` (anti-escalonamento) e removeu o seed. Não existe caminho, dentro do app, para
+fabricar quem administra.
+
+O que pode deixar de ser manual um dia é o **convite ao operador**, que é problema diferente: para ele o
+primeiro acesso já deduz o vínculo pelo `Funcionario` de mesmo e-mail. O administrador continua nascendo
+no console.
