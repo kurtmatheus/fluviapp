@@ -201,6 +201,13 @@ fun FormTextFieldBrownNoIcon(
     enabled: Boolean = true,
     isError: Boolean = false,
     textoErro: Int = R.string.error_camp_obrig,
+    /**
+     * Texto de apoio **abaixo do campo**, no lugar que o Material reserva para ele — usado para o que
+     * comenta o valor sem ser erro (a confirmação do IBGE, por exemplo). O erro tem precedência: quando
+     * há erro, é ele que ocupa a linha, porque duas mensagens ali competem e a que importa é a que
+     * impede de salvar.
+     */
+    textoApoio: String? = null,
     onFocusChange: () -> Unit = {}
 
 ) {
@@ -231,7 +238,12 @@ fun FormTextFieldBrownNoIcon(
         readOnly = readOnly,
         enabled = enabled,
         isError = isError,
-        supportingText = { if (isError) Text(text = stringResource(id = textoErro)) }
+        supportingText = {
+            when {
+                isError -> Text(text = stringResource(id = textoErro))
+                textoApoio != null -> Text(text = textoApoio)
+            }
+        }
     )
 }
 

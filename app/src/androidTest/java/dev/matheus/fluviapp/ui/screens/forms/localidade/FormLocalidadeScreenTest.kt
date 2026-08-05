@@ -92,6 +92,50 @@ class FormLocalidadeScreenTest {
     }
 
     /**
+     * O sucesso é dito, e é dito **no campo do código** — é dele que a mensagem fala. Sem esta linha, o
+     * preenchimento acontecia em silêncio e não havia como saber se o que está na tela veio do IBGE.
+     */
+    @Test
+    fun formLocalidade_encontrado_confirmaOQueVeioDoIbge() {
+        montarTela(
+            FormLocalidadeUiState(
+                codigoIbge = "1501402",
+                municipio = "Belém",
+                uf = Uf.PA,
+                buscaIbge = BuscaIbge.Encontrado("Belém/PA"),
+            )
+        )
+
+        composeTestRule
+            .onNodeWithText(
+                composeTestRule.activity.getString(R.string.msg_ibge_encontrado, "Belém/PA"),
+            )
+            .assertIsDisplayed()
+    }
+
+    /**
+     * O erro tem precedência sobre a confirmação: com os dois no estado, a linha de apoio é do erro —
+     * duas mensagens no mesmo lugar competem, e a que importa é a que impede de salvar.
+     */
+    @Test
+    fun formLocalidade_comErroEConfirmacao_oErroOcupaALinha() {
+        montarTela(
+            FormLocalidadeUiState(
+                codigoIbge = "1501402",
+                isCodigoIbgeError = true,
+                buscaIbge = BuscaIbge.Encontrado("Belém/PA"),
+            )
+        )
+
+        composeTestRule.onNodeWithText(texto(R.string.error_codigo_ibge_invalido)).assertIsDisplayed()
+        composeTestRule
+            .onNodeWithText(
+                composeTestRule.activity.getString(R.string.msg_ibge_encontrado, "Belém/PA"),
+            )
+            .assertDoesNotExist()
+    }
+
+    /**
      * As duas mensagens de insucesso são diferentes porque falam de coisas diferentes: uma acusa o
      * código, a outra a rede. Trocá-las seria culpar quem digitou por um problema de conexão.
      */

@@ -5,9 +5,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -38,6 +37,10 @@ fun ContentLocalidadeAreaForm(
     ) {
         // O código vem PRIMEIRO porque é ele que preenche o resto. A ordem dos campos é a ordem do
         // trabalho: informa-se a chave, busca-se, confere-se o que veio.
+        //
+        // O resultado da consulta aparece como **texto de apoio do próprio campo** — é dele que a
+        // mensagem fala, e o Material já reserva essa linha logo abaixo. Antes ela vivia solta entre os
+        // campos, o que a fazia parecer comentário da tela em vez de resposta àquele valor.
         FormTextFieldBrownNoIcon(
             modifier = modifier.fillMaxWidth(),
             value = state.codigoIbge,
@@ -45,12 +48,13 @@ fun ContentLocalidadeAreaForm(
             onValueChange = onCodigoIbgeChange,
             isError = state.isCodigoIbgeError,
             textoErro = R.string.error_codigo_ibge_invalido,
+            textoApoio = textoDeApoioDaBusca(state.buscaIbge),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
         )
 
-        AreaBuscaIbge(
+        BotaoBuscarNoIbge(
             modifier = modifier,
-            state = state,
+            habilitado = state.podeConsultarIbge && state.buscaIbge != BuscaIbge.Consultando,
             onConsultarIbge = onConsultarIbge,
         )
 
@@ -79,50 +83,48 @@ fun ContentLocalidadeAreaForm(
 }
 
 /**
- * O botão de preencher pelo IBGE e o que ele tem a dizer.
+ * O botão de preencher pelo IBGE.
+ *
+ * **Contorno, e alinhado à direita** (pedido do analista, rc.2): como `TextButton` ele era texto solto
+ * entre dois campos e se lia como rótulo — ninguém identificava que dava para tocar. O contorno é o que
+ * diz *isto é acionável*, e a borda direita é onde a ação de uma linha de formulário é procurada.
  *
  * Fica **desabilitado** enquanto o código não tem sete dígitos — consultar meio código é gastar rede para
  * receber "não encontrado" e assustar quem ainda está digitando.
- *
- * As duas mensagens de insucesso são distintas de propósito: *não é município* fala do código,
- * *não deu para consultar* fala da rede, e só a primeira pede correção. Nenhuma das duas impede salvar.
  */
 @Composable
-private fun AreaBuscaIbge(
+private fun BotaoBuscarNoIbge(
     modifier: Modifier,
-    state: FormLocalidadeUiState,
+    habilitado: Boolean,
     onConsultarIbge: () -> Unit,
 ) {
-    Column(modifier = modifier.fillMaxWidth()) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            TextButton(
-                onClick = onConsultarIbge,
-                enabled = state.podeConsultarIbge && state.buscaIbge != BuscaIbge.Consultando,
-            ) {
-                Text(text = stringResource(R.string.btn_buscar_no_ibge))
-            }
-
-            if (state.buscaIbge == BuscaIbge.Consultando) {
-                Text(
-                    text = stringResource(R.string.msg_consultando_ibge),
-                    style = MaterialTheme.typography.bodySmall,
-                )
-            }
-        }
-
-        when (state.buscaIbge) {
-            BuscaIbge.NaoEncontrado -> Text(
-                text = stringResource(R.string.msg_ibge_nao_encontrado),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.error,
-            )
-
-            BuscaIbge.Indisponivel -> Text(
-                text = stringResource(R.string.msg_ibge_indisponivel),
-                style = MaterialTheme.typography.bodySmall,
-            )
-
-            BuscaIbge.Consultando, BuscaIbge.Ociosa -> Unit
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.End,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        OutlinedButton(
+            onClick = onConsultarIbge,
+            enabled = habilitado,
+        ) {
+            Text(text = stringResource(R.string.btn_buscar_no_ibge))
         }
     }
+}
+
+/**
+ * A mensagem que acompanha o campo do código — **uma linha, quatro sentidos**.
+ *
+ * O sucesso passou a ser dito (antes o preenchimento acontecia em silêncio, e não havia como saber se o
+ * que estava na tela veio do IBGE ou já estava lá). Os dois insucessos continuam distintos: *não é
+ * município* fala do código, *não deu para consultar* fala da rede, e só o primeiro pede correção.
+ * Nenhum dos dois impede salvar.
+ */
+@Composable
+private fun textoDeApoioDaBusca(busca: BuscaIbge): String? = when (busca) {
+    BuscaIbge.Ociosa -> null
+    BuscaIbge.Consultando -> stringResource(R.string.msg_consultando_ibge)
+    is BuscaIbge.Encontrado -> stringResource(R.string.msg_ibge_encontrado, busca.rotulo)
+    BuscaIbge.NaoEncontrado -> stringResource(R.string.msg_ibge_nao_encontrado)
+    BuscaIbge.Indisponivel -> stringResource(R.string.msg_ibge_indisponivel)
 }

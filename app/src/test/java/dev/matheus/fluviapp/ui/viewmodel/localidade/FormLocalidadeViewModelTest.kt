@@ -109,8 +109,12 @@ class FormLocalidadeViewModelTest {
 
     // --- A ajuda de digitação (IBGE) ---
 
+    /**
+     * Preencher **e dizer que preencheu**: sem a confirmação, quem edita uma localidade já preenchida não
+     * distingue "o IBGE respondeu isto" de "os campos já estavam assim antes de eu tocar no botão".
+     */
     @Test
-    fun `consulta preenche municipio e uf`() = runTest(mainRule.dispatcher) {
+    fun `consulta preenche municipio e uf, e confirma o que achou`() = runTest(mainRule.dispatcher) {
         val ibge = FakeConsultaMunicipioIbge().apply {
             resultado = ResultadoConsultaIbge.Encontrado("Belém", Uf.PA)
         }
@@ -123,7 +127,7 @@ class FormLocalidadeViewModelTest {
         val s = vm.uiState.value
         assertEquals("Belém", s.municipio)
         assertEquals(Uf.PA, s.uf)
-        assertEquals(BuscaIbge.Ociosa, s.buscaIbge)
+        assertEquals(BuscaIbge.Encontrado("Belém/PA"), s.buscaIbge)
         assertEquals(listOf("1501402"), ibge.consultados)
     }
 
@@ -187,6 +191,25 @@ class FormLocalidadeViewModelTest {
         vm.onCodigoIbgeChange("1501403")
 
         assertEquals(BuscaIbge.Ociosa, vm.uiState.value.buscaIbge)
+    }
+
+    /** Vale igual para a confirmação: trocar o código apaga o "IBGE: Belém/PA" do código anterior. */
+    @Test
+    fun `editar o codigo descarta tambem a confirmacao`() = runTest(mainRule.dispatcher) {
+        val ibge = FakeConsultaMunicipioIbge().apply {
+            resultado = ResultadoConsultaIbge.Encontrado("Belém", Uf.PA)
+        }
+        val vm = viewModel(ibge = ibge)
+
+        vm.onCodigoIbgeChange("1501402")
+        vm.consultarIbge()
+        advanceUntilIdle()
+
+        vm.onCodigoIbgeChange("1303205")
+
+        assertEquals(BuscaIbge.Ociosa, vm.uiState.value.buscaIbge)
+        // O que foi preenchido FICA: apagar o município junto puniria quem só corrigiu um dígito.
+        assertEquals("Belém", vm.uiState.value.municipio)
     }
 
     /** O IBGE fora do ar **não impede cadastrar**: é preenchimento, não porteiro. */

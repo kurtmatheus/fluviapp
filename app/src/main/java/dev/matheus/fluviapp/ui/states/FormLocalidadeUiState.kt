@@ -38,13 +38,23 @@ data class FormLocalidadeUiState(
 }
 
 /**
- * O que a tela mostra sobre a consulta ao IBGE. São quatro estados porque *não perguntei ainda*,
- * *perguntando*, *não é município* e *não deu para perguntar* pedem respostas diferentes de quem está
- * cadastrando — e dois deles não são culpa de quem digitou.
+ * O que a tela mostra sobre a consulta ao IBGE, **como texto de apoio do campo do código**.
+ *
+ * São cinco estados porque *não perguntei ainda*, *perguntando*, *achei isto*, *não é município* e
+ * *não deu para perguntar* pedem respostas diferentes de quem está cadastrando — e dois deles não são
+ * culpa de quem digitou.
  */
 sealed interface BuscaIbge {
     data object Ociosa : BuscaIbge
     data object Consultando : BuscaIbge
+
+    /**
+     * Deu certo, e a tela **diz o que achou**: sem isso, o preenchimento acontecia em silêncio e a
+     * pessoa não tinha como distinguir "o IBGE confirmou Belém/PA" de "os campos já estavam assim".
+     * O rótulo fica congelado no momento da consulta — ele fala do **código**, que é o campo ao qual
+     * esta mensagem pertence, e não do que foi digitado depois.
+     */
+    data class Encontrado(val rotulo: String) : BuscaIbge
 
     /** O serviço respondeu e o código não existe: aí sim é o código. */
     data object NaoEncontrado : BuscaIbge

@@ -104,7 +104,9 @@ class FormLocalidadeViewModel @Inject constructor(
                         isMunicipioError = false,
                         isUfError = false,
                         isCodigoIbgeError = false,
-                        buscaIbge = BuscaIbge.Ociosa,
+                        // O sucesso também é dito. Preencher em silêncio deixava a pessoa sem saber se o
+                        // que está na tela veio do IBGE ou já estava lá.
+                        buscaIbge = BuscaIbge.Encontrado("${resultado.municipio}/${resultado.uf.sigla}"),
                     )
                 }
 

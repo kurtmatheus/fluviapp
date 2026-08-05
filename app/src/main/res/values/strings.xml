@@ -201,7 +201,8 @@
     <string name="label_codigo_ibge">Código IBGE</string>
     <string name="error_codigo_ibge_invalido">Código de 7 dígitos, e os dois primeiros são os da UF.</string>
     <string name="btn_buscar_no_ibge">Buscar no IBGE</string>
-    <string name="msg_consultando_ibge">Consultando…</string>
+    <string name="msg_consultando_ibge">Consultando o IBGE…</string>
+    <string name="msg_ibge_encontrado">IBGE: %1$s</string>
     <string name="msg_ibge_nao_encontrado">O IBGE não conhece este código.</string>
     <string name="msg_ibge_indisponivel">Não foi possível consultar agora — preencha à mão.</string>
 
