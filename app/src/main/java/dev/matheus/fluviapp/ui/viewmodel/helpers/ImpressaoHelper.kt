@@ -54,10 +54,10 @@ class ImpressaoHelper(
         ImpressaoPassagem.IS_VIA_CLIENTE = viaCliente
     }
 
-    fun atualizarExibirDialogViaNavio() {
+    fun atualizarExibirDialogViaEmbarcacao() {
         uiState.update {
             it.copy(
-                isShowDialogImpressaoViaNavio = !it.isShowDialogImpressaoViaNavio
+                isShowDialogImpressaoViaEmbarcacao = !it.isShowDialogImpressaoViaEmbarcacao
             )
         }
     }
@@ -98,7 +98,7 @@ class ImpressaoHelper(
                 context.toastMessage(context.resources.getString(R.string.msg_emissao_bem_sucedida))
                 printerService.close()
                 atualizarIsPrinting()
-                atualizarExibirDialogViaNavio()
+                atualizarExibirDialogViaEmbarcacao()
                 atualizaSituacao()
             }
         } catch (e: Exception) {

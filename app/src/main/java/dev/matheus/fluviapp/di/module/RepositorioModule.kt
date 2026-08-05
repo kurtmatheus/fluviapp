@@ -8,8 +8,8 @@ import dev.matheus.fluviapp.services.repository.operacoes.SessaoUsuario
 import dev.matheus.fluviapp.services.repository.operacoes.SessaoUsuarioRoom
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.EmpresaFirestoreRepository
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.EmpresaRepository
-import dev.matheus.fluviapp.services.repository.cadastro.viagem.NavioFirestoreRepository
-import dev.matheus.fluviapp.services.repository.cadastro.viagem.NavioRepository
+import dev.matheus.fluviapp.services.repository.cadastro.viagem.EmbarcacaoFirestoreRepository
+import dev.matheus.fluviapp.services.repository.cadastro.viagem.EmbarcacaoRepository
 import dev.matheus.fluviapp.services.repository.firebase.FonteSnapshots
 import dev.matheus.fluviapp.services.repository.firebase.FonteSnapshotsFirestore
 import dev.matheus.fluviapp.services.repository.firebase.ViagemFirestoreRepository
@@ -43,7 +43,7 @@ abstract class RepositorioModule {
 
     @Binds
     @Singleton
-    abstract fun bindNavioRepository(impl: NavioFirestoreRepository): NavioRepository
+    abstract fun bindEmbarcacaoRepository(impl: EmbarcacaoFirestoreRepository): EmbarcacaoRepository
 
     /** Quem está operando: os dois contextos resolvidos num lugar só (ADR-0015 §8.1). */
     @Binds

@@ -1,4 +1,4 @@
-package dev.matheus.fluviapp.ui.components.forms.areas.navio
+package dev.matheus.fluviapp.ui.components.forms.areas.embarcacao
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -13,12 +13,12 @@ import androidx.compose.ui.unit.dp
 import dev.matheus.fluviapp.R
 import dev.matheus.fluviapp.ui.components.forms.dropdowns.DropDownFormField
 import dev.matheus.fluviapp.ui.components.forms.fields.FormTextFieldBrownNoIcon
-import dev.matheus.fluviapp.ui.states.FormNavioUiState
+import dev.matheus.fluviapp.ui.states.FormEmbarcacaoUiState
 
 @Composable
-fun ContentNavioAreaForm(
+fun ContentEmbarcacaoAreaForm(
     modifier: Modifier,
-    state: FormNavioUiState,
+    state: FormEmbarcacaoUiState,
     onNomeChange: (String) -> Unit,
     onEmpresaChange: (String) -> Unit,
     onCapacidadeVeiculoChange: (String) -> Unit,
@@ -33,7 +33,7 @@ fun ContentNavioAreaForm(
         FormTextFieldBrownNoIcon(
             modifier = modifier.fillMaxWidth(),
             value = state.nome,
-            label = R.string.label_nome_navio,
+            label = R.string.label_nome_embarcacao,
             onValueChange = onNomeChange,
             isError = state.isNomeError,
             keyboardOptions = KeyboardOptions(
@@ -42,7 +42,7 @@ fun ContentNavioAreaForm(
             ),
         )
 
-        // Vínculo N-1: navio pertence a uma empresa (por nome).
+        // Vínculo N-1: embarcacao pertence a uma empresa (por nome).
         DropDownFormField(
             listaItens = state.listaEmpresas.map { it.nome },
             label = R.string.label_empresa,

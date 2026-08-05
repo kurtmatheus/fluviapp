@@ -114,7 +114,7 @@ class FormEmpresaViewModel @Inject constructor(
                         telefone2 = s.telefone2,
                     )
                 )
-                // As concessões (navioIds) não são editadas aqui — o que este form decide é QUAIS
+                // As concessões (embarcacaoIds) não são editadas aqui — o que este form decide é QUAIS
                 // atuações a parte exerce. Preservam-se as que já existem, para que salvar a empresa
                 // não apague concessão concedida noutro lugar.
                 val concessoes = empresaRepository.obterAtuacoes(id).associateBy { it.atuacao }

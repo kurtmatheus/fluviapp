@@ -17,10 +17,10 @@ data class FormPassagemUiState(
     val listaTipoDocumento: List<String> = TipoDocumento.entries.map { it.name },
 
     val viagemId: String = "",
-    val navioId: String = "",
+    val embarcacaoId: String = "",
     val empresaId: String = "",
     val empresaViagem: String = "",
-    val navioViagem: String = "",
+    val embarcacaoViagem: String = "",
     val origemViagem: String = "",
     val destinoViagem: String = "",
     val codigoViagem: String = "",

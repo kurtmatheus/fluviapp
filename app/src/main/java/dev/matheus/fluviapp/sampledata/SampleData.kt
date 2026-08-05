@@ -26,12 +26,12 @@ import dev.matheus.fluviapp.domain.screendata.DadosImpressora
 import dev.matheus.fluviapp.domain.screendata.DadosPassagem
 import dev.matheus.fluviapp.domain.screendata.DadosViagemCard
 import dev.matheus.fluviapp.domain.viagem.Empresa
-import dev.matheus.fluviapp.domain.viagem.Navio
+import dev.matheus.fluviapp.domain.viagem.Embarcacao
 import java.math.BigDecimal
 
 val listaDadosDadosViagemHomeSampleCards = listOf(
     DadosViagemCard(
-        navio = "F/B Modelo",
+        embarcacao = "F/B Modelo",
         codigo = "PN-IC-001",
         origem = "Porto Norte",
         destino = "Ilha Central",
@@ -40,7 +40,7 @@ val listaDadosDadosViagemHomeSampleCards = listOf(
         capacidadeCamarotes = "6"
     ),
     DadosViagemCard(
-        navio = "F/B Modelo",
+        embarcacao = "F/B Modelo",
         codigo = "PN-IC-001",
         origem = "Porto Norte",
         destino = "Ilha Central",
@@ -49,7 +49,7 @@ val listaDadosDadosViagemHomeSampleCards = listOf(
         capacidadeCamarotes = "6"
     ),
     DadosViagemCard(
-        navio = "F/B Modelo",
+        embarcacao = "F/B Modelo",
         codigo = "PN-IC-001",
         origem = "Porto Norte",
         destino = "Ilha Central",
@@ -58,7 +58,7 @@ val listaDadosDadosViagemHomeSampleCards = listOf(
         capacidadeCamarotes = "6"
     ),
     DadosViagemCard(
-        navio = "F/B Modelo",
+        embarcacao = "F/B Modelo",
         codigo = "PN-IC-001",
         origem = "Porto Norte",
         destino = "Ilha Central",
@@ -80,8 +80,8 @@ val listaTipoDocumentosSample =
         Constante("6", "PASSAPORTE", DOCUMENTO.name),
         Constante("999", "SEM DOCUMENTO", DOCUMENTO.name)
     )
-val listaNavioSample = listOf(
-    Navio(
+val listaEmbarcacaoSample = listOf(
+    Embarcacao(
         "1",
         "F/B Modelo",
         60,
@@ -185,7 +185,7 @@ val dadosPassagemSample = DadosPassagem(
     idPassagem = "passagem-modelo-1",
     numero = "2444",
     empresaNome = "NAVEGACAO MODELO",
-    navio = "F/B Modelo",
+    embarcacao = "F/B Modelo",
     dataViagem = "31/12/2023",
     horaViagem = "12:00",
     origem = "PORTO NORTE",
@@ -211,7 +211,7 @@ val dadosPassagemVeiculoSample = DadosPassagem(
     idPassagem = "passagem-modelo-2",
     numero = "2444",
     empresaNome = "NAVEGACAO MODELO",
-    navio = "F/B Modelo",
+    embarcacao = "F/B Modelo",
     dataViagem = "31/12/2023",
     horaViagem = "12:00",
     origem = "Porto Norte",
@@ -289,10 +289,10 @@ val listaUserSample = listOf(
 
 val listaDadosContagemPassagems = listOf(
     DadosContagemPassagem(
-        navio = "F/B Modelo"
+        embarcacao = "F/B Modelo"
     ),
     DadosContagemPassagem(
-        navio = "F/B Modelo II"
+        embarcacao = "F/B Modelo II"
     )
 )
 

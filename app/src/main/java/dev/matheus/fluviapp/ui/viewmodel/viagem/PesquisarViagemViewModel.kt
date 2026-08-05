@@ -8,7 +8,7 @@ import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Categoria.MUNIC
 import dev.matheus.fluviapp.domain.mappers.ViagemDadosViagemMapper
 import dev.matheus.fluviapp.services.repository.cadastro.ConstanteRepository
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.EmpresaRepository
-import dev.matheus.fluviapp.services.repository.cadastro.viagem.NavioRepository
+import dev.matheus.fluviapp.services.repository.cadastro.viagem.EmbarcacaoRepository
 import dev.matheus.fluviapp.services.repository.firebase.ViagemRepository
 import dev.matheus.fluviapp.ui.states.PesquisarViagemUiState
 import dev.matheus.fluviapp.ui.viewmodel.helpers.viagem.validarPesquisaViagem
@@ -30,7 +30,7 @@ import javax.inject.Inject
 @HiltViewModel
 class PesquisarViagemViewModel @Inject constructor(
     private val empresaRepository: EmpresaRepository,
-    private val navioRepository: NavioRepository,
+    private val embarcacaoRepository: EmbarcacaoRepository,
     private val constanteRepository: ConstanteRepository,
     private val viagemRepository: ViagemRepository,
     private val viagemDadosViagemMapper: ViagemDadosViagemMapper,
@@ -55,7 +55,7 @@ class PesquisarViagemViewModel @Inject constructor(
             _uiState.update {
                 it.copy(
                     listaEmpresas = empresaRepository.obterTodas(),
-                    listaNavios = navioRepository.obterTodos(),
+                    listaEmbarcacoes = embarcacaoRepository.obterTodos(),
                     listaMunicipios = constanteRepository.obterTodosPorCategoria(MUNICIPIO.name),
                 )
             }
@@ -68,11 +68,11 @@ class PesquisarViagemViewModel @Inject constructor(
 
     fun onEmpresaChange(empresa: String) = _uiState.update { it.copy(empresa = empresa, isEmpresaError = false) }
 
-    fun onCheckNavio() = _uiState.update {
-        it.copy(isCheckedNavio = !it.isCheckedNavio, isNavioError = false, navio = "")
+    fun onCheckEmbarcacao() = _uiState.update {
+        it.copy(isCheckedEmbarcacao = !it.isCheckedEmbarcacao, isEmbarcacaoError = false, embarcacao = "")
     }
 
-    fun onNavioChange(navio: String) = _uiState.update { it.copy(navio = navio, isNavioError = false) }
+    fun onEmbarcacaoChange(embarcacao: String) = _uiState.update { it.copy(embarcacao = embarcacao, isEmbarcacaoError = false) }
 
     fun onCheckTrecho() = _uiState.update {
         it.copy(isCheckedTrecho = !it.isCheckedTrecho, isTrechoError = false, origem = "", destino = "")
@@ -86,7 +86,7 @@ class PesquisarViagemViewModel @Inject constructor(
         val erros = validarPesquisaViagem(_uiState.value)
         if (!erros.valido) {
             _uiState.update {
-                it.copy(isEmpresaError = erros.empresa, isNavioError = erros.navio, isTrechoError = erros.trecho)
+                it.copy(isEmpresaError = erros.empresa, isEmbarcacaoError = erros.embarcacao, isTrechoError = erros.trecho)
             }
             return
         }
@@ -103,7 +103,7 @@ class PesquisarViagemViewModel @Inject constructor(
         }
 
         var filtradas = filtrarPor(state.isCheckedEmpresa, cards) { it.empresa == state.empresa }
-        filtradas = filtrarPor(state.isCheckedNavio, filtradas) { it.navio == state.navio }
+        filtradas = filtrarPor(state.isCheckedEmbarcacao, filtradas) { it.embarcacao == state.embarcacao }
         filtradas = filtrarPor(state.filtrarPorOrigem, filtradas) { it.origem == state.origem }
         filtradas = filtrarPor(state.filtrarPorDestino, filtradas) { it.destino == state.destino }
         filtradas = filtrarPor(state.filtrarPorOrigemDestino, filtradas) {

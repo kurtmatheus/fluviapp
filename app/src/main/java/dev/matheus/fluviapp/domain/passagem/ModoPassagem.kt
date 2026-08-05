@@ -17,7 +17,7 @@ import java.text.Normalizer
  * só na rede" nunca disparava e a contagem de ocupação classificava tudo como nada. Com um só vocabulário,
  * o erro deixa de ser possível.
  *
- * A distinção suíte-de-2 × suíte-de-3 **não é modo, é capacidade**, e já vive onde deve: `Navio` tem
+ * A distinção suíte-de-2 × suíte-de-3 **não é modo, é capacidade**, e já vive onde deve: `Embarcacao` tem
  * `capacidadeSuite2` e `capacidadeSuite3`.
  *
  * > [VEICULO] existe aqui porque o eixo é este, mas o form ainda escolhe veículo por checkbox. Enquanto

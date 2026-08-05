@@ -10,7 +10,7 @@ import org.junit.Test
  * Trava a desserialização manual Map→domínio (§10 Nível 2 — substitui o `toObject` do Firestore).
  * É a área de risco (coerção de tipos): número chega como `Number`, campo ausente vira default.
  *
- * **Recortado à entidade viva** (ADR-0020): os casos de navio, funcionário, contador e viagem saíram —
+ * **Recortado à entidade viva** (ADR-0020): os casos de embarcacao, funcionário, contador e viagem saíram —
  * a mecânica que eles exercitavam é a mesma, e voltam com as entidades deles, contra os mappers que a
  * revitalização tiver deixado. O que fica é a fronteira da **Empresa**, nos dois sentidos: `Map` →
  * domínio na leitura, domínio → `Map` na escrita (ADR-0019 D2).

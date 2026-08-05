@@ -132,12 +132,12 @@ class FormEmpresaViewModelTest {
 
     @Test
     fun `salvar preserva a concessao ja concedida em vez de zera-la`() = runTest(mainRule.dispatcher) {
-        // O form decide QUAIS atuações a parte exerce, não os navios concedidos. Salvar a empresa não
+        // O form decide QUAIS atuações a parte exerce, não os embarcacoes concedidos. Salvar a empresa não
         // pode apagar concessão feita noutro lugar.
         val fake = FakeEmpresaRepository()
         fake.empresas = listOf(empresaValida("e1"))
         fake.atuacoesPorEmpresa["e1"] =
-            listOf(AtuacaoDaEmpresa(Atuacao.AGENCIAMENTO, navioIds = setOf("navio-7")))
+            listOf(AtuacaoDaEmpresa(Atuacao.AGENCIAMENTO, embarcacaoIds = setOf("embarcacao-7")))
         val vm = FormEmpresaViewModel(fake, SavedStateHandle(mapOf("idEmpresa" to "e1")))
         advanceUntilIdle()
 
@@ -145,8 +145,8 @@ class FormEmpresaViewModelTest {
         advanceUntilIdle()
 
         assertEquals(
-            setOf("navio-7"),
-            fake.atuacoesPorEmpresa["e1"]?.single()?.navioIds,
+            setOf("embarcacao-7"),
+            fake.atuacoesPorEmpresa["e1"]?.single()?.embarcacaoIds,
         )
     }
 

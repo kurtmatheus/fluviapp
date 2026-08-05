@@ -37,7 +37,7 @@ object PermissoesUsuario {
     // --- Eixo seção (menu) ---
 
     /**
-     * Quase todo o menu é eixo de SISTEMA — cadastro de viagem, empresa e navio é da plataforma. A
+     * Quase todo o menu é eixo de SISTEMA — cadastro de viagem, empresa e embarcacao é da plataforma. A
      * exceção é a **Equipe**: ela existe para o `SUPERVISOR` gerir os membros da própria agência
      * (ADR-0015 §2.2), então a seção olha os dois eixos. É a mistura que o §8.2 assume enquanto o app
      * cobre um processo só.
@@ -45,7 +45,7 @@ object PermissoesUsuario {
     fun podeAcessar(secao: SecaoMenu, papel: String?, cargo: String? = null): Boolean = when (secao) {
         SecaoMenu.PASSAGEM -> true
         SecaoMenu.EQUIPE -> podeCadastrarFuncionario(papel, cargo)
-        SecaoMenu.VIAGEM, SecaoMenu.EMPRESA, SecaoMenu.NAVIO -> ehPapelPlataforma(papel)
+        SecaoMenu.VIAGEM, SecaoMenu.EMPRESA, SecaoMenu.EMBARCACAO -> ehPapelPlataforma(papel)
     }
 
     /**

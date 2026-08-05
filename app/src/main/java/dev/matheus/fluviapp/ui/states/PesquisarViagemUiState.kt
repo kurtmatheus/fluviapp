@@ -4,7 +4,7 @@ import dev.matheus.fluviapp.R
 import dev.matheus.fluviapp.domain.cadastro.constantes.Constante
 import dev.matheus.fluviapp.domain.screendata.DadosViagemCard
 import dev.matheus.fluviapp.domain.viagem.Empresa
-import dev.matheus.fluviapp.domain.viagem.Navio
+import dev.matheus.fluviapp.domain.viagem.Embarcacao
 
 /**
  * Estado da pesquisa de viagem — puro (só dados/flags), sem lambdas. Eventos são métodos no
@@ -17,10 +17,10 @@ data class PesquisarViagemUiState(
     val empresa: String = "",
     val isEmpresaError: Boolean = false,
 
-    val listaNavios: List<Navio> = emptyList(),
-    val isCheckedNavio: Boolean = false,
-    val navio: String = "",
-    val isNavioError: Boolean = false,
+    val listaEmbarcacoes: List<Embarcacao> = emptyList(),
+    val isCheckedEmbarcacao: Boolean = false,
+    val embarcacao: String = "",
+    val isEmbarcacaoError: Boolean = false,
 
     val listaMunicipios: List<Constante> = emptyList(),
     val isCheckedTrecho: Boolean = false,

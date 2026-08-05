@@ -65,8 +65,8 @@ fun DetalhamentoViagemContent(
         ) {
             CommonRowDetalhamento(
                 modifier = modifier,
-                label = R.string.label_navio,
-                valor = dados.navio
+                label = R.string.label_embarcacao,
+                valor = dados.embarcacao
             )
 
             CommonRowDetalhamento(

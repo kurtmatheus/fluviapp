@@ -43,7 +43,7 @@ class MenuDaAtuacaoTest {
     fun `o painel administra as partes e os ativos, nao a operacao`() {
         val painel = secoesDoPainel()
         assertTrue(SecaoMenu.EMPRESA in painel)
-        assertTrue(SecaoMenu.NAVIO in painel)
+        assertTrue(SecaoMenu.EMBARCACAO in painel)
         // PASSAGEM é operação: quem administra a plataforma não emite (ADR-0016 §2).
         assertTrue(SecaoMenu.PASSAGEM !in painel)
     }

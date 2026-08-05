@@ -45,8 +45,8 @@ fun HomeCard(
                     modifier = modifier
                         .height(75.dp)
                         .padding(top = 10.dp, end = 10.dp),
-                    painter = painterResource(id = R.drawable.ic_navio_75),
-                    contentDescription = stringResource(id = R.string.description_icon_navio),
+                    painter = painterResource(id = R.drawable.ic_embarcacao_75),
+                    contentDescription = stringResource(id = R.string.description_icon_embarcacao),
                     tint = MaterialTheme.colorScheme.onBackground
                 )
 
@@ -64,7 +64,7 @@ fun HomeCard(
                 ) {
                     TextTitleBrownRegular(
                         modifier = modifier.padding(top = 5.dp),
-                        text = dadosViagemCard.navio
+                        text = dadosViagemCard.embarcacao
                     )
                     Row {
                         TextSubTitleBrownItalic(text = "${dadosViagemCard.origem} - ${dadosViagemCard.destino}")

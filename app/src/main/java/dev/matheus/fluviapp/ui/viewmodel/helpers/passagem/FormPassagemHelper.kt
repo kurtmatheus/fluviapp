@@ -89,10 +89,10 @@ class FormPassagemHelper(
         }
     }
 
-    private fun atualizarNavioViagem(navio: String) {
+    private fun atualizarEmbarcacaoViagem(embarcacao: String) {
         uiStatePassagem.update {
             it.copy(
-                navioViagem = navio,
+                embarcacaoViagem = embarcacao,
             )
         }
     }
@@ -129,10 +129,10 @@ class FormPassagemHelper(
         }
     }
 
-    private fun atualizarIdsViagem(navioId: String, empresaId: String) {
+    private fun atualizarIdsViagem(embarcacaoId: String, empresaId: String) {
         uiStatePassagem.update {
             it.copy(
-                navioId = navioId,
+                embarcacaoId = embarcacaoId,
                 empresaId = empresaId,
             )
         }
@@ -314,9 +314,9 @@ class FormPassagemHelper(
         // o mapper (mesma resolução do card). Esses nomes são congelados na Passagem na emissão.
         val card = viagemDadosViagemMapper.map(viagem)
         atualizarViagemId(viagem.id)
-        atualizarIdsViagem(navioId = viagem.navioId, empresaId = viagem.empresaId)
+        atualizarIdsViagem(embarcacaoId = viagem.embarcacaoId, empresaId = viagem.empresaId)
         atualizarEmpresaViagem(card.empresa)
-        atualizarNavioViagem(card.navio)
+        atualizarEmbarcacaoViagem(card.embarcacao)
         atualizarOrigemViagem(card.origem)
         atualizarDestinoViagem(card.destino)
         atualizarCodigoViagem(card.codigo)
@@ -405,11 +405,11 @@ class FormPassagemHelper(
             id = passagemExistente?.id.orEmpty(),
             numero = passagemExistente?.numero ?: numeroBilhete.toString(),
             viagemId = statePassagem.viagemId,
-            navioId = statePassagem.navioId,
+            embarcacaoId = statePassagem.embarcacaoId,
             empresaId = statePassagem.empresaId,
             codigoViagem = statePassagem.codigoViagem,
             empresa = statePassagem.empresaViagem,
-            navio = statePassagem.navioViagem,
+            embarcacao = statePassagem.embarcacaoViagem,
             origem = statePassagem.origemViagem,
             destino = statePassagem.destinoViagem,
             dataViagem = statePassagem.dataViagem,

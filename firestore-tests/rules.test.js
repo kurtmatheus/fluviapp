@@ -88,7 +88,7 @@ beforeEach(async () => {
     await setDoc(doc(db, 'funcionarios', F_OUTRA_AGENCIA), { nome: 'De Outra', agencia: 'AGENCIA MARE', cargo: 'AGENTE' });
     await setDoc(doc(db, 'funcionarios', F_NOVO), { nome: 'Novo', agencia: 'MATRIZ', cargo: 'AGENTE', email: EMAIL_F_NOVO });
     // Catálogo de exemplo (para os testes de leitura).
-    await setDoc(doc(db, 'navios', 'navio-1'), { nome: 'Navio 1' });
+    await setDoc(doc(db, 'embarcacoes', 'embarcacao-1'), { nome: 'Embarcação 1' });
     // Passagem alheia (dono = funcionário B) e o contador.
     await setDoc(doc(db, 'passagens', 'alheia'), { funcionarioId: F_B, valor: 10 });
     await setDoc(doc(db, 'passagens', 'contador'), { numeroBilhete: 100 });
@@ -105,7 +105,7 @@ beforeEach(async () => {
     await setDoc(doc(db, 'passagens', 'aemitir-a'), { funcionarioId: F_A, status: 'A_EMITIR' });
     // A PARTE e o que ela FAZ (ADR-0016 §4): a subcoleção de atuações, com a concessão pendurada.
     await setDoc(doc(db, "empresas", EMPRESA), { nome: "EMPRESA MODELO", cnpj: "11222333000181" });
-    await setDoc(doc(db, "empresas", EMPRESA, "atuacoes", "AGENCIAMENTO"), { navioIds: ["navio-1"] });
+    await setDoc(doc(db, "empresas", EMPRESA, "atuacoes", "AGENCIAMENTO"), { embarcacaoIds: ["embarcacao-1"] });
   });
 });
 
@@ -266,26 +266,26 @@ foraDoEscopo('funcionarios — escrita de plataforma e cargo não-autoescalável
   });
 });
 
-// --- Catálogos (navio como representante): ler todos autenticados, escrever só papel de plataforma ---
-foraDoEscopo('catálogo (navios) — leitura ampla, escrita só papel de plataforma', () => {
-  test('operador LÊ navio (a venda precisa) → OK', async () => {
-    await assertSucceeds(getDoc(doc(asAgenteA(), 'navios', 'navio-1')));
+// --- Catálogos (embarcação como representante): ler todos autenticados, escrever só papel de plataforma ---
+describe('flotilha (embarcações) — leitura ampla, escrita só papel de plataforma', () => {
+  test('operador LÊ embarcação (a venda precisa) → OK', async () => {
+    await assertSucceeds(getDoc(doc(asAgenteA(), 'embarcacoes', 'embarcacao-1')));
   });
 
-  test('não autenticado LÊ navio → NEGADO', async () => {
-    await assertFails(getDoc(doc(asAnon(), 'navios', 'navio-1')));
+  test('não autenticado LÊ embarcação → NEGADO', async () => {
+    await assertFails(getDoc(doc(asAnon(), 'embarcacoes', 'embarcacao-1')));
   });
 
-  test('operador ESCREVE navio → NEGADO', async () => {
-    await assertFails(setDoc(doc(asAgenteA(), 'navios', 'navio-2'), { nome: 'Navio 2' }));
+  test('operador ESCREVE embarcação → NEGADO', async () => {
+    await assertFails(setDoc(doc(asAgenteA(), 'embarcacoes', 'embarcacao-2'), { nome: 'Embarcação 2' }));
   });
 
-  test('SUPERVISOR escreve navio (cargo de agência não é papel de plataforma) → NEGADO', async () => {
-    await assertFails(setDoc(doc(asSupervisor(), 'navios', 'navio-2'), { nome: 'Navio 2' }));
+  test('SUPERVISOR escreve embarcação (cargo de agência não é papel de plataforma) → NEGADO', async () => {
+    await assertFails(setDoc(doc(asSupervisor(), 'embarcacoes', 'embarcacao-2'), { nome: 'Embarcação 2' }));
   });
 
-  test('plataforma (ADM) escreve navio → OK', async () => {
-    await assertSucceeds(setDoc(doc(asAdm(), 'navios', 'navio-2'), { nome: 'Navio 2' }));
+  test('plataforma (ADM) escreve embarcação → OK', async () => {
+    await assertSucceeds(setDoc(doc(asAdm(), 'embarcacoes', 'embarcacao-2'), { nome: 'Embarcação 2' }));
   });
 });
 
@@ -443,35 +443,35 @@ describe('empresas/atuacoes — cadastro de plataforma, id fechado', () => {
   });
 
   test('ADM declara que a parte passa a TRANSPORTAR → OK', async () => {
-    await assertSucceeds(setDoc(atuacao(asAdm(), 'TRANSPORTE'), { navioIds: [] }));
+    await assertSucceeds(setDoc(atuacao(asAdm(), 'TRANSPORTE'), { embarcacaoIds: [] }));
   });
 
   test('GESTOR também cadastra → OK (painel é dos dois papéis de plataforma)', async () => {
-    await assertSucceeds(setDoc(atuacao(asGestor(), 'TRANSPORTE'), { navioIds: [] }));
+    await assertSucceeds(setDoc(atuacao(asGestor(), 'TRANSPORTE'), { embarcacaoIds: [] }));
   });
 
   test('operador cadastra atuação → NEGADO (quem monta a parte é o painel)', async () => {
-    await assertFails(setDoc(atuacao(asAgenteA(), 'TRANSPORTE'), { navioIds: [] }));
+    await assertFails(setDoc(atuacao(asAgenteA(), 'TRANSPORTE'), { embarcacaoIds: [] }));
   });
 
   test('SUPERVISOR cadastra atuação → NEGADO (ele opera a agência, não cria a parte)', async () => {
-    await assertFails(setDoc(atuacao(asSupervisor(), 'TRANSPORTE'), { navioIds: [] }));
+    await assertFails(setDoc(atuacao(asSupervisor(), 'TRANSPORTE'), { embarcacaoIds: [] }));
   });
 
-  test('ADM concede um navio à atuação existente → OK', async () => {
-    await assertSucceeds(updateDoc(atuacao(asAdm(), 'AGENCIAMENTO'), { navioIds: ['navio-1', 'navio-2'] }));
+  test('ADM concede um embarcação à atuação existente → OK', async () => {
+    await assertSucceeds(updateDoc(atuacao(asAdm(), 'AGENCIAMENTO'), { embarcacaoIds: ['embarcacao-1', 'embarcacao-2'] }));
   });
 
-  test('operador se autoconcede um navio → NEGADO (concessão é allow-list de segurança)', async () => {
-    await assertFails(updateDoc(atuacao(asAgenteA(), 'AGENCIAMENTO'), { navioIds: ['navio-9'] }));
+  test('operador se autoconcede um embarcação → NEGADO (concessão é allow-list de segurança)', async () => {
+    await assertFails(updateDoc(atuacao(asAgenteA(), 'AGENCIAMENTO'), { embarcacaoIds: ['embarcação-9'] }));
   });
 
   test('ADM cria atuação com id DESCONHECIDO → NEGADO (fail-closed na origem)', async () => {
-    await assertFails(setDoc(atuacao(asAdm(), 'ARMAZENAGEM'), { navioIds: [] }));
+    await assertFails(setDoc(atuacao(asAdm(), 'ARMAZENAGEM'), { embarcacaoIds: [] }));
   });
 
   test('ADM cria atuação com id em caixa errada → NEGADO (o id é o name canônico)', async () => {
-    await assertFails(setDoc(atuacao(asAdm(), 'agenciamento'), { navioIds: [] }));
+    await assertFails(setDoc(atuacao(asAdm(), 'agenciamento'), { embarcacaoIds: [] }));
   });
 
   test('ADM remove a atuação (a parte deixa de exercê-la) → OK', async () => {

@@ -5,7 +5,7 @@ import org.junit.experimental.categories.Category
 import androidx.lifecycle.SavedStateHandle
 import dev.matheus.fluviapp.fakes.FakeConstanteRepository
 import dev.matheus.fluviapp.fakes.FakeEmpresaRepository
-import dev.matheus.fluviapp.fakes.FakeNavioRepository
+import dev.matheus.fluviapp.fakes.FakeEmbarcacaoRepository
 import dev.matheus.fluviapp.fakes.FakeViagemRepository
 import dev.matheus.fluviapp.domain.cadastro.constantes.Constante
 import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Categoria.ACOMODACAO
@@ -13,7 +13,7 @@ import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Categoria.MUNIC
 import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Categoria.VEICULO
 import dev.matheus.fluviapp.domain.mappers.ViagemDadosViagemMapper
 import dev.matheus.fluviapp.domain.viagem.Empresa
-import dev.matheus.fluviapp.domain.viagem.Navio
+import dev.matheus.fluviapp.domain.viagem.Embarcacao
 import dev.matheus.fluviapp.domain.viagem.TarifaViagem
 import dev.matheus.fluviapp.util.MainDispatcherRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -37,10 +37,10 @@ class FormViagemViewModelTest {
     private val fakeEmpresa = FakeEmpresaRepository().apply {
         empresas = listOf(Empresa("e1", "ACME", "ACME LTDA", "1", "end", "1", "2"))
     }
-    private val fakeNavio = FakeNavioRepository().apply {
-        navios = listOf(
-            Navio("n1", "F/B", 10, 2, 2, 2, "e1"),
-            Navio("n2", "Outro", 5, 1, 1, 1, "e2"),
+    private val fakeEmbarcacao = FakeEmbarcacaoRepository().apply {
+        embarcacoes = listOf(
+            Embarcacao("n1", "F/B", 10, 2, 2, 2, "e1"),
+            Embarcacao("n2", "Outro", 5, 1, 1, 1, "e2"),
         )
     }
     private val fakeConstante = FakeConstanteRepository().apply {
@@ -55,10 +55,10 @@ class FormViagemViewModelTest {
         )
     }
     private val fakeViagem = FakeViagemRepository()
-    private val mapper = ViagemDadosViagemMapper(fakeEmpresa, fakeNavio, fakeConstante)
+    private val mapper = ViagemDadosViagemMapper(fakeEmpresa, fakeEmbarcacao, fakeConstante)
 
     private fun viewModel() =
-        FormViagemViewModel(fakeEmpresa, fakeNavio, fakeConstante, fakeViagem, mapper, SavedStateHandle())
+        FormViagemViewModel(fakeEmpresa, fakeEmbarcacao, fakeConstante, fakeViagem, mapper, SavedStateHandle())
 
     @Test
     fun `carrega empresas e municipios`() = runTest(mainRule.dispatcher) {
@@ -70,27 +70,27 @@ class FormViagemViewModelTest {
     }
 
     @Test
-    fun `onEmpresaChange carrega navios da empresa e habilita navio`() = runTest(mainRule.dispatcher) {
+    fun `onEmpresaChange carrega embarcacoes da empresa e habilita embarcacao`() = runTest(mainRule.dispatcher) {
         val vm = viewModel()
         advanceUntilIdle()
 
         vm.onEmpresaChange("ACME")
         advanceUntilIdle()
 
-        assertEquals(1, vm.uiState.value.listaNavios.size)
-        assertEquals("F/B", vm.uiState.value.listaNavios.first().descricaoNome)
-        assertFalse(vm.uiState.value.navioDesabilitado)
+        assertEquals(1, vm.uiState.value.listaEmbarcacoes.size)
+        assertEquals("F/B", vm.uiState.value.listaEmbarcacoes.first().descricaoNome)
+        assertFalse(vm.uiState.value.embarcacaoDesabilitado)
     }
 
     @Test
-    fun `onEmpresaChange com empresa fora da lista nao lista navios`() = runTest(mainRule.dispatcher) {
+    fun `onEmpresaChange com empresa fora da lista nao lista embarcacoes`() = runTest(mainRule.dispatcher) {
         val vm = viewModel()
         advanceUntilIdle()
 
         vm.onEmpresaChange("FANTASMA") // não existe em listaEmpresas → sem id
         advanceUntilIdle()
 
-        assertTrue(vm.uiState.value.listaNavios.isEmpty())
+        assertTrue(vm.uiState.value.listaEmbarcacoes.isEmpty())
     }
 
     @Test
@@ -101,7 +101,7 @@ class FormViagemViewModelTest {
         vm.salvar()
 
         assertTrue(vm.uiState.value.isEmpresaError)
-        assertTrue(vm.uiState.value.isNavioError)
+        assertTrue(vm.uiState.value.isEmbarcacaoError)
         assertTrue(fakeViagem.salvos.isEmpty())
     }
 
@@ -114,7 +114,7 @@ class FormViagemViewModelTest {
 
         vm.onEmpresaChange("ACME")
         advanceUntilIdle()
-        vm.onNavioChange("F/B")
+        vm.onEmbarcacaoChange("F/B")
         vm.onTrechoOrigemChange("Porto Norte")
         vm.onTrechoDestinoChange("Ilha Central")
         vm.salvar()
@@ -126,7 +126,7 @@ class FormViagemViewModelTest {
         assertEquals("Porto Norte", salvo.origem)
         assertEquals("Ilha Central", salvo.destino)
         assertEquals("e1", salvo.empresaId) // ADR-0008 Fase 3: vínculo só por id (nomes não persistem)
-        assertEquals("n1", salvo.navioId)
+        assertEquals("n1", salvo.embarcacaoId)
         assertEquals(1, eventos.size)
         job.cancel()
     }
@@ -150,7 +150,7 @@ class FormViagemViewModelTest {
 
         vm.onEmpresaChange("ACME")
         advanceUntilIdle()
-        vm.onNavioChange("F/B")
+        vm.onEmbarcacaoChange("F/B")
         vm.onTrechoOrigemChange("Porto Norte")
         vm.onTrechoDestinoChange("Ilha Central")
         vm.onTarifaChange("REDE", "300")
@@ -169,7 +169,7 @@ class FormViagemViewModelTest {
 
         vm.onEmpresaChange("ACME")
         advanceUntilIdle()
-        vm.onNavioChange("F/B")
+        vm.onEmbarcacaoChange("F/B")
         vm.onTrechoOrigemChange("Porto Norte")
         vm.onTrechoDestinoChange("Ilha Central")
         vm.salvar() // nenhuma tarifa preenchida
@@ -186,7 +186,7 @@ class FormViagemViewModelTest {
 
         vm.onEmpresaChange("ACME")
         advanceUntilIdle()
-        vm.onNavioChange("F/B")
+        vm.onEmbarcacaoChange("F/B")
         vm.onTrechoOrigemChange("Porto Norte")
         vm.onTrechoDestinoChange("Ilha Central")
         vm.onTarifaChange("REDE", "abc") // não numérico

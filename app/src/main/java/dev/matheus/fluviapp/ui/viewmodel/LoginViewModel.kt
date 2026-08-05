@@ -17,7 +17,7 @@ import dev.matheus.fluviapp.preferences.PreferencesKey.USUARIO_ATUAL
 import dev.matheus.fluviapp.services.repository.cadastro.ConstanteRepository
 import dev.matheus.fluviapp.services.repository.operacoes.FuncionarioRepository
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.EmpresaRepository
-import dev.matheus.fluviapp.services.repository.cadastro.viagem.NavioRepository
+import dev.matheus.fluviapp.services.repository.cadastro.viagem.EmbarcacaoRepository
 import dev.matheus.fluviapp.services.repository.firebase.PassagemFirestoreRepository
 import dev.matheus.fluviapp.services.repository.firebase.ViagemFirestoreRepository
 import dev.matheus.fluviapp.services.repository.firebase.autenticacao.AutenticacaoRepository
@@ -44,7 +44,7 @@ class LoginViewModel @Inject constructor(
     private val autenticacaoRepository: AutenticacaoRepository,
     private val constanteRepository: ConstanteRepository,
     private val empresaRepository: EmpresaRepository,
-    private val navioRepository: NavioRepository,
+    private val embarcacaoRepository: EmbarcacaoRepository,
     private val funcionarioRepository: FuncionarioRepository,
     private val viagemRepository: ViagemFirestoreRepository,
     private val passagemRepository: PassagemFirestoreRepository,
@@ -176,7 +176,7 @@ class LoginViewModel @Inject constructor(
             constanteRepository.sincronizar()
             funcionarioRepository.sincronizar()
             empresaRepository.sincronizar()
-            navioRepository.sincronizar()
+            embarcacaoRepository.sincronizar()
             viagemRepository.sincronizar()
             passagemRepository.sincronizarNumeroBilheteEmTempoReal()
             onNavegaParaMainScreen()

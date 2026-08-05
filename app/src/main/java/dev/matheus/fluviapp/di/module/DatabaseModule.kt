@@ -9,7 +9,6 @@ import dev.matheus.fluviapp.database.FluviAppDatabase
 import dev.matheus.fluviapp.database.dao.ContadorDao
 import dev.matheus.fluviapp.database.dao.cadastro.ConstanteDao
 import dev.matheus.fluviapp.database.dao.operacoes.FuncionarioDao
-import dev.matheus.fluviapp.database.dao.cadastro.viagem.NavioDao
 import dev.matheus.fluviapp.database.dao.cadastro.viagem.TarifaViagemDao
 import dev.matheus.fluviapp.database.dao.cadastro.viagem.ViagemDao
 import dev.matheus.fluviapp.database.dao.operacoes.UsuarioDao
@@ -108,11 +107,6 @@ class DatabaseModule {
         return db.constanteDao()
     }
 
-
-    @Provides
-    fun provideNavioDao(db: FluviAppDatabase): NavioDao {
-        return db.navioDao()
-    }
 
     @Provides
     fun provideViagemDao(db: FluviAppDatabase): ViagemDao {

@@ -33,8 +33,8 @@ fun FormPesquisarViagemScreen(
     focusManager: FocusManager = LocalFocusManager.current,
     onCheckEmpresa: () -> Unit = {},
     onEmpresaChange: (String) -> Unit = {},
-    onCheckNavio: () -> Unit = {},
-    onNavioChange: (String) -> Unit = {},
+    onCheckEmbarcacao: () -> Unit = {},
+    onEmbarcacaoChange: (String) -> Unit = {},
     onCheckTrecho: () -> Unit = {},
     onOrigemChange: (String) -> Unit = {},
     onDestinoChange: (String) -> Unit = {},
@@ -77,17 +77,17 @@ fun FormPesquisarViagemScreen(
 
             CommonSearchAreaForm(
                 modifier = modifier,
-                labelFiltro = R.string.label_filtro_navio,
-                checked = state.isCheckedNavio,
-                onCheck = { onCheckNavio() }
+                labelFiltro = R.string.label_filtro_embarcacao,
+                checked = state.isCheckedEmbarcacao,
+                onCheck = { onCheckEmbarcacao() }
             ) {
                 DropDownFormField(
-                    listaItens = state.listaNavios.map { it.descricaoNome },
-                    label = R.string.label_navio,
+                    listaItens = state.listaEmbarcacoes.map { it.descricaoNome },
+                    label = R.string.label_embarcacao,
                     modifier = modifier.fillMaxWidth(),
-                    value = state.navio,
-                    onValueChange = onNavioChange,
-                    isError = state.isNavioError,
+                    value = state.embarcacao,
+                    onValueChange = onEmbarcacaoChange,
+                    isError = state.isEmbarcacaoError,
                     focusManager = focusManager
                 )
             }

@@ -13,13 +13,13 @@ enum class SecaoMenu(
     @StringRes val titulo: Int,
     @DrawableRes val icone: Int,
 ) {
-    // EMPRESA vem primeiro (ADR-0020 D10): é a **parte**, e dela dependem todas as outras — navio tem
+    // EMPRESA vem primeiro (ADR-0020 D10): é a **parte**, e dela dependem todas as outras — embarcacao tem
     // dono, funcionário tem vínculo, rota tem agência. A ordem do enum é a ordem do menu, então ela
     // também é a ordem de dependência do cadastro.
     EMPRESA(R.string.label_menu_empresa, R.drawable.ic_empresa_24),
-    NAVIO(R.string.label_menu_navios, R.drawable.ic_navio_75),
+    EMBARCACAO(R.string.label_menu_flotilha, R.drawable.ic_embarcacao_75),
     PASSAGEM(R.string.btn_menu_passagens, R.drawable.ic_bilhete),
-    VIAGEM(R.string.label_menu_viagens, R.drawable.ic_navio_75),
+    VIAGEM(R.string.label_menu_viagens, R.drawable.ic_embarcacao_75),
     // "Equipe" (ADR-0015 §8.1): o coletivo dos Funcionario — as pessoas na operação, com cargo, agência
     // e lotação. O nome AGENTE saiu daqui para não colidir com o cargo Funcionario.Cargo.AGENTE.
     EQUIPE(R.string.label_menu_equipe, R.drawable.ic_user_75),

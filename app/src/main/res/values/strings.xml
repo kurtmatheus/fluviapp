@@ -72,7 +72,7 @@
     <string name="label_nome_passageiro">Nome do Passageiro</string>
     <string name="label_data_nascimento">Data de Nascimento</string>
     <string name="label_numero_documento">Nº do Documento</string>
-    <string name="label_navio">Navio</string>
+    <string name="label_embarcacao">Embarcação</string>
     <string name="label_data_viagem">Data da Viagem</string>
     <string name="label_checkbox_veiculo">Veículo</string>
     <string name="label_modelo_veiculo">Modelo do Veículo</string>
@@ -91,7 +91,7 @@
     <string name="label_filtro_documento_destinatario">Por Documento Destinatario</string>
     <string name="label_filtro_situacao">Por Situacao</string>
     <string name="label_status_passagem">Status</string>
-    <string name="label_filtro_navio">Por Navio</string>
+    <string name="label_filtro_embarcacao">Por Embarcação</string>
     <string name="label_trecho_origem">De</string>
     <string name="label_trecho_destino">Para</string>
     <string name="label_trecho">Trecho</string>
@@ -172,20 +172,20 @@
     <string name="label_lotacao">Lotação</string>
     <string name="label_tema_escuro">Tema escuro</string>
     <string name="label_menu_empresa">Empresas</string>
-    <string name="label_menu_navios">Navios</string>
+    <string name="label_menu_flotilha">Flotilha</string>
 
     <!-- Navio -->
-    <string name="title_top_navio">Navios</string>
-    <string name="subtitle_cadastrar_novo_navio">Cadastrar Novo Navio</string>
-    <string name="subtitle_pesquisar_navios">Pesquisar Navios</string>
-    <string name="btn_pesquisar_navio">Pesquisar Navio</string>
-    <string name="subtitle_editar_navio">Editar Navio</string>
-    <string name="label_nome_navio">Nome</string>
+    <string name="title_top_embarcacao">Flotilha</string>
+    <string name="subtitle_cadastrar_nova_embarcacao">Cadastrar Nova Embarcação</string>
+    <string name="subtitle_pesquisar_embarcacoes">Pesquisar Embarcações</string>
+    <string name="btn_pesquisar_embarcacao">Pesquisar Embarcação</string>
+    <string name="subtitle_editar_embarcacao">Editar Embarcação</string>
+    <string name="label_nome_embarcacao">Nome</string>
     <string name="label_capacidade_veiculo">Capacidade de Veículos</string>
     <string name="label_capacidade_suite2">Capacidade Suíte 2</string>
     <string name="label_capacidade_suite3">Capacidade Suíte 3</string>
     <string name="label_capacidade_camarote">Capacidade Camarote</string>
-    <string name="btn_novo_navio">Novo Navio</string>
+    <string name="btn_nova_embarcacao">Nova Embarcação</string>
 
     <!-- Empresa -->
     <string name="title_top_empresa">Empresas</string>
@@ -213,7 +213,7 @@
     <string name="description_calendario">Calendario</string>
     <string name="description_icon_user">Icone Usuario</string>
     <string name="description_info">Informação</string>
-    <string name="description_icon_navio">Icone de Navio</string>
+    <string name="description_icon_embarcacao">Icone de Embarcação</string>
     <string name="description_relogio">Relogio</string>
     <string name="description_local">Localização</string>
     <string name="description_editar">Editar</string>
@@ -293,7 +293,7 @@
     <string name="msg_confirmar_exclusao">Tem certeza que deseja excluir este item?</string>
     <string name="msg_nenhum_resultado_pesquisa">Nenhum Resultado à Pesquisa selecionada.</string>
     <string name="msg_result_aqui">Resultados aparecerão aqui.</string>
-    <string name="msg_emissao_via_navio">Via do Cliente emitida com sucesso. Deseja emitir Via do Navio?</string>
+    <string name="msg_emissao_via_embarcacao">Via do Cliente emitida com sucesso. Deseja emitir Via da Embarcação?</string>
     <string name="msg_transmissao_viagem">Viagem Salva com Sucesso.</string>
     <string name="msg_exclusao_viagem">Viagem Excluida Com Sucesso.</string>
     <string name="msg_transmissao_passagem">Passagem Salva com Sucesso.</string>

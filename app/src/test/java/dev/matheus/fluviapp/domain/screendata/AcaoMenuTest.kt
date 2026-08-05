@@ -34,7 +34,7 @@ class AcaoMenuTest {
 
     @Test
     fun `os cadastros oferecem novo e pesquisar, nessa ordem`() {
-        listOf(SecaoMenu.VIAGEM, SecaoMenu.EQUIPE, SecaoMenu.EMPRESA, SecaoMenu.NAVIO).forEach { secao ->
+        listOf(SecaoMenu.VIAGEM, SecaoMenu.EQUIPE, SecaoMenu.EMPRESA, SecaoMenu.EMBARCACAO).forEach { secao ->
             assertEquals("$secao deveria ter duas ações", 2, AcaoMenu.de(secao).size)
         }
     }

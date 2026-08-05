@@ -13,13 +13,13 @@ fun DocumentoBruto.toViagemDocumento() = ViagemDocumento(
     origem = texto("origem"),
     destino = texto("destino"),
     empresa = texto("empresa"),
-    navio = texto("navio"),
+    embarcacao = texto("embarcacao"),
     empresaId = texto("empresaId"),
-    navioId = texto("navioId"),
+    embarcacaoId = texto("embarcacaoId"),
     tarifas = mapaDeDoubles("tarifas"),
 )
 
-fun DocumentoBruto.toNavioDocumento() = NavioDocumento(
+fun DocumentoBruto.toEmbarcacaoDocumento() = EmbarcacaoDocumento(
     nome = texto("nome"),
     capacidadeVeiculo = inteiro("capacidadeVeiculo"),
     capacidadeSuite2 = inteiro("capacidadeSuite2"),

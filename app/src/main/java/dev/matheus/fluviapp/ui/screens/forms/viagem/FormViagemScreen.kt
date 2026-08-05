@@ -26,7 +26,7 @@ import dev.matheus.fluviapp.ui.states.FormViagemUiState
 fun FormViagemScreen(
     uiState: FormViagemUiState,
     onEmpresaChange: (String) -> Unit = {},
-    onNavioChange: (String) -> Unit = {},
+    onEmbarcacaoChange: (String) -> Unit = {},
     onTrechoOrigemChange: (String) -> Unit = {},
     onLimparTrechoOrigem: () -> Unit = {},
     onTrechoDestinoChange: (String) -> Unit = {},
@@ -57,7 +57,7 @@ fun FormViagemScreen(
                     modifier = it,
                     state = uiState,
                     onEmpresaChange = onEmpresaChange,
-                    onNavioChange = onNavioChange,
+                    onEmbarcacaoChange = onEmbarcacaoChange,
                     onTrechoOrigemChange = onTrechoOrigemChange,
                     onLimparTrechoOrigem = onLimparTrechoOrigem,
                     onTrechoDestinoChange = onTrechoDestinoChange,

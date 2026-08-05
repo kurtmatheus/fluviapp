@@ -12,13 +12,13 @@ import dev.matheus.fluviapp.domain.passagem.ClasseVeiculo
  * falar antes de o valor significar alguma coisa, a lista não é a fonte — o tipo é.** Na formulação do
  * analista: *não se vende veículo para uma lancha se a cadastrarmos.*
  *
- * O tipo diz **o que** cabe; a capacidade do navio diz **quanto** (ADR-0018 D8) — os dois são
+ * O tipo diz **o que** cabe; a capacidade do embarcacao diz **quanto** (ADR-0018 D8) — os dois são
  * complementares e não se substituem.
  *
  * Ponto de aplicação: a **emissão**. Escolhida a viagem sabe-se a embarcação, e o form não oferece o
  * veículo que ela não leva — o erro morre na origem, em vez de virar validação depois.
  *
- * > O rename `Navio` → `Embarcacao` está decidido (ADR-0020 D4) e adiado para quando a estrutura de
+ * > O rename `Embarcacao` → `Embarcacao` está decidido (ADR-0020 D4) e adiado para quando a estrutura de
  * > embarcações for mexida. Este tipo já nasce com o nome certo.
  */
 enum class TipoEmbarcacao(
@@ -35,8 +35,8 @@ enum class TipoEmbarcacao(
             ClasseVeiculo.CARRETA,
         ),
     ),
-    NAVIO(
-        rotulo = "Navio",
+    EMBARCACAO(
+        rotulo = "Embarcacao",
         classesAdmitidas = setOf(ClasseVeiculo.CARRO, ClasseVeiculo.MOTO),
     ),
     LANCHA(

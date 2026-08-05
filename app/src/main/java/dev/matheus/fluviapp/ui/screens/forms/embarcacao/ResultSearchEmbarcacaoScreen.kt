@@ -1,4 +1,4 @@
-package dev.matheus.fluviapp.ui.screens.forms.navio
+package dev.matheus.fluviapp.ui.screens.forms.embarcacao
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -32,27 +32,27 @@ import dev.matheus.fluviapp.ui.components.forms.dropdowns.FilterDropDownForm
 import dev.matheus.fluviapp.ui.components.texts.TextRegularBrown
 import dev.matheus.fluviapp.ui.components.texts.TextTitleBrownRegular
 import dev.matheus.fluviapp.ui.screens.forms.CommonScreenNoBottom
-import dev.matheus.fluviapp.ui.states.NavioResultado
-import dev.matheus.fluviapp.ui.states.PesquisaNavioUiState
+import dev.matheus.fluviapp.ui.states.EmbarcacaoResultado
+import dev.matheus.fluviapp.ui.states.PesquisaEmbarcacaoUiState
 import dev.matheus.fluviapp.ui.theme.FluviAppTheme
 
 @Composable
-fun ResultSearchNavioScreen(
-    uiState: PesquisaNavioUiState,
+fun ResultSearchEmbarcacaoScreen(
+    uiState: PesquisaEmbarcacaoUiState,
     onEmpresaChange: (String) -> Unit = {},
     onClickVoltar: () -> Unit = {},
     onNavegaParaEditor: (String) -> Unit = {},
     onDeletar: (String) -> Unit = {},
 ) {
     CommonScreenNoBottom(
-        titleTopAppBar = R.string.title_top_navio,
-        titleTopContent = R.string.subtitle_pesquisar_navios,
+        titleTopAppBar = R.string.title_top_embarcacao,
+        titleTopContent = R.string.subtitle_pesquisar_embarcacoes,
         isShowRightIcon = false,
         hasRefresh = false,
         isRefreshing = false,
         onClickVoltar = onClickVoltar,
     ) { modifier, titulo ->
-        var navioParaDeletar by remember { mutableStateOf<NavioResultado?>(null) }
+        var embarcacaoParaDeletar by remember { mutableStateOf<EmbarcacaoResultado?>(null) }
 
         Column {
             CommonTopRow(modifier = modifier, titulo = titulo)
@@ -74,39 +74,39 @@ fun ResultSearchNavioScreen(
             FormDashedDivider(modifier = modifier.fillMaxWidth())
 
             LazyColumn {
-                items(uiState.resultados) { navio ->
-                    CardResultNavio(
+                items(uiState.resultados) { embarcacao ->
+                    CardResultEmbarcacao(
                         modifier = modifier,
-                        navio = navio,
+                        embarcacao = embarcacao,
                         onEditar = onNavegaParaEditor,
-                        onDeletar = { navioParaDeletar = it },
+                        onDeletar = { embarcacaoParaDeletar = it },
                     )
                 }
             }
         }
 
-        navioParaDeletar?.let { navio ->
+        embarcacaoParaDeletar?.let { embarcacao ->
             CommonInformativeDialog(
                 modifier = Modifier,
                 textMensagem = R.string.msg_confirmar_exclusao,
                 textConfirm = R.string.btn_excluir,
                 textDismiss = R.string.btn_cancelar,
                 onConfirm = {
-                    onDeletar(navio.id)
-                    navioParaDeletar = null
+                    onDeletar(embarcacao.id)
+                    embarcacaoParaDeletar = null
                 },
-                onDismiss = { navioParaDeletar = null },
+                onDismiss = { embarcacaoParaDeletar = null },
             )
         }
     }
 }
 
 @Composable
-fun CardResultNavio(
+fun CardResultEmbarcacao(
     modifier: Modifier,
-    navio: NavioResultado,
+    embarcacao: EmbarcacaoResultado,
     onEditar: (String) -> Unit,
-    onDeletar: (NavioResultado) -> Unit,
+    onDeletar: (EmbarcacaoResultado) -> Unit,
 ) {
     Column {
         Row(
@@ -121,17 +121,17 @@ fun CardResultNavio(
                 horizontalAlignment = Alignment.Start,
                 verticalArrangement = Arrangement.spacedBy(2.dp),
             ) {
-                TextTitleBrownRegular(text = navio.nome)
-                TextRegularBrown(text = navio.empresaNome)
+                TextTitleBrownRegular(text = embarcacao.nome)
+                TextRegularBrown(text = embarcacao.empresaNome)
             }
 
-            IconButton(onClick = { onEditar(navio.id) }) {
+            IconButton(onClick = { onEditar(embarcacao.id) }) {
                 Icon(
                     imageVector = Icons.Default.Edit,
                     contentDescription = stringResource(R.string.description_editar),
                 )
             }
-            IconButton(onClick = { onDeletar(navio) }) {
+            IconButton(onClick = { onDeletar(embarcacao) }) {
                 Icon(
                     imageVector = Icons.Default.Delete,
                     contentDescription = stringResource(R.string.description_deletar),
@@ -144,15 +144,15 @@ fun CardResultNavio(
 
 @Preview
 @Composable
-private fun ResultSearchNavioScreenPreview() {
+private fun ResultSearchEmbarcacaoScreenPreview() {
     FluviAppTheme {
-        ResultSearchNavioScreen(
-            uiState = PesquisaNavioUiState(
+        ResultSearchEmbarcacaoScreen(
+            uiState = PesquisaEmbarcacaoUiState(
                 empresa = "",
                 listaEmpresas = listOf("NAVEGA MODELO", "TRANSPORTE ILHA"),
                 resultados = listOf(
-                    NavioResultado("1", "F/B Modelo", "NAVEGA MODELO"),
-                    NavioResultado("2", "F/B Litoral", "TRANSPORTE ILHA"),
+                    EmbarcacaoResultado("1", "F/B Modelo", "NAVEGA MODELO"),
+                    EmbarcacaoResultado("2", "F/B Litoral", "TRANSPORTE ILHA"),
                 ),
             )
         )

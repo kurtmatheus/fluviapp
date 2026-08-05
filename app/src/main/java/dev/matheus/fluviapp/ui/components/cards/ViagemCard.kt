@@ -49,11 +49,11 @@ fun ViagemCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
-                    painter = painterResource(id = R.drawable.ic_navio_24),
-                    contentDescription = stringResource(id = R.string.description_icon_navio),
+                    painter = painterResource(id = R.drawable.ic_embarcacao_24),
+                    contentDescription = stringResource(id = R.string.description_icon_embarcacao),
                     tint = MaterialTheme.colorScheme.onBackground
                 )
-                TextRegularBrownItalic(text = ":   ${state.navioViagem}")
+                TextRegularBrownItalic(text = ":   ${state.embarcacaoViagem}")
             }
 
             Row(
@@ -89,7 +89,7 @@ private fun ViagemCardPreview() {
     ViagemCard(
         modifier = Modifier,
         state = FormPassagemUiState(
-            navioViagem = "F/B Regional",
+            embarcacaoViagem = "F/B Regional",
             horaViagem = "16:00",
             origemViagem = "BELEM - PA",
             destinoViagem = "SANTANA - AP",

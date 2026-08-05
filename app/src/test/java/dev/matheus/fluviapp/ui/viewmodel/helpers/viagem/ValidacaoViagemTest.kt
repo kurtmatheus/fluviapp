@@ -13,14 +13,14 @@ import org.junit.Test
 class ValidacaoViagemTest {
 
     private fun preenchida(tarifas: List<TarifaInputUiState>) = FormViagemUiState(
-        empresa = "ACME", navio = "F/B", trechoOrigem = "A", trechoDestino = "B", tarifas = tarifas,
+        empresa = "ACME", embarcacao = "F/B", trechoOrigem = "A", trechoDestino = "B", tarifas = tarifas,
     )
 
     @Test
     fun `campos em branco sao invalidos`() {
         val erros = validarViagem(FormViagemUiState())
         assertTrue(erros.empresa)
-        assertTrue(erros.navio)
+        assertTrue(erros.embarcacao)
         assertTrue(erros.trechoOrigem)
         assertTrue(erros.trechoDestino)
         assertFalse(erros.valido)
@@ -31,7 +31,7 @@ class ValidacaoViagemTest {
         val erros = validarViagem(
             FormViagemUiState(
                 empresa = "NAVEGACAO MODELO",
-                navio = "F/B Modelo",
+                embarcacao = "F/B Modelo",
                 trechoOrigem = "Porto Norte",
                 trechoDestino = "Ilha Central",
             ),
@@ -42,7 +42,7 @@ class ValidacaoViagemTest {
     @Test
     fun `empresa passa a ser validada`() {
         val erros = validarViagem(
-            FormViagemUiState(navio = "F/B", trechoOrigem = "A", trechoDestino = "B"),
+            FormViagemUiState(embarcacao = "F/B", trechoOrigem = "A", trechoDestino = "B"),
         )
         assertTrue(erros.empresa)
         assertFalse(erros.valido)

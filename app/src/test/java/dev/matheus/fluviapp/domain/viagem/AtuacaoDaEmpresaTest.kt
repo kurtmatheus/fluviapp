@@ -15,21 +15,21 @@ class AtuacaoDaEmpresaTest {
 
     private val agenciamento = AtuacaoDaEmpresa(
         atuacao = Atuacao.AGENCIAMENTO,
-        navioIds = setOf("navio-1", "navio-2"),
+        embarcacaoIds = setOf("embarcacao-1", "embarcacao-2"),
     )
     private val transporte = AtuacaoDaEmpresa(atuacao = Atuacao.TRANSPORTE)
 
     // --- concessão ---
 
     @Test
-    fun `navio concedido pode ser vendido`() {
-        assertTrue(agenciamento.concedeu("navio-1"))
-        assertTrue(agenciamento.concedeu("navio-2"))
+    fun `embarcacao concedido pode ser vendido`() {
+        assertTrue(agenciamento.concedeu("embarcacao-1"))
+        assertTrue(agenciamento.concedeu("embarcacao-2"))
     }
 
     @Test
-    fun `navio nao concedido nao pode — frota nova nasce fora`() {
-        assertFalse(agenciamento.concedeu("navio-3"))
+    fun `embarcacao nao concedido nao pode — frota nova nasce fora`() {
+        assertFalse(agenciamento.concedeu("embarcacao-3"))
     }
 
     @Test
@@ -41,7 +41,7 @@ class AtuacaoDaEmpresaTest {
 
     @Test
     fun `atuacao sem concessao nao concede nada`() {
-        assertFalse(transporte.concedeu("navio-1"))
+        assertFalse(transporte.concedeu("embarcacao-1"))
     }
 
     // --- o conjunto de atuações da parte ---

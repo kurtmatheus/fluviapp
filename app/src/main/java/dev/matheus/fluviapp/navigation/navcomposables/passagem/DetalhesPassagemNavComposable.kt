@@ -81,10 +81,10 @@ fun NavGraphBuilder.detalhesPassagemNavComposable(
                 viewModel.impressaoHelper.atualizarViaCliente(true)
                 viewModel.impressaoHelper.validarImprimir(context)
             },
-            onClickDismissDialogViaNavio = {
-                viewModel.impressaoHelper.atualizarExibirDialogViaNavio()
+            onClickDismissDialogViaEmbarcacao = {
+                viewModel.impressaoHelper.atualizarExibirDialogViaEmbarcacao()
             },
-            onClickImprimirViaNavio = {
+            onClickImprimirViaEmbarcacao = {
                 viewModel.impressaoHelper.atualizarViaCliente(false)
                 viewModel.impressaoHelper.validarImprimir(context)
                 viewModel.showConfirmDialog()

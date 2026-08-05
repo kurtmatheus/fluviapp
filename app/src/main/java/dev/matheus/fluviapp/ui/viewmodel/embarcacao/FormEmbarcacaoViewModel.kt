@@ -1,16 +1,16 @@
-package dev.matheus.fluviapp.ui.viewmodel.navio
+package dev.matheus.fluviapp.ui.viewmodel.embarcacao
 
 import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.matheus.fluviapp.R
-import dev.matheus.fluviapp.domain.viagem.Navio
-import dev.matheus.fluviapp.navigation.navcomposables.navio.ID_NAVIO_ARGUMENT
+import dev.matheus.fluviapp.domain.viagem.Embarcacao
+import dev.matheus.fluviapp.navigation.navcomposables.embarcacao.ID_EMBARCACAO_ARGUMENT
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.EmpresaRepository
-import dev.matheus.fluviapp.services.repository.cadastro.viagem.NavioRepository
-import dev.matheus.fluviapp.ui.states.FormNavioUiState
-import dev.matheus.fluviapp.ui.viewmodel.helpers.navio.validarNavio
+import dev.matheus.fluviapp.services.repository.cadastro.viagem.EmbarcacaoRepository
+import dev.matheus.fluviapp.ui.states.FormEmbarcacaoUiState
+import dev.matheus.fluviapp.ui.viewmodel.helpers.embarcacao.validarEmbarcacao
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,23 +22,23 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
- * Cadastro/edição de navio no molde refatorado (cadastro-modulos §7.2): VM dona do estado; eventos
+ * Cadastro/edição de embarcacao no molde refatorado (cadastro-modulos §7.2): VM dona do estado; eventos
  * são métodos; validação pura; sucesso via evento one-shot; cargas suspensas (sem runBlocking); arg
  * de rota opcional; sem Context. Vínculo N-1 com Empresa por id (ADR-0008): o dropdown seleciona o
  * nome, mas o `salvar` resolve e persiste o `empresaId`; a edição resolve o nome de volta do id.
  */
 @HiltViewModel
-class FormNavioViewModel @Inject constructor(
-    private val navioRepository: NavioRepository,
+class FormEmbarcacaoViewModel @Inject constructor(
+    private val embarcacaoRepository: EmbarcacaoRepository,
     private val empresaRepository: EmpresaRepository,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
     // "" = criação; id preenchido = edição (arg de rota opcional, sem sentinela "null").
-    private val idNavio: String = savedStateHandle.get<String>(ID_NAVIO_ARGUMENT).orEmpty()
+    private val idEmbarcacao: String = savedStateHandle.get<String>(ID_EMBARCACAO_ARGUMENT).orEmpty()
 
-    private val _uiState = MutableStateFlow(FormNavioUiState())
-    val uiState: StateFlow<FormNavioUiState> = _uiState.asStateFlow()
+    private val _uiState = MutableStateFlow(FormEmbarcacaoUiState())
+    val uiState: StateFlow<FormEmbarcacaoUiState> = _uiState.asStateFlow()
 
     private val _sucesso = Channel<Unit>(Channel.BUFFERED)
     val sucesso = _sucesso.receiveAsFlow()
@@ -48,7 +48,7 @@ class FormNavioViewModel @Inject constructor(
         // `listaEmpresas` pronta antes (ADR-0008, Fase 3).
         viewModelScope.launch {
             carregarFontes()
-            if (idNavio.isNotBlank()) carregar()
+            if (idEmbarcacao.isNotBlank()) carregar()
         }
     }
 
@@ -64,25 +64,25 @@ class FormNavioViewModel @Inject constructor(
     fun onCapacidadeCamaroteChange(v: String) = _uiState.update { it.copy(capacidadeCamarote = v.filter(Char::isDigit)) }
 
     private suspend fun carregar() {
-        navioRepository.obterPorId(idNavio)?.let { navio ->
-            // Nome exibido no dropdown resolvido do empresaId (o navio não guarda mais o nome).
-            val nomeEmpresa = _uiState.value.listaEmpresas.firstOrNull { it.id == navio.empresaId }?.nome.orEmpty()
+        embarcacaoRepository.obterPorId(idEmbarcacao)?.let { embarcacao ->
+            // Nome exibido no dropdown resolvido do empresaId (o embarcacao não guarda mais o nome).
+            val nomeEmpresa = _uiState.value.listaEmpresas.firstOrNull { it.id == embarcacao.empresaId }?.nome.orEmpty()
             _uiState.update {
                 it.copy(
-                    titulo = R.string.subtitle_editar_navio,
-                    nome = navio.descricaoNome,
+                    titulo = R.string.subtitle_editar_embarcacao,
+                    nome = embarcacao.descricaoNome,
                     empresa = nomeEmpresa,
-                    capacidadeVeiculo = navio.capacidadeVeiculo.toString(),
-                    capacidadeSuite2 = navio.capacidadeSuite2.toString(),
-                    capacidadeSuite3 = navio.capacidadeSuite3.toString(),
-                    capacidadeCamarote = navio.capacidadeCamarote.toString(),
+                    capacidadeVeiculo = embarcacao.capacidadeVeiculo.toString(),
+                    capacidadeSuite2 = embarcacao.capacidadeSuite2.toString(),
+                    capacidadeSuite3 = embarcacao.capacidadeSuite3.toString(),
+                    capacidadeCamarote = embarcacao.capacidadeCamarote.toString(),
                 )
             }
         }
     }
 
     fun salvar() {
-        val erros = validarNavio(_uiState.value)
+        val erros = validarEmbarcacao(_uiState.value)
         if (!erros.valido) {
             _uiState.update { it.copy(isNomeError = erros.nome, isEmpresaError = erros.empresa) }
             return
@@ -95,9 +95,9 @@ class FormNavioViewModel @Inject constructor(
             // já em cache. `empresa` (nome) segue gravado (dormente); ninguém lê `empresaId` ainda.
             val empresaId = s.listaEmpresas.firstOrNull { it.nome == s.empresa }?.id.orEmpty()
             try {
-                navioRepository.salvar(
-                    Navio(
-                        id = idNavio, // "" na criação → auto-id no repo
+                embarcacaoRepository.salvar(
+                    Embarcacao(
+                        id = idEmbarcacao, // "" na criação → auto-id no repo
                         descricaoNome = s.nome,
                         capacidadeVeiculo = s.capacidadeVeiculo.toIntOrNull() ?: 0,
                         capacidadeSuite2 = s.capacidadeSuite2.toIntOrNull() ?: 0,
@@ -115,6 +115,6 @@ class FormNavioViewModel @Inject constructor(
     }
 
     private companion object {
-        const val TAG = "formNavioViewModel"
+        const val TAG = "formEmbarcacaoViewModel"
     }
 }

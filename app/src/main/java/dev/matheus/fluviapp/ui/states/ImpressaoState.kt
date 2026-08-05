@@ -8,7 +8,7 @@ data class ImpressaoState(
     val exibirDialogImpressoras: Boolean = false,
     val listaImpressorasPareadas: List<DadosImpressora> = emptyList(),
 
-    val isShowDialogImpressaoViaNavio: Boolean = false,
+    val isShowDialogImpressaoViaEmbarcacao: Boolean = false,
 ) {
     companion object {
         var isPrinterSelected: Boolean = false

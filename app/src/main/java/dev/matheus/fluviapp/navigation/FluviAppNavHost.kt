@@ -18,7 +18,7 @@ import dev.matheus.fluviapp.extensions.navegaParaPesquisarViagemGraph
 import dev.matheus.fluviapp.extensions.navegaParaPrimeiroAcesso
 import dev.matheus.fluviapp.extensions.navegaParaRecuperarSenha
 import dev.matheus.fluviapp.extensions.navegaParaFormularioEmpresa
-import dev.matheus.fluviapp.extensions.navegaParaFormularioNavio
+import dev.matheus.fluviapp.extensions.navegaParaFormularioEmbarcacao
 import dev.matheus.fluviapp.extensions.navegaParaResultPesquisarFuncionario
 import dev.matheus.fluviapp.extensions.navegaParaResultadosPesquisarPassagem
 import dev.matheus.fluviapp.extensions.navegaParaResultadosPesquisarViagem
@@ -28,11 +28,11 @@ import dev.matheus.fluviapp.navigation.destinations.FluviAppGraphDestinations
 import dev.matheus.fluviapp.navigation.graphs.loginGraph
 import dev.matheus.fluviapp.navigation.graphs.mainScreenGraph
 import dev.matheus.fluviapp.extensions.navegaParaResultPesquisarEmpresa
-import dev.matheus.fluviapp.extensions.navegaParaResultPesquisarNavio
+import dev.matheus.fluviapp.extensions.navegaParaResultPesquisarEmbarcacao
 import dev.matheus.fluviapp.navigation.navcomposables.empresa.formEmpresaNavComposable
 import dev.matheus.fluviapp.navigation.navcomposables.empresa.resultSearchEmpresaNavComposable
-import dev.matheus.fluviapp.navigation.navcomposables.navio.formNavioNavComposable
-import dev.matheus.fluviapp.navigation.navcomposables.navio.resultSearchNavioNavComposable
+import dev.matheus.fluviapp.navigation.navcomposables.embarcacao.formEmbarcacaoNavComposable
+import dev.matheus.fluviapp.navigation.navcomposables.embarcacao.resultSearchEmbarcacaoNavComposable
 import dev.matheus.fluviapp.navigation.graphs.pesquisarPassagemGraph
 import dev.matheus.fluviapp.navigation.graphs.pesquisarViagemGraph
 import dev.matheus.fluviapp.navigation.graphs.splashGraph
@@ -117,11 +117,11 @@ fun FluviAppNavHost(
             onNavegaParaFormularioPesquisaEmpresa = {
                 navController.navegaParaResultPesquisarEmpresa()
             },
-            onNavegaParaFormularioNovoNavio = {
-                navController.navegaParaFormularioNavio()
+            onNavegaParaFormularioNovaEmbarcacao = {
+                navController.navegaParaFormularioEmbarcacao()
             },
-            onNavegaParaFormularioPesquisaNavio = {
-                navController.navegaParaResultPesquisarNavio()
+            onNavegaParaFormularioPesquisaEmbarcacao = {
+                navController.navegaParaResultPesquisarEmbarcacao()
             }
         )
 
@@ -236,7 +236,7 @@ fun FluviAppNavHost(
             }
         )
 
-        formNavioNavComposable(
+        formEmbarcacaoNavComposable(
             onNavegaParaMainScreen = {
                 navController.navegaParaMainScreenGraph()
             },
@@ -245,12 +245,12 @@ fun FluviAppNavHost(
             }
         )
 
-        resultSearchNavioNavComposable(
+        resultSearchEmbarcacaoNavComposable(
             onClickVoltar = {
                 navController.navigateUp()
             },
-            onNavegaParaEditorNavio = {
-                navController.navegaParaFormularioNavio(it)
+            onNavegaParaEditorEmbarcacao = {
+                navController.navegaParaFormularioEmbarcacao(it)
             }
         )
     }

@@ -4,13 +4,13 @@ import dev.matheus.fluviapp.revitalizacao.ForaDoEscopo
 import org.junit.experimental.categories.Category
 import dev.matheus.fluviapp.fakes.FakeConstanteRepository
 import dev.matheus.fluviapp.fakes.FakeEmpresaRepository
-import dev.matheus.fluviapp.fakes.FakeNavioRepository
+import dev.matheus.fluviapp.fakes.FakeEmbarcacaoRepository
 import dev.matheus.fluviapp.fakes.FakeViagemRepository
 import dev.matheus.fluviapp.domain.cadastro.constantes.Constante
 import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Categoria.MUNICIPIO
 import dev.matheus.fluviapp.domain.mappers.ViagemDadosViagemMapper
 import dev.matheus.fluviapp.domain.viagem.Empresa
-import dev.matheus.fluviapp.domain.viagem.Navio
+import dev.matheus.fluviapp.domain.viagem.Embarcacao
 import dev.matheus.fluviapp.domain.viagem.Viagem
 import dev.matheus.fluviapp.util.MainDispatcherRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -34,8 +34,8 @@ class PesquisarViagemViewModelTest {
     private val fakeEmpresa = FakeEmpresaRepository().apply {
         empresas = listOf(Empresa("e1", "ACME", "ACME LTDA", "1", "end", "1", "2"))
     }
-    private val fakeNavio = FakeNavioRepository().apply {
-        navios = listOf(Navio("n1", "F/B", 10, 2, 2, 2, "e1"))
+    private val fakeEmbarcacao = FakeEmbarcacaoRepository().apply {
+        embarcacoes = listOf(Embarcacao("n1", "F/B", 10, 2, 2, 2, "e1"))
     }
     private val fakeConstante = FakeConstanteRepository().apply {
         constantes = listOf(
@@ -44,13 +44,13 @@ class PesquisarViagemViewModelTest {
         )
     }
     private val fakeViagem = FakeViagemRepository().apply {
-        // Viagem relaciona por id (ADR-0008 Fase 3): empresaId "e1" (ACME), navioId "n1" (F/B).
+        // Viagem relaciona por id (ADR-0008 Fase 3): empresaId "e1" (ACME), embarcacaoId "n1" (F/B).
         viagens = listOf(Viagem("v1", "COD", "Porto Norte", "Ilha Central", "e1", "n1"))
     }
-    private val mapper = ViagemDadosViagemMapper(fakeEmpresa, fakeNavio, fakeConstante)
+    private val mapper = ViagemDadosViagemMapper(fakeEmpresa, fakeEmbarcacao, fakeConstante)
 
     private fun viewModel() =
-        PesquisarViagemViewModel(fakeEmpresa, fakeNavio, fakeConstante, fakeViagem, mapper)
+        PesquisarViagemViewModel(fakeEmpresa, fakeEmbarcacao, fakeConstante, fakeViagem, mapper)
 
     @Test
     fun `carrega fontes de filtro`() = runTest(mainRule.dispatcher) {
@@ -58,7 +58,7 @@ class PesquisarViagemViewModelTest {
         advanceUntilIdle()
 
         assertEquals(1, vm.uiState.value.listaEmpresas.size)
-        assertEquals(1, vm.uiState.value.listaNavios.size)
+        assertEquals(1, vm.uiState.value.listaEmbarcacoes.size)
         assertEquals(2, vm.uiState.value.listaMunicipios.size)
     }
 

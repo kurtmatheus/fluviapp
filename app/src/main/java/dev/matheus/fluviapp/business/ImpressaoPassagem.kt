@@ -56,7 +56,7 @@ class ImpressaoPassagem {
         private const val LABEL_OBS = "Observação"
 
         const val VIA_CLIENTE = "VIA DO CLIENTE"
-        const val VIA_EMPRESA = "VIA DO NAVIO"
+        const val VIA_EMPRESA = "VIA DO EMBARCACAO"
 
         private fun getCabecalho(): String {
             return buildString {
@@ -98,7 +98,7 @@ class ImpressaoPassagem {
 
         private fun getDadosViagem(): String {
             return buildString {
-                append(getDadoDestaqueCentralizado(dadosPassagem.navio.uppercase()))
+                append(getDadoDestaqueCentralizado(dadosPassagem.embarcacao.uppercase()))
                 append(String(TXT_BOLD_ON))
                 append(setLineLabelCampo(LABEL_TRECHO.uppercase(), "${dadosPassagem.origem.uppercase()}/${dadosPassagem.destino.uppercase()}"))
                 append("$LABEL_DATA_VIAGEM: ${dadosPassagem.dataViagem} $LABEL_HORA: ${dadosPassagem.horaViagem}\n")

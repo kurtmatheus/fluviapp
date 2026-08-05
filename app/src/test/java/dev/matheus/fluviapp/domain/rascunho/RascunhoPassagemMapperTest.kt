@@ -18,7 +18,7 @@ class RascunhoPassagemMapperTest {
         valorPix = "100",
         observacao = "obs",
         viagemId = "viagem-abc",
-        navioId = "navio-xyz",
+        embarcacaoId = "embarcacao-xyz",
         empresaId = "empresa-123",
         codigoViagem = "PN-IC-001",
     )
@@ -71,7 +71,7 @@ class RascunhoPassagemMapperTest {
 
         assertEquals(passagem.dataViagem, restaurado.passagem.dataViagem)
         assertEquals(passagem.viagemId, restaurado.passagem.viagemId)
-        assertEquals(passagem.navioId, restaurado.passagem.navioId)
+        assertEquals(passagem.embarcacaoId, restaurado.passagem.embarcacaoId)
         assertEquals(passagem.empresaId, restaurado.passagem.empresaId)
         assertEquals(passagem.valorPix, restaurado.passagem.valorPix)
         assertEquals(passageiro.documentoPassageiro1, restaurado.passageiro.documentoPassageiro1)

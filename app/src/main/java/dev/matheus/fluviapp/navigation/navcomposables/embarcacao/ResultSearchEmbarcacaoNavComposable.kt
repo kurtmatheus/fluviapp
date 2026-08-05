@@ -1,4 +1,4 @@
-package dev.matheus.fluviapp.navigation.navcomposables.navio
+package dev.matheus.fluviapp.navigation.navcomposables.embarcacao
 
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -6,24 +6,24 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import dev.matheus.fluviapp.navigation.destinations.FluviAppNavComposableDestinations
-import dev.matheus.fluviapp.ui.screens.forms.navio.ResultSearchNavioScreen
-import dev.matheus.fluviapp.ui.viewmodel.navio.PesquisaNavioViewModel
+import dev.matheus.fluviapp.ui.screens.forms.embarcacao.ResultSearchEmbarcacaoScreen
+import dev.matheus.fluviapp.ui.viewmodel.embarcacao.PesquisaEmbarcacaoViewModel
 
-fun NavGraphBuilder.resultSearchNavioNavComposable(
+fun NavGraphBuilder.resultSearchEmbarcacaoNavComposable(
     onClickVoltar: () -> Unit,
-    onNavegaParaEditorNavio: (String) -> Unit,
+    onNavegaParaEditorEmbarcacao: (String) -> Unit,
 ) {
     composable(
-        route = FluviAppNavComposableDestinations.ResultPesquisarNavioNavComposable.route,
+        route = FluviAppNavComposableDestinations.ResultPesquisarEmbarcacaoNavComposable.route,
     ) {
-        val viewModel = hiltViewModel<PesquisaNavioViewModel>()
+        val viewModel = hiltViewModel<PesquisaEmbarcacaoViewModel>()
         val uiState by viewModel.uiState.collectAsState()
 
-        ResultSearchNavioScreen(
+        ResultSearchEmbarcacaoScreen(
             uiState = uiState,
             onEmpresaChange = viewModel::onEmpresaChange,
             onClickVoltar = onClickVoltar,
-            onNavegaParaEditor = onNavegaParaEditorNavio,
+            onNavegaParaEditor = onNavegaParaEditorEmbarcacao,
             onDeletar = viewModel::onDeletar,
         )
     }

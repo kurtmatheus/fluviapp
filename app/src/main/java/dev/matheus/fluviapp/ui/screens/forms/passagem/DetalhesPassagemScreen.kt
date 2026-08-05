@@ -57,8 +57,8 @@ fun DetalhesPassagemScreen(
     onDismissSheetEmissao: () -> Unit = {},
     onClickImpressaoFisica: () -> Unit = {},
     onClickEmitirPassagemDigital: () -> Unit = {},
-    onClickDismissDialogViaNavio: () -> Unit = {},
-    onClickImprimirViaNavio: () -> Unit = {},
+    onClickDismissDialogViaEmbarcacao: () -> Unit = {},
+    onClickImprimirViaEmbarcacao: () -> Unit = {},
     onDismissDialogEmissaoPassagemDigital: () -> Unit = {},
     onProcessaImageBitmap: (ImageBitmap) -> Unit = {},
     onClickMenuImpressoras: () -> Unit = {},
@@ -88,8 +88,8 @@ fun DetalhesPassagemScreen(
             onClickConfirmDeleteDialog = onClickConfirmDeleteDialog,
             onDismissDialogImpressoras = onDismissDialogImpressoras,
             onClickSelecionarImpressora = onClickSelecionarImpressora,
-            onClickDismissDialogViaNavio = onClickDismissDialogViaNavio,
-            onClickImprimirViaNavio = onClickImprimirViaNavio,
+            onClickDismissDialogViaEmbarcacao = onClickDismissDialogViaEmbarcacao,
+            onClickImprimirViaEmbarcacao = onClickImprimirViaEmbarcacao,
             onDismissDialogEmissaoPassagemDigital = onDismissDialogEmissaoPassagemDigital,
             onProcessaImageBitmap = onProcessaImageBitmap,
             onParearNovaImpressora = onParearNovaImpressora
@@ -187,8 +187,8 @@ private fun DetalhesPassagemDialogHandler(
     onClickConfirmDeleteDialog: (String) -> Unit,
     onDismissDialogImpressoras: () -> Unit,
     onClickSelecionarImpressora: (DadosImpressora) -> Unit,
-    onClickDismissDialogViaNavio: () -> Unit,
-    onClickImprimirViaNavio: () -> Unit,
+    onClickDismissDialogViaEmbarcacao: () -> Unit,
+    onClickImprimirViaEmbarcacao: () -> Unit,
     onDismissDialogEmissaoPassagemDigital: () -> Unit,
     onProcessaImageBitmap: (ImageBitmap) -> Unit,
     onParearNovaImpressora: () -> Unit
@@ -227,14 +227,14 @@ private fun DetalhesPassagemDialogHandler(
         )
     }
 
-    if (stateImpressao.isShowDialogImpressaoViaNavio) {
+    if (stateImpressao.isShowDialogImpressaoViaEmbarcacao) {
         CommonInformativeDialog(
             modifier = Modifier,
-            textMensagem = R.string.msg_emissao_via_navio,
+            textMensagem = R.string.msg_emissao_via_embarcacao,
             textConfirm = R.string.btn_sim,
             textDismiss = R.string.btn_cancelar,
-            onDismiss = onClickDismissDialogViaNavio,
-            onConfirm = onClickImprimirViaNavio
+            onDismiss = onClickDismissDialogViaEmbarcacao,
+            onConfirm = onClickImprimirViaEmbarcacao
         )
     }
 
@@ -299,7 +299,7 @@ private fun ResultadosPassagemScreenPreview() {
             isAdminOuFuncResposavel = true
         ),
         stateImpressao = ImpressaoState(
-            isShowDialogImpressaoViaNavio = true
+            isShowDialogImpressaoViaEmbarcacao = true
         )
     )
 }

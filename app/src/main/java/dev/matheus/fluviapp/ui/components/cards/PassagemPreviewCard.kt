@@ -65,7 +65,7 @@ fun PassagemPreviewCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 TextTitleWhiteItalic(
-                    text = dadosPassagem.navio
+                    text = dadosPassagem.embarcacao
                 )
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -103,7 +103,7 @@ fun PassagemPreviewCard(
                 RowPassagemPreview(
                     modifier = modifier,
                     icon = R.drawable.ic_bilhete_75,
-                    contentDescription = R.string.description_icon_navio,
+                    contentDescription = R.string.description_icon_embarcacao,
                     labelTop = R.string.label_nome_preview,
                     textTop = dadosPassagem.nomePassageiro1,
                     labelMid = R.string.label_documento_preview,

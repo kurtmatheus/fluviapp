@@ -186,7 +186,7 @@ private fun ConteudoPassagemDigital(
                 )
 
                 TextRegularBrown(
-                    text = "${dadosPassagem.empresaNome} - ${dadosPassagem.navio}"
+                    text = "${dadosPassagem.empresaNome} - ${dadosPassagem.embarcacao}"
                 )
 
                 val acomodacao = if (dadosPassagem.ehVeiculo) dadosPassagem.tipoVeiculo

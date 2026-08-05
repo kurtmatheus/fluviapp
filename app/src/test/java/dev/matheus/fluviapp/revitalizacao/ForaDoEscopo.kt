@@ -5,7 +5,7 @@ package dev.matheus.fluviapp.revitalizacao
  *
  * A regra da revitalização (ADR-0020) é que o app vale uma entidade por vez — hoje a **Empresa** —, e que
  * só precisa passar o que é testável para a entidade em foco. Um teste vermelho de passagem, viagem ou
- * navio não é regressão: é código que ainda não foi refeito, e consertá-lo de passagem seria trabalho
+ * embarcacao não é regressão: é código que ainda não foi refeito, e consertá-lo de passagem seria trabalho
  * jogado fora quando a vez dele chegar.
  *
  * Uma classe está **dentro** do escopo quando o código que ela testa é executado em alguma parte da

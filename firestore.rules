@@ -214,7 +214,9 @@ service cloud.firestore {
         allow delete: if autenticado() && ehPapelPlataforma();
       }
     }
-    match /navios/{doc} {
+    // A coleção acompanhou o rename da entidade (`Navio` → `Embarcacao`): nem tudo que navega é navio, e
+    // o domínio já dizia isso no tipo de embarcação. A seção do menu chama-se **Flotilha**.
+    match /embarcacoes/{doc} {
       allow read: if autenticado();
       allow write: if autenticado() && ehPapelPlataforma();
     }

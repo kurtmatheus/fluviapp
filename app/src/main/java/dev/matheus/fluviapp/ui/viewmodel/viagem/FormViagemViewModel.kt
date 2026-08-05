@@ -10,13 +10,13 @@ import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Categoria.MUNIC
 import dev.matheus.fluviapp.domain.passagem.ClasseVeiculo
 import dev.matheus.fluviapp.domain.extrairPorDescricao
 import dev.matheus.fluviapp.domain.mappers.ViagemDadosViagemMapper
-import dev.matheus.fluviapp.domain.viagem.Navio
+import dev.matheus.fluviapp.domain.viagem.Embarcacao
 import dev.matheus.fluviapp.domain.viagem.TarifaViagem
 import dev.matheus.fluviapp.domain.viagem.Viagem
 import dev.matheus.fluviapp.navigation.navcomposables.viagem.ID_VIAGEM_ARGUMENT
 import dev.matheus.fluviapp.services.repository.cadastro.ConstanteRepository
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.EmpresaRepository
-import dev.matheus.fluviapp.services.repository.cadastro.viagem.NavioRepository
+import dev.matheus.fluviapp.services.repository.cadastro.viagem.EmbarcacaoRepository
 import dev.matheus.fluviapp.services.repository.firebase.ViagemRepository
 import dev.matheus.fluviapp.ui.states.FormViagemUiState
 import dev.matheus.fluviapp.ui.states.TarifaInputUiState
@@ -40,7 +40,7 @@ import javax.inject.Inject
 @HiltViewModel
 class FormViagemViewModel @Inject constructor(
     private val empresaRepository: EmpresaRepository,
-    private val navioRepository: NavioRepository,
+    private val embarcacaoRepository: EmbarcacaoRepository,
     private val constanteRepository: ConstanteRepository,
     private val viagemRepository: ViagemRepository,
     private val viagemDadosViagemMapper: ViagemDadosViagemMapper,
@@ -88,12 +88,12 @@ class FormViagemViewModel @Inject constructor(
             st.copy(
                 titulo = R.string.subtitle_editar_viagem,
                 empresa = card.empresa,
-                navio = card.navio,
+                embarcacao = card.embarcacao,
                 trechoOrigem = card.origem,
                 trechoDestino = card.destino,
-                navioDesabilitado = card.empresa.isBlank(),
+                embarcacaoDesabilitado = card.empresa.isBlank(),
                 trechoDestinoDesabilitado = card.origem.isBlank(), // corrige o prefill (lia estado velho)
-                listaNavios = naviosDaEmpresa(card.empresa),
+                listaEmbarcacoes = embarcacoesDaEmpresa(card.empresa),
                 tarifas = st.tarifas.map { input ->
                     valores[input.chave]?.let { input.copy(valor = it.paraCampoMoeda()) } ?: input
                 },
@@ -103,31 +103,31 @@ class FormViagemViewModel @Inject constructor(
 
     fun onEmpresaChange(empresa: String) {
         viewModelScope.launch {
-            val navios = naviosDaEmpresa(empresa)
+            val embarcacoes = embarcacoesDaEmpresa(empresa)
             _uiState.update {
                 it.copy(
                     empresa = empresa,
                     isEmpresaError = false,
-                    navioDesabilitado = false,
-                    navio = "",
-                    listaNavios = navios,
+                    embarcacaoDesabilitado = false,
+                    embarcacao = "",
+                    listaEmbarcacoes = embarcacoes,
                 )
             }
         }
     }
 
     /**
-     * Navios da empresa selecionada — filtra pelo **empresaId** estável (ADR-0008), resolvido do nome
+     * Embarcacoes da empresa selecionada — filtra pelo **empresaId** estável (ADR-0008), resolvido do nome
      * via `listaEmpresas` em cache. Rename-safe: o vínculo não depende do rótulo. Sem id resolvido →
-     * lista vazia (nunca casa `empresaId == ""`, que pegaria navios sem vínculo).
+     * lista vazia (nunca casa `empresaId == ""`, que pegaria embarcacoes sem vínculo).
      */
-    private suspend fun naviosDaEmpresa(nomeEmpresa: String): List<Navio> {
+    private suspend fun embarcacoesDaEmpresa(nomeEmpresa: String): List<Embarcacao> {
         val empresaId = _uiState.value.listaEmpresas.firstOrNull { it.nome == nomeEmpresa }?.id
             ?: return emptyList()
-        return navioRepository.obterTodos().filter { it.empresaId == empresaId }
+        return embarcacaoRepository.obterTodos().filter { it.empresaId == empresaId }
     }
 
-    fun onNavioChange(navio: String) = _uiState.update { it.copy(navio = navio, isNavioError = false) }
+    fun onEmbarcacaoChange(embarcacao: String) = _uiState.update { it.copy(embarcacao = embarcacao, isEmbarcacaoError = false) }
 
     fun onTrechoOrigemChange(trecho: String) = _uiState.update {
         it.copy(trechoOrigem = trecho, isTrechoOrigemError = false, trechoDestinoDesabilitado = false)
@@ -159,7 +159,7 @@ class FormViagemViewModel @Inject constructor(
             _uiState.update {
                 it.copy(
                     isEmpresaError = erros.empresa,
-                    isNavioError = erros.navio,
+                    isEmbarcacaoError = erros.embarcacao,
                     isTrechoOrigemError = erros.trechoOrigem,
                     isTrechoDestinoError = erros.trechoDestino,
                     tarifas = it.tarifas.map { t -> t.copy(isError = t.chave in erros.tarifasInvalidas) },
@@ -172,7 +172,7 @@ class FormViagemViewModel @Inject constructor(
         viewModelScope.launch {
             val s = _uiState.value
             try {
-                val navio = s.listaNavios.extrairPorDescricao(s.navio)
+                val embarcacao = s.listaEmbarcacoes.extrairPorDescricao(s.embarcacao)
                 val empresa = s.listaEmpresas.first { it.nome == s.empresa }
                 val origem = s.listaMunicipios.extrairPorDescricao(s.trechoOrigem)
                 val destino = s.listaMunicipios.extrairPorDescricao(s.trechoDestino)
@@ -186,12 +186,12 @@ class FormViagemViewModel @Inject constructor(
                 viagemRepository.salvar(
                     Viagem(
                         id = idViagem, // "" na criação → auto-id no repo
-                        codigo = "", // derivado na persistência (resolve o nome do navio pelo id)
+                        codigo = "", // derivado na persistência (resolve o nome do embarcacao pelo id)
                         origem = origem.descricaoNome,
                         destino = destino.descricaoNome,
                         // Vínculo vivo só por id (ADR-0008 Fase 3); nomes resolvidos na fronteira.
                         empresaId = empresa.id,
-                        navioId = navio.id,
+                        embarcacaoId = embarcacao.id,
                     ),
                     tarifas,
                 )

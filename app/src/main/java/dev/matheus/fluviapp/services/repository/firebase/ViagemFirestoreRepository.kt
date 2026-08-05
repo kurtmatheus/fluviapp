@@ -3,13 +3,13 @@ package dev.matheus.fluviapp.services.repository.firebase
 import android.util.Log
 import dev.matheus.fluviapp.database.dao.cadastro.viagem.TarifaViagemDao
 import dev.matheus.fluviapp.database.dao.cadastro.viagem.ViagemDao
-import dev.matheus.fluviapp.extensions.formatarCodigoViagemNavioFB
+import dev.matheus.fluviapp.extensions.formatarCodigoViagemEmbarcacaoFB
 import dev.matheus.fluviapp.extensions.paraMapaTarifas
 import dev.matheus.fluviapp.extensions.tarifasParaLinhas
 import dev.matheus.fluviapp.domain.viagem.TarifaViagem
 import dev.matheus.fluviapp.domain.viagem.Viagem
 import dev.matheus.fluviapp.domain.viagem.toDocumento
-import dev.matheus.fluviapp.services.repository.cadastro.viagem.NavioRepository
+import dev.matheus.fluviapp.services.repository.cadastro.viagem.EmbarcacaoRepository
 import dev.matheus.fluviapp.services.repository.firebase.documents.toViagem
 import dev.matheus.fluviapp.services.repository.firebase.documents.toViagemDocumento
 import dev.matheus.fluviapp.di.module.SyncScope
@@ -31,7 +31,7 @@ class ViagemFirestoreRepository @Inject constructor(
     private val tarifaDao: TarifaViagemDao,
     private val firestore: FirebaseFirestore,
     private val registroCadastro: RegistroCadastro,
-    private val navioRepository: NavioRepository,
+    private val embarcacaoRepository: EmbarcacaoRepository,
     @SyncScope private val syncScope: CoroutineScope,
     private val registroSincronizacao: RegistroSincronizacao,
     private val fonteSnapshots: FonteSnapshots,
@@ -67,11 +67,11 @@ class ViagemFirestoreRepository @Inject constructor(
         } else {
             firestore.collection(COLLECTION_VIAGENS).document(viagem.id)
         }
-        // codigo é derivado na persistência (a partir do navio); id vem do doc. O nome do navio é
-        // resolvido do navioId (ADR-0008 Fase 3 — a Viagem não guarda mais o nome).
+        // codigo é derivado na persistência (a partir do embarcacao); id vem do doc. O nome do embarcacao é
+        // resolvido do embarcacaoId (ADR-0008 Fase 3 — a Viagem não guarda mais o nome).
         val comId = viagem.copy(id = documento.id)
-        val navioNome = navioRepository.obterPorId(comId.navioId)?.descricaoNome.orEmpty()
-        val completo = comId.copy(codigo = comId.formatarCodigoViagemNavioFB(navioNome))
+        val embarcacaoNome = embarcacaoRepository.obterPorId(comId.embarcacaoId)?.descricaoNome.orEmpty()
+        val completo = comId.copy(codigo = comId.formatarCodigoViagemEmbarcacaoFB(embarcacaoNome))
 
         // FALHA: Room não gravou — desfecho não recuperável, propaga pro VM tratar.
         try {

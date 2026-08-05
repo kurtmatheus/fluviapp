@@ -10,43 +10,43 @@ import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.MEIA
 import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.MOTO
 import dev.matheus.fluviapp.domain.passagem.Passagem
 import dev.matheus.fluviapp.domain.screendata.DadosContagemPassagem
-import dev.matheus.fluviapp.domain.viagem.Navio
-import dev.matheus.fluviapp.services.repository.cadastro.viagem.NavioRepository
+import dev.matheus.fluviapp.domain.viagem.Embarcacao
+import dev.matheus.fluviapp.services.repository.cadastro.viagem.EmbarcacaoRepository
 import dev.matheus.fluviapp.util.Mapper
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class ContagemPassagensMapper @Inject constructor(
-    private val navioRepository: NavioRepository
+    private val embarcacaoRepository: EmbarcacaoRepository
 ) : Mapper<List<Passagem>, List<DadosContagemPassagem>> {
 
     override suspend fun map(entry: List<Passagem>): List<DadosContagemPassagem> {
-        // Agrega pelo navioId CONGELADO na Passagem (ADR-0008 Fase 2): sem ida à Viagem viva, então
+        // Agrega pelo embarcacaoId CONGELADO na Passagem (ADR-0008 Fase 2): sem ida à Viagem viva, então
         // rename/reatribuição posterior não altera balanços históricos. obterTodos uma vez (não N+1);
-        // associateBy dá lookup O(1) por id (era firstOrNull O(navios) por grupo).
-        val naviosPorId = navioRepository.obterTodos().associateBy { it.id }
+        // associateBy dá lookup O(1) por id (era firstOrNull O(embarcacoes) por grupo).
+        val embarcacoesPorId = embarcacaoRepository.obterTodos().associateBy { it.id }
 
         return entry
-            .groupBy { it.navioId }
-            .mapNotNull { (navioId, passagens) ->
-                // Navio removido → órfão detectável (lookup por id retorna null); descarta o grupo.
-                val navio = naviosPorId[navioId] ?: return@mapNotNull null
-                contarOcupacaoNavio(navio, passagens)
+            .groupBy { it.embarcacaoId }
+            .mapNotNull { (embarcacaoId, passagens) ->
+                // Embarcacao removido → órfão detectável (lookup por id retorna null); descarta o grupo.
+                val embarcacao = embarcacoesPorId[embarcacaoId] ?: return@mapNotNull null
+                contarOcupacaoEmbarcacao(embarcacao, passagens)
             }
     }
 }
 
 /**
- * Contagem pura da ocupação de um navio a partir das suas passagens — função testável sem repositório.
+ * Contagem pura da ocupação de um embarcacao a partir das suas passagens — função testável sem repositório.
  *
  * Contagem **por bilhete/unidade** (decisão do analista, `balanco-passagens-mapper.md` §7): cada bilhete de
  * suíte ocupa **uma** suíte — `temPassageiro3` (trio; p3 ⇒ p2) cai no bucket de 3 pessoas, senão no de 2 (o
  * titular-solo conta). Rede/camarote/veículo contam 1 por bilhete. O breakdown inteira/meia/gratuidade vive
  * no ramo REDE porque o tipo tarifário só existe na rede (ADR-0013).
  */
-internal fun contarOcupacaoNavio(
-    navio: Navio,
+internal fun contarOcupacaoEmbarcacao(
+    embarcacao: Embarcacao,
     listaPassagem: List<Passagem>,
 ): DadosContagemPassagem {
     var preenchidasRede = 0
@@ -122,7 +122,7 @@ internal fun contarOcupacaoNavio(
     }
 
     return DadosContagemPassagem(
-        navio = navio.descricaoNome,
+        embarcacao = embarcacao.descricaoNome,
         preenchidasRedes = preenchidasRede.toString(),
         preenchidasInteiras = preenchidasInteiras.toString(),
         preenchidasMeias = preenchidasMeias.toString(),
@@ -132,14 +132,14 @@ internal fun contarOcupacaoNavio(
         totalMotos = totalMotos.toString(),
         totalCaminhoes = totalCaminhoes.toString(),
         totalCarretas = totalCarretas.toString(),
-        capacidadeVeiculos = navio.capacidadeVeiculo.toString(),
+        capacidadeVeiculos = embarcacao.capacidadeVeiculo.toString(),
         preenchidasSuitesGeral = preenchidasSuite.toString(),
-        capacidadeSuitesGeral = (navio.capacidadeSuite2 + navio.capacidadeSuite3).toString(),
+        capacidadeSuitesGeral = (embarcacao.capacidadeSuite2 + embarcacao.capacidadeSuite3).toString(),
         preenchidasSuites2Pessoas = preenchidasSuite2Pessoas.toString(),
-        capacidadeSuites2Pessoas = navio.capacidadeSuite2.toString(),
+        capacidadeSuites2Pessoas = embarcacao.capacidadeSuite2.toString(),
         preenchidasSuites3Pessoas = preenchidasSuite3Pessoas.toString(),
-        capacidadeSuites3Pessoas = navio.capacidadeSuite3.toString(),
+        capacidadeSuites3Pessoas = embarcacao.capacidadeSuite3.toString(),
         preenchidosCamarotes = preenchidasCamarote.toString(),
-        capacidadeCamarotes = navio.capacidadeCamarote.toString()
+        capacidadeCamarotes = embarcacao.capacidadeCamarote.toString()
     )
 }

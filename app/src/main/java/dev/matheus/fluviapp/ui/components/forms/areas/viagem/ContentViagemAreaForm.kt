@@ -34,7 +34,7 @@ fun ContentViagemAreaForm(
     modifier: Modifier,
     state: FormViagemUiState,
     onEmpresaChange: (String) -> Unit,
-    onNavioChange: (String) -> Unit,
+    onEmbarcacaoChange: (String) -> Unit,
     onTrechoOrigemChange: (String) -> Unit,
     onLimparTrechoOrigem: () -> Unit,
     onTrechoDestinoChange: (String) -> Unit,
@@ -54,13 +54,13 @@ fun ContentViagemAreaForm(
     )
 
     DropDownFormField(
-        listaItens = state.listaNavios.mapDescricao(),
-        label = R.string.label_navio,
+        listaItens = state.listaEmbarcacoes.mapDescricao(),
+        label = R.string.label_embarcacao,
         modifier = modifier.fillMaxWidth(),
-        value = state.navio,
-        onValueChange = onNavioChange,
-        isError = state.isNavioError,
-        readOnly = state.navioDesabilitado,
+        value = state.embarcacao,
+        onValueChange = onEmbarcacaoChange,
+        isError = state.isEmbarcacaoError,
+        readOnly = state.embarcacaoDesabilitado,
         focusManager = focusManager
     )
 
@@ -168,7 +168,7 @@ private fun ContentViagemAreaFormPreview() {
             modifier = it,
             state = FormViagemUiState(),
             onEmpresaChange = {},
-            onNavioChange = {},
+            onEmbarcacaoChange = {},
             onTrechoOrigemChange = {},
             onLimparTrechoOrigem = {},
             onTrechoDestinoChange = {},

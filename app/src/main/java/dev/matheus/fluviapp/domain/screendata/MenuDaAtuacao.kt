@@ -25,7 +25,7 @@ import dev.matheus.fluviapp.domain.operacoes.Atuacao
  * dissolve em **Rota** + **Viagem** e a passa para o agenciamento; enquanto essas entidades não existirem,
  * mover a seção seria mudar quem pode o quê sem que o cadastro correspondente exista.
  */
-val SECOES_DO_PAINEL: Set<SecaoMenu> = setOf(SecaoMenu.EMPRESA, SecaoMenu.NAVIO, SecaoMenu.VIAGEM)
+val SECOES_DO_PAINEL: Set<SecaoMenu> = setOf(SecaoMenu.EMPRESA, SecaoMenu.EMBARCACAO, SecaoMenu.VIAGEM)
 
 /**
  * A seção que **atravessa** painel e atuações — a única, e por uma razão de domínio: o supervisor gere os

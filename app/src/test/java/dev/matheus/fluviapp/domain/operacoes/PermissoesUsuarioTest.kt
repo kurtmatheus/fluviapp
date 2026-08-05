@@ -105,13 +105,13 @@ class PermissoesUsuarioTest {
     @Test
     fun `supervisor ve Passagem e EQUIPE — e nada de cadastro de plataforma`() {
         // A Equipe é a única seção que olha o cargo: ela existe para o supervisor gerir a própria
-        // agência (§2.2). Viagem/Empresa/Navio continuam sendo cadastro de plataforma.
+        // agência (§2.2). Viagem/Empresa/Embarcacao continuam sendo cadastro de plataforma.
         assertEquals(
             listOf(SecaoMenu.PASSAGEM, SecaoMenu.EQUIPE),
             PermissoesUsuario.secoesVisiveis(operador, supervisor),
         )
         assertFalse(PermissoesUsuario.podeAcessar(SecaoMenu.VIAGEM, operador, supervisor))
-        assertFalse(PermissoesUsuario.podeAcessar(SecaoMenu.NAVIO, operador, supervisor))
+        assertFalse(PermissoesUsuario.podeAcessar(SecaoMenu.EMBARCACAO, operador, supervisor))
     }
 
     // --- Família da atuação × permissão (ADR-0016 §2, ADR-0020 F3) ---
@@ -132,9 +132,9 @@ class PermissoesUsuarioTest {
         val visiveis = PermissoesUsuario.secoesVisiveis(adm, atuacao = Atuacao.AGENCIAMENTO)
 
         // A ordem é a do enum, e desde o ADR-0020 D10 ela começa pela EMPRESA: é a parte, e dela
-        // dependem as outras — navio tem dono, funcionário tem vínculo.
+        // dependem as outras — embarcacao tem dono, funcionário tem vínculo.
         assertEquals(
-            listOf(SecaoMenu.EMPRESA, SecaoMenu.NAVIO, SecaoMenu.VIAGEM, SecaoMenu.EQUIPE),
+            listOf(SecaoMenu.EMPRESA, SecaoMenu.EMBARCACAO, SecaoMenu.VIAGEM, SecaoMenu.EQUIPE),
             visiveis,
         )
         // ADM administra a plataforma; emitir passagem exige vínculo de funcionário (ADR-0016 §2).
@@ -201,7 +201,7 @@ class PermissoesUsuarioTest {
         assertEquals(listOf(SecaoMenu.PASSAGEM), PermissoesUsuario.secoesVisiveis(null))
         assertFalse(PermissoesUsuario.podeAcessar(SecaoMenu.VIAGEM, null))
         assertFalse(PermissoesUsuario.podeAcessar(SecaoMenu.EMPRESA, "X"))
-        assertFalse(PermissoesUsuario.podeAcessar(SecaoMenu.NAVIO, operador))
+        assertFalse(PermissoesUsuario.podeAcessar(SecaoMenu.EMBARCACAO, operador))
     }
 
     @Test

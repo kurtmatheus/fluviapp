@@ -4,7 +4,7 @@ data class DadosViagemCard(
     val idViagem: String = "",
     val codigo: String = "",
     val empresa: String = "",
-    val navio: String = "",
+    val embarcacao: String = "",
     val origem: String = "",
     val destino: String = "",
     val data: String = "",

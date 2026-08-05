@@ -215,8 +215,8 @@ private fun SecaoViagem(modifier: Modifier, state: DetalhesPassagemState) {
 
         CommonRowDetalhamento(
             modifier = modifier,
-            label = R.string.label_navio,
-            valor = state.dadosPassagem.navio,
+            label = R.string.label_embarcacao,
+            valor = state.dadosPassagem.embarcacao,
         )
 
         CommonRowDetalhamento(

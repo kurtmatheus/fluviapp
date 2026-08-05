@@ -5,7 +5,6 @@ import androidx.room.RoomDatabase
 import dev.matheus.fluviapp.database.dao.ContadorDao
 import dev.matheus.fluviapp.database.dao.cadastro.ConstanteDao
 import dev.matheus.fluviapp.database.dao.operacoes.FuncionarioDao
-import dev.matheus.fluviapp.database.dao.cadastro.viagem.NavioDao
 import dev.matheus.fluviapp.database.dao.cadastro.viagem.TarifaViagemDao
 import dev.matheus.fluviapp.database.dao.cadastro.viagem.ViagemDao
 import dev.matheus.fluviapp.database.dao.operacoes.UsuarioDao
@@ -18,7 +17,6 @@ import dev.matheus.fluviapp.domain.operacoes.Funcionario
 import dev.matheus.fluviapp.domain.operacoes.Usuario
 import dev.matheus.fluviapp.domain.passagem.Passagem
 import dev.matheus.fluviapp.domain.passagem.PassagemDigital
-import dev.matheus.fluviapp.domain.viagem.Navio
 import dev.matheus.fluviapp.domain.viagem.TarifaViagem
 import dev.matheus.fluviapp.domain.viagem.Viagem
 
@@ -26,7 +24,6 @@ import dev.matheus.fluviapp.domain.viagem.Viagem
     entities = [
         Usuario::class,
         Constante::class,
-        Navio::class,
         Funcionario::class,
         Viagem::class,
         TarifaViagem::class,
@@ -36,13 +33,14 @@ import dev.matheus.fluviapp.domain.viagem.Viagem
         RascunhoPassagemEntity::class
     ],
     // v3: a tabela Empresa saiu — a coleção passou a viver só no Firestore (ADR-0017 D1, ADR-0020 F5).
-    version = 3,
+    // v4: a Embarcação (ex-`Navio`) segue o mesmo caminho, pela mesma razão. O que sobra aqui é cache do
+    // Firestore e o resíduo local (rascunho, bilhete digital) — nenhum deles é fonte da verdade.
+    version = 4,
     exportSchema = true
 )
 abstract class FluviAppDatabase : RoomDatabase() {
     abstract fun usuarioDao(): UsuarioDao
     abstract fun constanteDao(): ConstanteDao
-    abstract fun navioDao(): NavioDao
     abstract fun viagemDao(): ViagemDao
     abstract fun tarifaViagemDao(): TarifaViagemDao
     abstract fun funcionarioDao(): FuncionarioDao

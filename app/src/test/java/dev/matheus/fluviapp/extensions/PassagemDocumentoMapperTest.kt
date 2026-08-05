@@ -20,11 +20,11 @@ class PassagemDocumentoMapperTest {
         id = "id-1",
         numero = "2444",
         viagemId = "viagem-abc",
-        navioId = "navio-xyz",
+        embarcacaoId = "embarcacao-xyz",
         empresaId = "empresa-123",
         codigoViagem = "PN-IC-001",
         empresa = "Empresa Modelo",
-        navio = "F/B Modelo",
+        embarcacao = "F/B Modelo",
         origem = "Porto Norte",
         destino = "Ilha Central",
         dataViagem = "10/06/2024",
@@ -51,11 +51,11 @@ class PassagemDocumentoMapperTest {
 
         // viagemId é FK top-level (ponteiro por id, ADR-0008), fora do snapshot `viagem` (por valor).
         assertEquals("viagem-abc", doc.viagemId)
-        // navioId/empresaId ficam DENTRO do snapshot `viagem` embutido (ids congelados da viagem).
-        assertEquals("navio-xyz", doc.viagem?.navioId)
+        // embarcacaoId/empresaId ficam DENTRO do snapshot `viagem` embutido (ids congelados da viagem).
+        assertEquals("embarcacao-xyz", doc.viagem?.embarcacaoId)
         assertEquals("empresa-123", doc.viagem?.empresaId)
         assertEquals("PN-IC-001", doc.viagem?.codigo)
-        assertEquals("F/B Modelo", doc.viagem?.navio)
+        assertEquals("F/B Modelo", doc.viagem?.embarcacao)
         assertEquals("RG", doc.passageiro1?.documento)
         assertEquals("ABC1D23", doc.veiculo?.placaVeiculo)
         // A agência viaja para o Firestore (Path B do ADR-0002/0003); o nome do emissor NÃO tem coluna
@@ -73,7 +73,7 @@ class PassagemDocumentoMapperTest {
 
         assertEquals("id-restaurado", passagem.id)
         assertEquals("viagem-abc", passagem.viagemId)
-        assertEquals("navio-xyz", passagem.navioId)
+        assertEquals("embarcacao-xyz", passagem.embarcacaoId)
         assertEquals("empresa-123", passagem.empresaId)
         assertEquals("PN-IC-001", passagem.codigoViagem)
         assertEquals("RG", passagem.documentoPassageiro1)
@@ -91,7 +91,7 @@ class PassagemDocumentoMapperTest {
 
         assertEquals(original.numero, roundTrip.numero)
         assertEquals(original.viagemId, roundTrip.viagemId)
-        assertEquals(original.navioId, roundTrip.navioId)
+        assertEquals(original.embarcacaoId, roundTrip.embarcacaoId)
         assertEquals(original.empresaId, roundTrip.empresaId)
         assertEquals(original.codigoViagem, roundTrip.codigoViagem)
         assertEquals(original.empresa, roundTrip.empresa)

@@ -359,7 +359,7 @@ private fun AvisoBloqueioEmissao(
 private fun NovaPassagemFormScreenPreview() {
     FormPassagemScreen(
         statePassagem = FormPassagemUiState(
-            navioViagem = "F/B Regional",
+            embarcacaoViagem = "F/B Regional",
             horaViagem = "18:00",
             origemViagem = "Belém - Santana",
             codigoViagem = "BEL-SAN-101",
@@ -379,7 +379,7 @@ private fun NovaPassagemFormScreenPreview() {
 private fun NovaPassagemFormScreenLoadingPreview() {
     FormPassagemScreen(
         statePassagem = FormPassagemUiState(
-            navioViagem = "F/B Regional",
+            embarcacaoViagem = "F/B Regional",
             horaViagem = "18:00",
             origemViagem = "Belém - Santana",
             codigoViagem = "BEL-SAN-101",

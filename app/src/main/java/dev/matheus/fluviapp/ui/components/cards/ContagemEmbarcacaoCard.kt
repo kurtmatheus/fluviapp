@@ -20,7 +20,7 @@ import dev.matheus.fluviapp.ui.components.texts.TextTitleWhiteItalic
 import dev.matheus.fluviapp.ui.theme.FluviAppTheme
 
 @Composable
-fun ContagemNavioCard(
+fun ContagemEmbarcacaoCard(
     modifier: Modifier,
     dadosContagemPassagem: DadosContagemPassagem,
 ) {
@@ -31,13 +31,13 @@ fun ContagemNavioCard(
             Icon(
                 modifier = Modifier
                     .height(25.dp),
-                painter = painterResource(id = R.drawable.ic_navio_75),
-                contentDescription = stringResource(id = R.string.description_icon_navio),
+                painter = painterResource(id = R.drawable.ic_embarcacao_75),
+                contentDescription = stringResource(id = R.string.description_icon_embarcacao),
                 tint = MaterialTheme.colorScheme.onPrimary
             )
 
             TextTitleWhiteItalic(
-                text = dadosContagemPassagem.navio
+                text = dadosContagemPassagem.embarcacao
             )
 
             Icon(
@@ -139,12 +139,12 @@ fun ContagemNavioCard(
 
 @Preview(showBackground = true)
 @Composable
-private fun ContagemNavioCardPreview() {
+private fun ContagemEmbarcacaoCardPreview() {
     FluviAppTheme {
         Box(
             modifier = Modifier.padding(10.dp)
         ) {
-            ContagemNavioCard(
+            ContagemEmbarcacaoCard(
                 modifier = Modifier,
                 dadosContagemPassagem = listaDadosContagemPassagems.first()
             )

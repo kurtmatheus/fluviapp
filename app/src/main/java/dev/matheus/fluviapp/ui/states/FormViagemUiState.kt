@@ -3,7 +3,7 @@ package dev.matheus.fluviapp.ui.states
 import dev.matheus.fluviapp.R
 import dev.matheus.fluviapp.domain.cadastro.constantes.Constante
 import dev.matheus.fluviapp.domain.viagem.Empresa
-import dev.matheus.fluviapp.domain.viagem.Navio
+import dev.matheus.fluviapp.domain.viagem.Embarcacao
 
 /**
  * Estado do formulário de viagem — puro (só dados + flags). Sem lambdas embutidas: os eventos são
@@ -15,9 +15,9 @@ data class FormViagemUiState(
     val empresa: String = "",
     val isEmpresaError: Boolean = false,
 
-    val navio: String = "",
-    val isNavioError: Boolean = false,
-    val navioDesabilitado: Boolean = true,
+    val embarcacao: String = "",
+    val isEmbarcacaoError: Boolean = false,
+    val embarcacaoDesabilitado: Boolean = true,
 
     val trechoOrigem: String = "",
     val isTrechoOrigemError: Boolean = false,
@@ -27,7 +27,7 @@ data class FormViagemUiState(
     val trechoDestinoDesabilitado: Boolean = true,
 
     val listaEmpresas: List<Empresa> = emptyList(),
-    val listaNavios: List<Navio> = emptyList(),
+    val listaEmbarcacoes: List<Embarcacao> = emptyList(),
     val listaMunicipios: List<Constante> = emptyList(),
 
     // Tarifa da inteira por acomodação (ADR-0013) — um input por acomodação do catálogo. Branco = não

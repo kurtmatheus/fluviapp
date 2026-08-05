@@ -12,7 +12,7 @@ data class DadosPassagem(
     val empresaEndereco: String = "",
     val empresaTelefone1: String = "",
     val empresaTelefone2: String = "",
-    val navio: String = "",
+    val embarcacao: String = "",
     val dataViagem: String = "",
     val horaViagem: String = "",
     val origem: String = "",

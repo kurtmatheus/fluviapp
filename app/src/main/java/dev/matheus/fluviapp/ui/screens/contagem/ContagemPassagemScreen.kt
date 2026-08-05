@@ -18,7 +18,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import dev.matheus.fluviapp.R
 import dev.matheus.fluviapp.sampledata.listaDadosContagemPassagems
-import dev.matheus.fluviapp.ui.components.cards.ContagemNavioCard
+import dev.matheus.fluviapp.ui.components.cards.ContagemEmbarcacaoCard
 import dev.matheus.fluviapp.ui.components.contents.CommonTopRow
 import dev.matheus.fluviapp.ui.components.forms.buttons.CommonIconButton
 import dev.matheus.fluviapp.ui.components.forms.fields.FormFieldCalendario
@@ -89,7 +89,7 @@ fun ContagemPassagemScreen(
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     items(state.listaDadosContagemPassagens) { dados ->
-                        ContagemNavioCard(
+                        ContagemEmbarcacaoCard(
                             modifier = modifier,
                             dadosContagemPassagem = dados
                         )

@@ -12,7 +12,7 @@ import dev.matheus.fluviapp.domain.passagem.TipoPassagem
 import dev.matheus.fluviapp.domain.passagem.descontoDerivado
 import dev.matheus.fluviapp.domain.screendata.DadosPassagem
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.EmpresaRepository
-import dev.matheus.fluviapp.services.repository.cadastro.viagem.NavioRepository
+import dev.matheus.fluviapp.services.repository.cadastro.viagem.EmbarcacaoRepository
 import dev.matheus.fluviapp.util.Mapper
 import java.math.BigDecimal
 import javax.inject.Inject
@@ -21,7 +21,7 @@ import javax.inject.Singleton
 @Singleton
 class PassagemDadosPassagemMapper @Inject constructor(
     private val empresaRepository: EmpresaRepository,
-    private val navioRepository: NavioRepository,
+    private val embarcacaoRepository: EmbarcacaoRepository,
 ) : Mapper<Passagem, DadosPassagem> {
     override suspend fun map(entry: Passagem): DadosPassagem {
         // Empresa resolvida por id (ADR-0008): rename-safe e órfão detectável (obterPorId → null),
@@ -29,10 +29,10 @@ class PassagemDadosPassagemMapper @Inject constructor(
         // Sem ida à Viagem: idViagem usa o viagemId congelado na Passagem (dropou ViagemRepository).
         val empresa = empresaRepository.obterPorId(entry.empresaId)
 
-        // Navio resolvido por id (ADR-0008), espelhando a empresa: usa o navioId congelado na Passagem,
+        // Embarcacao resolvido por id (ADR-0008), espelhando a empresa: usa o embarcacaoId congelado na Passagem,
         // rename-safe e órfão detectável (obterPorId → null → nome vazio). Fecha a dívida do §9 do doc de
-        // domínio (o nome vinha do snapshot entry.navio, que renomear a frota não atualizava).
-        val navio = navioRepository.obterPorId(entry.navioId)
+        // domínio (o nome vinha do snapshot entry.embarcacao, que renomear a frota não atualizava).
+        val embarcacao = embarcacaoRepository.obterPorId(entry.embarcacaoId)
 
         val valorPix = entry.valorPix.converterParaBigDecimal()
         val valorDinheiro = entry.valorDinheiro.converterParaBigDecimal()
@@ -65,7 +65,7 @@ class PassagemDadosPassagemMapper @Inject constructor(
             empresaEndereco = empresa?.endereco.orEmpty(),
             empresaTelefone1 = empresa?.telefone1.orEmpty(),
             empresaTelefone2 = empresa?.telefone2.orEmpty(),
-            navio = navio?.descricaoNome.orEmpty(),
+            embarcacao = embarcacao?.descricaoNome.orEmpty(),
             dataViagem = entry.dataViagem,
             horaViagem = entry.horaViagem,
             origem = entry.origem,

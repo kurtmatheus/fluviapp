@@ -1,4 +1,3 @@
-
 package dev.matheus.fluviapp.ui.screens
 
 import androidx.activity.ComponentActivity
@@ -100,7 +99,7 @@ class PainelRevitalizadoTest {
 
         composeTestRule.onNodeWithText(texto(SecaoMenu.EMPRESA.titulo)).assertIsDisplayed()
 
-        composeTestRule.onNodeWithText(texto(SecaoMenu.NAVIO.titulo)).assertDoesNotExist()
+        composeTestRule.onNodeWithText(texto(SecaoMenu.EMBARCACAO.titulo)).assertDoesNotExist()
         composeTestRule.onNodeWithText(texto(SecaoMenu.VIAGEM.titulo)).assertDoesNotExist()
         composeTestRule.onNodeWithText(texto(SecaoMenu.PASSAGEM.titulo)).assertDoesNotExist()
         composeTestRule.onNodeWithText(texto(SecaoMenu.EQUIPE.titulo)).assertDoesNotExist()

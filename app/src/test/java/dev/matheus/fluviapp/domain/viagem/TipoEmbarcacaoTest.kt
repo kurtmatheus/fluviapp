@@ -11,7 +11,7 @@ import org.junit.Test
 
 /**
  * Tipo da embarcação como tipo de domínio (ADR-0020 D4). A tabela do ADR-0016 §8, agora executável:
- * F/B leva tudo, navio leva carro e moto, lancha só passageiro.
+ * F/B leva tudo, embarcacao leva carro e moto, lancha só passageiro.
  */
 @Category(ForaDoEscopo::class)
 class TipoEmbarcacaoTest {
@@ -19,7 +19,7 @@ class TipoEmbarcacaoTest {
     @Test
     fun `de converte o name canonico e recusa desconhecido`() {
         assertEquals(TipoEmbarcacao.FERRY_BOAT, TipoEmbarcacao.de("FERRY_BOAT"))
-        assertEquals(TipoEmbarcacao.NAVIO, TipoEmbarcacao.de("navio"))
+        assertEquals(TipoEmbarcacao.EMBARCACAO, TipoEmbarcacao.de("embarcacao"))
         assertEquals(TipoEmbarcacao.LANCHA, TipoEmbarcacao.de(" Lancha "))
         assertNull(TipoEmbarcacao.de(null))
         // O "Catamarã" do §8: cadastrado no catálogo, nascia inerte. Agora simplesmente não existe.
@@ -37,11 +37,11 @@ class TipoEmbarcacaoTest {
     }
 
     @Test
-    fun `o navio leva carro e moto, mas nao carga pesada`() {
-        assertTrue(TipoEmbarcacao.NAVIO.admite(ClasseVeiculo.CARRO))
-        assertTrue(TipoEmbarcacao.NAVIO.admite(ClasseVeiculo.MOTO))
-        assertFalse(TipoEmbarcacao.NAVIO.admite(ClasseVeiculo.CAMINHAO))
-        assertFalse(TipoEmbarcacao.NAVIO.admite(ClasseVeiculo.CARRETA))
+    fun `o embarcacao leva carro e moto, mas nao carga pesada`() {
+        assertTrue(TipoEmbarcacao.EMBARCACAO.admite(ClasseVeiculo.CARRO))
+        assertTrue(TipoEmbarcacao.EMBARCACAO.admite(ClasseVeiculo.MOTO))
+        assertFalse(TipoEmbarcacao.EMBARCACAO.admite(ClasseVeiculo.CAMINHAO))
+        assertFalse(TipoEmbarcacao.EMBARCACAO.admite(ClasseVeiculo.CARRETA))
     }
 
     @Test
@@ -58,7 +58,7 @@ class TipoEmbarcacaoTest {
     @Test
     fun `levaVeiculo separa quem oferece o modo veiculo`() {
         assertTrue(TipoEmbarcacao.FERRY_BOAT.levaVeiculo)
-        assertTrue(TipoEmbarcacao.NAVIO.levaVeiculo)
+        assertTrue(TipoEmbarcacao.EMBARCACAO.levaVeiculo)
         assertFalse(TipoEmbarcacao.LANCHA.levaVeiculo)
     }
 }

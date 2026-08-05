@@ -13,22 +13,23 @@ import dev.matheus.fluviapp.domain.operacoes.Atuacao
  * `agenciaId` e `empresaId` são o mesmo id.
  *
  * **Concessão é allow-list, e é de segurança** (§7.1): o que não foi concedido não se vende. Distinta da
- * deny-list de rotas, que é conforto de tela. Aqui só existe [navioIds] porque `Porto` ainda não existe
- * como entidade; quando existir, entra `portoIds` ao lado, sem mudar a forma.
+ * deny-list de rotas, que é conforto de tela. Aqui só existe [embarcacaoIds] porque `Porto` ainda não
+ * existe como entidade; quando existir, entra `portoIds` ao lado, sem mudar a forma.
  */
 data class AtuacaoDaEmpresa(
     val atuacao: Atuacao,
-    /** Embarcações que esta parte pode **vender** (§7, 7ª rodada: concede-se o navio, não o armador). */
-    val navioIds: Set<String> = emptySet(),
+    /** Embarcações que esta parte pode **vender** (§7, 7ª rodada: concede-se a embarcação, não o armador). */
+    val embarcacaoIds: Set<String> = emptySet(),
 ) {
     /**
-     * A checagem que o §7 tornou **direta**: o id está na concessão, sem ler o dono do navio. Enquanto a
-     * concessão era por armador, descobrir isto exigia um `get()` em `navios/{id}.empresaId` — um salto a
-     * mais na UI e outro por escrita na regra do servidor.
+     * A checagem que o §7 tornou **direta**: o id está na concessão, sem ler o dono da embarcação.
+     * Enquanto a concessão era por armador, descobrir isto exigia um `get()` em
+     * `embarcacoes/{id}.empresaId` — um salto a mais na UI e outro por escrita na regra do servidor.
      *
      * Id ausente é negado: **frota nova nasce não-concedida**, que é o preço aceito no ADR.
      */
-    fun concedeu(navioId: String?): Boolean = !navioId.isNullOrBlank() && navioId in navioIds
+    fun concedeu(embarcacaoId: String?): Boolean =
+        !embarcacaoId.isNullOrBlank() && embarcacaoId in embarcacaoIds
 }
 
 /** Esta parte exerce esta atuação? */

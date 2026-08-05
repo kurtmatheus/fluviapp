@@ -44,7 +44,7 @@ fun NavGraphBuilder.formViagemNavComposable(
         FormViagemScreen(
             uiState = state,
             onEmpresaChange = viewModel::onEmpresaChange,
-            onNavioChange = viewModel::onNavioChange,
+            onEmbarcacaoChange = viewModel::onEmbarcacaoChange,
             onTrechoOrigemChange = viewModel::onTrechoOrigemChange,
             onLimparTrechoOrigem = viewModel::onLimparTrechoOrigem,
             onTrechoDestinoChange = viewModel::onTrechoDestinoChange,

@@ -38,10 +38,10 @@ class EscopoRevitalizadoTest {
     // --- O escopo em si ---
 
     @Test
-    fun `apenas a Empresa esta revitalizada`() {
-        assertEquals(setOf(SecaoMenu.EMPRESA), SECOES_REVITALIZADAS)
+    fun `estao revitalizadas a Empresa e a Flotilha`() {
+        assertEquals(setOf(SecaoMenu.EMPRESA, SecaoMenu.EMBARCACAO), SECOES_REVITALIZADAS)
         assertTrue(estaRevitalizada(SecaoMenu.EMPRESA))
-        assertFalse(estaRevitalizada(SecaoMenu.NAVIO))
+        assertTrue(estaRevitalizada(SecaoMenu.EMBARCACAO))
         assertFalse(estaRevitalizada(SecaoMenu.VIAGEM))
         assertFalse(estaRevitalizada(SecaoMenu.PASSAGEM))
         assertFalse(estaRevitalizada(SecaoMenu.EQUIPE))
@@ -49,10 +49,11 @@ class EscopoRevitalizadoTest {
 
     // --- O menu que o painel monta ---
 
+    /** A ordem é a de [SecaoMenu] — Empresa antes da Flotilha, que é a ordem de dependência do cadastro. */
     @Test
-    fun `plataforma ve so a Empresa`() {
-        assertEquals(listOf(SecaoMenu.EMPRESA), secoesDoMenu(adm))
-        assertEquals(listOf(SecaoMenu.EMPRESA), secoesDoMenu(gestor))
+    fun `plataforma ve a Empresa e a Flotilha`() {
+        assertEquals(listOf(SecaoMenu.EMPRESA, SecaoMenu.EMBARCACAO), secoesDoMenu(adm))
+        assertEquals(listOf(SecaoMenu.EMPRESA, SecaoMenu.EMBARCACAO), secoesDoMenu(gestor))
     }
 
     /**

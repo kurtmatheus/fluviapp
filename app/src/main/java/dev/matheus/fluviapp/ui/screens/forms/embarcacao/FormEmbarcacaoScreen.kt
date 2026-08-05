@@ -1,4 +1,4 @@
-package dev.matheus.fluviapp.ui.screens.forms.navio
+package dev.matheus.fluviapp.ui.screens.forms.embarcacao
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -17,14 +17,14 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import dev.matheus.fluviapp.R
 import dev.matheus.fluviapp.ui.components.forms.areas.CommonAreaForm
-import dev.matheus.fluviapp.ui.components.forms.areas.navio.ContentNavioAreaForm
+import dev.matheus.fluviapp.ui.components.forms.areas.embarcacao.ContentEmbarcacaoAreaForm
 import dev.matheus.fluviapp.ui.components.forms.buttons.CommonIconButton
 import dev.matheus.fluviapp.ui.screens.forms.CommonScreenNoBottom
-import dev.matheus.fluviapp.ui.states.FormNavioUiState
+import dev.matheus.fluviapp.ui.states.FormEmbarcacaoUiState
 
 @Composable
-fun FormNavioScreen(
-    uiState: FormNavioUiState,
+fun FormEmbarcacaoScreen(
+    uiState: FormEmbarcacaoUiState,
     onNomeChange: (String) -> Unit = {},
     onEmpresaChange: (String) -> Unit = {},
     onCapacidadeVeiculoChange: (String) -> Unit = {},
@@ -35,7 +35,7 @@ fun FormNavioScreen(
     onClickVoltar: () -> Unit = {},
 ) {
     CommonScreenNoBottom(
-        titleTopAppBar = R.string.title_top_navio,
+        titleTopAppBar = R.string.title_top_embarcacao,
         titleTopContent = 0,
         isShowRightIcon = false,
         hasRefresh = false,
@@ -52,7 +52,7 @@ fun FormNavioScreen(
                 modifier = modifier,
                 titleArea = uiState.titulo,
             ) {
-                ContentNavioAreaForm(
+                ContentEmbarcacaoAreaForm(
                     modifier = it,
                     state = uiState,
                     onNomeChange = onNomeChange,
@@ -87,6 +87,6 @@ fun FormNavioScreen(
 
 @Preview(showBackground = true)
 @Composable
-private fun FormNavioScreenPreview() {
-    FormNavioScreen(uiState = FormNavioUiState())
+private fun FormEmbarcacaoScreenPreview() {
+    FormEmbarcacaoScreen(uiState = FormEmbarcacaoUiState())
 }

@@ -54,8 +54,8 @@ fun DetalhesViagemPreviewCard(
                         modifier = modifier
                             .height(100.dp)
                             .padding(top = 10.dp, end = 10.dp),
-                        painter = painterResource(id = R.drawable.ic_navio_75),
-                        contentDescription = stringResource(id = R.string.description_icon_navio),
+                        painter = painterResource(id = R.drawable.ic_embarcacao_75),
+                        contentDescription = stringResource(id = R.string.description_icon_embarcacao),
                         tint = MaterialTheme.colorScheme.onBackground
                     )
 
@@ -75,7 +75,7 @@ fun DetalhesViagemPreviewCard(
                         verticalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
                         TextTitleBrownItalic(
-                            text = dadosViagemCard.navio
+                            text = dadosViagemCard.embarcacao
                         )
                         TextTitleBrownRegular(
                             text = "${dadosViagemCard.origem} - ${dadosViagemCard.destino}"

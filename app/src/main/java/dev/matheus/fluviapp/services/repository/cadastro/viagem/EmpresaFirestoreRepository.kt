@@ -6,18 +6,16 @@ import dev.matheus.fluviapp.di.module.SyncScope
 import dev.matheus.fluviapp.domain.operacoes.Atuacao
 import dev.matheus.fluviapp.domain.viagem.AtuacaoDaEmpresa
 import dev.matheus.fluviapp.domain.viagem.Empresa
+import dev.matheus.fluviapp.services.repository.firebase.CodecFirestore
+import dev.matheus.fluviapp.services.repository.firebase.ColecaoFirestore
+import dev.matheus.fluviapp.services.repository.firebase.DocumentoBruto
 import dev.matheus.fluviapp.services.repository.firebase.FonteSnapshots
 import dev.matheus.fluviapp.services.repository.firebase.documents.paraMapa
 import dev.matheus.fluviapp.services.repository.firebase.documents.toEmpresa
-import dev.matheus.fluviapp.services.repository.firebase.sincronizarColecao
 import dev.matheus.fluviapp.telemetry.RegistroCadastro
 import dev.matheus.fluviapp.telemetry.RegistroSincronizacao
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -42,58 +40,43 @@ import javax.inject.Singleton
  * A fronteira é `Map` (ADR-0019 D2): `DocumentoBruto` → `Empresa` na leitura, `Empresa` → `Map` na
  * escrita. O `EmpresaDocumento` sai do caminho e fica só como documentação da forma.
  */
+/**
+ * O codec da Empresa: o pouco que é dela na fronteira. Todo o resto do CRUD é da [ColecaoFirestore].
+ */
+private object EmpresaCodec : CodecFirestore<Empresa> {
+    override val colecao = "empresas"
+    override val entidade = "empresa"
+    override fun deDocumento(bruto: DocumentoBruto) = bruto.toEmpresa()
+    override fun paraMapa(modelo: Empresa) = modelo.paraMapa()
+    override fun id(modelo: Empresa) = modelo.id
+    override fun comId(modelo: Empresa, id: String) = modelo.copy(id = id)
+}
+
 @Singleton
 class EmpresaFirestoreRepository @Inject constructor(
     private val firestore: FirebaseFirestore,
     private val registroCadastro: RegistroCadastro,
-    @SyncScope private val syncScope: CoroutineScope,
-    private val registroSincronizacao: RegistroSincronizacao,
-    private val fonteSnapshots: FonteSnapshots,
+    @SyncScope syncScope: CoroutineScope,
+    registroSincronizacao: RegistroSincronizacao,
+    fonteSnapshots: FonteSnapshots,
 ) : EmpresaRepository {
 
-    private val _empresas = MutableStateFlow<List<Empresa>>(emptyList())
+    // O CRUD da coleção é composto, não herdado: quem os ViewModels conhecem é a porta acima, e é ela
+    // que os fakes substituem. A subcoleção de atuações fica aqui, porque é da Empresa, não da coleção.
+    private val colecao = ColecaoFirestore(
+        codec = EmpresaCodec,
+        firestore = firestore,
+        fonteSnapshots = fonteSnapshots,
+        syncScope = syncScope,
+        registroCadastro = registroCadastro,
+        registroSincronizacao = registroSincronizacao,
+    )
 
-    /** `true` depois do primeiro snapshot — distingue "coleção vazia" de "ainda não chegou". */
-    private val _recebeuSnapshot = MutableStateFlow(false)
+    override fun observarTodas(): StateFlow<List<Empresa>> = colecao.observarTodos()
 
-    private var syncJob: Job? = null
+    override fun sincronizar() = colecao.sincronizar()
 
-    override fun observarTodas(): StateFlow<List<Empresa>> = _empresas.asStateFlow()
-
-    override fun sincronizar() {
-        if (syncJob?.isActive == true) return
-        syncJob = sincronizarColecao(
-            fonte = fonteSnapshots,
-            colecao = COLLECTION_EMPRESAS,
-            scope = syncScope,
-            registro = registroSincronizacao,
-            paraModelo = { it.toEmpresa() },
-            salvarTodos = { empresas ->
-                _empresas.value = empresas
-                _recebeuSnapshot.value = true
-            },
-        )
-    }
-
-    override suspend fun salvar(empresa: Empresa): String {
-        val documento = if (empresa.id.isBlank()) {
-            firestore.collection(COLLECTION_EMPRESAS).document()
-        } else {
-            firestore.collection(COLLECTION_EMPRESAS).document(empresa.id)
-        }
-        val comId = empresa.copy(id = documento.id)
-
-        // O `set()` grava no cache do SDK na hora e o listener reflete; o `await()` espera o ack do
-        // servidor. Rejeição/offline vira WARNING (pendente-sync) e NÃO relança: o dado local já está
-        // aplicado e o SDK reconcilia quando a rede voltar.
-        try {
-            documento.set(comId.paraMapa()).await()
-            registroCadastro.salvou(ENTIDADE, comId.id)
-        } catch (e: Exception) {
-            registroCadastro.pendenteDeSync(ENTIDADE, comId.id, e)
-        }
-        return comId.id
-    }
+    override suspend fun salvar(empresa: Empresa): String = colecao.salvar(empresa)
 
     override suspend fun obterAtuacoes(empresaId: String): List<AtuacaoDaEmpresa> {
         if (empresaId.isBlank()) return emptyList()
@@ -104,7 +87,7 @@ class EmpresaFirestoreRepository @Inject constructor(
                 Atuacao.de(doc.id)?.let { atuacao ->
                     AtuacaoDaEmpresa(
                         atuacao = atuacao,
-                        navioIds = (doc.get(CAMPO_NAVIO_IDS) as? List<*>)
+                        embarcacaoIds = (doc.get(CAMPO_EMBARCACAO_IDS) as? List<*>)
                             ?.filterIsInstance<String>()
                             .orEmpty()
                             .toSet(),
@@ -128,7 +111,7 @@ class EmpresaFirestoreRepository @Inject constructor(
             // uma atuação seria inexprimível — o documento antigo sobreviveria à edição.
             firestore.runBatch { lote ->
                 desejadas.forEach { (id, atuacao) ->
-                    lote.set(colecao.document(id), mapOf(CAMPO_NAVIO_IDS to atuacao.navioIds.toList()))
+                    lote.set(colecao.document(id), mapOf(CAMPO_EMBARCACAO_IDS to atuacao.embarcacaoIds.toList()))
                 }
                 (existentes - desejadas.keys).forEach { lote.delete(colecao.document(it)) }
             }.await()
@@ -139,31 +122,18 @@ class EmpresaFirestoreRepository @Inject constructor(
     }
 
     private fun atuacoesDe(empresaId: String) =
-        firestore.collection(COLLECTION_EMPRESAS).document(empresaId).collection(SUBCOLECAO_ATUACOES)
+        firestore.collection(EmpresaCodec.colecao).document(empresaId).collection(SUBCOLECAO_ATUACOES)
 
-    override suspend fun obterTodas(): List<Empresa> {
-        sincronizar()
-        _recebeuSnapshot.first { it }
-        return _empresas.value
-    }
+    override suspend fun obterTodas(): List<Empresa> = colecao.obterTodos()
 
-    override suspend fun obterPorId(id: String): Empresa? =
-        obterTodas().firstOrNull { it.id == id }
+    override suspend fun obterPorId(id: String): Empresa? = colecao.obterPorId(id)
 
-    override suspend fun deletar(id: String) {
-        try {
-            firestore.collection(COLLECTION_EMPRESAS).document(id).delete().await()
-        } catch (e: Exception) {
-            Log.e(TAG, "deletar($id): ${e.message}", e)
-        }
-    }
+    override suspend fun deletar(id: String) = colecao.deletar(id)
 
     private companion object {
         const val TAG = "empresaRepository"
-        const val COLLECTION_EMPRESAS = "empresas"
-        const val ENTIDADE = "empresa"
         const val ENTIDADE_ATUACAO = "empresa.atuacoes"
         const val SUBCOLECAO_ATUACOES = "atuacoes"
-        const val CAMPO_NAVIO_IDS = "navioIds"
+        const val CAMPO_EMBARCACAO_IDS = "embarcacaoIds"
     }
 }

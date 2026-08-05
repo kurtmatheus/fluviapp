@@ -1,12 +1,10 @@
-package dev.matheus.fluviapp.ui.viewmodel.navio
+package dev.matheus.fluviapp.ui.viewmodel.embarcacao
 
-import dev.matheus.fluviapp.revitalizacao.ForaDoEscopo
-import org.junit.experimental.categories.Category
 import androidx.lifecycle.SavedStateHandle
 import dev.matheus.fluviapp.fakes.FakeEmpresaRepository
-import dev.matheus.fluviapp.fakes.FakeNavioRepository
+import dev.matheus.fluviapp.fakes.FakeEmbarcacaoRepository
 import dev.matheus.fluviapp.domain.viagem.Empresa
-import dev.matheus.fluviapp.domain.viagem.Navio
+import dev.matheus.fluviapp.domain.viagem.Embarcacao
 import dev.matheus.fluviapp.util.MainDispatcherRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.toList
@@ -20,8 +18,7 @@ import org.junit.Rule
 import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
-@Category(ForaDoEscopo::class)
-class FormNavioViewModelTest {
+class FormEmbarcacaoViewModelTest {
 
     @get:Rule
     val mainRule = MainDispatcherRule()
@@ -32,8 +29,8 @@ class FormNavioViewModelTest {
 
     @Test
     fun `salvar invalido marca erros e nao persiste`() = runTest(mainRule.dispatcher) {
-        val navioFake = FakeNavioRepository()
-        val vm = FormNavioViewModel(navioFake, empresaFake(), SavedStateHandle())
+        val embarcacaoFake = FakeEmbarcacaoRepository()
+        val vm = FormEmbarcacaoViewModel(embarcacaoFake, empresaFake(), SavedStateHandle())
 
         vm.salvar()
         advanceUntilIdle()
@@ -41,13 +38,13 @@ class FormNavioViewModelTest {
         val s = vm.uiState.value
         assertTrue(s.isNomeError)
         assertTrue(s.isEmpresaError)
-        assertTrue(navioFake.salvos.isEmpty())
+        assertTrue(embarcacaoFake.salvos.isEmpty())
     }
 
     @Test
     fun `salvar valido persiste com capacidades parseadas e emite sucesso`() = runTest(mainRule.dispatcher) {
-        val navioFake = FakeNavioRepository()
-        val vm = FormNavioViewModel(navioFake, empresaFake(), SavedStateHandle())
+        val embarcacaoFake = FakeEmbarcacaoRepository()
+        val vm = FormEmbarcacaoViewModel(embarcacaoFake, empresaFake(), SavedStateHandle())
         val eventos = mutableListOf<Unit>()
         val job = launch { vm.sucesso.toList(eventos) }
 
@@ -58,8 +55,8 @@ class FormNavioViewModelTest {
         vm.salvar()
         advanceUntilIdle()
 
-        assertEquals(1, navioFake.salvos.size)
-        val salvo = navioFake.salvos.first()
+        assertEquals(1, embarcacaoFake.salvos.size)
+        val salvo = embarcacaoFake.salvos.first()
         assertEquals("FLUVI I", salvo.descricaoNome)
         assertEquals("e1", salvo.empresaId) // ADR-0008: link resolvido do nome selecionado
         assertEquals(12, salvo.capacidadeVeiculo)
@@ -71,22 +68,22 @@ class FormNavioViewModelTest {
 
     @Test
     fun `empresa sem match na lista salva com empresaId vazio (dormente, nao quebra)`() = runTest(mainRule.dispatcher) {
-        val navioFake = FakeNavioRepository()
-        val vm = FormNavioViewModel(navioFake, empresaFake(), SavedStateHandle())
+        val embarcacaoFake = FakeEmbarcacaoRepository()
+        val vm = FormEmbarcacaoViewModel(embarcacaoFake, empresaFake(), SavedStateHandle())
 
         vm.onNomeChange("FLUVI I")
         vm.onEmpresaChange("EMPRESA FANTASMA") // não existe em listaEmpresas
         vm.salvar()
         advanceUntilIdle()
 
-        assertEquals(1, navioFake.salvos.size)
-        assertEquals("", navioFake.salvos.first().empresaId)
+        assertEquals(1, embarcacaoFake.salvos.size)
+        assertEquals("", embarcacaoFake.salvos.first().empresaId)
     }
 
     @Test
     fun `falha ao salvar nao emite sucesso e libera processamento`() = runTest(mainRule.dispatcher) {
-        val navioFake = FakeNavioRepository().apply { falharAoSalvar = true }
-        val vm = FormNavioViewModel(navioFake, empresaFake(), SavedStateHandle())
+        val embarcacaoFake = FakeEmbarcacaoRepository().apply { falharAoSalvar = true }
+        val vm = FormEmbarcacaoViewModel(embarcacaoFake, empresaFake(), SavedStateHandle())
         val eventos = mutableListOf<Unit>()
         val job = launch { vm.sucesso.toList(eventos) }
 
@@ -101,11 +98,11 @@ class FormNavioViewModelTest {
     }
 
     @Test
-    fun `edicao carrega navio existente`() = runTest(mainRule.dispatcher) {
-        val navioFake = FakeNavioRepository().apply {
-            navios = listOf(Navio("n1", "FLUVI I", 10, 20, 30, 5, "e1")) // vínculo por id
+    fun `edicao carrega embarcacao existente`() = runTest(mainRule.dispatcher) {
+        val embarcacaoFake = FakeEmbarcacaoRepository().apply {
+            embarcacoes = listOf(Embarcacao("n1", "FLUVI I", 10, 20, 30, 5, "e1")) // vínculo por id
         }
-        val vm = FormNavioViewModel(navioFake, empresaFake(), SavedStateHandle(mapOf("idNavio" to "n1")))
+        val vm = FormEmbarcacaoViewModel(embarcacaoFake, empresaFake(), SavedStateHandle(mapOf("idEmbarcacao" to "n1")))
         advanceUntilIdle()
 
         val s = vm.uiState.value
