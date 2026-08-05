@@ -274,8 +274,20 @@ fase apaga o que ela tornou obsoleto.
 - **F2 — A saída de `Constante`** — ⚠️ **PARCIAL** (`c5023d7`, `10dc514`): **12 das 16** chamadas saíram e o
   form de passagem deixou de ler o catálogo. `ConstanteDao`, o repositório, o `ConstanteDocumento`, a coleção
   `constants`, a regra em `firestore.rules:183` e o `IObjetoSimplificado` (D7) **não saíram** — as quatro
-  chamadas restantes são de `MUNICIPIO`, e município não vira `.entries`: vira `Localidade` (D6). A fase só
-  fecha com as capacidades da plataforma.
+  chamadas restantes são de `MUNICIPIO`, e município não vira `.entries`: vira `Localidade` (D6). ~~A fase só
+  fecha com as capacidades da plataforma.~~
+
+  **Corrigido em 2026-08-05, quando a `Localidade` nasceu e o `Constante` não morreu junto.** A frase acima
+  supunha que os quatro leitores seriam *migrados* para a entidade nova. Não serão: eles vivem em
+  `FormViagemViewModel`, `PesquisarViagemViewModel`, `ViagemDadosViagemMapper` e `FormFuncionarioViewModel`
+  — seções fora do escopo da revitalização —, e o ADR-0016 §7 já decidiu que a **Rota referencia portos por
+  id**, com o par de cidades virando *leitura sobre os portos*, não campo. O `listaMunicipios` do form de
+  viagem não muda de fonte: ele **deixa de existir** quando a Rota nascer, e o mesmo vale para a lotação do
+  funcionário no §6. Migrá-los agora seria escrever contra um domínio já marcado para mudar de forma.
+
+  Então a condição real de fechamento é outra: **`Constante` morre com a Rota e a Equipe**, não com as
+  capacidades. O que a `Localidade` fechou aqui foi só o que era dela — o `LoginViewModel` parou de
+  sincronizar a coleção `constants`, que era a última dependência do caminho vivo.
 - **F3 — A derivação do menu** (E2): `Atuacao → Set<SecaoMenu>` como função pura; `acoesDe` sai do grafo;
   `DadosBotoesMenus` perde o `onClick` (ADR-0019 §7).
 - **F4 — O contexto e a splash** (D9): `ContextoUsuario` ganha o vínculo ativo; `SplashScreenViewModel` passa

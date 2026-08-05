@@ -14,7 +14,6 @@ import dev.matheus.fluviapp.preferences.PreferencesKey.CARGO_ATUAL
 import dev.matheus.fluviapp.preferences.PreferencesKey.PAPEL_ATUAL
 import dev.matheus.fluviapp.preferences.PreferencesKey.LOGADO
 import dev.matheus.fluviapp.preferences.PreferencesKey.USUARIO_ATUAL
-import dev.matheus.fluviapp.services.repository.cadastro.ConstanteRepository
 import dev.matheus.fluviapp.services.repository.operacoes.FuncionarioRepository
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.EmpresaRepository
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.EmbarcacaoRepository
@@ -42,7 +41,6 @@ class LoginViewModel @Inject constructor(
     private val dataStore: DataStore<Preferences>,
     private val usuarioRepository: UsuarioRepository,
     private val autenticacaoRepository: AutenticacaoRepository,
-    private val constanteRepository: ConstanteRepository,
     private val empresaRepository: EmpresaRepository,
     private val embarcacaoRepository: EmbarcacaoRepository,
     private val funcionarioRepository: FuncionarioRepository,
@@ -171,9 +169,20 @@ class LoginViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(logado = true)
     }
 
+    /**
+     * Liga os listeners das coleções ao entrar.
+     *
+     * O `constanteRepository` **saiu daqui** (ADR-0020 F2): era a última referência ao `Constante` no
+     * caminho vivo do app, e servia só para aquecer um cache que ninguém mais lê — os quatro leitores que
+     * restam estão em Viagem e Equipe, que o menu não alcança. Um listener anexado a cada login numa
+     * coleção sem leitor é custo sem contrapartida, e some sem que nada em tela mude.
+     *
+     * A `localidades` **não entra**: quem a observa é o ViewModel da própria seção, que liga o listener ao
+     * abrir a busca. Sincronizar tudo no login é o hábito antigo, de quando o Room precisava estar cheio
+     * antes de alguém olhar — com o cache do SDK, cada tela liga o que usa (ADR-0017 D1).
+     */
     fun sincronizar(context: Context) {
         try {
-            constanteRepository.sincronizar()
             funcionarioRepository.sincronizar()
             empresaRepository.sincronizar()
             embarcacaoRepository.sincronizar()

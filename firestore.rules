@@ -220,6 +220,15 @@ service cloud.firestore {
       allow read: if autenticado();
       allow write: if autenticado() && ehPapelPlataforma();
     }
+    // Capacidade da plataforma (ADR-0016 §5): sem dono, escrita só por papel de plataforma. Não há
+    // `delete` porque não existe apagar aqui — excluir uma localidade é gravar `ativo: false`, que passa
+    // pelo `write` acima. Regra que permitisse o delete físico contradiria o motivo do delete lógico:
+    // o porto histórico ficaria apontando para um documento que não existe mais.
+    match /localidades/{doc} {
+      allow read: if autenticado();
+      allow create, update: if autenticado() && ehPapelPlataforma();
+      allow delete: if false;
+    }
     match /viagens/{doc} {
       allow read: if autenticado();
       allow write: if autenticado() && ehPapelPlataforma();

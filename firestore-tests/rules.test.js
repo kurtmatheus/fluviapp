@@ -89,6 +89,12 @@ beforeEach(async () => {
     await setDoc(doc(db, 'funcionarios', F_NOVO), { nome: 'Novo', agencia: 'MATRIZ', cargo: 'AGENTE', email: EMAIL_F_NOVO });
     // Catálogo de exemplo (para os testes de leitura).
     await setDoc(doc(db, 'embarcacoes', 'embarcacao-1'), { nome: 'Embarcação 1' });
+    await setDoc(doc(db, 'localidades', 'loc-1'), {
+      municipio: 'Parintins',
+      uf: 'AM',
+      codigoIbge: '1303205',
+      ativo: true,
+    });
     // Passagem alheia (dono = funcionário B) e o contador.
     await setDoc(doc(db, 'passagens', 'alheia'), { funcionarioId: F_B, valor: 10 });
     await setDoc(doc(db, 'passagens', 'contador'), { numeroBilhete: 100 });
@@ -286,6 +292,45 @@ describe('flotilha (embarcações) — leitura ampla, escrita só papel de plata
 
   test('plataforma (ADM) escreve embarcação → OK', async () => {
     await assertSucceeds(setDoc(doc(asAdm(), 'embarcacoes', 'embarcacao-2'), { nome: 'Embarcação 2' }));
+  });
+});
+
+// --- Localidades: capacidade da plataforma, e a coleção onde NÃO se apaga (ADR-0016 §5) ---
+describe('localidades — escrita só de plataforma, e delete físico impossível', () => {
+  test('operador LÊ localidade (a venda vai precisar do porto, e o porto dela) → OK', async () => {
+    await assertSucceeds(getDoc(doc(asAgenteA(), 'localidades', 'loc-1')));
+  });
+
+  test('não autenticado LÊ localidade → NEGADO', async () => {
+    await assertFails(getDoc(doc(asAnon(), 'localidades', 'loc-1')));
+  });
+
+  test('operador ESCREVE localidade → NEGADO', async () => {
+    await assertFails(setDoc(doc(asAgenteA(), 'localidades', 'loc-2'), { municipio: 'Belém', uf: 'PA' }));
+  });
+
+  test('SUPERVISOR escreve localidade (cargo de agência não é papel de plataforma) → NEGADO', async () => {
+    await assertFails(setDoc(doc(asSupervisor(), 'localidades', 'loc-2'), { municipio: 'Belém', uf: 'PA' }));
+  });
+
+  test('plataforma (ADM) cria localidade → OK', async () => {
+    await assertSucceeds(
+      setDoc(doc(asAdm(), 'localidades', 'loc-2'), { municipio: 'Belém', uf: 'PA', codigoIbge: '1501402', ativo: true }),
+    );
+  });
+
+  /**
+   * O delete lógico com dentes de servidor: inativar é `update`, e passa. Apagar é `delete`, e não passa
+   * NEM para o ADM — a única coleção do app assim. A razão é referencial: o porto aponta para a
+   * localidade, e a rota para o porto; um `delete` que escapasse deixaria histórico apontando para o
+   * nada, e nenhuma regra de aplicativo recupera um documento que já não existe.
+   */
+  test('plataforma INATIVA localidade (delete lógico) → OK', async () => {
+    await assertSucceeds(updateDoc(doc(asAdm(), 'localidades', 'loc-1'), { ativo: false }));
+  });
+
+  test('plataforma APAGA localidade → NEGADO (não existe apagar aqui)', async () => {
+    await assertFails(deleteDoc(doc(asAdm(), 'localidades', 'loc-1')));
   });
 });
 

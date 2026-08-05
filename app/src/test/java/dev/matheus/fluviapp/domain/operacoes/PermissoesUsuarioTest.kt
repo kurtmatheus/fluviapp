@@ -134,7 +134,15 @@ class PermissoesUsuarioTest {
         // A ordem é a do enum, e desde o ADR-0020 D10 ela começa pela EMPRESA: é a parte, e dela
         // dependem as outras — embarcacao tem dono, funcionário tem vínculo.
         assertEquals(
-            listOf(SecaoMenu.EMPRESA, SecaoMenu.EMBARCACAO, SecaoMenu.VIAGEM, SecaoMenu.EQUIPE),
+            listOf(
+                SecaoMenu.EMPRESA,
+                SecaoMenu.EMBARCACAO,
+                // A Localidade é capacidade da plataforma (ADR-0016 §5): sem dono e sem atuação, ela só
+                // pode estar aqui — nenhuma agência a administraria.
+                SecaoMenu.LOCALIDADE,
+                SecaoMenu.VIAGEM,
+                SecaoMenu.EQUIPE,
+            ),
             visiveis,
         )
         // ADM administra a plataforma; emitir passagem exige vínculo de funcionário (ADR-0016 §2).

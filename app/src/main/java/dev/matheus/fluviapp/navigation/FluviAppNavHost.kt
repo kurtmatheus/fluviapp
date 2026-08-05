@@ -29,10 +29,14 @@ import dev.matheus.fluviapp.navigation.graphs.loginGraph
 import dev.matheus.fluviapp.navigation.graphs.mainScreenGraph
 import dev.matheus.fluviapp.extensions.navegaParaResultPesquisarEmpresa
 import dev.matheus.fluviapp.extensions.navegaParaResultPesquisarEmbarcacao
+import dev.matheus.fluviapp.extensions.navegaParaFormularioLocalidade
+import dev.matheus.fluviapp.extensions.navegaParaResultPesquisarLocalidade
 import dev.matheus.fluviapp.navigation.navcomposables.empresa.formEmpresaNavComposable
 import dev.matheus.fluviapp.navigation.navcomposables.empresa.resultSearchEmpresaNavComposable
 import dev.matheus.fluviapp.navigation.navcomposables.embarcacao.formEmbarcacaoNavComposable
 import dev.matheus.fluviapp.navigation.navcomposables.embarcacao.resultSearchEmbarcacaoNavComposable
+import dev.matheus.fluviapp.navigation.navcomposables.localidade.formLocalidadeNavComposable
+import dev.matheus.fluviapp.navigation.navcomposables.localidade.resultSearchLocalidadeNavComposable
 import dev.matheus.fluviapp.navigation.graphs.pesquisarPassagemGraph
 import dev.matheus.fluviapp.navigation.graphs.pesquisarViagemGraph
 import dev.matheus.fluviapp.navigation.graphs.splashGraph
@@ -122,6 +126,12 @@ fun FluviAppNavHost(
             },
             onNavegaParaFormularioPesquisaEmbarcacao = {
                 navController.navegaParaResultPesquisarEmbarcacao()
+            },
+            onNavegaParaFormularioNovaLocalidade = {
+                navController.navegaParaFormularioLocalidade()
+            },
+            onNavegaParaFormularioPesquisaLocalidade = {
+                navController.navegaParaResultPesquisarLocalidade()
             }
         )
 
@@ -251,6 +261,24 @@ fun FluviAppNavHost(
             },
             onNavegaParaEditorEmbarcacao = {
                 navController.navegaParaFormularioEmbarcacao(it)
+            }
+        )
+
+        formLocalidadeNavComposable(
+            onNavegaParaMainScreen = {
+                navController.navegaParaMainScreenGraph()
+            },
+            onClickVoltar = {
+                navController.navigateUp()
+            }
+        )
+
+        resultSearchLocalidadeNavComposable(
+            onClickVoltar = {
+                navController.navigateUp()
+            },
+            onNavegaParaEditorLocalidade = {
+                navController.navegaParaFormularioLocalidade(it)
             }
         )
     }

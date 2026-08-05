@@ -14,6 +14,13 @@ data class DocumentoBruto(
     fun inteiro(chave: String): Int = (dados[chave] as? Number)?.toInt() ?: 0
 
     /**
+     * Booleano com **padrão explícito**, e não `false` fixo: ausente pode significar coisas opostas
+     * conforme o campo. No `ativo` do delete lógico, documento antigo sem o campo é um registro **em uso**
+     * — assumir `false` esconderia dado bom. Quem chama declara o que a ausência quer dizer.
+     */
+    fun booleano(chave: String, padrao: Boolean = false): Boolean = dados[chave] as? Boolean ?: padrao
+
+    /**
      * Mapa aninhado chave(String)→valor(Double) — a forma que o Firestore devolve um `map` de números
      * (ADR-0013, tabela de tarifas). Coage cada valor de Number→Double (Firestore devolve Long ou
      * Double); entradas com chave/valor de tipo inesperado são descartadas (defensivo, como os demais

@@ -18,6 +18,9 @@ enum class SecaoMenu(
     // também é a ordem de dependência do cadastro.
     EMPRESA(R.string.label_menu_empresa, R.drawable.ic_empresa_24),
     EMBARCACAO(R.string.label_menu_flotilha, R.drawable.ic_embarcacao_75),
+    // Capacidade da plataforma (ADR-0016 §5): não pertence a empresa nenhuma. Vem depois dos ativos e
+    // antes da operação porque é o que o porto — e, por ele, a rota — vai referenciar.
+    LOCALIDADE(R.string.label_menu_localidades, R.drawable.ic_localidade_24),
     PASSAGEM(R.string.btn_menu_passagens, R.drawable.ic_bilhete),
     VIAGEM(R.string.label_menu_viagens, R.drawable.ic_embarcacao_75),
     // "Equipe" (ADR-0015 §8.1): o coletivo dos Funcionario — as pessoas na operação, com cargo, agência

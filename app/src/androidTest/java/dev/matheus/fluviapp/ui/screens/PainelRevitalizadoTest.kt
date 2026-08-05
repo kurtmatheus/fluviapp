@@ -21,7 +21,7 @@ import org.junit.Rule
 import org.junit.Test
 
 /**
- * O painel da revitalização, em tela: **existem a Empresa e a Flotilha** (ADR-0020), e mais nada.
+ * O painel da revitalização, em tela: **existem a Empresa, a Flotilha e as Localidades**, e mais nada.
  *
  * O menu não é fabricado à mão aqui — vem de `secoesDoMenu(ADM)` e `acoesPorSecao`, as mesmas funções de
  * domínio que a Main Screen usa em produção. É o que faz este teste valer como emenda entre as camadas:
@@ -103,45 +103,45 @@ class PainelRevitalizadoTest {
 
         composeTestRule.onNodeWithText(texto(SecaoMenu.EMPRESA.titulo)).assertIsDisplayed()
         composeTestRule.onNodeWithText(texto(SecaoMenu.EMBARCACAO.titulo)).assertIsDisplayed()
+        composeTestRule.onNodeWithText(texto(SecaoMenu.LOCALIDADE.titulo)).assertIsDisplayed()
 
         composeTestRule.onNodeWithText(texto(SecaoMenu.VIAGEM.titulo)).assertDoesNotExist()
         composeTestRule.onNodeWithText(texto(SecaoMenu.PASSAGEM.titulo)).assertDoesNotExist()
         composeTestRule.onNodeWithText(texto(SecaoMenu.EQUIPE.titulo)).assertDoesNotExist()
     }
 
-    /** A seção viva abre e navega: o corte não deixou a Empresa inacessível junto com o resto. */
-    @Test
-    fun menu_expandeEmpresa_eNavegaPelaAcao() {
-        val navegadas = mutableListOf<AcaoMenu>()
-        montarMenu(onNavegar = { navegadas += it })
-
-        composeTestRule.onNodeWithText(texto(SecaoMenu.EMPRESA.titulo)).performClick()
-
-        composeTestRule.onNodeWithText(texto(AcaoMenu.EMPRESA_NOVA.titulo)).assertIsDisplayed()
-        composeTestRule.onNodeWithText(texto(AcaoMenu.EMPRESA_PESQUISAR.titulo)).assertIsDisplayed()
-
-        composeTestRule.onNodeWithText(texto(AcaoMenu.EMPRESA_NOVA.titulo)).performClick()
-
-        assertEquals(listOf(AcaoMenu.EMPRESA_NOVA), navegadas)
-    }
-
     /**
-     * A mesma cobrança para a segunda seção viva. Não é repetição por simetria: cadastrar e pesquisar são
-     * **duas ações por seção**, e é aqui que se vê que a Flotilha entrou inteira — porta aberta e as duas
-     * telas alcançáveis —, e não só como um item de menu que expande para o vazio.
+     * A seção abre e navega — para **cada** seção viva.
+     *
+     * As ações esperadas não são digitadas aqui: vêm de `AcaoMenu.de(secao)`, a mesma função que o menu
+     * usa. É o que faz a cobrança acompanhar o domínio sozinha — acrescentar uma ação a uma seção passa a
+     * ser exigida em tela sem que este arquivo mude, que é o oposto de uma lista repetida por seção.
      */
-    @Test
-    fun menu_expandeFlotilha_eNavegaPelaAcao() {
+    private fun expandeENavega(secao: SecaoMenu, acaoTocada: AcaoMenu) {
         val navegadas = mutableListOf<AcaoMenu>()
         montarMenu(onNavegar = { navegadas += it })
 
-        composeTestRule.onNodeWithText(texto(SecaoMenu.EMBARCACAO.titulo)).performClick()
+        composeTestRule.onNodeWithText(texto(secao.titulo)).performClick()
 
-        composeTestRule.onNodeWithText(texto(AcaoMenu.EMBARCACAO_NOVA.titulo)).assertIsDisplayed()
-        composeTestRule.onNodeWithText(texto(AcaoMenu.EMBARCACAO_PESQUISAR.titulo)).assertIsDisplayed()
+        AcaoMenu.de(secao).forEach {
+            composeTestRule.onNodeWithText(texto(it.titulo)).assertIsDisplayed()
+        }
 
-        composeTestRule.onNodeWithText(texto(AcaoMenu.EMBARCACAO_PESQUISAR.titulo)).performClick()
+        composeTestRule.onNodeWithText(texto(acaoTocada.titulo)).performClick()
 
-        assertEquals(listOf(AcaoMenu.EMBARCACAO_PESQUISAR), navegadas)
+        assertEquals(listOf(acaoTocada), navegadas)
     }
+
+    /** O corte não deixou a Empresa inacessível junto com o resto. */
+    @Test
+    fun menu_expandeEmpresa_eNavegaPelaAcao() =
+        expandeENavega(SecaoMenu.EMPRESA, AcaoMenu.EMPRESA_NOVA)
+
+    @Test
+    fun menu_expandeFlotilha_eNavegaPelaAcao() =
+        expandeENavega(SecaoMenu.EMBARCACAO, AcaoMenu.EMBARCACAO_PESQUISAR)
+
+    @Test
+    fun menu_expandeLocalidades_eNavegaPelaAcao() =
+        expandeENavega(SecaoMenu.LOCALIDADE, AcaoMenu.LOCALIDADE_NOVA)
 }

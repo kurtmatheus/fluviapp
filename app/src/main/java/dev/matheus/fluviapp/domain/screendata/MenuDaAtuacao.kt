@@ -25,7 +25,14 @@ import dev.matheus.fluviapp.domain.operacoes.Atuacao
  * dissolve em **Rota** + **Viagem** e a passa para o agenciamento; enquanto essas entidades não existirem,
  * mover a seção seria mudar quem pode o quê sem que o cadastro correspondente exista.
  */
-val SECOES_DO_PAINEL: Set<SecaoMenu> = setOf(SecaoMenu.EMPRESA, SecaoMenu.EMBARCACAO, SecaoMenu.VIAGEM)
+val SECOES_DO_PAINEL: Set<SecaoMenu> = setOf(
+    SecaoMenu.EMPRESA,
+    SecaoMenu.EMBARCACAO,
+    // A `LOCALIDADE` é o caso mais puro desta família: capacidade da plataforma, sem dono e sem atuação
+    // (ADR-0016 §5). Nenhuma agência a administra — todas a usam.
+    SecaoMenu.LOCALIDADE,
+    SecaoMenu.VIAGEM,
+)
 
 /**
  * A seção que **atravessa** painel e atuações — a única, e por uma razão de domínio: o supervisor gere os

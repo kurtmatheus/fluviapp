@@ -36,7 +36,10 @@ enum class AcaoMenu(
     EMPRESA_PESQUISAR(SecaoMenu.EMPRESA, R.string.btn_pesquisar_empresa, R.drawable.ic_lupa_75),
 
     EMBARCACAO_NOVA(SecaoMenu.EMBARCACAO, R.string.btn_nova_embarcacao, R.drawable.ic_add_75),
-    EMBARCACAO_PESQUISAR(SecaoMenu.EMBARCACAO, R.string.btn_pesquisar_embarcacao, R.drawable.ic_lupa_75);
+    EMBARCACAO_PESQUISAR(SecaoMenu.EMBARCACAO, R.string.btn_pesquisar_embarcacao, R.drawable.ic_lupa_75),
+
+    LOCALIDADE_NOVA(SecaoMenu.LOCALIDADE, R.string.btn_nova_localidade, R.drawable.ic_add_75),
+    LOCALIDADE_PESQUISAR(SecaoMenu.LOCALIDADE, R.string.btn_pesquisar_localidade, R.drawable.ic_lupa_75);
 
     companion object {
         /** As ações desta seção, na ordem declarada. */

@@ -16,34 +16,34 @@ package dev.matheus.fluviapp.domain.localidade
  *
  * O `name` é a **sigla** e é o valor canônico persistido.
  */
-enum class Uf(val nome: String) {
-    AC("Acre"),
-    AL("Alagoas"),
-    AP("Amapá"),
-    AM("Amazonas"),
-    BA("Bahia"),
-    CE("Ceará"),
-    DF("Distrito Federal"),
-    ES("Espírito Santo"),
-    GO("Goiás"),
-    MA("Maranhão"),
-    MT("Mato Grosso"),
-    MS("Mato Grosso do Sul"),
-    MG("Minas Gerais"),
-    PA("Pará"),
-    PB("Paraíba"),
-    PR("Paraná"),
-    PE("Pernambuco"),
-    PI("Piauí"),
-    RJ("Rio de Janeiro"),
-    RN("Rio Grande do Norte"),
-    RS("Rio Grande do Sul"),
-    RO("Rondônia"),
-    RR("Roraima"),
-    SC("Santa Catarina"),
-    SP("São Paulo"),
-    SE("Sergipe"),
-    TO("Tocantins");
+enum class Uf(val nome: String, val codigo: String) {
+    AC("Acre", "12"),
+    AL("Alagoas", "27"),
+    AP("Amapá", "16"),
+    AM("Amazonas", "13"),
+    BA("Bahia", "29"),
+    CE("Ceará", "23"),
+    DF("Distrito Federal", "53"),
+    ES("Espírito Santo", "32"),
+    GO("Goiás", "52"),
+    MA("Maranhão", "21"),
+    MT("Mato Grosso", "51"),
+    MS("Mato Grosso do Sul", "50"),
+    MG("Minas Gerais", "31"),
+    PA("Pará", "15"),
+    PB("Paraíba", "25"),
+    PR("Paraná", "41"),
+    PE("Pernambuco", "26"),
+    PI("Piauí", "22"),
+    RJ("Rio de Janeiro", "33"),
+    RN("Rio Grande do Norte", "24"),
+    RS("Rio Grande do Sul", "43"),
+    RO("Rondônia", "11"),
+    RR("Roraima", "14"),
+    SC("Santa Catarina", "42"),
+    SP("São Paulo", "35"),
+    SE("Sergipe", "28"),
+    TO("Tocantins", "17");
 
     /** A sigla — valor canônico e o que aparece em tela. */
     val sigla: String get() = name
@@ -61,6 +61,29 @@ enum class Uf(val nome: String) {
             if (bruto.isEmpty()) return null
             return entries.firstOrNull { it.name == bruto.uppercase() }
                 ?: entries.firstOrNull { it.nome.equals(bruto, ignoreCase = true) }
+        }
+
+        /**
+         * A UF pelo **código numérico do IBGE** (os dois primeiros dígitos do código de município).
+         *
+         * É o que torna a verificação do `codigoIbge` possível **sem rede e sem tabela**: `1501402` começa
+         * em `15`, e `15` é o Pará. Um código de outro estado deixa de ser um erro que só aparece no
+         * relatório e passa a ser um erro que a tela recusa na hora.
+         */
+        fun porCodigo(codigo: String?): Uf? =
+            entries.firstOrNull { it.codigo == codigo?.trim() }
+
+        /**
+         * Fronteira de **tela**: o dropdown mostra [rotulo] ("Pará (PA)") e devolve o texto escolhido.
+         *
+         * Separada de [de] pela mesma razão que em `TipoEmbarcacao`: aquela lê o que ficou **gravado**
+         * (a sigla, estável), esta lê o que a **pessoa** escolheu. A forma de exibição pode mudar sem
+         * migrar dado — e foi um teste de ViewModel que cobrou esta função, ao passar `"Pará (PA)"` para
+         * um `de()` que só entendia `"PA"`.
+         */
+        fun porRotulo(rotulo: String?): Uf? {
+            val bruto = rotulo?.trim() ?: return null
+            return entries.firstOrNull { it.rotulo().equals(bruto, ignoreCase = true) }
         }
     }
 }

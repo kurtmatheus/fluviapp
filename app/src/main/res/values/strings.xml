@@ -173,6 +173,7 @@
     <string name="label_tema_escuro">Tema escuro</string>
     <string name="label_menu_empresa">Empresas</string>
     <string name="label_menu_flotilha">Flotilha</string>
+    <string name="label_menu_localidades">Localidades</string>
 
     <!-- Flotilha -->
     <string name="title_top_embarcacao">Flotilha</string>
@@ -187,6 +188,22 @@
     <string name="label_capacidade_suite3">Capacidade Suíte 3</string>
     <string name="label_capacidade_camarote">Capacidade Camarote</string>
     <string name="btn_nova_embarcacao">Nova Embarcação</string>
+
+    <!-- Localidade -->
+    <string name="title_top_localidade">Localidades</string>
+    <string name="subtitle_cadastrar_nova_localidade">Cadastrar Nova Localidade</string>
+    <string name="subtitle_pesquisar_localidades">Pesquisar Localidades</string>
+    <string name="subtitle_editar_localidade">Editar Localidade</string>
+    <string name="btn_nova_localidade">Nova Localidade</string>
+    <string name="btn_pesquisar_localidade">Pesquisar Localidade</string>
+    <string name="label_municipio">Município</string>
+    <string name="label_uf">UF</string>
+    <string name="label_codigo_ibge">Código IBGE</string>
+    <string name="error_codigo_ibge_invalido">Código de 7 dígitos, e os dois primeiros são os da UF.</string>
+    <string name="btn_buscar_no_ibge">Buscar no IBGE</string>
+    <string name="msg_consultando_ibge">Consultando…</string>
+    <string name="msg_ibge_nao_encontrado">O IBGE não conhece este código.</string>
+    <string name="msg_ibge_indisponivel">Não foi possível consultar agora — preencha à mão.</string>
 
     <!-- Empresa -->
     <string name="title_top_empresa">Empresas</string>
@@ -305,6 +322,7 @@
     <string name="msg_painel_sem_secao">Abra o menu para começar.</string>
     <string name="msg_empresa_salva">Empresa salva.</string>
     <string name="msg_embarcacao_salva">Embarcação salva.</string>
+    <string name="msg_localidade_salva">Localidade salva.</string>
     <string name="msg_carreg_usuarios">Carregando Usuários…</string>
     <string name="msg_carreg_info">Carregando Informações…</string>
     <string name="msg_salva_agent">Agente salvo com Sucesso.</string>

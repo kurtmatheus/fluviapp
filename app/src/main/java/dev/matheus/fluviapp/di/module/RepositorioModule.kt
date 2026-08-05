@@ -1,7 +1,11 @@
 package dev.matheus.fluviapp.di.module
 
+import dev.matheus.fluviapp.services.ibge.ConsultaMunicipioIbge
+import dev.matheus.fluviapp.services.ibge.ConsultaMunicipioIbgeHttp
 import dev.matheus.fluviapp.services.repository.cadastro.ConstanteFirestoreRepository
 import dev.matheus.fluviapp.services.repository.cadastro.ConstanteRepository
+import dev.matheus.fluviapp.services.repository.cadastro.localidade.LocalidadeFirestoreRepository
+import dev.matheus.fluviapp.services.repository.cadastro.localidade.LocalidadeRepository
 import dev.matheus.fluviapp.services.repository.operacoes.FuncionarioFirestoreRepository
 import dev.matheus.fluviapp.services.repository.operacoes.FuncionarioRepository
 import dev.matheus.fluviapp.services.repository.operacoes.SessaoUsuario
@@ -44,6 +48,20 @@ abstract class RepositorioModule {
     @Binds
     @Singleton
     abstract fun bindEmbarcacaoRepository(impl: EmbarcacaoFirestoreRepository): EmbarcacaoRepository
+
+    /** Capacidade da plataforma, na raiz (ADR-0016 §5). */
+    @Binds
+    @Singleton
+    abstract fun bindLocalidadeRepository(impl: LocalidadeFirestoreRepository): LocalidadeRepository
+
+    /**
+     * Preenchimento pelo IBGE — **porta de fora**, e a única do app. Fica ao lado dos repositórios porque
+     * o papel é o mesmo (buscar dado que não é nosso), mas o que ela devolve não é persistido por ela:
+     * quem grava é a `LocalidadeRepository`.
+     */
+    @Binds
+    @Singleton
+    abstract fun bindConsultaMunicipioIbge(impl: ConsultaMunicipioIbgeHttp): ConsultaMunicipioIbge
 
     /** Quem está operando: os dois contextos resolvidos num lugar só (ADR-0015 §8.1). */
     @Binds

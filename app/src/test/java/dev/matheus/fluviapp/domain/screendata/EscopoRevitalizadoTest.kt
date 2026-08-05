@@ -38,10 +38,14 @@ class EscopoRevitalizadoTest {
     // --- O escopo em si ---
 
     @Test
-    fun `estao revitalizadas a Empresa e a Flotilha`() {
-        assertEquals(setOf(SecaoMenu.EMPRESA, SecaoMenu.EMBARCACAO), SECOES_REVITALIZADAS)
+    fun `estao revitalizadas a Empresa, a Flotilha e a Localidade`() {
+        assertEquals(
+            setOf(SecaoMenu.EMPRESA, SecaoMenu.EMBARCACAO, SecaoMenu.LOCALIDADE),
+            SECOES_REVITALIZADAS,
+        )
         assertTrue(estaRevitalizada(SecaoMenu.EMPRESA))
         assertTrue(estaRevitalizada(SecaoMenu.EMBARCACAO))
+        assertTrue(estaRevitalizada(SecaoMenu.LOCALIDADE))
         assertFalse(estaRevitalizada(SecaoMenu.VIAGEM))
         assertFalse(estaRevitalizada(SecaoMenu.PASSAGEM))
         assertFalse(estaRevitalizada(SecaoMenu.EQUIPE))
@@ -49,11 +53,13 @@ class EscopoRevitalizadoTest {
 
     // --- O menu que o painel monta ---
 
-    /** A ordem é a de [SecaoMenu] — Empresa antes da Flotilha, que é a ordem de dependência do cadastro. */
+    /** A ordem é a de [SecaoMenu] — parte, ativos, capacidades: a ordem em que se consegue cadastrar. */
     @Test
-    fun `plataforma ve a Empresa e a Flotilha`() {
-        assertEquals(listOf(SecaoMenu.EMPRESA, SecaoMenu.EMBARCACAO), secoesDoMenu(adm))
-        assertEquals(listOf(SecaoMenu.EMPRESA, SecaoMenu.EMBARCACAO), secoesDoMenu(gestor))
+    fun `plataforma ve a Empresa, a Flotilha e a Localidade`() {
+        val esperado = listOf(SecaoMenu.EMPRESA, SecaoMenu.EMBARCACAO, SecaoMenu.LOCALIDADE)
+
+        assertEquals(esperado, secoesDoMenu(adm))
+        assertEquals(esperado, secoesDoMenu(gestor))
     }
 
     /**
