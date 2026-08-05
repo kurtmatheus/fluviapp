@@ -261,6 +261,8 @@
     <string name="error_carregar_contexto">Não foi possível carregar seus dados.</string>
     <string name="btn_tentar_novamente">Tentar novamente</string>
     <string name="label_atuacoes">Atuações</string>
+    <string name="label_concessoes">Embarcações que pode vender</string>
+    <string name="msg_sem_embarcacoes">Nenhuma embarcação cadastrada na Flotilha.</string>
     <string name="error_valor_invalido">Informe um valor maior que zero</string>
     <string name="error_emissao_sem_tarifa">Sem tarifa cadastrada para esta viagem. Cadastre a tarifa na viagem antes de emitir.</string>
     <string name="error_emissao_cota_gratuidade">Cota de gratuidade atingida nesta viagem para: %1$s (máx. 2 por categoria).</string>

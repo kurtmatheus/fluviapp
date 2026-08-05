@@ -8,7 +8,9 @@ import dev.matheus.fluviapp.R
 import dev.matheus.fluviapp.domain.operacoes.Atuacao
 import dev.matheus.fluviapp.domain.viagem.AtuacaoDaEmpresa
 import dev.matheus.fluviapp.domain.viagem.Empresa
+import dev.matheus.fluviapp.domain.viagem.de
 import dev.matheus.fluviapp.navigation.navcomposables.empresa.ID_EMPRESA_ARGUMENT
+import dev.matheus.fluviapp.services.repository.cadastro.viagem.EmbarcacaoRepository
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.EmpresaRepository
 import dev.matheus.fluviapp.ui.states.FormEmpresaUiState
 import dev.matheus.fluviapp.ui.viewmodel.helpers.empresa.validarEmpresa
@@ -26,10 +28,15 @@ import javax.inject.Inject
  * Cadastro/edição de empresa no molde refatorado (cadastro-modulos §7.2): VM dona do estado;
  * eventos são métodos (sem lambdas no state); validação pura; sucesso via evento one-shot
  * (consumido por LaunchedEffect na navegação). Sem Context, sem navegar-no-finally, sem runBlocking.
+ *
+ * Edita também a **concessão** (ADR-0016 §7.1): quais embarcações esta parte pode vender quando exerce
+ * `AGENCIAMENTO`. Por isso conhece o repositório de embarcações — não para cadastrá-las, mas para
+ * oferecer os candidatos.
  */
 @HiltViewModel
 class FormEmpresaViewModel @Inject constructor(
     private val empresaRepository: EmpresaRepository,
+    private val embarcacaoRepository: EmbarcacaoRepository,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
@@ -43,7 +50,16 @@ class FormEmpresaViewModel @Inject constructor(
     val sucesso = _sucesso.receiveAsFlow()
 
     init {
-        if (idEmpresa.isNotBlank()) carregar()
+        // Sequenciado numa corrotina só: a edição só faz sentido depois que a frota chegou, senão a
+        // concessão gravada apareceria como uma lista de ids sem nome ao lado.
+        viewModelScope.launch {
+            carregarFrota()
+            if (idEmpresa.isNotBlank()) carregar()
+        }
+    }
+
+    private suspend fun carregarFrota() {
+        _uiState.update { it.copy(embarcacoes = embarcacaoRepository.obterTodos()) }
     }
 
     fun onNomeChange(v: String) = _uiState.update { it.copy(nome = v, isNomeError = false) }
@@ -53,32 +69,56 @@ class FormEmpresaViewModel @Inject constructor(
     fun onTelefone1Change(v: String) = _uiState.update { it.copy(telefone1 = v) }
     fun onTelefone2Change(v: String) = _uiState.update { it.copy(telefone2 = v) }
 
-    /** Liga/desliga uma atuação. Marcar e desmarcar são o mesmo gesto: o conjunto muda nos dois sentidos. */
+    /**
+     * Liga/desliga uma atuação. Marcar e desmarcar são o mesmo gesto: o conjunto muda nos dois sentidos.
+     *
+     * Deixar de agenciar **apaga a concessão do estado**, e não por limpeza: salvar sem a atuação já
+     * apaga o documento inteiro (`salvarAtuacoes` remove o que não foi desejado), então guardar os ids
+     * seria manter na memória uma promessa que a próxima escrita desfaz. Mesma razão de o tipo da
+     * embarcação zerar a capacidade de veículo — o estado tem de ser igual ao que a pessoa vê.
+     */
     fun onAtuacaoToggle(atuacao: Atuacao) = _uiState.update { estado ->
         val atuacoes = if (atuacao in estado.atuacoes) {
             estado.atuacoes - atuacao
         } else {
             estado.atuacoes + atuacao
         }
-        estado.copy(atuacoes = atuacoes, isAtuacoesError = false)
+        estado.copy(
+            atuacoes = atuacoes,
+            isAtuacoesError = false,
+            embarcacoesConcedidas = if (Atuacao.AGENCIAMENTO in atuacoes) estado.embarcacoesConcedidas else emptySet(),
+        )
     }
 
-    private fun carregar() {
-        viewModelScope.launch {
-            empresaRepository.obterPorId(idEmpresa)?.let { empresa ->
-                val atuacoes = empresaRepository.obterAtuacoes(idEmpresa).map { it.atuacao }.toSet()
-                _uiState.update {
-                    it.copy(
-                        titulo = R.string.subtitle_editar_empresa,
-                        nome = empresa.nome,
-                        razaoSocial = empresa.razaoSocial,
-                        cnpj = empresa.cnpj.filter(Char::isDigit).take(14),
-                        endereco = empresa.endereco,
-                        telefone1 = empresa.telefone1,
-                        telefone2 = empresa.telefone2,
-                        atuacoes = atuacoes,
-                    )
-                }
+    /**
+     * Concede ou revoga **uma** embarcação. Revogar é o mesmo gesto que conceder, como nas atuações — e
+     * aqui isso importa mais: concessão é allow-list de segurança (ADR-0016 §7.1), e uma lista da qual
+     * não se consegue tirar nada não é uma lista de permissão, é um caminho de mão única.
+     */
+    fun onEmbarcacaoToggle(embarcacaoId: String) = _uiState.update { estado ->
+        val concedidas = if (embarcacaoId in estado.embarcacoesConcedidas) {
+            estado.embarcacoesConcedidas - embarcacaoId
+        } else {
+            estado.embarcacoesConcedidas + embarcacaoId
+        }
+        estado.copy(embarcacoesConcedidas = concedidas)
+    }
+
+    private suspend fun carregar() {
+        empresaRepository.obterPorId(idEmpresa)?.let { empresa ->
+            val atuacoesGravadas = empresaRepository.obterAtuacoes(idEmpresa)
+            _uiState.update {
+                it.copy(
+                    titulo = R.string.subtitle_editar_empresa,
+                    nome = empresa.nome,
+                    razaoSocial = empresa.razaoSocial,
+                    cnpj = empresa.cnpj.filter(Char::isDigit).take(14),
+                    endereco = empresa.endereco,
+                    telefone1 = empresa.telefone1,
+                    telefone2 = empresa.telefone2,
+                    atuacoes = atuacoesGravadas.map { gravada -> gravada.atuacao }.toSet(),
+                    embarcacoesConcedidas = atuacoesGravadas.de(Atuacao.AGENCIAMENTO)?.embarcacaoIds.orEmpty(),
+                )
             }
         }
     }
@@ -114,13 +154,19 @@ class FormEmpresaViewModel @Inject constructor(
                         telefone2 = s.telefone2,
                     )
                 )
-                // As concessões (embarcacaoIds) não são editadas aqui — o que este form decide é QUAIS
-                // atuações a parte exerce. Preservam-se as que já existem, para que salvar a empresa
-                // não apague concessão concedida noutro lugar.
-                val concessoes = empresaRepository.obterAtuacoes(id).associateBy { it.atuacao }
+                // A concessão do AGENCIAMENTO vem do estado — é o que esta tela agora edita. As demais
+                // atuações continuam sendo **preservadas** a partir do que está gravado: elas não têm
+                // editor, e salvar a empresa não pode apagar em silêncio o que este form não mostra.
+                val gravadas = empresaRepository.obterAtuacoes(id).associateBy { it.atuacao }
                 empresaRepository.salvarAtuacoes(
                     empresaId = id,
-                    atuacoes = s.atuacoes.map { concessoes[it] ?: AtuacaoDaEmpresa(it) },
+                    atuacoes = s.atuacoes.map { atuacao ->
+                        if (atuacao == Atuacao.AGENCIAMENTO) {
+                            AtuacaoDaEmpresa(atuacao, embarcacaoIds = s.embarcacoesConcedidas)
+                        } else {
+                            gravadas[atuacao] ?: AtuacaoDaEmpresa(atuacao)
+                        }
+                    },
                 )
                 _sucesso.send(Unit)
             } catch (e: Exception) {

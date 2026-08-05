@@ -33,6 +33,7 @@ fun FormEmpresaScreen(
     onTelefone1Change: (String) -> Unit = {},
     onTelefone2Change: (String) -> Unit = {},
     onAtuacaoToggle: (Atuacao) -> Unit = {},
+    onEmbarcacaoToggle: (String) -> Unit = {},
     onClickSalvar: () -> Unit = {},
     onClickVoltar: () -> Unit = {},
 ) {
@@ -64,6 +65,7 @@ fun FormEmpresaScreen(
                     onTelefone1Change = onTelefone1Change,
                     onTelefone2Change = onTelefone2Change,
                     onAtuacaoToggle = onAtuacaoToggle,
+                    onEmbarcacaoToggle = onEmbarcacaoToggle,
                 )
             }
             Column(

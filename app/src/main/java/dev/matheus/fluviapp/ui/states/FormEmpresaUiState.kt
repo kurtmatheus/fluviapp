@@ -2,6 +2,7 @@ package dev.matheus.fluviapp.ui.states
 
 import dev.matheus.fluviapp.R
 import dev.matheus.fluviapp.domain.operacoes.Atuacao
+import dev.matheus.fluviapp.domain.viagem.Embarcacao
 
 /**
  * Estado do formulário de empresa — puro (só dados + flags). Sem lambdas embutidas: os eventos são
@@ -25,5 +26,26 @@ data class FormEmpresaUiState(
      */
     val atuacoes: Set<Atuacao> = emptySet(),
     val isAtuacoesError: Boolean = false,
+
+    /**
+     * Toda a frota da plataforma — os **candidatos** à concessão. Concede-se a embarcação, e não o
+     * armador (ADR-0016 §7, 7ª rodada), então quem lista aqui não é a frota da própria parte: é a de
+     * todo mundo, porque agenciar é vender o que é dos outros.
+     */
+    val embarcacoes: List<Embarcacao> = emptyList(),
+
+    /** Ids concedidos à atuação de agenciamento desta parte (`atuacoes/AGENCIAMENTO.embarcacaoIds`). */
+    val embarcacoesConcedidas: Set<String> = emptySet(),
+
     val isProcessing: Boolean = false,
-)
+) {
+
+    /**
+     * Se o formulário deve **perguntar** a concessão. Concessão é da atuação de agenciamento — pedi-la a
+     * quem não agencia seria perguntar quem esta parte representa quando ela não representa ninguém.
+     *
+     * Mesmo gesto do tipo da embarcação escondendo a capacidade de veículo: a pergunta que não se aplica
+     * não fica cinza, **não existe**.
+     */
+    val concedeEmbarcacoes: Boolean get() = Atuacao.AGENCIAMENTO in atuacoes
+}

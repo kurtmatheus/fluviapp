@@ -10,6 +10,8 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import dev.matheus.fluviapp.R
 import dev.matheus.fluviapp.domain.operacoes.Atuacao
+import dev.matheus.fluviapp.domain.viagem.Embarcacao
+import dev.matheus.fluviapp.domain.viagem.TipoEmbarcacao
 import dev.matheus.fluviapp.ui.states.FormEmpresaUiState
 import dev.matheus.fluviapp.ui.theme.FluviAppTheme
 import org.junit.Assert.assertEquals
@@ -38,13 +40,28 @@ class FormEmpresaScreenTest {
     private fun montarTela(
         uiState: FormEmpresaUiState = FormEmpresaUiState(),
         onAtuacaoToggle: (Atuacao) -> Unit = {},
+        onEmbarcacaoToggle: (String) -> Unit = {},
     ) {
         composeTestRule.setContent {
             FluviAppTheme {
-                FormEmpresaScreen(uiState = uiState, onAtuacaoToggle = onAtuacaoToggle)
+                FormEmpresaScreen(
+                    uiState = uiState,
+                    onAtuacaoToggle = onAtuacaoToggle,
+                    onEmbarcacaoToggle = onEmbarcacaoToggle,
+                )
             }
         }
     }
+
+    private val frota = listOf(
+        Embarcacao("n1", "F/B UM", TipoEmbarcacao.FERRY_BOAT, 10, 2, 2, 2, "outra"),
+        Embarcacao("n2", "LANCHA DOIS", TipoEmbarcacao.LANCHA, 0, 1, 1, 1, "outra"),
+    )
+
+    private fun agenciando() = FormEmpresaUiState(
+        atuacoes = setOf(Atuacao.AGENCIAMENTO),
+        embarcacoes = frota,
+    )
 
     /**
      * A linha de uma atuação, encontrada pelo próprio rótulo.
@@ -92,5 +109,58 @@ class FormEmpresaScreenTest {
         montarTela(FormEmpresaUiState(isAtuacoesError = true))
 
         composeTestRule.onNodeWithText(texto(R.string.error_selecione_opcao)).performScrollTo().assertIsDisplayed()
+    }
+
+    // --- Concessão (ADR-0016 §7.1): a área que só existe para quem agencia ---
+
+    /**
+     * Perguntar o que a parte pode vender antes de ela dizer que agencia é perguntar quem ela representa
+     * quando ela não representa ninguém. A área **não existe** — não fica desabilitada.
+     */
+    @Test
+    fun formEmpresa_semAgenciamento_naoPerguntaConcessao() {
+        montarTela(FormEmpresaUiState(embarcacoes = frota))
+
+        composeTestRule.onNodeWithText(texto(R.string.label_concessoes)).assertDoesNotExist()
+        composeTestRule.onNodeWithText(frota.first().descricaoNome).assertDoesNotExist()
+    }
+
+    /** Marcada a atuação, a área aparece com a frota **inteira** — agenciar é vender o que é dos outros. */
+    @Test
+    fun formEmpresa_comAgenciamento_ofereceAFrotaInteira() {
+        montarTela(agenciando())
+
+        composeTestRule.onNodeWithText(texto(R.string.label_concessoes)).performScrollTo().assertIsDisplayed()
+        frota.forEach {
+            composeTestRule
+                .onNodeWithText("${it.descricaoNome} · ${it.tipo.rotulo}")
+                .performScrollTo()
+                .assertIsDisplayed()
+        }
+    }
+
+    /** O toque avisa **qual** embarcação, por id — o estado é do ViewModel, não da tela. */
+    @Test
+    fun formEmpresa_aoTocarNaEmbarcacao_avisaQual() {
+        val concedidas = mutableListOf<String>()
+        montarTela(agenciando(), onEmbarcacaoToggle = { concedidas += it })
+
+        composeTestRule
+            .onNodeWithText("${frota[1].descricaoNome} · ${frota[1].tipo.rotulo}")
+            .performScrollTo()
+            .performClick()
+
+        assertEquals(listOf("n2"), concedidas)
+    }
+
+    /**
+     * Frota vazia: a área explica o que falta em vez de ficar em branco. Quem chegou aqui esperando
+     * escolher precisa saber que o caminho é cadastrar embarcação, não procurar um botão escondido.
+     */
+    @Test
+    fun formEmpresa_comAgenciamentoESemFrota_dizOQueFalta() {
+        montarTela(FormEmpresaUiState(atuacoes = setOf(Atuacao.AGENCIAMENTO)))
+
+        composeTestRule.onNodeWithText(texto(R.string.msg_sem_embarcacoes)).performScrollTo().assertIsDisplayed()
     }
 }

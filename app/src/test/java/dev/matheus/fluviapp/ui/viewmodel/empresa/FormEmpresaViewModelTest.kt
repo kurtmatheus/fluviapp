@@ -1,10 +1,13 @@
 package dev.matheus.fluviapp.ui.viewmodel.empresa
 
 import androidx.lifecycle.SavedStateHandle
+import dev.matheus.fluviapp.fakes.FakeEmbarcacaoRepository
 import dev.matheus.fluviapp.fakes.FakeEmpresaRepository
 import dev.matheus.fluviapp.domain.operacoes.Atuacao
 import dev.matheus.fluviapp.domain.viagem.AtuacaoDaEmpresa
+import dev.matheus.fluviapp.domain.viagem.Embarcacao
 import dev.matheus.fluviapp.domain.viagem.Empresa
+import dev.matheus.fluviapp.domain.viagem.TipoEmbarcacao
 import dev.matheus.fluviapp.util.MainDispatcherRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.toList
@@ -26,7 +29,7 @@ class FormEmpresaViewModelTest {
     @Test
     fun `salvar invalido marca erros e nao persiste`() = runTest(mainRule.dispatcher) {
         val fake = FakeEmpresaRepository()
-        val vm = FormEmpresaViewModel(fake, SavedStateHandle())
+        val vm = viewModel(fake)
 
         vm.salvar()
         advanceUntilIdle()
@@ -41,7 +44,7 @@ class FormEmpresaViewModelTest {
     @Test
     fun `salvar valido persiste cnpj em digitos e emite sucesso`() = runTest(mainRule.dispatcher) {
         val fake = FakeEmpresaRepository()
-        val vm = FormEmpresaViewModel(fake, SavedStateHandle())
+        val vm = viewModel(fake)
         val eventos = mutableListOf<Unit>()
         val job = launch { vm.sucesso.toList(eventos) }
 
@@ -61,7 +64,7 @@ class FormEmpresaViewModelTest {
     @Test
     fun `falha ao salvar nao emite sucesso e libera processamento`() = runTest(mainRule.dispatcher) {
         val fake = FakeEmpresaRepository().apply { falharAoSalvar = true }
-        val vm = FormEmpresaViewModel(fake, SavedStateHandle())
+        val vm = viewModel(fake)
         val eventos = mutableListOf<Unit>()
         val job = launch { vm.sucesso.toList(eventos) }
 
@@ -81,7 +84,7 @@ class FormEmpresaViewModelTest {
         val fake = FakeEmpresaRepository().apply {
             empresas = listOf(Empresa("e1", "ACME", "ACME LTDA", "11222333000181", "Rua 1", "111", "222"))
         }
-        val vm = FormEmpresaViewModel(fake, SavedStateHandle(mapOf("idEmpresa" to "e1")))
+        val vm = viewModel(fake, idEmpresa = "e1")
         advanceUntilIdle()
 
         val s = vm.uiState.value
@@ -95,7 +98,7 @@ class FormEmpresaViewModelTest {
     @Test
     fun `atuacao marcada e salva na subcolecao, pendurada no id gerado`() = runTest(mainRule.dispatcher) {
         val fake = FakeEmpresaRepository()
-        val vm = FormEmpresaViewModel(fake, SavedStateHandle())
+        val vm = viewModel(fake)
 
         preencherObrigatorios(vm)
         vm.onAtuacaoToggle(Atuacao.AGENCIAMENTO)
@@ -111,7 +114,7 @@ class FormEmpresaViewModelTest {
 
     @Test
     fun `o toggle liga e desliga — desmarcar deixa a parte sem aquela atuacao`() {
-        val vm = FormEmpresaViewModel(FakeEmpresaRepository(), SavedStateHandle())
+        val vm = viewModel(FakeEmpresaRepository())
 
         vm.onAtuacaoToggle(Atuacao.TRANSPORTE)
         assertEquals(setOf(Atuacao.TRANSPORTE), vm.uiState.value.atuacoes)
@@ -122,7 +125,7 @@ class FormEmpresaViewModelTest {
 
     @Test
     fun `uma parte exerce varias atuacoes ao mesmo tempo`() {
-        val vm = FormEmpresaViewModel(FakeEmpresaRepository(), SavedStateHandle())
+        val vm = viewModel(FakeEmpresaRepository())
 
         vm.onAtuacaoToggle(Atuacao.AGENCIAMENTO)
         vm.onAtuacaoToggle(Atuacao.TRANSPORTE)
@@ -130,17 +133,26 @@ class FormEmpresaViewModelTest {
         assertEquals(setOf(Atuacao.AGENCIAMENTO, Atuacao.TRANSPORTE), vm.uiState.value.atuacoes)
     }
 
+    // --- Concessão: o que esta parte pode vender (ADR-0016 §7.1) ---
+
+    /**
+     * Editar a empresa sem tocar na concessão não pode apagá-la. Antes isto se garantia **preservando** o
+     * que estava gravado (o form não editava concessão); agora se garante por **ida e volta**: a edição
+     * carrega os ids para o estado e o salvar devolve os mesmos. O resultado é o mesmo, o caminho não —
+     * e é o caminho que este teste vigia, porque é ele que pode quebrar.
+     */
     @Test
-    fun `salvar preserva a concessao ja concedida em vez de zera-la`() = runTest(mainRule.dispatcher) {
-        // O form decide QUAIS atuações a parte exerce, não os embarcacoes concedidos. Salvar a empresa não
-        // pode apagar concessão feita noutro lugar.
+    fun `editar a empresa sem mexer na concessao devolve os mesmos ids`() = runTest(mainRule.dispatcher) {
         val fake = FakeEmpresaRepository()
         fake.empresas = listOf(empresaValida("e1"))
         fake.atuacoesPorEmpresa["e1"] =
             listOf(AtuacaoDaEmpresa(Atuacao.AGENCIAMENTO, embarcacaoIds = setOf("embarcacao-7")))
-        val vm = FormEmpresaViewModel(fake, SavedStateHandle(mapOf("idEmpresa" to "e1")))
+        val vm = viewModel(fake, frota = listOf(embarcacao("embarcacao-7", "F/B SETE")), idEmpresa = "e1")
         advanceUntilIdle()
 
+        assertEquals(setOf("embarcacao-7"), vm.uiState.value.embarcacoesConcedidas)
+
+        vm.onNomeChange("OUTRO NOME")
         vm.salvar()
         advanceUntilIdle()
 
@@ -150,12 +162,114 @@ class FormEmpresaViewModelTest {
         )
     }
 
+    /** A frota inteira é candidata: agenciar é vender o que é dos outros (7ª rodada do §7). */
+    @Test
+    fun `o formulario oferece toda a frota, e nao so a da propria parte`() = runTest(mainRule.dispatcher) {
+        val vm = viewModel(
+            FakeEmpresaRepository(),
+            frota = listOf(embarcacao("n1", "F/B UM"), embarcacao("n2", "F/B DOIS")),
+        )
+        advanceUntilIdle()
+
+        assertEquals(listOf("n1", "n2"), vm.uiState.value.embarcacoes.map { it.id })
+    }
+
+    @Test
+    fun `conceder e revogar sao o mesmo gesto`() = runTest(mainRule.dispatcher) {
+        val vm = viewModel(FakeEmpresaRepository(), frota = listOf(embarcacao("n1", "F/B UM")))
+        advanceUntilIdle()
+
+        vm.onEmbarcacaoToggle("n1")
+        assertEquals(setOf("n1"), vm.uiState.value.embarcacoesConcedidas)
+
+        vm.onEmbarcacaoToggle("n1")
+        assertTrue(vm.uiState.value.embarcacoesConcedidas.isEmpty())
+    }
+
+    @Test
+    fun `a concessao escolhida e gravada na atuacao de agenciamento`() = runTest(mainRule.dispatcher) {
+        val fake = FakeEmpresaRepository()
+        val vm = viewModel(fake, frota = listOf(embarcacao("n1", "F/B UM"), embarcacao("n2", "F/B DOIS")))
+        advanceUntilIdle()
+
+        preencherObrigatorios(vm)
+        vm.onAtuacaoToggle(Atuacao.AGENCIAMENTO)
+        vm.onEmbarcacaoToggle("n2")
+        vm.salvar()
+        advanceUntilIdle()
+
+        val id = fake.salvos.single().id.ifBlank { "id-gerado-1" }
+        assertEquals(
+            listOf(AtuacaoDaEmpresa(Atuacao.AGENCIAMENTO, embarcacaoIds = setOf("n2"))),
+            fake.atuacoesPorEmpresa[id],
+        )
+    }
+
+    /**
+     * Revogar tem de chegar ao Firestore. Se o salvar apenas acrescentasse — preservando o gravado como
+     * antes —, tirar a marca da tela não tiraria a permissão: a agência continuaria podendo vender.
+     */
+    @Test
+    fun `revogar na tela apaga a concessao gravada`() = runTest(mainRule.dispatcher) {
+        val fake = FakeEmpresaRepository()
+        fake.empresas = listOf(empresaValida("e1"))
+        fake.atuacoesPorEmpresa["e1"] =
+            listOf(AtuacaoDaEmpresa(Atuacao.AGENCIAMENTO, embarcacaoIds = setOf("n1", "n2")))
+        val vm = viewModel(
+            fake,
+            frota = listOf(embarcacao("n1", "F/B UM"), embarcacao("n2", "F/B DOIS")),
+            idEmpresa = "e1",
+        )
+        advanceUntilIdle()
+
+        vm.onEmbarcacaoToggle("n1")
+        vm.salvar()
+        advanceUntilIdle()
+
+        assertEquals(setOf("n2"), fake.atuacoesPorEmpresa["e1"]?.single()?.embarcacaoIds)
+    }
+
+    /** Deixar de agenciar leva a concessão junto: a permissão não sobrevive à atuação que a justificava. */
+    @Test
+    fun `desmarcar agenciamento limpa a concessao do estado`() = runTest(mainRule.dispatcher) {
+        val vm = viewModel(FakeEmpresaRepository(), frota = listOf(embarcacao("n1", "F/B UM")))
+        advanceUntilIdle()
+
+        vm.onAtuacaoToggle(Atuacao.AGENCIAMENTO)
+        vm.onEmbarcacaoToggle("n1")
+        assertTrue(vm.uiState.value.concedeEmbarcacoes)
+
+        vm.onAtuacaoToggle(Atuacao.AGENCIAMENTO)
+
+        assertFalse(vm.uiState.value.concedeEmbarcacoes)
+        assertTrue(vm.uiState.value.embarcacoesConcedidas.isEmpty())
+    }
+
+    /**
+     * A atuação sem editor continua **preservada**: `TRANSPORTE` não tem tela de concessão, e salvar a
+     * empresa não pode apagar em silêncio o que o formulário não mostra.
+     */
+    @Test
+    fun `atuacao sem editor conserva o que estava gravado`() = runTest(mainRule.dispatcher) {
+        val fake = FakeEmpresaRepository()
+        fake.empresas = listOf(empresaValida("e1"))
+        fake.atuacoesPorEmpresa["e1"] =
+            listOf(AtuacaoDaEmpresa(Atuacao.TRANSPORTE, embarcacaoIds = setOf("herdada")))
+        val vm = viewModel(fake, idEmpresa = "e1")
+        advanceUntilIdle()
+
+        vm.salvar()
+        advanceUntilIdle()
+
+        assertEquals(setOf("herdada"), fake.atuacoesPorEmpresa["e1"]?.single()?.embarcacaoIds)
+    }
+
     @Test
     fun `edicao carrega as atuacoes ja gravadas`() = runTest(mainRule.dispatcher) {
         val fake = FakeEmpresaRepository()
         fake.empresas = listOf(empresaValida("e1"))
         fake.atuacoesPorEmpresa["e1"] = listOf(AtuacaoDaEmpresa(Atuacao.TRANSPORTE))
-        val vm = FormEmpresaViewModel(fake, SavedStateHandle(mapOf("idEmpresa" to "e1")))
+        val vm = viewModel(fake, idEmpresa = "e1")
 
         advanceUntilIdle()
 
@@ -168,7 +282,7 @@ class FormEmpresaViewModelTest {
             // Domínio §3.1: a empresa não tem campo de segmento nem de tipo. Sem atuação ela não pode
             // ser escolhida em lugar nenhum — não tem cargo, não abre seção, não recebe concessão.
             val fake = FakeEmpresaRepository()
-            val vm = FormEmpresaViewModel(fake, SavedStateHandle())
+            val vm = viewModel(fake)
 
             preencherObrigatorios(vm)
             vm.salvar()
@@ -177,6 +291,24 @@ class FormEmpresaViewModelTest {
             assertTrue(vm.uiState.value.isAtuacoesError)
             assertTrue(fake.salvos.isEmpty())
         }
+
+    /**
+     * O VM conhece dois repositórios: a Empresa que ele cadastra e a **frota**, que ele só lê para
+     * oferecer os candidatos à concessão (ADR-0016 §7.1). Frota vazia é o caso comum aqui — quem não
+     * testa concessão não precisa declarar embarcação nenhuma.
+     */
+    private fun viewModel(
+        empresaFake: FakeEmpresaRepository,
+        frota: List<Embarcacao> = emptyList(),
+        idEmpresa: String? = null,
+    ) = FormEmpresaViewModel(
+        empresaFake,
+        FakeEmbarcacaoRepository().apply { embarcacoes = frota },
+        if (idEmpresa == null) SavedStateHandle() else SavedStateHandle(mapOf("idEmpresa" to idEmpresa)),
+    )
+
+    private fun embarcacao(id: String, nome: String) =
+        Embarcacao(id, nome, TipoEmbarcacao.FERRY_BOAT, 10, 2, 2, 2, "outra-empresa")
 
     private fun preencherObrigatorios(vm: FormEmpresaViewModel) {
         vm.onNomeChange("EMPRESA MODELO")

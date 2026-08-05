@@ -21,6 +21,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import dev.matheus.fluviapp.R
 import dev.matheus.fluviapp.domain.operacoes.Atuacao
+import dev.matheus.fluviapp.domain.viagem.Embarcacao
 import dev.matheus.fluviapp.ui.components.forms.fields.FormTextFieldBrownNoIcon
 import dev.matheus.fluviapp.ui.states.FormEmpresaUiState
 import dev.matheus.fluviapp.util.visualtransformation.CnpjVisualTransformation
@@ -36,6 +37,7 @@ fun ContentEmpresaAreaForm(
     onTelefone1Change: (String) -> Unit,
     onTelefone2Change: (String) -> Unit,
     onAtuacaoToggle: (Atuacao) -> Unit = {},
+    onEmbarcacaoToggle: (String) -> Unit = {},
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -117,6 +119,16 @@ fun ContentEmpresaAreaForm(
             isError = state.isAtuacoesError,
             onAtuacaoToggle = onAtuacaoToggle,
         )
+
+        // A concessão só existe para quem agencia — e por isso vem DEPOIS das atuações: é a resposta a
+        // uma pergunta que a de cima acabou de fazer.
+        if (state.concedeEmbarcacoes) {
+            AreaConcessoes(
+                embarcacoes = state.embarcacoes,
+                concedidas = state.embarcacoesConcedidas,
+                onEmbarcacaoToggle = onEmbarcacaoToggle,
+            )
+        }
     }
 }
 
@@ -171,6 +183,64 @@ private fun AreaAtuacoes(
                 )
                 Text(
                     text = atuacao.rotulo,
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+            }
+        }
+    }
+}
+
+/**
+ * **O que esta parte pode vender** (ADR-0016 §7.1). A lista é a frota inteira da plataforma, porque
+ * agenciar é vender o que é dos outros — concede-se a **embarcação**, não o armador (7ª rodada), e foi
+ * essa mudança que tornou a checagem direta: `concedeu(id)`, sem ir perguntar de quem é o navio.
+ *
+ * **Não marcar nada é uma resposta legítima**, e por isso não há validação aqui: frota nova nasce
+ * não-concedida, que é o fail-closed assumido no ADR — a agência que ainda não representa ninguém é um
+ * estado normal do cadastro, não um formulário pela metade.
+ *
+ * Mesmo `toggleable` no `Row` das atuações, e pelo mesmo motivo: funde caixa e rótulo num nó só, para o
+ * leitor de tela anunciar *qual* embarcação em vez de "caixa de seleção, não marcada" repetida.
+ */
+@Composable
+private fun AreaConcessoes(
+    embarcacoes: List<Embarcacao>,
+    concedidas: Set<String>,
+    onEmbarcacaoToggle: (String) -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(
+            text = stringResource(R.string.label_concessoes),
+            style = MaterialTheme.typography.titleSmall,
+        )
+
+        if (embarcacoes.isEmpty()) {
+            // Sem frota cadastrada a área ficaria em branco, e branco não explica nada: quem chegou aqui
+            // esperando escolher precisa saber que o que falta é cadastrar embarcação, não achar o botão.
+            Text(
+                text = stringResource(R.string.msg_sem_embarcacoes),
+                style = MaterialTheme.typography.bodySmall,
+            )
+            return@Column
+        }
+
+        embarcacoes.forEach { embarcacao ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .toggleable(
+                        value = embarcacao.id in concedidas,
+                        role = Role.Checkbox,
+                        onValueChange = { onEmbarcacaoToggle(embarcacao.id) },
+                    ),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Checkbox(
+                    checked = embarcacao.id in concedidas,
+                    onCheckedChange = null,
+                )
+                Text(
+                    text = "${embarcacao.descricaoNome} · ${embarcacao.tipo.rotulo}",
                     style = MaterialTheme.typography.bodyMedium,
                 )
             }
