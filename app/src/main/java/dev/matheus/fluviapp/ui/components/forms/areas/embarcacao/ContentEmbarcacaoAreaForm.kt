@@ -11,6 +11,7 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import dev.matheus.fluviapp.R
+import dev.matheus.fluviapp.domain.viagem.TipoEmbarcacao
 import dev.matheus.fluviapp.ui.components.forms.dropdowns.DropDownFormField
 import dev.matheus.fluviapp.ui.components.forms.fields.FormTextFieldBrownNoIcon
 import dev.matheus.fluviapp.ui.states.FormEmbarcacaoUiState
@@ -20,6 +21,7 @@ fun ContentEmbarcacaoAreaForm(
     modifier: Modifier,
     state: FormEmbarcacaoUiState,
     onNomeChange: (String) -> Unit,
+    onTipoChange: (String) -> Unit,
     onEmpresaChange: (String) -> Unit,
     onCapacidadeVeiculoChange: (String) -> Unit,
     onCapacidadeSuite2Change: (String) -> Unit,
@@ -42,7 +44,18 @@ fun ContentEmbarcacaoAreaForm(
             ),
         )
 
-        // Vínculo N-1: embarcacao pertence a uma empresa (por nome).
+        // O que ela é, antes de quanto ela leva: é o tipo que decide se a próxima pergunta existe.
+        // A tela não conhece o enum — mostra rótulos e devolve o rótulo escolhido; traduzir é do VM.
+        DropDownFormField(
+            listaItens = TipoEmbarcacao.entries.map { it.rotulo },
+            label = R.string.label_tipo_embarcacao,
+            modifier = modifier.fillMaxWidth(),
+            value = state.tipo?.rotulo.orEmpty(),
+            onValueChange = onTipoChange,
+            isError = state.isTipoError,
+        )
+
+        // Vínculo N-1: a embarcação pertence a uma empresa (por nome).
         DropDownFormField(
             listaItens = state.listaEmpresas.map { it.nome },
             label = R.string.label_empresa,
@@ -52,13 +65,18 @@ fun ContentEmbarcacaoAreaForm(
             isError = state.isEmpresaError,
         )
 
-        FormTextFieldBrownNoIcon(
-            modifier = modifier.fillMaxWidth(),
-            value = state.capacidadeVeiculo,
-            label = R.string.label_capacidade_veiculo,
-            onValueChange = onCapacidadeVeiculoChange,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
-        )
+        // A pergunta só existe para quem leva veículo (ADR-0016 §8). Some para a lancha em vez de aparecer
+        // desabilitada: campo cinza diz "aqui vai um número que você não pode dar"; ausência diz a
+        // verdade — esta embarcação não tem essa medida.
+        if (state.perguntaCapacidadeVeiculo) {
+            FormTextFieldBrownNoIcon(
+                modifier = modifier.fillMaxWidth(),
+                value = state.capacidadeVeiculo,
+                label = R.string.label_capacidade_veiculo,
+                onValueChange = onCapacidadeVeiculoChange,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
+            )
+        }
 
         FormTextFieldBrownNoIcon(
             modifier = modifier.fillMaxWidth(),

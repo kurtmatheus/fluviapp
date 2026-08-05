@@ -36,7 +36,7 @@ data class Funcionario(
 
     /**
      * O eixo **aberto** da autorização (ADR-0015, revisão estrutural): hoje supervisor e agente, amanhã
-     * quem faz check-in, quem valida embarque, quem responde por um embarcacao. Cresce sem tocar no
+     * quem faz check-in, quem valida embarque, quem responde por uma embarcação. Cresce sem tocar no
      * [Usuario.Papel], que é fechado por natureza.
      *
      * Sem default na fronteira, de propósito: cargo desconhecido → sem permissão (fail-closed, ADR-0010).

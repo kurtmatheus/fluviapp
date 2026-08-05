@@ -11,6 +11,7 @@ import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Categoria.MUNIC
 import dev.matheus.fluviapp.domain.mappers.ViagemDadosViagemMapper
 import dev.matheus.fluviapp.domain.viagem.Empresa
 import dev.matheus.fluviapp.domain.viagem.Embarcacao
+import dev.matheus.fluviapp.domain.viagem.TipoEmbarcacao
 import dev.matheus.fluviapp.domain.viagem.Viagem
 import dev.matheus.fluviapp.util.MainDispatcherRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -35,7 +36,7 @@ class PesquisarViagemViewModelTest {
         empresas = listOf(Empresa("e1", "ACME", "ACME LTDA", "1", "end", "1", "2"))
     }
     private val fakeEmbarcacao = FakeEmbarcacaoRepository().apply {
-        embarcacoes = listOf(Embarcacao("n1", "F/B", 10, 2, 2, 2, "e1"))
+        embarcacoes = listOf(Embarcacao("n1", "F/B", TipoEmbarcacao.FERRY_BOAT, 10, 2, 2, 2, "e1"))
     }
     private val fakeConstante = FakeConstanteRepository().apply {
         constantes = listOf(

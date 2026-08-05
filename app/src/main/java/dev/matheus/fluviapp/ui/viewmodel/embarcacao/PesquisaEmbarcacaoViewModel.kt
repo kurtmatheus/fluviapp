@@ -82,6 +82,7 @@ class PesquisaEmbarcacaoViewModel @Inject constructor(
                 EmbarcacaoResultado(
                     id = embarcacao.id,
                     nome = embarcacao.descricaoNome,
+                    tipo = embarcacao.tipo.rotulo,
                     empresaNome = empresas.find { it.id == embarcacao.empresaId }?.nome.orEmpty(),
                 )
             }

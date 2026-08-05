@@ -174,13 +174,14 @@
     <string name="label_menu_empresa">Empresas</string>
     <string name="label_menu_flotilha">Flotilha</string>
 
-    <!-- Navio -->
+    <!-- Flotilha -->
     <string name="title_top_embarcacao">Flotilha</string>
     <string name="subtitle_cadastrar_nova_embarcacao">Cadastrar Nova Embarcação</string>
     <string name="subtitle_pesquisar_embarcacoes">Pesquisar Embarcações</string>
     <string name="btn_pesquisar_embarcacao">Pesquisar Embarcação</string>
     <string name="subtitle_editar_embarcacao">Editar Embarcação</string>
     <string name="label_nome_embarcacao">Nome</string>
+    <string name="label_tipo_embarcacao">Tipo</string>
     <string name="label_capacidade_veiculo">Capacidade de Veículos</string>
     <string name="label_capacidade_suite2">Capacidade Suíte 2</string>
     <string name="label_capacidade_suite3">Capacidade Suíte 3</string>
@@ -301,6 +302,7 @@
     <string name="msg_sincronizacao_offline">Sem conexão — mostrando dados salvos.</string>
     <string name="msg_painel_sem_secao">Abra o menu para começar.</string>
     <string name="msg_empresa_salva">Empresa salva.</string>
+    <string name="msg_embarcacao_salva">Embarcação salva.</string>
     <string name="msg_carreg_usuarios">Carregando Usuários…</string>
     <string name="msg_carreg_info">Carregando Informações…</string>
     <string name="msg_salva_agent">Agente salvo com Sucesso.</string>

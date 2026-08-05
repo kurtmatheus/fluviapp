@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.matheus.fluviapp.R
 import dev.matheus.fluviapp.domain.viagem.Embarcacao
+import dev.matheus.fluviapp.domain.viagem.TipoEmbarcacao
 import dev.matheus.fluviapp.navigation.navcomposables.embarcacao.ID_EMBARCACAO_ARGUMENT
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.EmpresaRepository
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.EmbarcacaoRepository
@@ -22,10 +23,13 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
- * Cadastro/edição de embarcacao no molde refatorado (cadastro-modulos §7.2): VM dona do estado; eventos
+ * Cadastro/edição de embarcação no molde refatorado (cadastro-modulos §7.2): VM dona do estado; eventos
  * são métodos; validação pura; sucesso via evento one-shot; cargas suspensas (sem runBlocking); arg
  * de rota opcional; sem Context. Vínculo N-1 com Empresa por id (ADR-0008): o dropdown seleciona o
  * nome, mas o `salvar` resolve e persiste o `empresaId`; a edição resolve o nome de volta do id.
+ *
+ * O **tipo** entra pelo rótulo (é o que o dropdown devolve) e sai como tipo de domínio: quem traduz é
+ * `TipoEmbarcacao.porRotulo`, não a tela. E trocar de tipo tem consequência de estado — ver [onTipoChange].
  */
 @HiltViewModel
 class FormEmbarcacaoViewModel @Inject constructor(
@@ -58,6 +62,22 @@ class FormEmbarcacaoViewModel @Inject constructor(
 
     fun onNomeChange(v: String) = _uiState.update { it.copy(nome = v, isNomeError = false) }
     fun onEmpresaChange(v: String) = _uiState.update { it.copy(empresa = v, isEmpresaError = false) }
+
+    /**
+     * Escolher o tipo pode **apagar** a capacidade de veículos, e isso é deliberado: quem digitou 12 vagas
+     * e depois marcou "Lancha" não tem mais onde pôr as 12: o campo some da tela. Mantê-lo no estado
+     * gravaria, invisível, uma lancha que leva carro — a contradição sobreviveria à interface que a
+     * escondeu. Zerar é a única saída que deixa o estado igual ao que a pessoa vê.
+     */
+    fun onTipoChange(rotulo: String) = _uiState.update {
+        val tipo = TipoEmbarcacao.porRotulo(rotulo)
+        it.copy(
+            tipo = tipo,
+            isTipoError = false,
+            capacidadeVeiculo = if (tipo?.levaVeiculo == true) it.capacidadeVeiculo else "",
+        )
+    }
+
     fun onCapacidadeVeiculoChange(v: String) = _uiState.update { it.copy(capacidadeVeiculo = v.filter(Char::isDigit)) }
     fun onCapacidadeSuite2Change(v: String) = _uiState.update { it.copy(capacidadeSuite2 = v.filter(Char::isDigit)) }
     fun onCapacidadeSuite3Change(v: String) = _uiState.update { it.copy(capacidadeSuite3 = v.filter(Char::isDigit)) }
@@ -65,13 +85,14 @@ class FormEmbarcacaoViewModel @Inject constructor(
 
     private suspend fun carregar() {
         embarcacaoRepository.obterPorId(idEmbarcacao)?.let { embarcacao ->
-            // Nome exibido no dropdown resolvido do empresaId (o embarcacao não guarda mais o nome).
+            // Nome exibido no dropdown resolvido do empresaId (a embarcação não guarda mais o nome).
             val nomeEmpresa = _uiState.value.listaEmpresas.firstOrNull { it.id == embarcacao.empresaId }?.nome.orEmpty()
             _uiState.update {
                 it.copy(
                     titulo = R.string.subtitle_editar_embarcacao,
                     nome = embarcacao.descricaoNome,
                     empresa = nomeEmpresa,
+                    tipo = embarcacao.tipo,
                     capacidadeVeiculo = embarcacao.capacidadeVeiculo.toString(),
                     capacidadeSuite2 = embarcacao.capacidadeSuite2.toString(),
                     capacidadeSuite3 = embarcacao.capacidadeSuite3.toString(),
@@ -82,9 +103,15 @@ class FormEmbarcacaoViewModel @Inject constructor(
     }
 
     fun salvar() {
-        val erros = validarEmbarcacao(_uiState.value)
-        if (!erros.valido) {
-            _uiState.update { it.copy(isNomeError = erros.nome, isEmpresaError = erros.empresa) }
+        val estado = _uiState.value
+        val erros = validarEmbarcacao(estado)
+        // `tipo == null` é redundante com `erros.tipo` — e está aqui de propósito: é o compilador, e não
+        // um comentário, que garante que nenhuma embarcação sem tipo chegue ao domínio.
+        val tipo = estado.tipo
+        if (!erros.valido || tipo == null) {
+            _uiState.update {
+                it.copy(isNomeError = erros.nome, isEmpresaError = erros.empresa, isTipoError = erros.tipo)
+            }
             return
         }
 
@@ -99,6 +126,7 @@ class FormEmbarcacaoViewModel @Inject constructor(
                     Embarcacao(
                         id = idEmbarcacao, // "" na criação → auto-id no repo
                         descricaoNome = s.nome,
+                        tipo = tipo,
                         capacidadeVeiculo = s.capacidadeVeiculo.toIntOrNull() ?: 0,
                         capacidadeSuite2 = s.capacidadeSuite2.toIntOrNull() ?: 0,
                         capacidadeSuite3 = s.capacidadeSuite3.toIntOrNull() ?: 0,

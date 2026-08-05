@@ -29,7 +29,7 @@ class PassagemDadosPassagemMapper @Inject constructor(
         // Sem ida à Viagem: idViagem usa o viagemId congelado na Passagem (dropou ViagemRepository).
         val empresa = empresaRepository.obterPorId(entry.empresaId)
 
-        // Embarcacao resolvido por id (ADR-0008), espelhando a empresa: usa o embarcacaoId congelado na Passagem,
+        // Embarcação resolvida por id (ADR-0008), espelhando a empresa: usa o embarcacaoId congelado na Passagem,
         // rename-safe e órfão detectável (obterPorId → null → nome vazio). Fecha a dívida do §9 do doc de
         // domínio (o nome vinha do snapshot entry.embarcacao, que renomear a frota não atualizava).
         val embarcacao = embarcacaoRepository.obterPorId(entry.embarcacaoId)

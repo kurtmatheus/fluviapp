@@ -3,10 +3,10 @@ package dev.matheus.fluviapp.revitalizacao
 /**
  * **Marcador de suíte**: esta classe de teste cobre código que ainda não foi revitalizado.
  *
- * A regra da revitalização (ADR-0020) é que o app vale uma entidade por vez — hoje a **Empresa** —, e que
- * só precisa passar o que é testável para a entidade em foco. Um teste vermelho de passagem, viagem ou
- * embarcacao não é regressão: é código que ainda não foi refeito, e consertá-lo de passagem seria trabalho
- * jogado fora quando a vez dele chegar.
+ * A regra da revitalização (ADR-0020) é que o app vale uma entidade por vez — hoje a **Empresa** e a
+ * **Embarcação** —, e que só precisa passar o que é testável para as entidades em foco. Um teste vermelho
+ * de passagem ou viagem não é regressão: é código que ainda não foi refeito, e consertá-lo de passagem
+ * seria trabalho jogado fora quando a vez dele chegar.
  *
  * Uma classe está **dentro** do escopo quando o código que ela testa é executado em alguma parte da
  * jornada da entidade viva — do login ao painel, do painel ao formulário, do formulário ao Firestore.

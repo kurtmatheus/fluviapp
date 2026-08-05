@@ -21,6 +21,7 @@ fun DocumentoBruto.toViagemDocumento() = ViagemDocumento(
 
 fun DocumentoBruto.toEmbarcacaoDocumento() = EmbarcacaoDocumento(
     nome = texto("nome"),
+    tipo = texto("tipo"),
     capacidadeVeiculo = inteiro("capacidadeVeiculo"),
     capacidadeSuite2 = inteiro("capacidadeSuite2"),
     capacidadeSuite3 = inteiro("capacidadeSuite3"),

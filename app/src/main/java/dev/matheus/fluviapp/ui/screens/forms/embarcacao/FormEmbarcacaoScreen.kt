@@ -26,6 +26,7 @@ import dev.matheus.fluviapp.ui.states.FormEmbarcacaoUiState
 fun FormEmbarcacaoScreen(
     uiState: FormEmbarcacaoUiState,
     onNomeChange: (String) -> Unit = {},
+    onTipoChange: (String) -> Unit = {},
     onEmpresaChange: (String) -> Unit = {},
     onCapacidadeVeiculoChange: (String) -> Unit = {},
     onCapacidadeSuite2Change: (String) -> Unit = {},
@@ -56,6 +57,7 @@ fun FormEmbarcacaoScreen(
                     modifier = it,
                     state = uiState,
                     onNomeChange = onNomeChange,
+                    onTipoChange = onTipoChange,
                     onEmpresaChange = onEmpresaChange,
                     onCapacidadeVeiculoChange = onCapacidadeVeiculoChange,
                     onCapacidadeSuite2Change = onCapacidadeSuite2Change,

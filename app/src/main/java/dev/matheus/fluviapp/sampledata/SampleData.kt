@@ -27,6 +27,7 @@ import dev.matheus.fluviapp.domain.screendata.DadosPassagem
 import dev.matheus.fluviapp.domain.screendata.DadosViagemCard
 import dev.matheus.fluviapp.domain.viagem.Empresa
 import dev.matheus.fluviapp.domain.viagem.Embarcacao
+import dev.matheus.fluviapp.domain.viagem.TipoEmbarcacao
 import java.math.BigDecimal
 
 val listaDadosDadosViagemHomeSampleCards = listOf(
@@ -84,6 +85,7 @@ val listaEmbarcacaoSample = listOf(
     Embarcacao(
         "1",
         "F/B Modelo",
+        TipoEmbarcacao.FERRY_BOAT,
         60,
         4,
         5,

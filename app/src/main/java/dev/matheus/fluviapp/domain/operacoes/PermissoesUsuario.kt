@@ -37,7 +37,7 @@ object PermissoesUsuario {
     // --- Eixo seção (menu) ---
 
     /**
-     * Quase todo o menu é eixo de SISTEMA — cadastro de viagem, empresa e embarcacao é da plataforma. A
+     * Quase todo o menu é eixo de SISTEMA — cadastro de viagem, empresa e embarcação é da plataforma. A
      * exceção é a **Equipe**: ela existe para o `SUPERVISOR` gerir os membros da própria agência
      * (ADR-0015 §2.2), então a seção olha os dois eixos. É a mistura que o §8.2 assume enquanto o app
      * cobre um processo só.

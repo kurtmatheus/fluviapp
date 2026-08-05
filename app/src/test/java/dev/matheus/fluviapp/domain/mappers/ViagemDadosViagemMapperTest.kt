@@ -9,6 +9,7 @@ import dev.matheus.fluviapp.domain.cadastro.constantes.Constante
 import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Categoria.MUNICIPIO
 import dev.matheus.fluviapp.domain.viagem.Empresa
 import dev.matheus.fluviapp.domain.viagem.Embarcacao
+import dev.matheus.fluviapp.domain.viagem.TipoEmbarcacao
 import dev.matheus.fluviapp.domain.viagem.Viagem
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -22,7 +23,7 @@ class ViagemDadosViagemMapperTest {
         empresas = listOf(Empresa("e1", "ACME ATUAL", "ACME LTDA", "1", "end", "1", "2"))
     }
     private val fakeEmbarcacao = FakeEmbarcacaoRepository().apply {
-        embarcacoes = listOf(Embarcacao("n1", "F/B ATUAL", 60, 4, 5, 4, "e1"))
+        embarcacoes = listOf(Embarcacao("n1", "F/B ATUAL", TipoEmbarcacao.FERRY_BOAT, 60, 4, 5, 4, "e1"))
     }
     private val fakeConstante = FakeConstanteRepository().apply {
         constantes = listOf(

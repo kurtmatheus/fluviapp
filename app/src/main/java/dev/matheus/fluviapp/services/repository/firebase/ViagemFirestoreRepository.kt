@@ -67,7 +67,7 @@ class ViagemFirestoreRepository @Inject constructor(
         } else {
             firestore.collection(COLLECTION_VIAGENS).document(viagem.id)
         }
-        // codigo é derivado na persistência (a partir do embarcacao); id vem do doc. O nome do embarcacao é
+        // codigo é derivado na persistência (a partir da embarcação); id vem do doc. O nome da embarcação é
         // resolvido do embarcacaoId (ADR-0008 Fase 3 — a Viagem não guarda mais o nome).
         val comId = viagem.copy(id = documento.id)
         val embarcacaoNome = embarcacaoRepository.obterPorId(comId.embarcacaoId)?.descricaoNome.orEmpty()

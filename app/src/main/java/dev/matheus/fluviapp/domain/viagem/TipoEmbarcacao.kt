@@ -12,14 +12,20 @@ import dev.matheus.fluviapp.domain.passagem.ClasseVeiculo
  * falar antes de o valor significar alguma coisa, a lista não é a fonte — o tipo é.** Na formulação do
  * analista: *não se vende veículo para uma lancha se a cadastrarmos.*
  *
- * O tipo diz **o que** cabe; a capacidade do embarcacao diz **quanto** (ADR-0018 D8) — os dois são
+ * O tipo diz **o que** cabe; a capacidade da embarcação diz **quanto** (ADR-0018 D8) — os dois são
  * complementares e não se substituem.
  *
- * Ponto de aplicação: a **emissão**. Escolhida a viagem sabe-se a embarcação, e o form não oferece o
- * veículo que ela não leva — o erro morre na origem, em vez de virar validação depois.
+ * ### Onde se aplica
  *
- * > O rename `Embarcacao` → `Embarcacao` está decidido (ADR-0020 D4) e adiado para quando a estrutura de
- * > embarcações for mexida. Este tipo já nasce com o nome certo.
+ * Desde que virou campo de [Embarcacao], o tipo age **duas vezes**. Primeiro no **cadastro**: escolhida a
+ * lancha, o formulário não pergunta capacidade de veículo — a contradição *"lancha com doze vagas de
+ * carro"* não chega a nascer. Depois na **emissão** (ADR-0016 §8): sabida a viagem, sabe-se a embarcação,
+ * e o form não oferece o veículo que ela não leva. O erro morre na origem, em vez de virar validação
+ * depois.
+ *
+ * > **Gênero e espécie.** `Embarcacao` é a entidade — o gênero; `NAVIO` é um dos valores deste enum — uma
+ * > espécie. Foi essa distinção que motivou o rename de `Navio` para `Embarcacao` (ADR-0020 D4): "o navio
+ * > é do tipo lancha" é a frase que denuncia o nome errado.
  */
 enum class TipoEmbarcacao(
     val rotulo: String,
@@ -35,8 +41,8 @@ enum class TipoEmbarcacao(
             ClasseVeiculo.CARRETA,
         ),
     ),
-    EMBARCACAO(
-        rotulo = "Embarcacao",
+    NAVIO(
+        rotulo = "Navio",
         classesAdmitidas = setOf(ClasseVeiculo.CARRO, ClasseVeiculo.MOTO),
     ),
     LANCHA(
@@ -56,5 +62,14 @@ enum class TipoEmbarcacao(
             val normalizado = valor?.trim()?.uppercase()?.replace(" ", "_") ?: return null
             return entries.firstOrNull { it.name == normalizado }
         }
+
+        /**
+         * Fronteira de **tela**: o dropdown mostra o [rotulo] e devolve o texto escolhido, e é aqui que ele
+         * volta a ser tipo. Separada de [de] de propósito — aquela lê o que o **Firestore** gravou (o
+         * `name`, estável), esta lê o que a **pessoa** escolheu (o rótulo, que pode ser reescrito sem
+         * migrar dado). Confundir as duas é atar a persistência ao texto da interface.
+         */
+        fun porRotulo(rotulo: String?): TipoEmbarcacao? =
+            entries.firstOrNull { it.rotulo.equals(rotulo?.trim(), ignoreCase = true) }
     }
 }

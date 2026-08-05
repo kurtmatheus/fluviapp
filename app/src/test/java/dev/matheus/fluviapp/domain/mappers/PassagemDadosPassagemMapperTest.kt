@@ -9,6 +9,7 @@ import dev.matheus.fluviapp.domain.passagem.Passagem
 import dev.matheus.fluviapp.domain.passagem.TipoPassagem
 import dev.matheus.fluviapp.domain.viagem.Empresa
 import dev.matheus.fluviapp.domain.viagem.Embarcacao
+import dev.matheus.fluviapp.domain.viagem.TipoEmbarcacao
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -38,6 +39,7 @@ class PassagemDadosPassagemMapperTest {
     private fun embarcacao(id: String, nome: String) = Embarcacao(
         id = id,
         descricaoNome = nome,
+        tipo = TipoEmbarcacao.FERRY_BOAT,
         capacidadeVeiculo = 0,
         capacidadeSuite2 = 0,
         capacidadeSuite3 = 0,

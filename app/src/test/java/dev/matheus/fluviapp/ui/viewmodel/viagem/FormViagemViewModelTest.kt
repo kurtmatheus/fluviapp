@@ -14,6 +14,7 @@ import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Categoria.VEICU
 import dev.matheus.fluviapp.domain.mappers.ViagemDadosViagemMapper
 import dev.matheus.fluviapp.domain.viagem.Empresa
 import dev.matheus.fluviapp.domain.viagem.Embarcacao
+import dev.matheus.fluviapp.domain.viagem.TipoEmbarcacao
 import dev.matheus.fluviapp.domain.viagem.TarifaViagem
 import dev.matheus.fluviapp.util.MainDispatcherRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -39,8 +40,8 @@ class FormViagemViewModelTest {
     }
     private val fakeEmbarcacao = FakeEmbarcacaoRepository().apply {
         embarcacoes = listOf(
-            Embarcacao("n1", "F/B", 10, 2, 2, 2, "e1"),
-            Embarcacao("n2", "Outro", 5, 1, 1, 1, "e2"),
+            Embarcacao("n1", "F/B", TipoEmbarcacao.FERRY_BOAT, 10, 2, 2, 2, "e1"),
+            Embarcacao("n2", "Outro", TipoEmbarcacao.NAVIO, 5, 1, 1, 1, "e2"),
         )
     }
     private val fakeConstante = FakeConstanteRepository().apply {

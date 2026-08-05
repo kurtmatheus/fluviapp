@@ -1,7 +1,5 @@
 package dev.matheus.fluviapp.domain.viagem
 
-import dev.matheus.fluviapp.revitalizacao.ForaDoEscopo
-import org.junit.experimental.categories.Category
 import dev.matheus.fluviapp.domain.passagem.ClasseVeiculo
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -11,15 +9,18 @@ import org.junit.Test
 
 /**
  * Tipo da embarcação como tipo de domínio (ADR-0020 D4). A tabela do ADR-0016 §8, agora executável:
- * F/B leva tudo, embarcacao leva carro e moto, lancha só passageiro.
+ * F/B leva tudo, navio leva carro e moto, lancha só passageiro.
+ *
+ * **Entrou no escopo da revitalização** junto com o campo `Embarcacao.tipo`: até então o tipo existia sem
+ * ninguém que o carregasse, e o `@Category(ForaDoEscopo)` dizia isso. Agora a Flotilha inteira depende
+ * dele — o cadastro exige, a fronteira descarta quem não o tem, a busca o exibe.
  */
-@Category(ForaDoEscopo::class)
 class TipoEmbarcacaoTest {
 
     @Test
     fun `de converte o name canonico e recusa desconhecido`() {
         assertEquals(TipoEmbarcacao.FERRY_BOAT, TipoEmbarcacao.de("FERRY_BOAT"))
-        assertEquals(TipoEmbarcacao.EMBARCACAO, TipoEmbarcacao.de("embarcacao"))
+        assertEquals(TipoEmbarcacao.NAVIO, TipoEmbarcacao.de("navio"))
         assertEquals(TipoEmbarcacao.LANCHA, TipoEmbarcacao.de(" Lancha "))
         assertNull(TipoEmbarcacao.de(null))
         // O "Catamarã" do §8: cadastrado no catálogo, nascia inerte. Agora simplesmente não existe.
@@ -31,17 +32,53 @@ class TipoEmbarcacaoTest {
         assertEquals(TipoEmbarcacao.FERRY_BOAT, TipoEmbarcacao.de("FERRY BOAT"))
     }
 
+    /** Documento sem o campo: a fronteira lê `""` e tem de recusar, não escolher um padrão. */
+    @Test
+    fun `de recusa texto vazio`() {
+        assertNull(TipoEmbarcacao.de(""))
+        assertNull(TipoEmbarcacao.de("   "))
+    }
+
+    // --- A outra fronteira: o rótulo que a tela devolve ---
+
+    @Test
+    fun `porRotulo converte o que o dropdown escolheu`() {
+        assertEquals(TipoEmbarcacao.FERRY_BOAT, TipoEmbarcacao.porRotulo("Ferry Boat"))
+        assertEquals(TipoEmbarcacao.NAVIO, TipoEmbarcacao.porRotulo("navio"))
+        assertNull(TipoEmbarcacao.porRotulo(null))
+        assertNull(TipoEmbarcacao.porRotulo("Catamarã"))
+    }
+
+    /**
+     * As duas fronteiras não se confundem: o `name` é o que o Firestore grava, o rótulo é o que a pessoa
+     * lê. `FERRY_BOAT` não é rótulo de nada, e é isso que permite reescrever "Ferry Boat" na tela sem
+     * migrar documento.
+     */
+    @Test
+    fun `porRotulo nao aceita o name, e de nao aceita o rotulo com espaco fora do padrao`() {
+        assertNull(TipoEmbarcacao.porRotulo("FERRY_BOAT"))
+        assertEquals(TipoEmbarcacao.FERRY_BOAT, TipoEmbarcacao.de("Ferry Boat")) // este ainda casa: vira FERRY_BOAT
+    }
+
+    @Test
+    fun `todo tipo tem rotulo, e todo rotulo volta a ser tipo`() {
+        TipoEmbarcacao.entries.forEach { tipo ->
+            assertTrue(tipo.rotulo.isNotBlank())
+            assertEquals(tipo, TipoEmbarcacao.porRotulo(tipo.rotulo))
+        }
+    }
+
     @Test
     fun `a balsa leva todas as classes, inclusive as pesadas`() {
         ClasseVeiculo.entries.forEach { assertTrue(TipoEmbarcacao.FERRY_BOAT.admite(it)) }
     }
 
     @Test
-    fun `o embarcacao leva carro e moto, mas nao carga pesada`() {
-        assertTrue(TipoEmbarcacao.EMBARCACAO.admite(ClasseVeiculo.CARRO))
-        assertTrue(TipoEmbarcacao.EMBARCACAO.admite(ClasseVeiculo.MOTO))
-        assertFalse(TipoEmbarcacao.EMBARCACAO.admite(ClasseVeiculo.CAMINHAO))
-        assertFalse(TipoEmbarcacao.EMBARCACAO.admite(ClasseVeiculo.CARRETA))
+    fun `o navio leva carro e moto, mas nao carga pesada`() {
+        assertTrue(TipoEmbarcacao.NAVIO.admite(ClasseVeiculo.CARRO))
+        assertTrue(TipoEmbarcacao.NAVIO.admite(ClasseVeiculo.MOTO))
+        assertFalse(TipoEmbarcacao.NAVIO.admite(ClasseVeiculo.CAMINHAO))
+        assertFalse(TipoEmbarcacao.NAVIO.admite(ClasseVeiculo.CARRETA))
     }
 
     @Test
@@ -58,7 +95,7 @@ class TipoEmbarcacaoTest {
     @Test
     fun `levaVeiculo separa quem oferece o modo veiculo`() {
         assertTrue(TipoEmbarcacao.FERRY_BOAT.levaVeiculo)
-        assertTrue(TipoEmbarcacao.EMBARCACAO.levaVeiculo)
+        assertTrue(TipoEmbarcacao.NAVIO.levaVeiculo)
         assertFalse(TipoEmbarcacao.LANCHA.levaVeiculo)
     }
 }

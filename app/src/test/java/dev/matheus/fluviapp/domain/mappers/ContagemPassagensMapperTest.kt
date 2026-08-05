@@ -7,6 +7,7 @@ import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.INTEI
 import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.REDE
 import dev.matheus.fluviapp.domain.passagem.Passagem
 import dev.matheus.fluviapp.domain.viagem.Embarcacao
+import dev.matheus.fluviapp.domain.viagem.TipoEmbarcacao
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -16,7 +17,7 @@ import org.junit.Test
 
 /**
  * Trava o balanço na Fase 2 do ADR-0008: agrega pelo `embarcacaoId` CONGELADO na Passagem, não pela
- * Viagem viva nem pelo nome do embarcacao. Consequências verificadas: rename-safe (nome atual do embarcacao
+ * Viagem viva nem pelo nome da embarcação. Consequências verificadas: rename-safe (nome atual da embarcação
  * vem do repo por id, não do snapshot) e órfão detectável (embarcacaoId sem embarcacao → grupo descartado).
  */
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -26,6 +27,7 @@ class ContagemPassagensMapperTest {
     private fun embarcacao(id: String, nome: String) = Embarcacao(
         id = id,
         descricaoNome = nome,
+        tipo = TipoEmbarcacao.FERRY_BOAT,
         capacidadeVeiculo = 10,
         capacidadeSuite2 = 4,
         capacidadeSuite3 = 2,
@@ -62,7 +64,7 @@ class ContagemPassagensMapperTest {
     )
 
     @Test
-    fun `agrega por embarcacaoId congelado e resolve o nome atual do embarcacao pelo id`() = runTest {
+    fun `agrega por embarcacaoId congelado e resolve o nome atual da embarcacao pelo id`() = runTest {
         // embarcacao renomeado: passagens carregam o nome ANTIGO no snapshot; o resultado deve usar o ATUAL.
         val embarcacoes = listOf(embarcacao("embarcacao-1", "F/B Nome Novo"))
         val passagens = listOf(

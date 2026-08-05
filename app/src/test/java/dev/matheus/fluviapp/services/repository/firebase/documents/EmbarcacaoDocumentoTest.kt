@@ -1,9 +1,11 @@
 package dev.matheus.fluviapp.services.repository.firebase.documents
 
 import dev.matheus.fluviapp.domain.viagem.Embarcacao
+import dev.matheus.fluviapp.domain.viagem.TipoEmbarcacao
 import dev.matheus.fluviapp.services.repository.firebase.DocumentoBruto
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Test
 
 /**
@@ -11,14 +13,16 @@ import org.junit.Test
  * escrita. É a única parte do `EmbarcacaoFirestoreRepository` que roda sem SDK — o resto do CRUD é da
  * `ColecaoFirestore`, testada uma vez para todas as coleções.
  *
- * Trocou de forma junto com a entidade: o teste antigo cobria o salto
- * `EmbarcacaoDocumento → Embarcacao`, que deixou de existir quando a fronteira virou `Map`.
+ * Aqui mora o teste do **invariante**: não existe embarcação sem tipo, então esta é a primeira leitura do
+ * projeto que pode devolver `null`. Os casos abaixo separam as duas famílias de campo — os que têm
+ * fail-closed por valor (capacidade ausente = `0`) e o que só tem fail-closed por **recusa**.
  */
 class EmbarcacaoDocumentoTest {
 
     private val embarcacao = Embarcacao(
         id = "emb-1",
         descricaoNome = "FLUVI I",
+        tipo = TipoEmbarcacao.FERRY_BOAT,
         capacidadeVeiculo = 12,
         capacidadeSuite2 = 4,
         capacidadeSuite3 = 2,
@@ -40,7 +44,7 @@ class EmbarcacaoDocumentoTest {
     fun `toEmbarcacao tira o id do documento`() {
         val lida = documento(id = "outro", dados = embarcacao.paraMapa()).toEmbarcacao()
 
-        assertEquals("outro", lida.id)
+        assertEquals("outro", lida?.id)
     }
 
     /**
@@ -50,30 +54,65 @@ class EmbarcacaoDocumentoTest {
     @Test
     fun `capacidades coagem Number para Int`() {
         val lida = documento(
-            dados = mapOf("nome" to "FLUVI II", "capacidadeVeiculo" to 10L, "capacidadeCamarote" to 3L),
+            dados = mapOf(
+                "nome" to "FLUVI II",
+                "tipo" to "FERRY_BOAT",
+                "capacidadeVeiculo" to 10L,
+                "capacidadeCamarote" to 3L,
+            ),
         ).toEmbarcacao()
 
-        assertEquals(10, lida.capacidadeVeiculo)
-        assertEquals(3, lida.capacidadeCamarote)
+        assertEquals(10, lida?.capacidadeVeiculo)
+        assertEquals(3, lida?.capacidadeCamarote)
     }
 
     /** Capacidade ausente é capacidade nenhuma: embarcação sem lugar declarado não vende lugar. */
     @Test
     fun `campos ausentes viram zero e vazio em vez de falhar`() {
-        val lida = documento(dados = mapOf("nome" to "SÓ O NOME")).toEmbarcacao()
+        val lida = documento(dados = mapOf("nome" to "SÓ O NOME", "tipo" to "LANCHA")).toEmbarcacao()
 
-        assertEquals("SÓ O NOME", lida.descricaoNome)
-        assertEquals(0, lida.capacidadeVeiculo)
-        assertEquals(0, lida.capacidadeSuite2)
-        assertEquals(0, lida.capacidadeSuite3)
-        assertEquals(0, lida.capacidadeCamarote)
-        assertEquals("", lida.empresaId)
+        assertEquals("SÓ O NOME", lida?.descricaoNome)
+        assertEquals(0, lida?.capacidadeVeiculo)
+        assertEquals(0, lida?.capacidadeSuite2)
+        assertEquals(0, lida?.capacidadeSuite3)
+        assertEquals(0, lida?.capacidadeCamarote)
+        assertEquals("", lida?.empresaId)
     }
 
     /** Documento de antes do vínculo por id (ADR-0008): sem `empresaId`, e a leitura não quebra. */
     @Test
     fun `documento sem empresaId desserializa para vazio`() {
-        assertEquals("", documento(dados = mapOf("nome" to "FLUVI III")).toEmbarcacao().empresaId)
+        val lida = documento(dados = mapOf("nome" to "FLUVI III", "tipo" to "NAVIO")).toEmbarcacao()
+
+        assertEquals("", lida?.empresaId)
+    }
+
+    // --- O invariante: não existe embarcação sem tipo ---
+
+    /**
+     * Documento gravado antes do campo existir. Não vira embarcação de tipo padrão — não vira nada: um
+     * padrão seria uma afirmação inventada sobre o que ela transporta.
+     */
+    @Test
+    fun `documento sem tipo nao vira embarcacao`() {
+        assertNull(documento(dados = mapOf("nome" to "SEM TIPO", "capacidadeVeiculo" to 10L)).toEmbarcacao())
+    }
+
+    /** Valor que o app não conhece (catamarã, lixo, tipo removido): mesma recusa. */
+    @Test
+    fun `documento com tipo desconhecido nao vira embarcacao`() {
+        assertNull(documento(dados = mapOf("nome" to "X", "tipo" to "CATAMARA")).toEmbarcacao())
+        assertNull(documento(dados = mapOf("nome" to "X", "tipo" to "")).toEmbarcacao())
+    }
+
+    /**
+     * O tipo gravado é o `name`, e o **rótulo não serve** para ler de volta. Parece rigor inútil até
+     * lembrar do efeito contrário: se "Ferry Boat" fosse aceito na leitura, renomear o rótulo na tela
+     * apagaria silenciosamente a frota inteira do app.
+     */
+    @Test
+    fun `o rotulo de tela nao e aceito no lugar do name`() {
+        assertNull(documento(dados = mapOf("nome" to "X", "tipo" to "Lancha Rápida")).toEmbarcacao())
     }
 
     // --- Escrita: domínio -> Map ---
@@ -84,7 +123,21 @@ class EmbarcacaoDocumentoTest {
     }
 
     @Test
+    fun `paraMapa grava o name do tipo, nao o rotulo`() {
+        assertEquals("FERRY_BOAT", embarcacao.paraMapa()["tipo"])
+    }
+
+    @Test
     fun `gravar e ler de volta devolve a mesma embarcacao`() {
         assertEquals(embarcacao, documento(id = embarcacao.id, dados = embarcacao.paraMapa()).toEmbarcacao())
+    }
+
+    /** A propriedade vale para todos os tipos, e não só para o que o exemplo usa. */
+    @Test
+    fun `o round-trip fecha para todo tipo de embarcacao`() {
+        TipoEmbarcacao.entries.forEach { tipo ->
+            val original = embarcacao.copy(tipo = tipo)
+            assertEquals(original, documento(id = original.id, dados = original.paraMapa()).toEmbarcacao())
+        }
     }
 }

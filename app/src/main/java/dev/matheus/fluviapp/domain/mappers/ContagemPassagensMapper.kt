@@ -38,7 +38,7 @@ class ContagemPassagensMapper @Inject constructor(
 }
 
 /**
- * Contagem pura da ocupação de um embarcacao a partir das suas passagens — função testável sem repositório.
+ * Contagem pura da ocupação de uma embarcação a partir das suas passagens — função testável sem repositório.
  *
  * Contagem **por bilhete/unidade** (decisão do analista, `balanco-passagens-mapper.md` §7): cada bilhete de
  * suíte ocupa **uma** suíte — `temPassageiro3` (trio; p3 ⇒ p2) cai no bucket de 3 pessoas, senão no de 2 (o

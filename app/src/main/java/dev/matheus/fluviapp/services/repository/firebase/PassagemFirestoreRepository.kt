@@ -140,7 +140,7 @@ class PassagemFirestoreRepository @Inject constructor(
 
     /**
      * Consulta da **Contagem de Passagem** (ocupação). Sem recorte por agência, e isso é decisão, não
-     * esquecimento (ADR-0015 §6): a lotação do embarcacao é um recurso finito e COMPARTILHADO — fatiar por
+     * esquecimento (ADR-0015 §6): a lotação da embarcação é um recurso finito e COMPARTILHADO — fatiar por
      * agência daria a cada uma uma visão parcial do mesmo barco. Não acrescente filtro de agência aqui.
      */
     fun obterTodasPorData(data: String): Task<QuerySnapshot> {

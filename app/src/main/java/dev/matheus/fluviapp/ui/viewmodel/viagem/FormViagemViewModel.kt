@@ -119,7 +119,7 @@ class FormViagemViewModel @Inject constructor(
     /**
      * Embarcacoes da empresa selecionada — filtra pelo **empresaId** estável (ADR-0008), resolvido do nome
      * via `listaEmpresas` em cache. Rename-safe: o vínculo não depende do rótulo. Sem id resolvido →
-     * lista vazia (nunca casa `empresaId == ""`, que pegaria embarcacoes sem vínculo).
+     * lista vazia (nunca casa `empresaId == ""`, que pegaria embarcações sem vínculo).
      */
     private suspend fun embarcacoesDaEmpresa(nomeEmpresa: String): List<Embarcacao> {
         val empresaId = _uiState.value.listaEmpresas.firstOrNull { it.nome == nomeEmpresa }?.id
@@ -186,7 +186,7 @@ class FormViagemViewModel @Inject constructor(
                 viagemRepository.salvar(
                     Viagem(
                         id = idViagem, // "" na criação → auto-id no repo
-                        codigo = "", // derivado na persistência (resolve o nome do embarcacao pelo id)
+                        codigo = "", // derivado na persistência (resolve o nome da embarcação pelo id)
                         origem = origem.descricaoNome,
                         destino = destino.descricaoNome,
                         // Vínculo vivo só por id (ADR-0008 Fase 3); nomes resolvidos na fronteira.

@@ -13,7 +13,7 @@ data class Passagem(
     // Ponteiro estável para a Viagem (ADR-0008): id p/ relacionar/agregar. codigoViagem e
     // empresa/embarcacao/origem/destino seguem como snapshot por valor (histórico imutável do bilhete).
     val viagemId: String = "",
-    // Ids do embarcacao/empresa congelados no momento da emissão (snapshot). O balanço agrega por embarcacaoId
+    // Ids da embarcação/empresa congelados no momento da emissão (snapshot). O balanço agrega por embarcacaoId
     // (frozen) — rename/reatribuição posterior na Viagem não altera bilhetes históricos. empresaId
     // fica dormente até a relação Passagem→Empresa por id.
     val embarcacaoId: String = "",

@@ -24,8 +24,18 @@ interface CodecFirestore<T> {
     /** Como a entidade aparece na telemetria de cadastro. */
     val entidade: String
 
-    /** `Map` → domínio na leitura (ADR-0019 D2). */
-    fun deDocumento(bruto: DocumentoBruto): T
+    /**
+     * `Map` → domínio na leitura (ADR-0019 D2). **`null` = este documento não é uma entidade minha** e
+     * fica de fora da coleção.
+     *
+     * A recusa é do codec porque só ele conhece o invariante: a Embarcação, por exemplo, não existe sem
+     * tipo, e um documento que não o declara não vira embarcação de tipo padrão — não vira nada. Quem não
+     * tem invariante nenhum devolve sempre o modelo (a Empresa, hoje) e nem percebe a nulidade.
+     *
+     * Uma recusa **não derruba a coleção**: o snapshot é mapeado com `mapNotNull`, e a diferença entre
+     * `snapshotRecebido` e `gravado` na telemetria conta quantos documentos foram recusados.
+     */
+    fun deDocumento(bruto: DocumentoBruto): T?
 
     /** Domínio → `Map` na escrita. O `id` **não entra**: ele é o nome do documento, não um campo dele. */
     fun paraMapa(modelo: T): Map<String, Any?>

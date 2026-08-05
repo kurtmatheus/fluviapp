@@ -122,7 +122,9 @@ fun CardResultEmbarcacao(
                 verticalArrangement = Arrangement.spacedBy(2.dp),
             ) {
                 TextTitleBrownRegular(text = embarcacao.nome)
-                TextRegularBrown(text = embarcacao.empresaNome)
+                // Tipo e dono na mesma linha: são as duas coisas que distinguem duas embarcações de
+                // nome parecido numa frota, e é por elas que se procura.
+                TextRegularBrown(text = "${embarcacao.tipo} · ${embarcacao.empresaNome}")
             }
 
             IconButton(onClick = { onEditar(embarcacao.id) }) {
@@ -151,8 +153,8 @@ private fun ResultSearchEmbarcacaoScreenPreview() {
                 empresa = "",
                 listaEmpresas = listOf("NAVEGA MODELO", "TRANSPORTE ILHA"),
                 resultados = listOf(
-                    EmbarcacaoResultado("1", "F/B Modelo", "NAVEGA MODELO"),
-                    EmbarcacaoResultado("2", "F/B Litoral", "TRANSPORTE ILHA"),
+                    EmbarcacaoResultado("1", "F/B Modelo", "Ferry Boat", "NAVEGA MODELO"),
+                    EmbarcacaoResultado("2", "Lancha Litoral", "Lancha", "TRANSPORTE ILHA"),
                 ),
             )
         )
