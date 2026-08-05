@@ -21,11 +21,17 @@ private const val TAG = "fluvi app"
  * (sessão e viagem) que ainda não foram refeitos, e um caminho de login que deixou de existir como está
  * desde que o provisionamento fechou (ADR-0015 §2.1: só e-mail e senha pré-cadastrados).
  *
- * Fica no lugar, e não apagado, porque a jornada que ele descreve é a que deve voltar a valer quando as
- * seções correspondentes entrarem em `SECOES_REVITALIZADAS`. Enquanto isso, quem cobre a apresentação são
- * os testes de tela — sem Hilt, sem Activity e sem login.
+ * É o `@Category(ForaDoEscopo)` da suíte instrumentada: aqui não há categoria para excluir, então o
+ * marcador é o próprio `@Ignore` — **com a razão escrita**, porque um `@Ignore` sem motivo é indistinguível
+ * de um teste abandonado.
+ *
+ * **Revitalizar a Flotilha não o traz de volta**, e é por isso que ele continua ignorado depois dela: a
+ * jornada que ele descreve não passa por embarcação nenhuma — passa por login e por viagem. Ele volta
+ * quando **essas** seções entrarem em `SECOES_REVITALIZADAS`, e voltará reescrito, porque a tela de login
+ * que ele conhece já não é a que existe. Enquanto isso, quem cobre a apresentação são os testes de tela —
+ * sem Hilt, sem Activity e sem login.
  */
-@Ignore("Revitalização ADR-0020: só a Empresa está viva; login e viagem voltam com as seções delas.")
+@Ignore("Revitalização ADR-0020: vivas a Empresa e a Flotilha; este cobre login e viagem, que voltam com as seções delas.")
 @HiltAndroidTest
 class FluviAppNavigationTest {
 

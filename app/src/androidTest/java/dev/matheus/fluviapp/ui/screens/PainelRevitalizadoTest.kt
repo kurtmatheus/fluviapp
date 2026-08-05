@@ -21,12 +21,16 @@ import org.junit.Rule
 import org.junit.Test
 
 /**
- * O painel da revitalização, em tela: **só a Empresa existe** (ADR-0020).
+ * O painel da revitalização, em tela: **existem a Empresa e a Flotilha** (ADR-0020), e mais nada.
  *
  * O menu não é fabricado à mão aqui — vem de `secoesDoMenu(ADM)` e `acoesPorSecao`, as mesmas funções de
  * domínio que a Main Screen usa em produção. É o que faz este teste valer como emenda entre as camadas:
  * se alguém revitalizar uma seção no domínio, é aqui que a tela é cobrada; e se o recorte vazar, é aqui
  * que aparece — sem Firestore, sem sessão e sem login.
+ *
+ * A emenda cobrou: quando a Flotilha entrou em `SECOES_REVITALIZADAS`, este teste ficou **vermelho**
+ * afirmando que ela não deveria aparecer. Foi o combinado funcionando — a lista viva do domínio e a tela
+ * discordaram em voz alta, em vez de a seção nova entrar sem ninguém perceber.
  */
 class PainelRevitalizadoTest {
 
@@ -98,8 +102,8 @@ class PainelRevitalizadoTest {
         montarMenu()
 
         composeTestRule.onNodeWithText(texto(SecaoMenu.EMPRESA.titulo)).assertIsDisplayed()
+        composeTestRule.onNodeWithText(texto(SecaoMenu.EMBARCACAO.titulo)).assertIsDisplayed()
 
-        composeTestRule.onNodeWithText(texto(SecaoMenu.EMBARCACAO.titulo)).assertDoesNotExist()
         composeTestRule.onNodeWithText(texto(SecaoMenu.VIAGEM.titulo)).assertDoesNotExist()
         composeTestRule.onNodeWithText(texto(SecaoMenu.PASSAGEM.titulo)).assertDoesNotExist()
         composeTestRule.onNodeWithText(texto(SecaoMenu.EQUIPE.titulo)).assertDoesNotExist()
@@ -119,5 +123,25 @@ class PainelRevitalizadoTest {
         composeTestRule.onNodeWithText(texto(AcaoMenu.EMPRESA_NOVA.titulo)).performClick()
 
         assertEquals(listOf(AcaoMenu.EMPRESA_NOVA), navegadas)
+    }
+
+    /**
+     * A mesma cobrança para a segunda seção viva. Não é repetição por simetria: cadastrar e pesquisar são
+     * **duas ações por seção**, e é aqui que se vê que a Flotilha entrou inteira — porta aberta e as duas
+     * telas alcançáveis —, e não só como um item de menu que expande para o vazio.
+     */
+    @Test
+    fun menu_expandeFlotilha_eNavegaPelaAcao() {
+        val navegadas = mutableListOf<AcaoMenu>()
+        montarMenu(onNavegar = { navegadas += it })
+
+        composeTestRule.onNodeWithText(texto(SecaoMenu.EMBARCACAO.titulo)).performClick()
+
+        composeTestRule.onNodeWithText(texto(AcaoMenu.EMBARCACAO_NOVA.titulo)).assertIsDisplayed()
+        composeTestRule.onNodeWithText(texto(AcaoMenu.EMBARCACAO_PESQUISAR.titulo)).assertIsDisplayed()
+
+        composeTestRule.onNodeWithText(texto(AcaoMenu.EMBARCACAO_PESQUISAR.titulo)).performClick()
+
+        assertEquals(listOf(AcaoMenu.EMBARCACAO_PESQUISAR), navegadas)
     }
 }
