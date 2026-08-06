@@ -38,14 +38,15 @@ class EscopoRevitalizadoTest {
     // --- O escopo em si ---
 
     @Test
-    fun `estao revitalizadas a Empresa, a Flotilha e a Localidade`() {
+    fun `estao revitalizadas a Empresa, a Flotilha, a Localidade e o Porto`() {
         assertEquals(
-            setOf(SecaoMenu.EMPRESA, SecaoMenu.EMBARCACAO, SecaoMenu.LOCALIDADE),
+            setOf(SecaoMenu.EMPRESA, SecaoMenu.EMBARCACAO, SecaoMenu.LOCALIDADE, SecaoMenu.PORTO),
             SECOES_REVITALIZADAS,
         )
         assertTrue(estaRevitalizada(SecaoMenu.EMPRESA))
         assertTrue(estaRevitalizada(SecaoMenu.EMBARCACAO))
         assertTrue(estaRevitalizada(SecaoMenu.LOCALIDADE))
+        assertTrue(estaRevitalizada(SecaoMenu.PORTO))
         assertFalse(estaRevitalizada(SecaoMenu.VIAGEM))
         assertFalse(estaRevitalizada(SecaoMenu.PASSAGEM))
         assertFalse(estaRevitalizada(SecaoMenu.EQUIPE))
@@ -55,8 +56,9 @@ class EscopoRevitalizadoTest {
 
     /** A ordem é a de [SecaoMenu] — parte, ativos, capacidades: a ordem em que se consegue cadastrar. */
     @Test
-    fun `plataforma ve a Empresa, a Flotilha e a Localidade`() {
-        val esperado = listOf(SecaoMenu.EMPRESA, SecaoMenu.EMBARCACAO, SecaoMenu.LOCALIDADE)
+    fun `plataforma ve a Empresa, a Flotilha, a Localidade e o Porto`() {
+        val esperado =
+            listOf(SecaoMenu.EMPRESA, SecaoMenu.EMBARCACAO, SecaoMenu.LOCALIDADE, SecaoMenu.PORTO)
 
         assertEquals(esperado, secoesDoMenu(adm))
         assertEquals(esperado, secoesDoMenu(gestor))

@@ -31,6 +31,9 @@ val SECOES_DO_PAINEL: Set<SecaoMenu> = setOf(
     // A `LOCALIDADE` é o caso mais puro desta família: capacidade da plataforma, sem dono e sem atuação
     // (ADR-0016 §5). Nenhuma agência a administra — todas a usam.
     SecaoMenu.LOCALIDADE,
+    // O `PORTO` está aqui pelo mesmo motivo, e apesar de a atuação portuária existir no modelo: o cais é
+    // infraestrutura (da plataforma), e o que a empresa tem nele é a **atuação**, não o porto (§5).
+    SecaoMenu.PORTO,
     SecaoMenu.VIAGEM,
 )
 

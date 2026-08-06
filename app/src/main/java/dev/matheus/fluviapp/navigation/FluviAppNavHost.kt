@@ -37,6 +37,10 @@ import dev.matheus.fluviapp.navigation.navcomposables.embarcacao.formEmbarcacaoN
 import dev.matheus.fluviapp.navigation.navcomposables.embarcacao.resultSearchEmbarcacaoNavComposable
 import dev.matheus.fluviapp.navigation.navcomposables.localidade.formLocalidadeNavComposable
 import dev.matheus.fluviapp.navigation.navcomposables.localidade.resultSearchLocalidadeNavComposable
+import dev.matheus.fluviapp.extensions.navegaParaFormularioPorto
+import dev.matheus.fluviapp.extensions.navegaParaResultPesquisarPorto
+import dev.matheus.fluviapp.navigation.navcomposables.porto.formPortoNavComposable
+import dev.matheus.fluviapp.navigation.navcomposables.porto.resultSearchPortoNavComposable
 import dev.matheus.fluviapp.navigation.graphs.pesquisarPassagemGraph
 import dev.matheus.fluviapp.navigation.graphs.pesquisarViagemGraph
 import dev.matheus.fluviapp.navigation.graphs.splashGraph
@@ -132,6 +136,12 @@ fun FluviAppNavHost(
             },
             onNavegaParaFormularioPesquisaLocalidade = {
                 navController.navegaParaResultPesquisarLocalidade()
+            },
+            onNavegaParaFormularioNovoPorto = {
+                navController.navegaParaFormularioPorto()
+            },
+            onNavegaParaFormularioPesquisaPorto = {
+                navController.navegaParaResultPesquisarPorto()
             }
         )
 
@@ -279,6 +289,24 @@ fun FluviAppNavHost(
             },
             onNavegaParaEditorLocalidade = {
                 navController.navegaParaFormularioLocalidade(it)
+            }
+        )
+
+        formPortoNavComposable(
+            onNavegaParaMainScreen = {
+                navController.navegaParaMainScreenGraph()
+            },
+            onClickVoltar = {
+                navController.navigateUp()
+            }
+        )
+
+        resultSearchPortoNavComposable(
+            onClickVoltar = {
+                navController.navigateUp()
+            },
+            onNavegaParaEditorPorto = {
+                navController.navegaParaFormularioPorto(it)
             }
         )
     }

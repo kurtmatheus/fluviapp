@@ -140,6 +140,9 @@ class PermissoesUsuarioTest {
                 // A Localidade é capacidade da plataforma (ADR-0016 §5): sem dono e sem atuação, ela só
                 // pode estar aqui — nenhuma agência a administraria.
                 SecaoMenu.LOCALIDADE,
+                // O Porto, idem — e apesar de a atuação portuária existir: o cais é infraestrutura, e o
+                // que a empresa tem nele é a atuação, não o porto.
+                SecaoMenu.PORTO,
                 SecaoMenu.VIAGEM,
                 SecaoMenu.EQUIPE,
             ),

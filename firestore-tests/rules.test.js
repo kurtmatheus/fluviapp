@@ -95,6 +95,11 @@ beforeEach(async () => {
       codigoIbge: '1303205',
       ativo: true,
     });
+    await setDoc(doc(db, 'portos', 'porto-1'), {
+      nome: 'Porto de Val-de-Cães',
+      localidadeId: 'loc-1',
+      ativo: true,
+    });
     // Passagem alheia (dono = funcionário B) e o contador.
     await setDoc(doc(db, 'passagens', 'alheia'), { funcionarioId: F_B, valor: 10 });
     await setDoc(doc(db, 'passagens', 'contador'), { numeroBilhete: 100 });
@@ -331,6 +336,67 @@ describe('localidades — escrita só de plataforma, e delete físico impossíve
 
   test('plataforma APAGA localidade → NEGADO (não existe apagar aqui)', async () => {
     await assertFails(deleteDoc(doc(asAdm(), 'localidades', 'loc-1')));
+  });
+});
+
+// --- Portos: a mesma forma da localidade, um elo adiante na cadeia de referências (ADR-0016 §5) ---
+describe('portos — escrita só de plataforma, e delete físico impossível', () => {
+  test('operador LÊ porto (quem vende precisa saber de onde sai) → OK', async () => {
+    await assertSucceeds(getDoc(doc(asAgenteA(), 'portos', 'porto-1')));
+  });
+
+  test('não autenticado LÊ porto → NEGADO', async () => {
+    await assertFails(getDoc(doc(asAnon(), 'portos', 'porto-1')));
+  });
+
+  test('operador ESCREVE porto → NEGADO', async () => {
+    await assertFails(
+      setDoc(doc(asAgenteA(), 'portos', 'porto-2'), { nome: 'Porto Central', localidadeId: 'loc-1' }),
+    );
+  });
+
+  test('SUPERVISOR escreve porto (cargo de agência não é papel de plataforma) → NEGADO', async () => {
+    await assertFails(
+      setDoc(doc(asSupervisor(), 'portos', 'porto-2'), { nome: 'Porto Central', localidadeId: 'loc-1' }),
+    );
+  });
+
+  test('plataforma (ADM) cria porto → OK', async () => {
+    await assertSucceeds(
+      setDoc(doc(asAdm(), 'portos', 'porto-2'), {
+        nome: 'Porto Central',
+        localidadeId: 'loc-1',
+        ativo: true,
+      }),
+    );
+  });
+
+  /**
+   * O mesmo par da localidade, e aqui a razão referencial é ainda mais direta: a **rota** e a
+   * **concessão** guardam o id do porto. Inativar é `update` e passa; apagar não passa nem para o ADM.
+   */
+  test('plataforma INATIVA porto (delete lógico) → OK', async () => {
+    await assertSucceeds(updateDoc(doc(asAdm(), 'portos', 'porto-1'), { ativo: false }));
+  });
+
+  test('plataforma APAGA porto → NEGADO (não existe apagar aqui)', async () => {
+    await assertFails(deleteDoc(doc(asAdm(), 'portos', 'porto-1')));
+  });
+
+  /**
+   * **A unicidade `(nome, localidade)` não é do servidor hoje** (ADR-0016 §5, paridade na F8): o
+   * cadastro a verifica em memória, e a regra deixa passar. O caso está aqui como *documentação
+   * executável* do limite — quando a F8 fechar isso, ele vira `assertFails` e é este arquivo que
+   * cobra a mudança.
+   */
+  test('plataforma cria porto homônimo na mesma localidade → OK (limite conhecido, F8)', async () => {
+    await assertSucceeds(
+      setDoc(doc(asAdm(), 'portos', 'porto-3'), {
+        nome: 'Porto de Val-de-Cães',
+        localidadeId: 'loc-1',
+        ativo: true,
+      }),
+    );
   });
 });
 

@@ -229,6 +229,18 @@ service cloud.firestore {
       allow create, update: if autenticado() && ehPapelPlataforma();
       allow delete: if false;
     }
+    // A outra capacidade da plataforma (ADR-0016 §5), com a mesma forma e pela mesma razão — um elo
+    // adiante: o porto é referenciado pela rota e pela concessão da empresa, então aqui também não
+    // existe apagar. Excluir um porto é gravar `ativo: false`, que passa pelo `update`.
+    //
+    // A unicidade `(nome, localidade)` do §5 NÃO está aqui: sem query na regra, verificá-la exigiria um
+    // índice de documento por par, e a F8 é quem decide essa forma. Hoje ela é do cadastro — impede o
+    // acidente, não a corrida.
+    match /portos/{doc} {
+      allow read: if autenticado();
+      allow create, update: if autenticado() && ehPapelPlataforma();
+      allow delete: if false;
+    }
     match /viagens/{doc} {
       allow read: if autenticado();
       allow write: if autenticado() && ehPapelPlataforma();

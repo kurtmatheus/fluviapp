@@ -107,3 +107,11 @@ fun NavHostController.navegaParaResultPesquisarLocalidade() {
     navegaDireto(FluviAppNavComposableDestinations.ResultPesquisarLocalidadeNavComposable.route)
 }
 
+fun NavHostController.navegaParaFormularioPorto(idPorto: String = "") {
+    navegaDireto("${FluviAppNavComposableDestinations.FormPortoNavComposable.route}?idPorto=$idPorto")
+}
+
+fun NavHostController.navegaParaResultPesquisarPorto() {
+    navegaDireto(FluviAppNavComposableDestinations.ResultPesquisarPortoNavComposable.route)
+}
+

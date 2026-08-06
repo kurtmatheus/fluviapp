@@ -7,15 +7,18 @@ import dev.matheus.fluviapp.domain.operacoes.PermissoesUsuario
  * **O andaime da revitalização**: quais seções já foram refeitas na arquitetura nova — domínio isolado,
  * camada de dados, camada lógica e apresentação, cada uma testável para a entidade em foco.
  *
- * Hoje são três: [SecaoMenu.EMPRESA] (ADR-0020 D10, ADR-0017 F3), [SecaoMenu.EMBARCACAO] — a **Flotilha** —
- * e [SecaoMenu.LOCALIDADE] (ADR-0016 §5, F4). O app deve se comportar, do painel para dentro, **como se
- * tivesse acabado de ser implementado** e só conhecesse elas — não como um app completo com pedaços
- * quebrados. Seção fora daqui não aparece no menu, e o que ela abriria não é alcançável.
+ * Hoje são quatro: [SecaoMenu.EMPRESA] (ADR-0020 D10, ADR-0017 F3), [SecaoMenu.EMBARCACAO] — a
+ * **Flotilha** —, [SecaoMenu.LOCALIDADE] e [SecaoMenu.PORTO] (ADR-0016 §5, F4). O app deve se comportar,
+ * do painel para dentro, **como se tivesse acabado de ser implementado** e só conhecesse elas — não como
+ * um app completo com pedaços quebrados. Seção fora daqui não aparece no menu, e o que ela abriria não é
+ * alcançável.
  *
  * A ordem não é arbitrária: a Empresa veio primeiro porque a Embarcação **tem dono** (`empresaId`), e
  * cadastrar frota antes de existir parte a quem pertencer seria cadastrar órfão. A Localidade veio depois
  * por outro motivo — ela não depende de ninguém, mas **o Porto depende dela**, e é o porto que a Rota vai
- * referenciar. Ou seja: as duas primeiras entraram pela dependência que tinham; esta, pela que virá.
+ * referenciar. Ou seja: as duas primeiras entraram pela dependência que tinham; a terceira, pela que
+ * virá — e o Porto é essa dependência se cumprindo, a primeira seção deste andaime que **precisa** de
+ * outra para funcionar (o dropdown de localidade não tem o que oferecer sem ela).
  *
  * ### Por que aqui, e não dentro da política
  *
@@ -38,6 +41,7 @@ val SECOES_REVITALIZADAS: Set<SecaoMenu> = setOf(
     SecaoMenu.EMPRESA,
     SecaoMenu.EMBARCACAO,
     SecaoMenu.LOCALIDADE,
+    SecaoMenu.PORTO,
 )
 
 /** Se a seção já foi refeita ponta a ponta. */

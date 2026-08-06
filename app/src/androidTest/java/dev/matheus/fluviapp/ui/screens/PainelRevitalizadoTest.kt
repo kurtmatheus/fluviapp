@@ -104,6 +104,7 @@ class PainelRevitalizadoTest {
         composeTestRule.onNodeWithText(texto(SecaoMenu.EMPRESA.titulo)).assertIsDisplayed()
         composeTestRule.onNodeWithText(texto(SecaoMenu.EMBARCACAO.titulo)).assertIsDisplayed()
         composeTestRule.onNodeWithText(texto(SecaoMenu.LOCALIDADE.titulo)).assertIsDisplayed()
+        composeTestRule.onNodeWithText(texto(SecaoMenu.PORTO.titulo)).assertIsDisplayed()
 
         composeTestRule.onNodeWithText(texto(SecaoMenu.VIAGEM.titulo)).assertDoesNotExist()
         composeTestRule.onNodeWithText(texto(SecaoMenu.PASSAGEM.titulo)).assertDoesNotExist()
@@ -144,4 +145,8 @@ class PainelRevitalizadoTest {
     @Test
     fun menu_expandeLocalidades_eNavegaPelaAcao() =
         expandeENavega(SecaoMenu.LOCALIDADE, AcaoMenu.LOCALIDADE_NOVA)
+
+    @Test
+    fun menu_expandePortos_eNavegaPelaAcao() =
+        expandeENavega(SecaoMenu.PORTO, AcaoMenu.PORTO_PESQUISAR)
 }

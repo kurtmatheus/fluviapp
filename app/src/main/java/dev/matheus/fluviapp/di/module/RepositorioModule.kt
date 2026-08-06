@@ -6,6 +6,8 @@ import dev.matheus.fluviapp.services.repository.cadastro.ConstanteFirestoreRepos
 import dev.matheus.fluviapp.services.repository.cadastro.ConstanteRepository
 import dev.matheus.fluviapp.services.repository.cadastro.localidade.LocalidadeFirestoreRepository
 import dev.matheus.fluviapp.services.repository.cadastro.localidade.LocalidadeRepository
+import dev.matheus.fluviapp.services.repository.cadastro.porto.PortoFirestoreRepository
+import dev.matheus.fluviapp.services.repository.cadastro.porto.PortoRepository
 import dev.matheus.fluviapp.services.repository.operacoes.FuncionarioFirestoreRepository
 import dev.matheus.fluviapp.services.repository.operacoes.FuncionarioRepository
 import dev.matheus.fluviapp.services.repository.operacoes.SessaoUsuario
@@ -53,6 +55,11 @@ abstract class RepositorioModule {
     @Binds
     @Singleton
     abstract fun bindLocalidadeRepository(impl: LocalidadeFirestoreRepository): LocalidadeRepository
+
+    /** A outra capacidade da plataforma — o lugar físico, que referencia a localidade (ADR-0016 §5). */
+    @Binds
+    @Singleton
+    abstract fun bindPortoRepository(impl: PortoFirestoreRepository): PortoRepository
 
     /**
      * Preenchimento pelo IBGE — **porta de fora**, e a única do app. Fica ao lado dos repositórios porque

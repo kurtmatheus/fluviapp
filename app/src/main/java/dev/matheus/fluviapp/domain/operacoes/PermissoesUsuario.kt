@@ -45,8 +45,9 @@ object PermissoesUsuario {
     fun podeAcessar(secao: SecaoMenu, papel: String?, cargo: String? = null): Boolean = when (secao) {
         SecaoMenu.PASSAGEM -> true
         SecaoMenu.EQUIPE -> podeCadastrarFuncionario(papel, cargo)
-        SecaoMenu.VIAGEM, SecaoMenu.EMPRESA, SecaoMenu.EMBARCACAO, SecaoMenu.LOCALIDADE ->
-            ehPapelPlataforma(papel)
+        SecaoMenu.VIAGEM, SecaoMenu.EMPRESA, SecaoMenu.EMBARCACAO,
+        SecaoMenu.LOCALIDADE, SecaoMenu.PORTO,
+        -> ehPapelPlataforma(papel)
     }
 
     /**
