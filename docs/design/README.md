@@ -56,6 +56,7 @@ Como o app se mostra e por onde o usuário anda.
 | [fluxo-main-screen.md](fluxo-main-screen.md) | base · **vocabulário vencido** | A Main Screen: bottom bar reduzida e drawer com as seções. Cita `Agente` e cargos antigos; as seções passam a **derivar da atuação** (ADR-0016 §2) |
 | [form-passagem-validacao-exibicao.md](form-passagem-validacao-exibicao.md) | **superado em boa parte** | Descreve o form **antes** do molde. Validação pura, UiState puro e eventos por parâmetro **já foram feitos**; sobrevivem os achados de regra, hoje listados no §9 do estudo do agregado |
 | [cadastro-modulos.md](cadastro-modulos.md) | fechado → ADR-0006 | A análise que virou o molde de cadastro |
+| [impressao-fisica-bluetooth.md](impressao-fisica-bluetooth.md) | **aberto** · fora do MVP | A **outra superfície de apresentação: o papel**. Mapeia os sete arquivos do `printerservice`, treze falhas (a maior: impressora fora do ar → toast de sucesso **e** passagem marcada como `EMITIDA`), o vocabulário do bilhete que ficou em 2024 e o desenho que resolve a raiz — um documento intermediário com dois renderizadores, um deles a **prévia em Compose** da bobina térmica |
 
 ## Eixo 4 — Regra de negócio e relatórios
 
