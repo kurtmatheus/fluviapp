@@ -17,31 +17,31 @@ import dev.matheus.fluviapp.domain.IObjetoSimplificado
  * Room não é só arrumação — é o que **destrava a forma nova**: [vinculos] é uma lista, e lista em tabela
  * exigiria `TypeConverter` e migração para um formato que muda de novo na fatia seguinte.
  *
- * ### Os vínculos, e o que ainda não morreu
+ * ### Os vínculos, e o que sobrou
  *
- * [vinculos] é a forma alvo (ADR-0016 §6): a pessoa serve uma ou mais empresas, com cargo em cada uma. É
- * a **fonte** desde a F6.3 — o cadastro edita vínculos, e o que sobrou de [agencia] e [cargo] passou a ser
- * derivado deles, para o único leitor que ainda não migrou: a Passagem, que imprime a agência no bilhete
- * (F9).
+ * [vinculos] é a forma do ADR-0016 §6, e desde a F6.3 é **a fonte**: a pessoa serve uma ou mais empresas,
+ * com cargo em cada uma.
  *
- * A ordem é a mesma que o ADR-0008 usou para relacionar por id: **acrescenta, migra os leitores, remove**.
- * A `lotacao` já saiu (ninguém a lia fora do cadastro); os outros dois saem na F6.5.
+ * A troca seguiu a ordem que o ADR-0008 usou para relacionar por id — **acrescenta, migra os leitores,
+ * remove** — e chegou ao fim aqui: `lotacao` saiu na F6.3 (ninguém a lia fora do cadastro), `agencia` saiu
+ * na F6.5 (o bilhete passou a tirar a agência do vínculo ativo) e [cargo] ficou, com um leitor só e com
+ * dono: a regra de *passagem* no servidor, que a F9 vai reescrever.
  */
 data class Funcionario(
     override val id: String,
     override val descricaoNome: String,
     /**
-     * **Legado, e agora derivado**: desde a F6.3 o cadastro grava aqui o **nome da empresa do primeiro
-     * vínculo**, em vez de um texto livre. É ponte, não modelo — quem ainda lê é a Passagem, que imprime
-     * a agência no bilhete e só troca de fonte quando for revitalizada (F6.5).
-     */
-    val agencia: String,
-    /**
-     * Cargo de **negócio** (§8.1) — nasce [Cargo.AGENTE], o menor privilégio. Promover é decisão da
-     * gestão (ADR-0015 §8.5), nunca do próprio.
+     * Cargo de **negócio** (§8.1) — nasce [Cargo.AGENTE], o menor privilégio.
      *
-     * **Legado**: o cargo passa a ser por vínculo (§6.1), porque a mesma pessoa pode ter cargos
-     * diferentes em empresas diferentes — e um campo só não tem como dizer isso.
+     * **Legado com um leitor conhecido, e é por isso que ele ainda existe**: a regra do Firestore para
+     * *passagem* pergunta "quem edita qualquer uma?" lendo este campo (`cargoDoAutor`), e a linguagem de
+     * regras não sabe procurar "algum vínculo com cargo SUPERVISOR" sem saber a empresa. Trocar isso
+     * exigiria um campo derivado novo, que a F9 (Passagem) descartaria em seguida — então ele fica, e
+     * sai lá.
+     *
+     * No aplicativo ninguém mais o lê: o cargo em vigor é o do **vínculo ativo**
+     * ([ContextoUsuario.cargo]), porque a mesma pessoa pode ser supervisora numa empresa e agente em
+     * outra. Aqui ele é escrito derivado do primeiro vínculo.
      */
     val cargo: String = Cargo.AGENTE.name,
     /**

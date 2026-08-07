@@ -105,23 +105,27 @@ class FormFuncionarioViewModelTest {
         job.cancel()
     }
 
-    /** A ponte para o bilhete (F6.5): o legado deixa de ser texto livre e espelha a empresa do vínculo. */
+    /**
+     * O `cargo` do documento é o **último legado**, e continua sendo escrito derivado do primeiro
+     * vínculo — não para o app, que lê o cargo do vínculo ativo, mas para a regra de *passagem* no
+     * servidor (`cargoDoAutor`), que a F9 reescreve.
+     */
     @Test
-    fun `o campo legado agencia passa a espelhar o nome da empresa do primeiro vinculo`() =
-        runTest(mainRule.dispatcher) {
-            val fake = FakeFuncionarioRepository()
-            val vm = vm(fake)
-            advanceUntilIdle()
+    fun `o cargo legado espelha o primeiro vinculo`() = runTest(mainRule.dispatcher) {
+        val fake = FakeFuncionarioRepository()
+        val vm = vm(fake)
+        advanceUntilIdle()
 
-            vm.onNomeChange("Ana")
-            vm.onEmailChange("ana@fluviapp.com.br")
-            vm.onEmpresaChange("Rio Sul")
-            vm.onAdicionarVinculo()
-            vm.salvar()
-            advanceUntilIdle()
+        vm.onNomeChange("Ana")
+        vm.onEmailChange("ana@fluviapp.com.br")
+        vm.onEmpresaChange("Rio Sul")
+        vm.onCargoChange(Cargo.SUPERVISOR.name)
+        vm.onAdicionarVinculo()
+        vm.salvar()
+        advanceUntilIdle()
 
-            assertEquals("Rio Sul", fake.salvos.single().agencia)
-        }
+        assertEquals(Cargo.SUPERVISOR.name, fake.salvos.single().cargo)
+    }
 
     @Test
     fun `a pessoa pode servir a duas empresas, com cargos diferentes`() = runTest(mainRule.dispatcher) {
@@ -188,7 +192,6 @@ class FormFuncionarioViewModelTest {
                 Funcionario(
                     id = "a1",
                     descricaoNome = "Ana",
-                    agencia = "Navegação Norte",
                     email = "ana@x.com",
                     vinculos = listOf(Vinculo("empresa-1", Cargo.SUPERVISOR)),
                 )

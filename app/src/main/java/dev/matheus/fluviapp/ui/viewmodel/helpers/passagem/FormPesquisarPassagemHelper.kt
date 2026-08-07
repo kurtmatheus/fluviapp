@@ -11,6 +11,12 @@ class FormPesquisarPassagemHelper(
     private val funcionarioRepository: FuncionarioRepository,
     /** Recorte da listagem (ADR-0015 §4.1): em branco = todas as agências. */
     private val agenciaDoEscopo: String = "",
+    /**
+     * O mesmo recorte, pelo **id da empresa** (F6.5): as passagens ainda são filtradas pelo *nome* da
+     * agência — é o que elas congelam —, mas os **funcionários** passaram a se recortar por
+     * `empresaIds`. Dois campos porque são duas coleções em estágios diferentes: a Passagem é F9.
+     */
+    private val empresaIdDoEscopo: String = "",
 ) {
 
     init {
@@ -43,8 +49,9 @@ class FormPesquisarPassagemHelper(
                 // O dropdown de operador acompanha o escopo: o supervisor filtra pelos nomes da
                 // PRÓPRIA agência — oferecer nomes de fora seria oferecer uma busca que volta vazia.
                 listaOperadores = runBlocking {
-                    if (agenciaDoEscopo.isBlank()) funcionarioRepository.obterTodosFuncionarios()
-                    else funcionarioRepository.obterFuncionariosPorAgencia(agenciaDoEscopo)
+                    val todos = funcionarioRepository.obterTodosFuncionarios()
+                    if (empresaIdDoEscopo.isBlank()) todos
+                    else todos.filter { empresaIdDoEscopo in it.empresaIds }
                 }.map { it.descricaoNome }
             )
         }

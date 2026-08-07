@@ -21,7 +21,6 @@ class FuncionarioDocumentoTest {
     private val ana = Funcionario(
         id = "func-1",
         descricaoNome = "Ana Ribeiro",
-        agencia = "MATRIZ",
         cargo = Cargo.SUPERVISOR.name,
         email = "ana@fluviapp.com.br",
         vinculos = listOf(
@@ -94,12 +93,18 @@ class FuncionarioDocumentoTest {
         assertEquals(null, Cargo.de(lido.cargo))
     }
 
-    /** Agência é String livre desde o §8.1: nenhuma leitura pode colapsá-la num valor de enum. */
+    /**
+     * O documento antigo continua legível **inteiro** — a `agencia` gravada por versões anteriores
+     * simplesmente deixa de ser lida (F6.5), e nada no caminho estoura por causa dela. É a contrapartida
+     * de um Firestore schemaless: campo que ninguém lê não precisa ser removido do banco.
+     */
     @Test
-    fun `agencia legada atravessa intacta`() {
-        val lido = documento(dados = mapOf("nome" to "Carla", "agencia" to "AGENCIA HORIZONTE")).toFuncionario()
+    fun `campo legado que ninguem le mais nao atrapalha a leitura`() {
+        val lido = documento(
+            dados = mapOf("nome" to "Carla", "agencia" to "AGENCIA HORIZONTE", "lotacao" to "ILHA")
+        ).toFuncionario()
 
-        assertEquals("AGENCIA HORIZONTE", lido.agencia)
+        assertEquals("Carla", lido.descricaoNome)
     }
 
     // --- Escrita ---

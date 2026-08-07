@@ -28,13 +28,42 @@ class ContextoUsuarioTest {
         assertNull(plataforma.cargo)
     }
 
+    /**
+     * **O cargo em vigor é o do vínculo** (F6.5), e não mais o campo do funcionário: mexer no legado não
+     * muda mais nada. O fail-closed do cargo desconhecido não sumiu — mudou de lugar: ele agora acontece
+     * na fronteira, onde `Vinculo.de` recusa o cargo ilegível e a pessoa fica sem aquele vínculo.
+     */
     @Test
-    fun `cargo desconhecido nao inventa atuacao (fail-closed)`() {
-        val comCargoEstranho = supervisor.copy(
+    fun `o campo legado de cargo nao decide mais a atuacao`() {
+        val comCargoLegadoEstranho = supervisor.copy(
             funcionario = supervisor.funcionario?.copy(cargo = "GERENTE_DE_PATIO"),
         )
 
-        assertNull(comCargoEstranho.atuacao)
+        assertEquals(Funcionario.Cargo.SUPERVISOR.name, comCargoLegadoEstranho.cargo)
+        assertEquals(Atuacao.AGENCIAMENTO, comCargoLegadoEstranho.atuacao)
+    }
+
+    /** Sem vínculo em vigor não há cargo nem atuação — nem agência a aplicar. */
+    @Test
+    fun `sem vinculo ativo, nao ha cargo nem agencia`() {
+        val semVinculo = supervisor.copy(
+            funcionario = supervisor.funcionario?.copy(vinculos = emptyList()),
+        )
+
+        assertNull(semVinculo.cargo)
+        assertNull(semVinculo.atuacao)
+        assertEquals("", semVinculo.agencia)
+    }
+
+    /**
+     * A agência do bilhete é o **nome da empresa do vínculo ativo** (F6.5) — e some junto com o vínculo,
+     * em vez de ficar sobrando de um contexto que não vale mais.
+     */
+    @Test
+    fun `a agencia e o nome da empresa em vigor`() {
+        val comEmpresa = supervisor.copy(empresaAtivaNome = "Navegação Norte")
+
+        assertEquals("Navegação Norte", comEmpresa.agencia)
     }
 
     @Test

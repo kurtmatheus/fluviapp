@@ -59,10 +59,21 @@ class PesquisarPassagemViewModel @Inject constructor(
             uiState = _uiState,
             funcionarioRepository = funcionarioRepository,
             agenciaDoEscopo = agenciaDoEscopoDoContexto(),
+            empresaIdDoEscopo = empresaIdDoEscopoDoContexto(),
         )
         validacaoFormPesquisarPassagemHelper = ValidacaoFormPesquisarPassagemHelper(
             uiState = _uiState
         )
+    }
+
+    /**
+     * O recorte pelo **id da empresa** (F6.5) — o que serve para recortar *funcionários*, agora que eles
+     * se ligam por vínculo. "" = plataforma (atravessa) ou sem vínculo em vigor.
+     */
+    private fun empresaIdDoEscopoDoContexto(): String {
+        val contexto = contexto ?: return ""
+        if (PermissoesUsuario.podeVerTodasAgencias(contexto.papel)) return ""
+        return contexto.vinculoAtivo?.empresaId.orEmpty()
     }
 
     /** "" = sem recorte (plataforma). Sem vínculo, também "": lá a listagem já nem consulta (§4.1). */

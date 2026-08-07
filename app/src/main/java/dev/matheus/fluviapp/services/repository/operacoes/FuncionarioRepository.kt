@@ -9,8 +9,8 @@ import kotlinx.coroutines.flow.StateFlow
  *
  * Desde a F6.2 a coleção vive **só no Firestore** (ADR-0017 D1), e a porta ganhou o que faltava para
  * isso: [observarTodos], a janela para o `StateFlow` que o listener alimenta. As duas consultas por
- * agência ficaram, e ficaram marcadas — elas são do vocabulário antigo, e saem quando a agência virar o
- * `empresaId` do vínculo (F6.3).
+ * String de agência saíram na F6.5, com o campo que as sustentava: recortar por empresa é filtrar por
+ * `empresaIds` na lista que o listener já entregou.
  */
 interface FuncionarioRepository {
     fun sincronizar()
@@ -21,13 +21,6 @@ interface FuncionarioRepository {
 
     suspend fun obterPorId(id: String): Funcionario?
     suspend fun obterTodosFuncionarios(): List<Funcionario>
-
-    /** **Legado** (F6.3): recorte por String de agência. */
-    suspend fun obterTodasAgencias(): List<String>
-
-    /** **Legado** (F6.3): idem. */
-    suspend fun obterFuncionariosPorAgencia(agencia: String): List<Funcionario>
-
     suspend fun deletar(id: String)
 
     /**

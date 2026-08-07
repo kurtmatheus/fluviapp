@@ -170,15 +170,12 @@ class FormFuncionarioViewModel @Inject constructor(
                 // Edição parte do gravado (preserva id e o que esta tela não edita); criação parte do
                 // zero, com id vazio → auto-id no repositório.
                 val base = if (idFuncionario.isNotBlank()) funcionarioRepository.obterPorId(idFuncionario) else null
-                val funcionario = (base ?: Funcionario(id = "", descricaoNome = "", agencia = "")).copy(
+                val funcionario = (base ?: Funcionario(id = "", descricaoNome = "")).copy(
                     descricaoNome = estado.nome,
                     email = estado.email.trim(),
                     vinculos = estado.vinculos,
-                    // A ponte para o bilhete (F6.5): o legado passa a espelhar a empresa do primeiro
-                    // vínculo, em vez de ficar preso ao que alguém digitou antes.
-                    agencia = estado.vinculosNaTela.firstOrNull()?.empresa.orEmpty(),
-                    // O cargo legado acompanha o primeiro vínculo pelo mesmo motivo — quem ainda o lê é
-                    // a política, enquanto ela não perguntar pelo vínculo (F6.5).
+                    // O cargo legado acompanha o primeiro vínculo: quem ainda o lê é a regra de
+                    // *passagem* no servidor (`cargoDoAutor`), que a F9 reescreve.
                     cargo = estado.vinculos.firstOrNull()?.cargo?.name ?: Funcionario.Cargo.AGENTE.name,
                 )
                 funcionarioRepository.salvar(funcionario)

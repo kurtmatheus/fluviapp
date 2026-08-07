@@ -60,7 +60,6 @@ class FakeSessaoUsuario(var contexto: ContextoUsuario? = null) : SessaoUsuario {
                 funcionario = Funcionario(
                     id = "f-op",
                     descricaoNome = "Operador",
-                    agencia = primeira,
                     vinculos = listOf(
                         Vinculo(primeira, Funcionario.Cargo.SUPERVISOR),
                         Vinculo(segunda, Funcionario.Cargo.AGENTE),
@@ -82,7 +81,6 @@ class FakeSessaoUsuario(var contexto: ContextoUsuario? = null) : SessaoUsuario {
                 funcionario = Funcionario(
                     id = "f-op",
                     descricaoNome = "Operador",
-                    agencia = empresaId,
                     cargo = cargo.name,
                     vinculos = listOf(Vinculo(empresaId, cargo)),
                 ),

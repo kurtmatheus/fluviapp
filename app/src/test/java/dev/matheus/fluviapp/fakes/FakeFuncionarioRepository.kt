@@ -32,10 +32,7 @@ class FakeFuncionarioRepository : FuncionarioRepository {
     }
 
     override suspend fun obterPorId(id: String): Funcionario? = funcionarios.find { it.id == id }
-    override suspend fun obterTodasAgencias(): List<String> = funcionarios.map { it.agencia }.distinct()
     override suspend fun obterTodosFuncionarios(): List<Funcionario> = funcionarios
-    override suspend fun obterFuncionariosPorAgencia(agencia: String): List<Funcionario> =
-        funcionarios.filter { it.agencia == agencia }
 
     /** No fake não há "servidor": a mesma lista responde — o que importa é o casamento por e-mail. */
     override suspend fun obterPorEmailDoServidor(email: String): Funcionario? =

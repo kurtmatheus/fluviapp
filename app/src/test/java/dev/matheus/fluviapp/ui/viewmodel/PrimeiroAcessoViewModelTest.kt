@@ -36,7 +36,6 @@ class PrimeiroAcessoViewModelTest {
     private val funcionario = Funcionario(
         id = "f1",
         descricaoNome = "Ana Ribeiro",
-        agencia = "MATRIZ",
         email = email,
     )
 

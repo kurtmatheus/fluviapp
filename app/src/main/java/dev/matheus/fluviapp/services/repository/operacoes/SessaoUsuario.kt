@@ -2,6 +2,7 @@ package dev.matheus.fluviapp.services.repository.operacoes
 
 import dev.matheus.fluviapp.domain.operacoes.ContextoUsuario
 import dev.matheus.fluviapp.preferences.EscolhaDeVinculo
+import dev.matheus.fluviapp.services.repository.cadastro.viagem.EmpresaRepository
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -42,6 +43,7 @@ interface SessaoUsuario {
 class SessaoUsuarioRoom @Inject constructor(
     private val usuarioRepository: UsuarioRepository,
     private val funcionarioRepository: FuncionarioRepository,
+    private val empresaRepository: EmpresaRepository,
     private val escolhaDeVinculo: EscolhaDeVinculo,
 ) : SessaoUsuario {
 
@@ -50,11 +52,18 @@ class SessaoUsuarioRoom @Inject constructor(
         val funcionario = usuario.funcionarioId
             .takeIf { it.isNotBlank() }
             ?.let { funcionarioRepository.obterPorId(it) }
-        return ContextoUsuario(
+
+        val contexto = ContextoUsuario(
             usuario = usuario,
             funcionario = funcionario,
             empresaAtivaId = escolhaDeVinculo.empresaEscolhida(),
         )
+
+        // O nome da empresa é resolvido **aqui**, e só quando há vínculo em vigor: é o bilhete que
+        // precisa dele (gente lê nome, não id), e uma leitura a mais por sessão é mais barata do que
+        // cada tela que imprime algo repetir a consulta.
+        val empresaAtiva = contexto.vinculoAtivo?.let { empresaRepository.obterPorId(it.empresaId) }
+        return contexto.copy(empresaAtivaNome = empresaAtiva?.nome.orEmpty())
     }
 
     override suspend fun escolherEmpresa(empresaId: String) = escolhaDeVinculo.guardar(empresaId)

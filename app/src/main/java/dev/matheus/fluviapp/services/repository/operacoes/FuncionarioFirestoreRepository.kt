@@ -69,11 +69,6 @@ class FuncionarioFirestoreRepository @Inject constructor(
 
     override suspend fun obterTodosFuncionarios(): List<Funcionario> = colecao.obterTodos()
 
-    override suspend fun obterTodasAgencias(): List<String> =
-        colecao.obterTodos().map { it.agencia }.filter { it.isNotBlank() }.distinct()
-
-    override suspend fun obterFuncionariosPorAgencia(agencia: String): List<Funcionario> =
-        colecao.obterTodos().filter { it.agencia == agencia }
 
     /**
      * Consulta o servidor por e-mail (ADR-0015 §2.1). **Não passa pela coleção em memória de propósito**:
