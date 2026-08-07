@@ -109,10 +109,20 @@ para um domínio que ia mudar.
 |---|---|
 | ~~F4, F5~~ | **feitas** (D1) |
 | **F6 — Equipe** | vínculos, cargo por atuação, política com três coordenadas, seleção de contexto, `EscopoAgencia` por empresa; `Agencia` e `Lotacao` morrem |
-| **F7 — Início** | o painel que deriva do contexto escolhido, com o estado vazio como cidadão de primeira classe |
-| **F8 — Rotas** | `rotas/{id}` na raiz, imutável, unicidade do par de portos no servidor, validação de concessão |
-| **F9 — Viagens** | `viagens/{id}` atômica, unicidade `(rotaId, navioId, diaSemana, hora)`, lista de negadas, ocupação |
-| **F10 — Passagens** | emissão sobre a viagem, e a revitalização do que já existe (ciclo de vida, QR, bilhete) |
+| **F7 — Rotas** | `rotas/{id}` na raiz, imutável, unicidade do par de portos no servidor, validação de concessão |
+| **F8 — Viagens** | `viagens/{id}` atômica, unicidade `(rotaId, navioId, diaSemana, hora)`, lista de negadas, ocupação |
+| **F9 — Passagens** | emissão sobre a viagem, e a revitalização do que já existe (ciclo de vida, QR, bilhete) |
+| **F10 — Início** | o painel que deriva do contexto escolhido, com o estado vazio como cidadão de primeira classe |
+
+**O Início é o último, e não o segundo** *(emenda do analista, 2026-08-07, no mesmo dia)*. A versão anterior
+desta tabela o punha logo depois da Equipe, tratando-o como casca a ser preenchida. Ele não é casca: é um
+**sumário**, e sumário só existe depois do que ele resume. O que a tela mostra muda por **papel, empresa e
+cargo** — três eixos que só ficam completos quando Equipe, Rotas, Viagens e Passagens existirem. Construí-lo
+antes seria desenhar o resumo de um trabalho que ainda não acontece, e refazê-lo a cada fase seguinte.
+
+Consequência de ordem: **cada seção trata do seu próprio início no seu devido momento**. O que a fase da
+Equipe deve à F10 é o vínculo ativo (é ele que decide de quem é o sumário); o que as outras devem é o
+número que cada uma sabe calcular.
 
 **Rota e Viagem viram duas fases, e não uma.** Eram uma linha só quando "rota" era um cadastro; desde a 9ª
 rodada são entidades de ciclos diferentes — a rota é a ligação (estável), a viagem é a partida (repetida, e
@@ -150,9 +160,9 @@ camada de serviço — e uma coleção sem regra não falha, **pendura**.
   supervisor que quiser algo fora do ar depende de quem administra. É custo aceito em troca de nenhuma
   agência poder derrubar o que a outra vende; a válvula de escape é a lista de negadas, que resolve o caso
   comum sem tocar no pool.
-- **O `Início` é a primeira seção sem entidade.** Todas as outras nasceram de um cadastro; esta nasce de
-  uma pergunta ("o que eu faço agora?"), e é por isso que ela é a fase mais fácil de adiar e a mais fácil
-  de encher de coisa que não serve.
+- **O `Início` é a única seção sem entidade — e por isso é a última.** Todas as outras nascem de um
+  cadastro; esta nasce de uma pergunta ("o que eu faço agora?"), respondida por **papel, empresa e cargo**.
+  É sumário, e sumário depende de tudo o que resume.
 - **O andaime da revitalização encolhe até sumir.** `SECOES_REVITALIZADAS` ganha um valor por fase, e
   quando igualar `SecaoMenu.entries` o arquivo inteiro sai do projeto — junto com `ForaDoEscopo` e o
   `foraDoEscopo` da suíte de regras.

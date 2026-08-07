@@ -90,10 +90,13 @@ entregue desde a revitalização:
 |---|---|---|
 | ~~F4, F5~~ | **feitas** — painel da plataforma completo | §4, §5, §7.1 (concessão), §8 |
 | **F6 — Equipe** | vínculos, cargo por atuação, política com três coordenadas, seleção de contexto, `EscopoAgencia` por empresa; `Agencia` e `Lotacao` morrem | F6 inteira + o resíduo da F5 |
-| **F7 — Início** | a casca: o painel que deriva do contexto escolhido, e o estado vazio como cidadão de primeira classe | consequência do §1 (matar o seed), nunca teve fase própria |
-| **F8 — Rotas** | `rotas/{id}` na raiz, compartilhadas, imutáveis, unicidade no servidor; a validação de concessão | metade da F7 antiga (§7) |
-| **F9 — Viagens** | `viagens/{id}` atômica `(rota, embarcação, dia, hora)`; a lista de negadas na atuação; ocupação | a outra metade da F7 antiga (§7.1) |
-| **F10 — Passagens** | emissão sobre a viagem, tarifa inferida (ADR-0013 revisado), e a revitalização do que já existe (ciclo de vida, QR, bilhete) | não estava no plano — era pressuposta |
+| **F7 — Rotas** | `rotas/{id}` na raiz, compartilhadas, imutáveis, unicidade no servidor; a validação de concessão | metade da F7 antiga (§7) |
+| **F8 — Viagens** | `viagens/{id}` atômica `(rota, embarcação, dia, hora)`; a lista de negadas na atuação; ocupação | a outra metade da F7 antiga (§7.1) |
+| **F9 — Passagens** | emissão sobre a viagem, tarifa inferida (ADR-0013 revisado), e a revitalização do que já existe (ciclo de vida, QR, bilhete) | não estava no plano — era pressuposta |
+| **F10 — Início** | o painel que deriva do contexto, e o estado vazio como cidadão de primeira classe | consequência do §1 (matar o seed), nunca teve fase própria |
+
+> **O Início foi para o fim** (emenda do analista, 2026-08-07): ele é **sumário** por papel, empresa e cargo
+> — e sumário depende de tudo o que resume. Cada seção trata do seu próprio início quando chegar a vez dela.
 
 Duas observações sobre essa tabela, e as duas são consequência de trabalho já feito:
 
