@@ -104,11 +104,65 @@ object PermissoesUsuario {
      */
     fun podeVerTodasAgencias(papel: String?): Boolean = ehPapelPlataforma(papel)
 
+    // --- O eixo do vínculo (ADR-0016 §6/§6.1, ADR-0022 D4 — F6) ---
+
+    /**
+     * Cadastrar/editar membro, **perguntado pelo vínculo**: plataforma em qualquer empresa, supervisor na
+     * dele. É a mesma regra do §2.1 com a coordenada certa — antes o "dele" era uma String de agência,
+     * agora é o id da empresa em que ele é supervisor.
+     *
+     * **Nome diferente de `podeCadastrarFuncionario` de propósito**, e não por gosto: as duas assinaturas
+     * terminariam em `(String?, null)` no ponto de chamada, e o compilador não teria como escolher. Uma
+     * sobrecarga ambígua que aparece meses depois, num `null` literal, é pior do que duas palavras. Esta
+     * fica quando a outra sair (F6.3).
+     */
+    fun podeCadastrarMembro(papel: String?, vinculo: Vinculo?): Boolean =
+        ehPapelPlataforma(papel) || vinculo?.cargo == Cargo.SUPERVISOR
+
+    /**
+     * O **escopo de empresa** de uma listagem — o que o [EscopoAgencia] vira quando a agência deixa de
+     * ser String e passa a ser a empresa em que se atua (§6).
+     *
+     * Os três casos continuam sendo os mesmos, e o terceiro continua sendo o perigoso: *não filtrar nada*
+     * e *não ter empresa nenhuma* pareceriam iguais como String vazia, e abririam a listagem inteira
+     * para quem não deveria ver nada.
+     */
+    sealed interface EscopoEmpresa {
+        /** Papel de plataforma: atravessa empresas. */
+        data object Todas : EscopoEmpresa
+
+        /** Vínculo ativo: só a empresa dele. */
+        data class Apenas(val empresaId: String) : EscopoEmpresa
+
+        /** Sem papel de plataforma e sem vínculo: não há o que mostrar (fail-closed). */
+        data object Nenhuma : EscopoEmpresa
+    }
+
+    fun escopoDeEmpresa(papel: String?, vinculo: Vinculo?): EscopoEmpresa = when {
+        podeVerTodasAgencias(papel) -> EscopoEmpresa.Todas
+        vinculo != null -> EscopoEmpresa.Apenas(vinculo.empresaId)
+        else -> EscopoEmpresa.Nenhuma
+    }
+
+    /**
+     * A **atuação em vigor**: a do vínculo ativo, e `null` para quem administra a plataforma.
+     *
+     * É esta função que substitui a derivação de hoje (`Cargo.de(cargo)?.atuacao` no `ContextoUsuario`),
+     * e a diferença aparece quando a pessoa tem dois vínculos: o cargo deixa de ser um só, então a
+     * atuação deixa de sair dele — sai da **escolha**.
+     */
+    fun atuacaoEmVigor(vinculo: Vinculo?): Atuacao? = vinculo?.atuacao
+
+    // --- O eixo antigo, por String de agência (morre na F6.3) ---
+
     /**
      * O **escopo de agência** de uma listagem (ADR-0015 §4.1/§6). Existe como tipo, e não como String
      * vazia significando "sem filtro", porque os três casos são diferentes e o terceiro é o perigoso:
      * "não filtra nada" e "não tem agência nenhuma" pareceriam iguais e abririam a listagem inteira
      * para quem não deveria ver nada.
+     *
+     * **Substituído por [EscopoEmpresa]**, e ainda de pé porque quem o consome — a consulta de passagem —
+     * é código não revitalizado (F9). Sai quando a Equipe terminar de trocar agência por empresa.
      */
     sealed interface EscopoAgencia {
         /** Papel de plataforma: atravessa agências. */

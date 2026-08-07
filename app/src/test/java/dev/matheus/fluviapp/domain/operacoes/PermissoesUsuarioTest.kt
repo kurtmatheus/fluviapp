@@ -207,6 +207,59 @@ class PermissoesUsuarioTest {
         assertFalse(PermissoesUsuario.podeVerTodasAgencias(operador))
     }
 
+    // --- O eixo do vínculo (ADR-0016 §6, ADR-0022 D4 — F6) ---
+
+    private val naEmpresaA = Vinculo("empresa-a", Cargo.SUPERVISOR)
+    private val agenteNaB = Vinculo("empresa-b", Cargo.AGENTE)
+
+    /** A mesma regra do §2.1, com a coordenada certa: o "dele" deixa de ser String e vira id de empresa. */
+    @Test
+    fun `cadastrar membro pelo vinculo — plataforma em qualquer empresa, supervisor na dele`() {
+        assertTrue(PermissoesUsuario.podeCadastrarMembro(adm, vinculo = null))
+        assertTrue(PermissoesUsuario.podeCadastrarMembro(operador, naEmpresaA))
+        assertFalse(PermissoesUsuario.podeCadastrarMembro(operador, agenteNaB))
+        assertFalse(PermissoesUsuario.podeCadastrarMembro(operador, vinculo = null))
+    }
+
+    @Test
+    fun `o escopo de empresa recorta pelo vinculo ativo`() {
+        assertEquals(
+            PermissoesUsuario.EscopoEmpresa.Todas,
+            PermissoesUsuario.escopoDeEmpresa(adm, agenteNaB),
+        )
+        assertEquals(
+            PermissoesUsuario.EscopoEmpresa.Apenas("empresa-b"),
+            PermissoesUsuario.escopoDeEmpresa(operador, agenteNaB),
+        )
+    }
+
+    /**
+     * O caso que o tipo existe para impedir: sem plataforma e sem vínculo, a listagem não abre inteira —
+     * ela não abre. "Não filtra nada" e "não tem empresa nenhuma" seriam a mesma String vazia.
+     */
+    @Test
+    fun `sem papel de plataforma e sem vinculo, o escopo e Nenhuma`() {
+        assertEquals(
+            PermissoesUsuario.EscopoEmpresa.Nenhuma,
+            PermissoesUsuario.escopoDeEmpresa(operador, vinculo = null),
+        )
+        assertEquals(
+            PermissoesUsuario.EscopoEmpresa.Nenhuma,
+            PermissoesUsuario.escopoDeEmpresa(null, vinculo = null),
+        )
+    }
+
+    /**
+     * A atuação passa a sair da **escolha**, não do cargo — e é isso que faz sentido quando a pessoa tem
+     * dois vínculos, porque aí o cargo deixa de ser um só.
+     */
+    @Test
+    fun `a atuacao em vigor e a do vinculo ativo`() {
+        assertEquals(Atuacao.AGENCIAMENTO, PermissoesUsuario.atuacaoEmVigor(naEmpresaA))
+        // Quem administra a plataforma não atua em segmento nenhum, e isso é a informação, não a falta dela.
+        assertEquals(null, PermissoesUsuario.atuacaoEmVigor(null))
+    }
+
     @Test
     fun `papel desconhecido nao ve nenhuma secao operacional`() {
         assertEquals(listOf(SecaoMenu.PASSAGEM), PermissoesUsuario.secoesVisiveis(null))
