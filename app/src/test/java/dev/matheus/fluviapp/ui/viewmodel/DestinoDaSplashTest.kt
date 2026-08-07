@@ -53,6 +53,47 @@ class DestinoDaSplashTest {
         )
     }
 
+    // --- A seleção de contexto (F6.4) ---
+
+    /**
+     * Saber *quem* a pessoa é não basta quando ela é duas coisas em empresas diferentes: entrar assim
+     * montaria o painel a partir de uma resposta que ninguém deu.
+     */
+    @Test
+    fun `dois vinculos sem escolha param na selecao de contexto — nao entram`() {
+        val semEscolha = requireNotNull(FakeSessaoUsuario.comDoisVinculos().contexto)
+
+        assertEquals(
+            SplashScreenState.EscolherVinculo,
+            destinoDaSplash(temSessao = true, contexto = semEscolha),
+        )
+    }
+
+    @Test
+    fun `dois vinculos com escolha valida entram direto`() {
+        val escolhido = requireNotNull(
+            FakeSessaoUsuario.comDoisVinculos(escolhida = "empresa-2").contexto
+        )
+
+        assertEquals(
+            SplashScreenState.Logado,
+            destinoDaSplash(temSessao = true, contexto = escolhido),
+        )
+    }
+
+    /** A escolha que não casa mais com vínculo nenhum volta a ser pergunta, não vira entrada silenciosa. */
+    @Test
+    fun `escolha vencida devolve a pergunta`() {
+        val vencida = requireNotNull(
+            FakeSessaoUsuario.comDoisVinculos(escolhida = "empresa-que-saiu").contexto
+        )
+
+        assertEquals(
+            SplashScreenState.EscolherVinculo,
+            destinoDaSplash(temSessao = true, contexto = vencida),
+        )
+    }
+
     @Test
     fun `nenhuma combinacao resolve para Carregando`() {
         val combinacoes = listOf(

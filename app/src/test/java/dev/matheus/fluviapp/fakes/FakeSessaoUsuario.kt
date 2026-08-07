@@ -12,7 +12,16 @@ import dev.matheus.fluviapp.services.repository.operacoes.SessaoUsuario
  * §8.1); usá-los nos testes evita montar `Usuario`/`Funcionario` à mão em cada caso.
  */
 class FakeSessaoUsuario(var contexto: ContextoUsuario? = null) : SessaoUsuario {
-    override suspend fun atual(): ContextoUsuario? = contexto
+    /** A escolha guardada, como no DataStore real — e aplicada ao contexto na leitura seguinte. */
+    var empresaEscolhida: String? = null
+        private set
+
+    override suspend fun atual(): ContextoUsuario? =
+        contexto?.copy(empresaAtivaId = empresaEscolhida ?: contexto?.empresaAtivaId)
+
+    override suspend fun escolherEmpresa(empresaId: String) { empresaEscolhida = empresaId }
+
+    override suspend fun limparEscolha() { empresaEscolhida = null }
 
     companion object {
         /** Papel puro de plataforma: existe no sistema, não existe na operação (sem funcionário). */
@@ -33,6 +42,33 @@ class FakeSessaoUsuario(var contexto: ContextoUsuario? = null) : SessaoUsuario {
 
         fun agente(empresaId: String = "empresa-1") =
             operador(Funcionario.Cargo.AGENTE, empresaId)
+
+        /** Quem serve a duas empresas — a persona que a seleção de contexto (F6.4) existe para atender. */
+        fun comDoisVinculos(
+            primeira: String = "empresa-1",
+            segunda: String = "empresa-2",
+            escolhida: String? = null,
+        ) = FakeSessaoUsuario(
+            ContextoUsuario(
+                usuario = Usuario(
+                    id = "u-op",
+                    email = "op@x.com",
+                    username = "op",
+                    papel = Usuario.Papel.OPERADOR.name,
+                    funcionarioId = "f-op",
+                ),
+                funcionario = Funcionario(
+                    id = "f-op",
+                    descricaoNome = "Operador",
+                    agencia = primeira,
+                    vinculos = listOf(
+                        Vinculo(primeira, Funcionario.Cargo.SUPERVISOR),
+                        Vinculo(segunda, Funcionario.Cargo.AGENTE),
+                    ),
+                ),
+                empresaAtivaId = escolhida,
+            )
+        )
 
         private fun operador(cargo: Funcionario.Cargo, empresaId: String) = FakeSessaoUsuario(
             ContextoUsuario(

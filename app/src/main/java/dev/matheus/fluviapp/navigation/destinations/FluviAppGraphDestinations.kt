@@ -13,6 +13,9 @@ sealed class FluviAppGraphDestinations(val route: String) {
     // gestão pré-cadastrou leva a pessoa a criar a própria senha.
     data object PrimeiroAcesso : FluviAppGraphDestinations("primeiroAcesso")
     data object RecuperarSenha : FluviAppGraphDestinations("recuperarSenha")
+
+    /** Em nome de qual empresa se opera (ADR-0016 §6, F6.4) — só para quem tem mais de um vínculo. */
+    data object SelecaoVinculo : FluviAppGraphDestinations("selecaoVinculo")
     data object MainScreenGraph : FluviAppGraphDestinations("mainScreenGraph")
     data object PesquisarViagemGraph : FluviAppGraphDestinations("pesquisarViagemGraph")
     data object PesquisarPassagemGraph : FluviAppGraphDestinations("pesquisarPassagemGraph")

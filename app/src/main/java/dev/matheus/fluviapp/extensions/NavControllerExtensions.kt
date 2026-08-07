@@ -27,6 +27,14 @@ fun NavHostController.navegaParaMainScreenGraph() {
     navegaLimpo(FluviAppGraphDestinations.MainScreenGraph.route)
 }
 
+/**
+ * A seleção de contexto (F6.4) entra **limpa**, como o login e o painel: ela não é um passo dentro de um
+ * fluxo, é a porta — e ter "voltar" para a splash daria a impressão de que dá para pular a pergunta.
+ */
+fun NavHostController.navegaParaSelecaoVinculo() {
+    navegaLimpo(FluviAppGraphDestinations.SelecaoVinculo.route)
+}
+
 fun NavHostController.navegaParaRecuperarSenha(email: String) {
     navigate("${FluviAppGraphDestinations.RecuperarSenha.route}?$ARG_EMAIL_PREFILL=$email")
 }

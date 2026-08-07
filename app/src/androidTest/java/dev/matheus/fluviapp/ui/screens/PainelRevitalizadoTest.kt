@@ -105,10 +105,11 @@ class PainelRevitalizadoTest {
         composeTestRule.onNodeWithText(texto(SecaoMenu.EMBARCACAO.titulo)).assertIsDisplayed()
         composeTestRule.onNodeWithText(texto(SecaoMenu.LOCALIDADE.titulo)).assertIsDisplayed()
         composeTestRule.onNodeWithText(texto(SecaoMenu.PORTO.titulo)).assertIsDisplayed()
+        // A Equipe entrou na F6.4, com a seleção de contexto (ADR-0022 D5).
+        composeTestRule.onNodeWithText(texto(SecaoMenu.EQUIPE.titulo)).assertIsDisplayed()
 
         composeTestRule.onNodeWithText(texto(SecaoMenu.VIAGEM.titulo)).assertDoesNotExist()
         composeTestRule.onNodeWithText(texto(SecaoMenu.PASSAGEM.titulo)).assertDoesNotExist()
-        composeTestRule.onNodeWithText(texto(SecaoMenu.EQUIPE.titulo)).assertDoesNotExist()
     }
 
     /**
@@ -149,4 +150,8 @@ class PainelRevitalizadoTest {
     @Test
     fun menu_expandePortos_eNavegaPelaAcao() =
         expandeENavega(SecaoMenu.PORTO, AcaoMenu.PORTO_PESQUISAR)
+
+    @Test
+    fun menu_expandeEquipe_eNavegaPelaAcao() =
+        expandeENavega(SecaoMenu.EQUIPE, AcaoMenu.EQUIPE_NOVO)
 }

@@ -17,6 +17,15 @@ sealed class SplashScreenState {
     data object Logado : SplashScreenState()
     data object Deslogado : SplashScreenState()
 
+    /**
+     * Sessão válida, **mas falta dizer em nome de quem se opera** (ADR-0016 §6, F6.4): a pessoa tem mais
+     * de um vínculo e nenhuma escolha em vigor.
+     *
+     * É estado próprio, e não um desvio dentro de `Logado`, porque a diferença é de destino: aqui não se
+     * entra no painel — o menu que ele montaria dependeria de uma resposta que ninguém deu.
+     */
+    data object EscolherVinculo : SplashScreenState()
+
     /** Falha ao resolver o contexto. A tela oferece tentar de novo; não se entra pela metade. */
     data object Erro : SplashScreenState()
 }

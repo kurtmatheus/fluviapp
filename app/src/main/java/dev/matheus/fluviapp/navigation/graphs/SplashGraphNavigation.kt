@@ -14,6 +14,7 @@ import dev.matheus.fluviapp.ui.viewmodel.SplashScreenViewModel
 fun NavGraphBuilder.splashGraph(
     onNavegaParaLogin: () -> Unit,
     onNavegaParaHome: () -> Unit,
+    onNavegaParaSelecaoVinculo: () -> Unit,
 ) {
     composable(
         route = FluviAppGraphDestinations.SplashScreen.route
@@ -32,6 +33,8 @@ fun NavGraphBuilder.splashGraph(
             when (state.splashScreenState) {
                 SplashScreenState.Deslogado -> onNavegaParaLogin()
                 SplashScreenState.Logado -> onNavegaParaHome()
+                // Sessão boa, falta dizer em nome de quem se opera (F6.4): a pergunta vem antes do painel.
+                SplashScreenState.EscolherVinculo -> onNavegaParaSelecaoVinculo()
                 // Os dois ficam na splash: um espera, o outro pede ação. Nenhum navega sozinho.
                 SplashScreenState.Carregando, SplashScreenState.Erro -> Unit
             }

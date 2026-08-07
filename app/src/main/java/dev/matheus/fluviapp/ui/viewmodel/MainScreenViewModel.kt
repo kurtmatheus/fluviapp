@@ -130,6 +130,10 @@ class MainScreenViewModel @Inject constructor(
             it[PreferencesKey.LOGADO] = false
             it[PreferencesKey.USUARIO_ATUAL] = ""
             it[PreferencesKey.CARGO_ATUAL] = ""
+            // A escolha de contexto (F6.4) é de quem estava operando, não do aparelho: quem entrar
+            // depois responde de novo. Deixá-la para trás faria a próxima pessoa herdar a empresa da
+            // anterior — e o app não perguntaria, porque já teria uma resposta guardada.
+            it.remove(PreferencesKey.EMPRESA_ATIVA)
         }
     }
 

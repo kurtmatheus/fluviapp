@@ -39,10 +39,12 @@ import dev.matheus.fluviapp.navigation.navcomposables.localidade.formLocalidadeN
 import dev.matheus.fluviapp.navigation.navcomposables.localidade.resultSearchLocalidadeNavComposable
 import dev.matheus.fluviapp.extensions.navegaParaFormularioPorto
 import dev.matheus.fluviapp.extensions.navegaParaResultPesquisarPorto
+import dev.matheus.fluviapp.extensions.navegaParaSelecaoVinculo
 import dev.matheus.fluviapp.navigation.navcomposables.porto.formPortoNavComposable
 import dev.matheus.fluviapp.navigation.navcomposables.porto.resultSearchPortoNavComposable
 import dev.matheus.fluviapp.navigation.graphs.pesquisarPassagemGraph
 import dev.matheus.fluviapp.navigation.graphs.pesquisarViagemGraph
+import dev.matheus.fluviapp.navigation.graphs.selecaoVinculoGraph
 import dev.matheus.fluviapp.navigation.graphs.splashGraph
 import dev.matheus.fluviapp.navigation.navcomposables.contagem.contagemPassagemNavComposable
 import dev.matheus.fluviapp.navigation.navcomposables.funcionario.formFuncionarioNavComposable
@@ -64,6 +66,15 @@ fun FluviAppNavHost(
             onNavegaParaLogin = {
                 navController.navegaParaLoginGraph()
             },
+            onNavegaParaHome = {
+                navController.navegaParaMainScreenGraph()
+            },
+            onNavegaParaSelecaoVinculo = {
+                navController.navegaParaSelecaoVinculo()
+            }
+        )
+
+        selecaoVinculoGraph(
             onNavegaParaHome = {
                 navController.navegaParaMainScreenGraph()
             }

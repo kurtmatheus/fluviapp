@@ -67,3 +67,33 @@ fun List<Vinculo>.naEmpresa(empresaId: String): Vinculo? = firstOrNull { it.empr
  * caso do papel puro de plataforma, que não atua em empresa nenhuma.
  */
 fun List<Vinculo>.unicoOuNenhum(): Vinculo? = singleOrNull()
+
+/**
+ * **Qual vínculo está em vigor**, dada a escolha guardada (ADR-0016 §6 — F6.4). Função pura: é a regra
+ * inteira da seleção de contexto, e é ela que os testes cobrem sem DataStore nem tela.
+ *
+ * | vínculos | escolha | resultado |
+ * |---|---|---|
+ * | nenhum | — | `null` — papel puro de plataforma, não atua em empresa nenhuma |
+ * | um | qualquer | **o único** — quem não tem alternativa não escolhe, e escolha guardada não o contradiz |
+ * | vários | válida | o escolhido |
+ * | vários | ausente ou **vencida** | `null` — é a pergunta que falta fazer |
+ *
+ * A linha da escolha **vencida** é a que evita o pior defeito possível aqui: alguém perde o vínculo com
+ * uma empresa e continua operando em nome dela porque o id ficou gravado no aparelho. A escolha é
+ * revalidada contra os vínculos **a cada leitura** — ela é uma preferência, nunca uma credencial.
+ */
+fun resolverVinculoAtivo(vinculos: List<Vinculo>, empresaEscolhida: String?): Vinculo? = when {
+    vinculos.isEmpty() -> null
+    vinculos.size == 1 -> vinculos.single()
+    else -> empresaEscolhida?.let { vinculos.naEmpresa(it) }
+}
+
+/**
+ * Falta escolher? Só quando há **mais de uma** opção e nenhuma escolha válida em vigor.
+ *
+ * Note o que isto **não** é: "não tem vínculo ativo". Quem não tem vínculo nenhum também não tem vínculo
+ * ativo, e mandá-lo escolher entre zero opções seria uma tela sem saída.
+ */
+fun precisaEscolherVinculo(vinculos: List<Vinculo>, empresaEscolhida: String?): Boolean =
+    vinculos.size > 1 && resolverVinculoAtivo(vinculos, empresaEscolhida) == null

@@ -82,6 +82,7 @@
     <string name="label_agente">Agente</string>
     <string name="label_cargo">Cargo</string>
     <string name="btn_adicionar_vinculo">Adicionar vínculo</string>
+    <string name="titulo_selecao_vinculo">Você atua em mais de uma empresa. Em nome de qual vai operar?</string>
     <string name="msg_sem_vinculo">Nenhum vínculo — escolha a empresa e adicione.</string>
     <string name="label_valor_total">Valor Total</string>
     <string name="label_obs">Observação</string>

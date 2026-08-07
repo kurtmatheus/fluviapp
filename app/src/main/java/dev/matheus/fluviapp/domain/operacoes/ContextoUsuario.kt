@@ -12,17 +12,34 @@ package dev.matheus.fluviapp.domain.operacoes
 data class ContextoUsuario(
     val usuario: Usuario,
     val funcionario: Funcionario?,
+    /**
+     * A empresa **escolhida** por quem opera (F6.4), lida de onde ela foi guardada. `null` = ainda não
+     * escolheu — e continua sendo `null` para quem não tem o que escolher.
+     *
+     * É preferência, não credencial: quem decide se ela vale é [vinculoAtivo], revalidando-a contra os
+     * vínculos atuais a cada leitura.
+     */
+    val empresaAtivaId: String? = null,
 ) {
     val papel: String get() = usuario.papel
 
     /**
      * **O vínculo em vigor** (ADR-0016 §6): em nome de qual empresa esta pessoa está operando agora.
      *
-     * Enquanto a seleção de contexto não existir (F6.4), ele é resolvido pelo caso sem ambiguidade —
-     * quem tem um vínculo só não tem o que escolher. Com dois, é `null` de propósito: adivinhar seria
-     * decidir em nome de quem opera, e o efeito apareceria no recorte das listas e na agência do bilhete.
+     * Um vínculo só, é ele. Vários, é o escolhido — e `null` enquanto a escolha não existir ou não valer
+     * mais, porque adivinhar seria decidir em nome de quem opera, e o efeito apareceria no recorte das
+     * listas e na agência do bilhete.
      */
-    val vinculoAtivo: Vinculo? get() = funcionario?.vinculos?.unicoOuNenhum()
+    val vinculoAtivo: Vinculo? get() = resolverVinculoAtivo(vinculos, empresaAtivaId)
+
+    /** Os vínculos desta pessoa; vazio para papel puro de plataforma. */
+    val vinculos: List<Vinculo> get() = funcionario?.vinculos.orEmpty()
+
+    /**
+     * A pergunta que a entrada precisa fazer: **mais de uma opção e nenhuma escolha em vigor**. Quem tem
+     * zero ou uma nunca cai aqui.
+     */
+    val precisaEscolherVinculo: Boolean get() = precisaEscolherVinculo(vinculos, empresaAtivaId)
 
     /** `null` quando não há vínculo — a política trata ausência como caso normal (§8.2). */
     val cargo: String? get() = funcionario?.cargo

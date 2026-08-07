@@ -7,11 +7,11 @@ import dev.matheus.fluviapp.domain.operacoes.PermissoesUsuario
  * **O andaime da revitalização**: quais seções já foram refeitas na arquitetura nova — domínio isolado,
  * camada de dados, camada lógica e apresentação, cada uma testável para a entidade em foco.
  *
- * Hoje são quatro: [SecaoMenu.EMPRESA] (ADR-0020 D10, ADR-0017 F3), [SecaoMenu.EMBARCACAO] — a
- * **Flotilha** —, [SecaoMenu.LOCALIDADE] e [SecaoMenu.PORTO] (ADR-0016 §5, F4). O app deve se comportar,
- * do painel para dentro, **como se tivesse acabado de ser implementado** e só conhecesse elas — não como
- * um app completo com pedaços quebrados. Seção fora daqui não aparece no menu, e o que ela abriria não é
- * alcançável.
+ * Hoje são cinco: [SecaoMenu.EMPRESA] (ADR-0020 D10, ADR-0017 F3), [SecaoMenu.EMBARCACAO] — a
+ * **Flotilha** —, [SecaoMenu.LOCALIDADE] e [SecaoMenu.PORTO] (ADR-0016 §5, F4), e a [SecaoMenu.EQUIPE]
+ * (ADR-0022 D5, F6). O app deve se comportar, do painel para dentro, **como se tivesse acabado de ser
+ * implementado** e só conhecesse elas — não como um app completo com pedaços quebrados. Seção fora daqui
+ * não aparece no menu, e o que ela abriria não é alcançável.
  *
  * A ordem não é arbitrária: a Empresa veio primeiro porque a Embarcação **tem dono** (`empresaId`), e
  * cadastrar frota antes de existir parte a quem pertencer seria cadastrar órfão. A Localidade veio depois
@@ -42,6 +42,9 @@ val SECOES_REVITALIZADAS: Set<SecaoMenu> = setOf(
     SecaoMenu.EMBARCACAO,
     SecaoMenu.LOCALIDADE,
     SecaoMenu.PORTO,
+    // A **Equipe** entra com a seleção de contexto (F6.4), e não antes: até ela existir, o supervisor com
+    // dois vínculos abriria o cadastro sem empresa nenhuma. Seção meio viva não entra no andaime.
+    SecaoMenu.EQUIPE,
 )
 
 /** Se a seção já foi refeita ponta a ponta. */

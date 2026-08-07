@@ -38,41 +38,53 @@ class EscopoRevitalizadoTest {
     // --- O escopo em si ---
 
     @Test
-    fun `estao revitalizadas a Empresa, a Flotilha, a Localidade e o Porto`() {
+    fun `estao revitalizadas as quatro do painel e a Equipe`() {
         assertEquals(
-            setOf(SecaoMenu.EMPRESA, SecaoMenu.EMBARCACAO, SecaoMenu.LOCALIDADE, SecaoMenu.PORTO),
+            setOf(
+                SecaoMenu.EMPRESA,
+                SecaoMenu.EMBARCACAO,
+                SecaoMenu.LOCALIDADE,
+                SecaoMenu.PORTO,
+                SecaoMenu.EQUIPE,
+            ),
             SECOES_REVITALIZADAS,
         )
         assertTrue(estaRevitalizada(SecaoMenu.EMPRESA))
         assertTrue(estaRevitalizada(SecaoMenu.EMBARCACAO))
         assertTrue(estaRevitalizada(SecaoMenu.LOCALIDADE))
         assertTrue(estaRevitalizada(SecaoMenu.PORTO))
+        // Entrou na F6.4, junto com a seleção de contexto — não antes (ADR-0022 D5).
+        assertTrue(estaRevitalizada(SecaoMenu.EQUIPE))
         assertFalse(estaRevitalizada(SecaoMenu.VIAGEM))
         assertFalse(estaRevitalizada(SecaoMenu.PASSAGEM))
-        assertFalse(estaRevitalizada(SecaoMenu.EQUIPE))
     }
 
     // --- O menu que o painel monta ---
 
     /** A ordem é a de [SecaoMenu] — parte, ativos, capacidades: a ordem em que se consegue cadastrar. */
     @Test
-    fun `plataforma ve a Empresa, a Flotilha, a Localidade e o Porto`() {
-        val esperado =
-            listOf(SecaoMenu.EMPRESA, SecaoMenu.EMBARCACAO, SecaoMenu.LOCALIDADE, SecaoMenu.PORTO)
+    fun `plataforma ve as quatro do painel e a Equipe`() {
+        val esperado = listOf(
+            SecaoMenu.EMPRESA,
+            SecaoMenu.EMBARCACAO,
+            SecaoMenu.LOCALIDADE,
+            SecaoMenu.PORTO,
+            SecaoMenu.EQUIPE,
+        )
 
         assertEquals(esperado, secoesDoMenu(adm))
         assertEquals(esperado, secoesDoMenu(gestor))
     }
 
     /**
-     * O operador tinha PASSAGEM garantida pela política (`podeAcessar` devolve `true` para todos) e a
-     * Empresa negada — logo, menu vazio. Não é bug: é o app agindo como recém-implementado para quem
-     * ainda não tem seção viva.
+     * **O supervisor ganhou a primeira seção dele** (F6.4): a Equipe atravessa painel e atuação (§2.2), e
+     * ele a gere na própria empresa. O agente continua sem menu — a seção dele é a Passagem, que ainda
+     * não foi revitalizada —, e isso não é bug: é o app agindo como recém-implementado.
      */
     @Test
-    fun `operador fica sem menu enquanto a secao dele nao for revitalizada`() {
+    fun `o supervisor ve a Equipe e o agente segue sem menu`() {
+        assertEquals(listOf(SecaoMenu.EQUIPE), secoesDoMenu(operador, supervisor, Atuacao.AGENCIAMENTO))
         assertEquals(emptyList<SecaoMenu>(), secoesDoMenu(operador, agente, Atuacao.AGENCIAMENTO))
-        assertEquals(emptyList<SecaoMenu>(), secoesDoMenu(operador, supervisor, Atuacao.AGENCIAMENTO))
     }
 
     @Test

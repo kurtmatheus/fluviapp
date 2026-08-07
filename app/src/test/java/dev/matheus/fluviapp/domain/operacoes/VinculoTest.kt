@@ -2,7 +2,9 @@ package dev.matheus.fluviapp.domain.operacoes
 
 import dev.matheus.fluviapp.domain.operacoes.Funcionario.Cargo
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
@@ -82,5 +84,47 @@ class VinculoTest {
         assertEquals(naAgencia, listOf(naAgencia).unicoOuNenhum())
         assertNull(listOf(naAgencia, naOutra).unicoOuNenhum())
         assertNull(emptyList<Vinculo>().unicoOuNenhum())
+    }
+
+    // --- A seleção de contexto (F6.4): a regra inteira, sem DataStore e sem tela ---
+
+    private val dois = listOf(naAgencia, naOutra)
+
+    @Test
+    fun `sem vinculo nao ha vinculo ativo — e nada a escolher`() {
+        assertNull(resolverVinculoAtivo(emptyList(), empresaEscolhida = null))
+        assertNull(resolverVinculoAtivo(emptyList(), empresaEscolhida = "empresa-1"))
+        assertFalse(precisaEscolherVinculo(emptyList(), empresaEscolhida = null))
+    }
+
+    /** Quem tem um só não escolhe — e uma escolha guardada não pode contradizer o único que existe. */
+    @Test
+    fun `com um vinculo, ele e o ativo mesmo com escolha divergente`() {
+        assertEquals(naAgencia, resolverVinculoAtivo(listOf(naAgencia), empresaEscolhida = null))
+        assertEquals(naAgencia, resolverVinculoAtivo(listOf(naAgencia), empresaEscolhida = "empresa-9"))
+        assertFalse(precisaEscolherVinculo(listOf(naAgencia), empresaEscolhida = null))
+    }
+
+    @Test
+    fun `com dois vinculos e escolha valida, vale o escolhido`() {
+        assertEquals(naOutra, resolverVinculoAtivo(dois, empresaEscolhida = "empresa-2"))
+        assertFalse(precisaEscolherVinculo(dois, empresaEscolhida = "empresa-2"))
+    }
+
+    @Test
+    fun `com dois vinculos e sem escolha, falta escolher`() {
+        assertNull(resolverVinculoAtivo(dois, empresaEscolhida = null))
+        assertTrue(precisaEscolherVinculo(dois, empresaEscolhida = null))
+    }
+
+    /**
+     * **A escolha vencida** — o pior defeito possível deste ponto, e o que a revalidação a cada leitura
+     * impede: alguém perde o vínculo com uma empresa e continua operando em nome dela porque o id ficou
+     * gravado no aparelho. A preferência simplesmente deixa de casar, e a pergunta volta.
+     */
+    @Test
+    fun `escolha de empresa em que a pessoa nao atua mais nao vale`() {
+        assertNull(resolverVinculoAtivo(dois, empresaEscolhida = "empresa-que-saiu"))
+        assertTrue(precisaEscolherVinculo(dois, empresaEscolhida = "empresa-que-saiu"))
     }
 }

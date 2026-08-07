@@ -25,4 +25,10 @@ object PreferencesKey {
     val PAPEL_ATUAL = stringPreferencesKey("papel_atual")
     val CARGO_ATUAL = stringPreferencesKey("cargo_funcionario_atual")
     val TEMA_ESCURO = booleanPreferencesKey("tema_escuro")
+
+    /**
+     * Em nome de qual empresa se está operando (F6.4) — a resposta à seleção de contexto do ADR-0016 §6.
+     * **Preferência, não credencial**: ver `EscolhaDeVinculo`.
+     */
+    val EMPRESA_ATIVA = stringPreferencesKey("empresa_ativa")
 }

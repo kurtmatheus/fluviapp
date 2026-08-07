@@ -72,17 +72,19 @@ class SplashScreenViewModel @Inject constructor(
  * A decisão da splash, **pura** — mesmo molde das validações do ADR-0006: a regra sai do ViewModel para
  * poder ser testada sem `FirebaseAuth` (classe final, e o projeto não usa biblioteca de mock).
  *
- * Três entradas, quatro saídas:
+ * Três entradas, cinco saídas:
  *
  * | sessão | contexto | falhou | destino |
  * |---|---|---|---|
  * | não | — | — | `Deslogado` |
  * | sim | — | sim | `Erro` |
  * | sim | ausente | não | `Deslogado` — sessão válida sem registro local: o vínculo se refaz no login |
+ * | sim | presente, **sem escolha e com mais de um vínculo** | não | `EscolherVinculo` (F6.4) |
  * | sim | presente | não | `Logado` |
  *
- * A terceira linha é a que muda o comportamento anterior: antes bastava haver sessão no Firebase para
- * entrar, e o painel montava sem saber quem era a pessoa na operação.
+ * A terceira linha mudou o comportamento anterior: antes bastava haver sessão no Firebase para entrar, e
+ * o painel montava sem saber quem era a pessoa na operação. A quarta é a mesma ideia levada até o fim —
+ * saber *quem* a pessoa é não basta quando ela é duas coisas em empresas diferentes.
  */
 internal fun destinoDaSplash(
     temSessao: Boolean,
@@ -92,5 +94,6 @@ internal fun destinoDaSplash(
     !temSessao -> SplashScreenState.Deslogado
     falhouAoCarregar -> SplashScreenState.Erro
     contexto == null -> SplashScreenState.Deslogado
+    contexto.precisaEscolherVinculo -> SplashScreenState.EscolherVinculo
     else -> SplashScreenState.Logado
 }
