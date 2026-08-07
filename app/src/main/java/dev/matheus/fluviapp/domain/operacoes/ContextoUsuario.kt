@@ -15,6 +15,15 @@ data class ContextoUsuario(
 ) {
     val papel: String get() = usuario.papel
 
+    /**
+     * **O vínculo em vigor** (ADR-0016 §6): em nome de qual empresa esta pessoa está operando agora.
+     *
+     * Enquanto a seleção de contexto não existir (F6.4), ele é resolvido pelo caso sem ambiguidade —
+     * quem tem um vínculo só não tem o que escolher. Com dois, é `null` de propósito: adivinhar seria
+     * decidir em nome de quem opera, e o efeito apareceria no recorte das listas e na agência do bilhete.
+     */
+    val vinculoAtivo: Vinculo? get() = funcionario?.vinculos?.unicoOuNenhum()
+
     /** `null` quando não há vínculo — a política trata ausência como caso normal (§8.2). */
     val cargo: String? get() = funcionario?.cargo
 
@@ -32,7 +41,12 @@ data class ContextoUsuario(
      */
     val atuacao: Atuacao? get() = Funcionario.Cargo.de(cargo)?.atuacao
 
-    /** Agência de quem opera; vazia sem vínculo (e aí não há recorte por agência a aplicar). */
+    /**
+     * Agência de quem opera; vazia sem vínculo.
+     *
+     * **Legado** (F6.5): quem ainda lê isto é a Passagem — a agência impressa no bilhete —, e ela só
+     * troca de fonte quando for revitalizada. O substituto já existe ao lado: [vinculoAtivo].
+     */
     val agencia: String get() = funcionario?.agencia.orEmpty()
 
     /** Nome da pessoa; sem funcionário, o `username` — o `Usuario` não tem nome (§8.1). */

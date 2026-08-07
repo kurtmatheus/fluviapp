@@ -1,60 +1,54 @@
 package dev.matheus.fluviapp.ui.components.forms.areas.funcionario
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import dev.matheus.fluviapp.R
 import dev.matheus.fluviapp.domain.operacoes.Funcionario
+import dev.matheus.fluviapp.domain.operacoes.Vinculo
 import dev.matheus.fluviapp.ui.components.forms.areas.CommonAreaForm
 import dev.matheus.fluviapp.ui.components.forms.dropdowns.DropDownFormField
-import dev.matheus.fluviapp.ui.components.forms.dropdowns.FilterDropDownForm
 import dev.matheus.fluviapp.ui.components.forms.fields.FormTextFieldBrownNoIcon
+import dev.matheus.fluviapp.ui.components.texts.TextRegularBrown
+import dev.matheus.fluviapp.ui.states.EmpresaOpcao
 import dev.matheus.fluviapp.ui.states.FormFuncionarioUiState
 
 @Composable
 fun ContentFuncionarioForm(
     modifier: Modifier,
     state: FormFuncionarioUiState,
-    onAgenciaChange: (String) -> Unit,
-    onFuncionarioChange: (String) -> Unit,
+    onNomeChange: (String) -> Unit,
     onEmailChange: (String) -> Unit,
-    onLotacaoChange: (String) -> Unit,
+    onEmpresaChange: (String) -> Unit,
     onCargoChange: (String) -> Unit,
+    onAdicionarVinculo: () -> Unit,
+    onRemoverVinculo: (String) -> Unit,
 ) {
-    // Dois recortes na mesma tela (ADR-0015 §2.1): a plataforma escolhe a agência; para o supervisor
-    // ela é a dele — mostrada, e não escondida, para que o cadastrante veja em nome de quem cadastra.
-    if (state.podeEscolherAgencia) {
-        FilterDropDownForm(
-            modifier = modifier.fillMaxWidth(),
-            listaItens = state.listaAgencia,
-            label = R.string.label_agencia,
-            value = state.agencia,
-            isError = state.isAgenciaError,
-            onValueChange = onAgenciaChange,
-            keyboardType = KeyboardType.Text,
-        )
-    } else {
-        FormTextFieldBrownNoIcon(
-            modifier = modifier,
-            value = state.agencia,
-            onValueChange = {},
-            label = R.string.label_agencia,
-            readOnly = true,
-            enabled = false,
-            isError = state.isAgenciaError,
-        )
-    }
-
     FormTextFieldBrownNoIcon(
         modifier = modifier,
-        value = state.funcionario,
-        onValueChange = onFuncionarioChange,
+        value = state.nome,
+        onValueChange = onNomeChange,
         label = R.string.label_agente,
-        isError = state.isFuncionarioError,
+        isError = state.isNomeError,
         keyboardOptions = KeyboardOptions(KeyboardCapitalization.Characters),
     )
 
@@ -70,13 +64,18 @@ fun ContentFuncionarioForm(
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
     )
 
+    // --- Vínculos: onde a pessoa atua, e como em cada lugar (ADR-0016 §6) ---
+
+    // Dois recortes na mesma tela (§2.1): a plataforma escolhe a empresa; para o supervisor ela é a
+    // dele — mostrada, e não escondida, para que quem cadastra veja em nome de quem cadastra.
     DropDownFormField(
         modifier = modifier.fillMaxWidth(),
-        listaItens = state.listaMunicipios,
-        label = R.string.label_lotacao,
-        value = state.lotacao,
-        isError = state.isLotacaoError,
-        onValueChange = onLotacaoChange,
+        listaItens = state.empresas.map { it.nome },
+        label = R.string.label_empresa,
+        value = state.empresaEmEdicao,
+        isError = state.isVinculosError,
+        readOnly = !state.podeEscolherEmpresa,
+        onValueChange = onEmpresaChange,
     )
 
     // Cargo só aparece para a plataforma (§8.5). Para o supervisor não é campo desabilitado: é campo
@@ -86,9 +85,57 @@ fun ContentFuncionarioForm(
             modifier = modifier.fillMaxWidth(),
             listaItens = state.listaCargo,
             label = R.string.label_cargo,
-            value = state.cargo,
+            value = state.cargoEmEdicao,
             onValueChange = onCargoChange,
         )
+    }
+
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.End,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        OutlinedButton(
+            onClick = onAdicionarVinculo,
+            enabled = state.podeAdicionarVinculo,
+        ) {
+            Text(text = stringResource(R.string.btn_adicionar_vinculo))
+        }
+    }
+
+    // A lista do que já foi atribuído. Vazia, ela **diz** que está vazia: um espaço em branco entre o
+    // botão e o salvar não distingue "ainda não atribuí" de "esta tela não tem essa parte".
+    if (state.vinculosNaTela.isEmpty()) {
+        TextRegularBrown(
+            modifier = modifier.padding(top = 4.dp),
+            text = stringResource(R.string.msg_sem_vinculo),
+        )
+    } else {
+        Column(modifier = modifier.fillMaxWidth()) {
+            state.vinculosNaTela.forEach { vinculo ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    TextRegularBrown(
+                        modifier = Modifier.weight(1f),
+                        text = listOf(vinculo.empresa, vinculo.cargo)
+                            .filter { it.isNotBlank() }
+                            .joinToString(" · "),
+                    )
+                    IconButton(onClick = { onRemoverVinculo(vinculo.empresaId) }) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = stringResource(R.string.description_deletar),
+                            tint = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                }
+                HorizontalDivider()
+            }
+        }
     }
 }
 
@@ -97,22 +144,24 @@ fun ContentFuncionarioForm(
 private fun ContentFuncionarioFormPreview() {
     CommonAreaForm(
         modifier = Modifier,
-        titleArea = R.string.form_area_title_agencia,
+        titleArea = R.string.subtitle_cadastrar_novo_agente,
     ) {
         ContentFuncionarioForm(
             modifier = it,
             state = FormFuncionarioUiState(
-                agencia = "MATRIZ",
-                funcionario = "Agente Modelo",
+                nome = "Agente Modelo",
                 email = "agente.modelo@fluviapp.com.br",
-                lotacao = "PORTO NORTE",
+                empresas = listOf(EmpresaOpcao("e1", "Navegação Norte"), EmpresaOpcao("e2", "Rio Sul")),
+                empresaEmEdicao = "Rio Sul",
+                vinculos = listOf(Vinculo("e1", Funcionario.Cargo.SUPERVISOR)),
                 listaCargo = Funcionario.Cargo.entries.map(Funcionario.Cargo::name),
             ),
-            onAgenciaChange = {},
-            onFuncionarioChange = {},
+            onNomeChange = {},
             onEmailChange = {},
-            onLotacaoChange = {},
+            onEmpresaChange = {},
             onCargoChange = {},
+            onAdicionarVinculo = {},
+            onRemoverVinculo = {},
         )
     }
 }

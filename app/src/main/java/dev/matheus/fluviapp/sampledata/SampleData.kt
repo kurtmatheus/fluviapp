@@ -16,10 +16,6 @@ import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.DEBIT
 import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.DINHEIRO
 import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.PIX
 import dev.matheus.fluviapp.domain.operacoes.Funcionario
-import dev.matheus.fluviapp.domain.operacoes.Agencia.MATRIZ
-import dev.matheus.fluviapp.domain.operacoes.Funcionario.Lotacao.ILHA_CENTRAL
-import dev.matheus.fluviapp.domain.operacoes.Funcionario.Lotacao.PORTO_NORTE
-import dev.matheus.fluviapp.domain.operacoes.Funcionario.Lotacao.PORTO_SUL
 import dev.matheus.fluviapp.domain.operacoes.Usuario
 import dev.matheus.fluviapp.domain.screendata.DadosContagemPassagem
 import dev.matheus.fluviapp.domain.screendata.DadosImpressora
@@ -105,44 +101,9 @@ val listaAcomodacaoSample =
         Constante("3", "Suíte p/ 3 Pessoas", ACOMODACAO.name),
         Constante("4", "Camarote", ACOMODACAO.name)
     )
-val listaFuncionarioSample = listOf(
-    Funcionario("1", "Ana Ribeiro", MATRIZ.name, PORTO_NORTE.name, email = "ana.ribeiro@fluviapp.com.br"),
-    // O seed também precisa de um master de agência: sem SUPERVISOR nenhum, o eixo de negócio da
-    // política (ADR-0015 §8.2) nunca aparece em execução — só nos testes.
-    Funcionario("2", "Bruno Costa", MATRIZ.name, PORTO_NORTE.name, Funcionario.Cargo.SUPERVISOR.name, email = "bruno.costa@fluviapp.com.br"),
-    Funcionario("3", "Carla Dias", "AGENCIA HORIZONTE", ILHA_CENTRAL.name, email = "carla.dias@fluviapp.com.br"),
-    Funcionario("4", "Daniel Alves", "AGENCIA MARE", ILHA_CENTRAL.name, email = "daniel.alves@fluviapp.com.br"),
-    Funcionario("5", "Elena Faria", "AGENCIA AURORA", ILHA_CENTRAL.name, email = "elena.faria@fluviapp.com.br"),
-    Funcionario("6", "Fabio Gomes", "AGENCIA HORIZONTE", ILHA_CENTRAL.name, email = "fabio.gomes@fluviapp.com.br"),
-    Funcionario("7", "Gabriela Lima", "AGENCIA MARE", ILHA_CENTRAL.name, email = "gabriela.lima@fluviapp.com.br"),
-    Funcionario("8", "Hugo Melo", "AGENCIA AURORA", ILHA_CENTRAL.name, email = "hugo.melo@fluviapp.com.br"),
-    Funcionario("9", "Igor Nunes", "AGENCIA HORIZONTE", ILHA_CENTRAL.name, email = "igor.nunes@fluviapp.com.br"),
-    Funcionario("10", "Julia Pires", "AGENCIA MARE", ILHA_CENTRAL.name, email = "julia.pires@fluviapp.com.br"),
-    Funcionario("11", "Karla Rocha", "AGENCIA AURORA", ILHA_CENTRAL.name, email = "karla.rocha@fluviapp.com.br"),
-    Funcionario("12", "Lucas Souza", "AGENCIA HORIZONTE", ILHA_CENTRAL.name, email = "lucas.souza@fluviapp.com.br"),
-    Funcionario("13", "Marina Teles", "AGENCIA MARE", ILHA_CENTRAL.name, email = "marina.teles@fluviapp.com.br"),
-    Funcionario("14", "Nadia Vaz", "AGENCIA LITORAL", PORTO_NORTE.name, email = "nadia.vaz@fluviapp.com.br"),
-    Funcionario("15", "Otavio Reis", "AGENCIA LITORAL", PORTO_NORTE.name, email = "otavio.reis@fluviapp.com.br"),
-    Funcionario("16", "Paula Matos", "AGENCIA LITORAL", PORTO_NORTE.name, email = "paula.matos@fluviapp.com.br"),
-    Funcionario("17", "Rafael Braga", "AGENCIA LITORAL", PORTO_NORTE.name, email = "rafael.braga@fluviapp.com.br"),
-    Funcionario("18", "Sofia Cunha", "AGENCIA LITORAL", PORTO_NORTE.name, email = "sofia.cunha@fluviapp.com.br"),
-    Funcionario("19", "Tiago Moraes", "AGENCIA LITORAL", PORTO_NORTE.name, email = "tiago.moraes@fluviapp.com.br"),
-    Funcionario("20", "Ursula Pinto", "AGENCIA NORTE", PORTO_NORTE.name, email = "ursula.pinto@fluviapp.com.br"),
-    Funcionario("21", "Vitor Campos", "AGENCIA NORTE", PORTO_NORTE.name, email = "vitor.campos@fluviapp.com.br"),
-    Funcionario("22", "Wesley Aragao", "SEM AGENCIA", PORTO_NORTE.name, email = "wesley.aragao@fluviapp.com.br"),
-    Funcionario("23", "Xavier Luz", "SEM AGENCIA", PORTO_NORTE.name, email = "xavier.luz@fluviapp.com.br"),
-    Funcionario("24", "Yasmin Freitas", "AGENCIA AURORA", ILHA_CENTRAL.name, email = "yasmin.freitas@fluviapp.com.br"),
-    Funcionario("25", "Ze Carlos", "AGENCIA AURORA", ILHA_CENTRAL.name, email = "ze.carlos@fluviapp.com.br"),
-    Funcionario("26", "Alice Barros", "AGENCIA AURORA", ILHA_CENTRAL.name, email = "alice.barros@fluviapp.com.br"),
-    Funcionario("27", "Bernardo Sa", "AGENCIA SUL", PORTO_SUL.name, email = "bernardo.sa@fluviapp.com.br"),
-    Funcionario("28", "Cecilia Mota", "AGENCIA MARE", ILHA_CENTRAL.name, email = "cecilia.mota@fluviapp.com.br"),
-    Funcionario("29", "Diego Farias", "AGENCIA HORIZONTE", ILHA_CENTRAL.name, email = "diego.farias@fluviapp.com.br"),
-    Funcionario("30", "Elisa Prado", "AGENCIA AURORA", ILHA_CENTRAL.name, email = "elisa.prado@fluviapp.com.br"),
-    Funcionario("31", "Felipe Aragao", "AGENCIA AURORA", ILHA_CENTRAL.name, email = "felipe.aragao@fluviapp.com.br"),
-    Funcionario("32", "Gisele Nery", "AGENCIA AURORA", ILHA_CENTRAL.name, email = "gisele.nery@fluviapp.com.br"),
-    Funcionario("33", "Heitor Vasques", MATRIZ.name, PORTO_NORTE.name, email = "heitor.vasques@fluviapp.com.br"),
-    Funcionario("999", "Sem Agente", "SEM AGENCIA", PORTO_NORTE.name, email = "sem.agente@fluviapp.com.br"),
-)
+// `listaFuncionarioSample` saiu na F6.3: a Equipe passou a exibir **vínculos** (empresa + cargo), e uma
+// amostra de 34 pessoas com agência e lotação como String era o retrato de um modelo que não existe mais.
+// Descarte progressivo — as prévias das telas montam o pouco de que precisam, ali mesmo.
 
 val listaFormaPagamentoSample = listOf(
     Constante("1", PIX.name, PAGAMENTO.name),
@@ -192,7 +153,7 @@ val dadosPassagemSample = DadosPassagem(
     horaViagem = "12:00",
     origem = "PORTO NORTE",
     destino = "ILHA CENTRAL",
-    agencia = MATRIZ.name,
+    agencia = "MATRIZ",
     valorAPagar = BigDecimal("1000").formataParaMoedaBrasileira(),
     observacao = "TESTE DE OBSERVACAO",
     tipoPassagem = "INTEIRA",

@@ -2,12 +2,15 @@ package dev.matheus.fluviapp.ui.viewmodel.funcionario
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.matheus.fluviapp.domain.operacoes.Funcionario
 import dev.matheus.fluviapp.domain.operacoes.PermissoesUsuario
+import dev.matheus.fluviapp.services.repository.cadastro.viagem.EmpresaRepository
 import dev.matheus.fluviapp.services.repository.operacoes.FuncionarioRepository
 import dev.matheus.fluviapp.services.repository.operacoes.SessaoUsuario
+import dev.matheus.fluviapp.ui.states.EmpresaOpcao
+import dev.matheus.fluviapp.ui.states.FuncionarioResultado
 import dev.matheus.fluviapp.ui.states.PesquisaFuncionarioUiState
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -16,24 +19,27 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
- * Busca de funcionários — VM próprio (não mais compartilhado com o formulário). Os filtros rodam aqui
- * (não no composable): `resultados` já vem filtrado.
+ * Busca de membros da equipe — mesma tela, **dois recortes** (ADR-0015 §2.2), agora por empresa.
  *
- * Mesma tela, **dois recortes** (ADR-0015 §2.2): a plataforma vê todas as agências e filtra por elas; o
- * supervisor vê só a própria — e o recorte é aplicado ao *universo* (`todos`), não ao filtro, para que
- * nenhum caminho de UI o contorne. É a antecipação do escopo por agência (§4.1) na primeira tela que
- * precisa dele; a listagem de passagens só ganha isso em P2.6.
+ * O recorte é aplicado ao **universo** (`todos`), e não ao filtro, para que nenhum caminho de UI o
+ * contorne: a lista do supervisor contém apenas quem tem vínculo com a empresa dele. Isso não mudou de
+ * intenção na F6.3, mudou de coordenada — era `agencia == "MATRIZ"`, virou `empresaIds.contains(id)`.
+ *
+ * O que **mudou de fato** é o que aparece em cada linha: quem serve a duas empresas mostra as duas, com o
+ * cargo de cada uma. O cadastro antigo não tinha como dizer isso.
  */
 @HiltViewModel
 class PesquisaFuncionarioViewModel @Inject constructor(
     private val funcionarioRepository: FuncionarioRepository,
+    private val empresaRepository: EmpresaRepository,
     private val sessaoUsuario: SessaoUsuario,
 ) : ViewModel() {
 
     private var todos: List<Funcionario> = emptyList()
+    private var empresasPorId: Map<String, String> = emptyMap()
 
-    /** Agência do logado quando ele não vê todas; vazia para a plataforma. */
-    private var agenciaDoEscopo: String = ""
+    /** Empresa do logado quando ele não vê todas; vazia para a plataforma. */
+    private var empresaDoEscopo: String = ""
 
     private val _uiState = MutableStateFlow(PesquisaFuncionarioUiState())
     val uiState: StateFlow<PesquisaFuncionarioUiState> = _uiState.asStateFlow()
@@ -47,23 +53,23 @@ class PesquisaFuncionarioViewModel @Inject constructor(
 
     private suspend fun aplicarRecorte() {
         val contexto = sessaoUsuario.atual()
-        val veTodasAgencias = PermissoesUsuario.podeVerTodasAgencias(contexto?.papel)
-        agenciaDoEscopo = if (veTodasAgencias) "" else contexto?.agencia.orEmpty()
+        val veTodas = PermissoesUsuario.podeVerTodasAgencias(contexto?.papel)
+        empresaDoEscopo = if (veTodas) "" else contexto?.vinculoAtivo?.empresaId.orEmpty()
         _uiState.update {
             it.copy(
-                podeFiltrarPorAgencia = veTodasAgencias,
+                podeFiltrarPorEmpresa = veTodas,
                 podeDeletar = PermissoesUsuario.podeDeletarFuncionario(contexto?.papel),
             )
         }
     }
 
-    fun onAgenciaChange(agencia: String) = _uiState.update {
-        if (!it.podeFiltrarPorAgencia) it
-        else it.copy(agencia = agencia, resultados = filtrar(agencia, it.lotacao))
+    fun onNomeChange(nome: String) = _uiState.update {
+        it.copy(nome = nome, resultados = filtrar(nome, it.empresa))
     }
 
-    fun onLotacaoChange(lotacao: String) = _uiState.update {
-        it.copy(lotacao = lotacao, resultados = filtrar(it.agencia, lotacao))
+    fun onEmpresaChange(empresa: String) = _uiState.update {
+        if (!it.podeFiltrarPorEmpresa) it
+        else it.copy(empresa = empresa, resultados = filtrar(it.nome, empresa))
     }
 
     fun onDeletar(id: String) {
@@ -76,26 +82,49 @@ class PesquisaFuncionarioViewModel @Inject constructor(
         }
     }
 
-    /** Recarrega `todos` do repo (já recortado) e reaplica os filtros correntes (init e pós-deleção). */
+    /** Recarrega o universo (já recortado) e reaplica os filtros correntes (init e pós-deleção). */
     private suspend fun recarregar() {
-        todos = if (agenciaDoEscopo.isBlank()) {
-            funcionarioRepository.obterTodosFuncionarios()
+        val empresas = empresaRepository.obterTodas()
+        empresasPorId = empresas.associate { it.id to it.nome }
+
+        val universo = funcionarioRepository.obterTodosFuncionarios()
+        todos = if (empresaDoEscopo.isBlank()) {
+            universo
         } else {
-            funcionarioRepository.obterFuncionariosPorAgencia(agenciaDoEscopo)
+            universo.filter { empresaDoEscopo in it.empresaIds }
         }
+
         _uiState.update {
             it.copy(
-                listaAgencia = if (it.podeFiltrarPorAgencia) funcionarioRepository.obterTodasAgencias() else emptyList(),
-                listaLotacao = todos.map { funcionario -> funcionario.lotacao }.distinct(),
-                resultados = filtrar(it.agencia, it.lotacao),
+                empresas = if (it.podeFiltrarPorEmpresa) {
+                    empresas.map { empresa -> EmpresaOpcao(empresa.id, empresa.nome) }
+                } else {
+                    emptyList()
+                },
+                resultados = filtrar(it.nome, it.empresa),
             )
         }
     }
 
-    // Agência: prefixo (dropdown editável). Lotação: seleção exata do dropdown (vazio = sem filtro).
-    private fun filtrar(agencia: String, lotacao: String): List<Funcionario> =
-        todos.filter {
-            it.agencia.startsWith(agencia, ignoreCase = true) &&
-                (lotacao.isBlank() || it.lotacao.equals(lotacao, ignoreCase = true))
-        }
+    // Nome: prefixo. Empresa: seleção exata do dropdown (vazio = sem filtro).
+    private fun filtrar(nome: String, empresa: String): List<FuncionarioResultado> {
+        val idDaEmpresa = empresasPorId.entries.firstOrNull { it.value == empresa }?.key
+
+        return todos
+            .filter { it.descricaoNome.startsWith(nome, ignoreCase = true) }
+            .filter { idDaEmpresa == null || idDaEmpresa in it.empresaIds }
+            .map { funcionario ->
+                FuncionarioResultado(
+                    id = funcionario.id,
+                    nome = funcionario.descricaoNome,
+                    email = funcionario.email,
+                    vinculos = funcionario.vinculos.map { vinculo ->
+                        // Empresa que não resolve aparece só com o cargo: a linha não some, porque o
+                        // vínculo existe — e sumir esconderia justamente o dado a corrigir.
+                        listOfNotNull(empresasPorId[vinculo.empresaId], vinculo.cargo.name)
+                            .joinToString(" · ")
+                    },
+                )
+            }
+    }
 }

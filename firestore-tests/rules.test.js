@@ -51,6 +51,15 @@ const EMPRESA = "empresa-modelo";
 const F_NOVO = 'func-novo';
 const EMAIL_F_NOVO = 'novo@x.com';
 
+// Empresas e vínculos (ADR-0016 §6): desde a F6.3 é o VÍNCULO que dá autoridade, e não a String de
+// agência. Os literais abaixo têm de casar **campo a campo** com o que a regra compara em `hasOnly` —
+// é essa igualdade estrutural que substitui a iteração que a linguagem de regras não tem.
+const E_MATRIZ = 'empresa-matriz';
+const E_MARE = 'empresa-mare';
+const AGENTE_NA_MATRIZ = { empresaId: E_MATRIZ, cargo: 'AGENTE' };
+const SUPERVISOR_NA_MATRIZ = { empresaId: E_MATRIZ, cargo: 'SUPERVISOR' };
+const AGENTE_NA_MARE = { empresaId: E_MARE, cargo: 'AGENTE' };
+
 let testEnv;
 
 beforeAll(async () => {
@@ -80,13 +89,14 @@ beforeEach(async () => {
     await setDoc(doc(db, 'users', SUPERVISOR), { username: 'c', email: 'c@x.com', papel: 'OPERADOR', funcionarioId: F_SUPERVISOR });
     await setDoc(doc(db, 'users', ADM), { username: 'adm', email: 'adm@x.com', papel: 'ADM', funcionarioId: F_ADM });
     await setDoc(doc(db, 'users', GESTOR), { username: 'g', email: 'g@x.com', papel: 'GESTOR' });
-    // Contexto NEGÓCIO: funcionarios/{id} com cargo.
-    await setDoc(doc(db, 'funcionarios', F_A), { nome: 'Agente A', agencia: 'MATRIZ', cargo: 'AGENTE' });
-    await setDoc(doc(db, 'funcionarios', F_B), { nome: 'Agente B', agencia: 'MATRIZ', cargo: 'AGENTE', email: 'b@x.com' });
-    await setDoc(doc(db, 'funcionarios', F_SUPERVISOR), { nome: 'Supervisor', agencia: 'MATRIZ', cargo: 'SUPERVISOR' });
-    await setDoc(doc(db, 'funcionarios', F_ADM), { nome: 'Adm', agencia: 'MATRIZ', cargo: 'AGENTE' });
-    await setDoc(doc(db, 'funcionarios', F_OUTRA_AGENCIA), { nome: 'De Outra', agencia: 'AGENCIA MARE', cargo: 'AGENTE' });
-    await setDoc(doc(db, 'funcionarios', F_NOVO), { nome: 'Novo', agencia: 'MATRIZ', cargo: 'AGENTE', email: EMAIL_F_NOVO });
+    // Contexto NEGÓCIO: funcionarios/{id}. A autoridade é o VÍNCULO desde a F6.3 (ADR-0016 §6);
+    // `agencia` e `cargo` seguem gravados como legado derivado, e nenhuma regra os consulta mais.
+    await setDoc(doc(db, 'funcionarios', F_A), { nome: 'Agente A', agencia: 'MATRIZ', cargo: 'AGENTE', vinculos: [AGENTE_NA_MATRIZ], empresaIds: [E_MATRIZ] });
+    await setDoc(doc(db, 'funcionarios', F_B), { nome: 'Agente B', agencia: 'MATRIZ', cargo: 'AGENTE', email: 'b@x.com', vinculos: [AGENTE_NA_MATRIZ], empresaIds: [E_MATRIZ] });
+    await setDoc(doc(db, 'funcionarios', F_SUPERVISOR), { nome: 'Supervisor', agencia: 'MATRIZ', cargo: 'SUPERVISOR', vinculos: [SUPERVISOR_NA_MATRIZ], empresaIds: [E_MATRIZ] });
+    await setDoc(doc(db, 'funcionarios', F_ADM), { nome: 'Adm', agencia: 'MATRIZ', cargo: 'AGENTE', vinculos: [AGENTE_NA_MATRIZ], empresaIds: [E_MATRIZ] });
+    await setDoc(doc(db, 'funcionarios', F_OUTRA_AGENCIA), { nome: 'De Outra', agencia: 'MARE', cargo: 'AGENTE', vinculos: [AGENTE_NA_MARE], empresaIds: [E_MARE] });
+    await setDoc(doc(db, 'funcionarios', F_NOVO), { nome: 'Novo', agencia: 'MATRIZ', cargo: 'AGENTE', email: EMAIL_F_NOVO, vinculos: [AGENTE_NA_MATRIZ], empresaIds: [E_MATRIZ] });
     // Catálogo de exemplo (para os testes de leitura).
     await setDoc(doc(db, 'embarcacoes', 'embarcacao-1'), { nome: 'Embarcação 1' });
     await setDoc(doc(db, 'localidades', 'loc-1'), {
@@ -210,76 +220,102 @@ describe('users/{uid} — anti-escalonamento', () => {
   });
 });
 
-// --- funcionarios/{id}: a Equipe (ADR-0015 §8.5) ---
+// --- funcionarios/{id}: a Equipe (ADR-0015 §8.5, reescrita sobre VÍNCULOS na F6.3) ---
 //
-// **Entrou no escopo na F6.2**, quando a Equipe começou a ser revitalizada — é a definição de pronto do
-// ADR-0022 D6 aplicada a esta fatia. A regra não mudou aqui: a fatia só acrescentou `vinculos` e
-// `empresaIds` ao documento, e o que a regra governa (agência do autor, cargo inalterado, delete de
-// plataforma) continua valendo campo a campo. Ela muda na F6.3, quando a escrita parar de carregar
-// `agencia` e `cargo` — e é este bloco que vai cobrar a mudança.
-describe('funcionarios — escrita de plataforma e cargo não-autoescalável', () => {
-  test('operador LÊ funcionário (a UI resolve nome/agência por aqui) → OK', async () => {
+// Entrou no escopo na F6.2 (definição de pronto, ADR-0022 D6) e **mudou de coordenada na F6.3**: onde a
+// regra lia a String `agencia` do autor, agora ela procura o par `{empresaId, cargo}` dentro do array de
+// vínculos. Os três invariantes são os mesmos; o que muda é como cada um é dito.
+describe('funcionarios — escrita por vínculo, e o supervisor que não fabrica par', () => {
+  const novoAgenteNaMatriz = { nome: 'X', vinculos: [AGENTE_NA_MATRIZ], empresaIds: [E_MATRIZ] };
+
+  test('operador LÊ funcionário (a UI resolve nome e vínculos por aqui) → OK', async () => {
     await assertSucceeds(getDoc(doc(asAgenteA(), 'funcionarios', F_B)));
   });
 
   test('operador cria funcionário → NEGADO (cadastro é da gestão)', async () => {
-    await assertFails(setDoc(doc(asAgenteA(), 'funcionarios', 'novo'), { nome: 'X', agencia: 'MATRIZ', cargo: 'AGENTE' }));
+    await assertFails(setDoc(doc(asAgenteA(), 'funcionarios', 'novo'), novoAgenteNaMatriz));
   });
 
-  test('SUPERVISOR cria funcionário na PRÓPRIA agência → OK', async () => {
-    await assertSucceeds(setDoc(doc(asSupervisor(), 'funcionarios', 'novo'), { nome: 'X', agencia: 'MATRIZ', cargo: 'AGENTE' }));
+  test('SUPERVISOR cria agente na PRÓPRIA empresa → OK', async () => {
+    await assertSucceeds(setDoc(doc(asSupervisor(), 'funcionarios', 'novo'), novoAgenteNaMatriz));
   });
 
-  test('SUPERVISOR cria funcionário em OUTRA agência → NEGADO', async () => {
-    await assertFails(setDoc(doc(asSupervisor(), 'funcionarios', 'novo'), { nome: 'X', agencia: 'AGENCIA MARE', cargo: 'AGENTE' }));
+  test('SUPERVISOR cria agente em OUTRA empresa → NEGADO', async () => {
+    await assertFails(setDoc(doc(asSupervisor(), 'funcionarios', 'novo'), {
+      nome: 'X', vinculos: [AGENTE_NA_MARE], empresaIds: [E_MARE],
+    }));
   });
 
-  test('SUPERVISOR cria funcionário já como SUPERVISOR → NEGADO (não fabrica par)', async () => {
-    await assertFails(setDoc(doc(asSupervisor(), 'funcionarios', 'novo'), { nome: 'X', agencia: 'MATRIZ', cargo: 'SUPERVISOR' }));
+  test('SUPERVISOR cria alguém já como SUPERVISOR → NEGADO (não fabrica par)', async () => {
+    await assertFails(setDoc(doc(asSupervisor(), 'funcionarios', 'novo'), {
+      nome: 'X', vinculos: [SUPERVISOR_NA_MATRIZ], empresaIds: [E_MATRIZ],
+    }));
   });
 
-  test('SUPERVISOR edita membro da própria agência (lotação) → OK', async () => {
-    await assertSucceeds(updateDoc(doc(asSupervisor(), 'funcionarios', F_A), { lotacao: 'Ilha Central' }));
+  /**
+   * O caso que só existe com vínculos: alguém que serve a **duas** empresas não é gerível por um
+   * supervisor, porque metade dos vínculos dessa pessoa não é dele. `hasOnly` diz isso numa linha.
+   */
+  test('SUPERVISOR cria alguém com vínculo na dele E em outra → NEGADO', async () => {
+    await assertFails(setDoc(doc(asSupervisor(), 'funcionarios', 'novo'), {
+      nome: 'X', vinculos: [AGENTE_NA_MATRIZ, AGENTE_NA_MARE], empresaIds: [E_MATRIZ, E_MARE],
+    }));
   });
 
-  test('SUPERVISOR edita membro de OUTRA agência → NEGADO', async () => {
-    await assertFails(updateDoc(doc(asSupervisor(), 'funcionarios', F_OUTRA_AGENCIA), { lotacao: 'Ilha Central' }));
+  test('SUPERVISOR edita membro da própria empresa (nome) → OK', async () => {
+    await assertSucceeds(updateDoc(doc(asSupervisor(), 'funcionarios', F_A), { nome: 'Agente A2' }));
   });
 
-  test('SUPERVISOR transfere membro para outra agência → NEGADO (não exporta gente)', async () => {
-    await assertFails(updateDoc(doc(asSupervisor(), 'funcionarios', F_A), { agencia: 'AGENCIA MARE' }));
+  test('SUPERVISOR edita membro de OUTRA empresa → NEGADO', async () => {
+    await assertFails(updateDoc(doc(asSupervisor(), 'funcionarios', F_OUTRA_AGENCIA), { nome: 'Outro' }));
   });
 
-  test('SUPERVISOR traz membro de outra agência para a dele → NEGADO (nem importa)', async () => {
-    await assertFails(updateDoc(doc(asSupervisor(), 'funcionarios', F_OUTRA_AGENCIA), { agencia: 'MATRIZ' }));
+  test('SUPERVISOR transfere membro para outra empresa → NEGADO (não exporta gente)', async () => {
+    await assertFails(updateDoc(doc(asSupervisor(), 'funcionarios', F_A), {
+      vinculos: [AGENTE_NA_MARE], empresaIds: [E_MARE],
+    }));
   });
 
-  test('SUPERVISOR promove membro da própria agência → NEGADO (cargo é da plataforma)', async () => {
-    await assertFails(updateDoc(doc(asSupervisor(), 'funcionarios', F_A), { cargo: 'SUPERVISOR' }));
+  test('SUPERVISOR traz membro de outra empresa para a dele → NEGADO (nem importa)', async () => {
+    await assertFails(updateDoc(doc(asSupervisor(), 'funcionarios', F_OUTRA_AGENCIA), {
+      vinculos: [AGENTE_NA_MATRIZ], empresaIds: [E_MATRIZ],
+    }));
   });
 
-  test('SUPERVISOR deleta membro da própria agência → NEGADO (edita, não apaga)', async () => {
+  test('SUPERVISOR promove membro da própria empresa → NEGADO (cargo é da plataforma)', async () => {
+    await assertFails(updateDoc(doc(asSupervisor(), 'funcionarios', F_A), {
+      vinculos: [SUPERVISOR_NA_MATRIZ], empresaIds: [E_MATRIZ],
+    }));
+  });
+
+  test('SUPERVISOR deleta membro da própria empresa → NEGADO (edita, não apaga)', async () => {
     await assertFails(deleteDoc(doc(asSupervisor(), 'funcionarios', F_A)));
   });
 
-  test('AGENTE edita membro da própria agência → NEGADO (não é cargo de gestão)', async () => {
-    await assertFails(updateDoc(doc(asAgenteA(), 'funcionarios', F_B), { lotacao: 'Ilha Central' }));
+  test('AGENTE edita membro da própria empresa → NEGADO (não é cargo de gestão)', async () => {
+    await assertFails(updateDoc(doc(asAgenteA(), 'funcionarios', F_B), { nome: 'B2' }));
   });
 
-  test('plataforma cria funcionário → OK', async () => {
-    await assertSucceeds(setDoc(doc(asAdm(), 'funcionarios', 'novo'), { nome: 'X', agencia: 'MATRIZ', cargo: 'AGENTE' }));
+  test('plataforma cria funcionário em qualquer empresa → OK', async () => {
+    await assertSucceeds(setDoc(doc(asAdm(), 'funcionarios', 'novo'), {
+      nome: 'X', vinculos: [AGENTE_NA_MARE], empresaIds: [E_MARE],
+    }));
   });
 
   test('plataforma promove OUTRO funcionário a SUPERVISOR → OK', async () => {
-    await assertSucceeds(updateDoc(doc(asAdm(), 'funcionarios', F_A), { cargo: 'SUPERVISOR' }));
+    await assertSucceeds(updateDoc(doc(asAdm(), 'funcionarios', F_A), {
+      vinculos: [SUPERVISOR_NA_MATRIZ], empresaIds: [E_MATRIZ],
+    }));
   });
 
-  test('plataforma promove o PRÓPRIO funcionário → NEGADO (anti-escalonamento do eixo de negócio)', async () => {
-    await assertFails(updateDoc(doc(asAdm(), 'funcionarios', F_ADM), { cargo: 'SUPERVISOR' }));
+  test('plataforma altera os PRÓPRIOS vínculos → NEGADO (anti-escalonamento do eixo de negócio)', async () => {
+    await assertFails(updateDoc(doc(asAdm(), 'funcionarios', F_ADM), {
+      vinculos: [SUPERVISOR_NA_MATRIZ], empresaIds: [E_MATRIZ],
+    }));
   });
 
-  test('plataforma edita o próprio funcionário sem tocar no cargo → OK', async () => {
-    await assertSucceeds(updateDoc(doc(asAdm(), 'funcionarios', F_ADM), { lotacao: 'Porto Sul' }));
+  test('plataforma edita o próprio funcionário sem tocar nos vínculos → OK', async () => {
+    await assertSucceeds(updateDoc(doc(asAdm(), 'funcionarios', F_ADM), { nome: 'Adm Silva' }));
   });
 });
 

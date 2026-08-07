@@ -19,22 +19,23 @@ import dev.matheus.fluviapp.domain.IObjetoSimplificado
  *
  * ### Os vínculos, e o que ainda não morreu
  *
- * [vinculos] é a forma alvo (ADR-0016 §6): a pessoa serve uma ou mais empresas, com cargo em cada uma.
- * Ele entra **aditivo** e vazio por padrão, ao lado dos campos que ele vai substituir — [agencia],
- * [lotacao] e [cargo] —, e essa convivência é deliberada: são 96 leituras espalhadas por 28 arquivos, boa
- * parte delas em Passagem, que é código não revitalizado (F9). Trocar tudo de uma vez seria reescrever a
- * emissão junto com o cadastro.
+ * [vinculos] é a forma alvo (ADR-0016 §6): a pessoa serve uma ou mais empresas, com cargo em cada uma. É
+ * a **fonte** desde a F6.3 — o cadastro edita vínculos, e o que sobrou de [agencia] e [cargo] passou a ser
+ * derivado deles, para o único leitor que ainda não migrou: a Passagem, que imprime a agência no bilhete
+ * (F9).
  *
  * A ordem é a mesma que o ADR-0008 usou para relacionar por id: **acrescenta, migra os leitores, remove**.
- * Quem remove é a F6.3 (cadastro) e a F6.5 (o mínimo da Passagem).
+ * A `lotacao` já saiu (ninguém a lia fora do cadastro); os outros dois saem na F6.5.
  */
 data class Funcionario(
     override val id: String,
     override val descricaoNome: String,
-    /** **Legado** — vira o `empresaId` do vínculo (F6.3). */
+    /**
+     * **Legado, e agora derivado**: desde a F6.3 o cadastro grava aqui o **nome da empresa do primeiro
+     * vínculo**, em vez de um texto livre. É ponte, não modelo — quem ainda lê é a Passagem, que imprime
+     * a agência no bilhete e só troca de fonte quando for revitalizada (F6.5).
+     */
     val agencia: String,
-    /** **Legado** — morre com `Funcionario.Lotacao` (F6.3): lotação não é dimensão do modelo novo. */
-    var lotacao: String,
     /**
      * Cargo de **negócio** (§8.1) — nasce [Cargo.AGENTE], o menor privilégio. Promover é decisão da
      * gestão (ADR-0015 §8.5), nunca do próprio.
@@ -86,10 +87,4 @@ data class Funcionario(
         }
     }
 
-    /** **Legado** — morre na F6.3 (ADR-0016 §6): a lotação some junto com a agência como String. */
-    enum class Lotacao {
-        PORTO_NORTE,
-        ILHA_CENTRAL,
-        PORTO_SUL
-    }
 }

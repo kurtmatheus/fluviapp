@@ -21,8 +21,8 @@ fun NavGraphBuilder.resultSearchFuncionarioNavComposable(
 
         ResultSearchFuncionarioScreen(
             uiState = uiState,
-            onAgenciaChange = viewModel::onAgenciaChange,
-            onLotacaoChange = viewModel::onLotacaoChange,
+            onNomeChange = viewModel::onNomeChange,
+            onEmpresaChange = viewModel::onEmpresaChange,
             onClickVoltar = onClickVoltar,
             onNavegaParaEditor = onNavegaParaEditorFuncionario,
             onDeletar = viewModel::onDeletar,

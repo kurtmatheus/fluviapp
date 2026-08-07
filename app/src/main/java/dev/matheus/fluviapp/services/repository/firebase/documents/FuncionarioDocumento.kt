@@ -15,11 +15,9 @@ import dev.matheus.fluviapp.services.repository.firebase.DocumentoBruto
  */
 data class FuncionarioDocumento(
     val nome: String = "",
-    /** **Legado** (F6.3). */
+    /** **Legado, derivado do primeiro vínculo** desde a F6.3 — some na F6.5, com o leitor. */
     val agencia: String = "",
-    /** **Legado** (F6.3). */
-    val lotacao: String = "",
-    /** **Legado** (F6.3) — cargo de negócio; documento antigo sem o campo lê como vazio. */
+    /** **Legado, derivado do primeiro vínculo** desde a F6.3 — idem. */
     val cargo: String = "",
     /** Chave do primeiro acesso (ADR-0015 §2.1) — casa este registro com a conta do Auth. */
     val email: String = "",
@@ -42,7 +40,6 @@ fun DocumentoBruto.toFuncionario(): Funcionario = Funcionario(
     id = id,
     descricaoNome = texto("nome"),
     agencia = texto("agencia"),
-    lotacao = texto("lotacao"),
     // Ausente vira AGENTE (o menor privilégio), não "sem cargo": quem tem registro de funcionário já
     // está na operação. Valor DESCONHECIDO, esse, atravessa cru — quem nega é a política (fail-closed).
     cargo = texto("cargo").ifBlank { Funcionario.Cargo.AGENTE.name },
@@ -61,7 +58,6 @@ fun DocumentoBruto.toFuncionario(): Funcionario = Funcionario(
 fun Funcionario.paraMapa(): Map<String, Any?> = mapOf(
     "nome" to descricaoNome,
     "agencia" to agencia,
-    "lotacao" to lotacao,
     "cargo" to cargo,
     "email" to email,
     "vinculos" to vinculos.map { mapOf("empresaId" to it.empresaId, "cargo" to it.cargo.name) },

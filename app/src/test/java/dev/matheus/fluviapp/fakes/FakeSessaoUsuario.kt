@@ -3,6 +3,7 @@ package dev.matheus.fluviapp.fakes
 import dev.matheus.fluviapp.domain.operacoes.ContextoUsuario
 import dev.matheus.fluviapp.domain.operacoes.Funcionario
 import dev.matheus.fluviapp.domain.operacoes.Usuario
+import dev.matheus.fluviapp.domain.operacoes.Vinculo
 import dev.matheus.fluviapp.services.repository.operacoes.SessaoUsuario
 
 /**
@@ -22,11 +23,18 @@ class FakeSessaoUsuario(var contexto: ContextoUsuario? = null) : SessaoUsuario {
             )
         )
 
-        fun supervisor(agencia: String = "MATRIZ") = operador(Funcionario.Cargo.SUPERVISOR.name, agencia)
+        /**
+         * O operador agora chega com **vínculo** (ADR-0016 §6): é dele que saem a empresa e o cargo em
+         * vigor. `empresaId` continua tendo um default para não obrigar todo teste a inventar um id — o
+         * que importa em quase todos é *ter* vínculo, não qual.
+         */
+        fun supervisor(empresaId: String = "empresa-1") =
+            operador(Funcionario.Cargo.SUPERVISOR, empresaId)
 
-        fun agente(agencia: String = "MATRIZ") = operador(Funcionario.Cargo.AGENTE.name, agencia)
+        fun agente(empresaId: String = "empresa-1") =
+            operador(Funcionario.Cargo.AGENTE, empresaId)
 
-        private fun operador(cargo: String, agencia: String) = FakeSessaoUsuario(
+        private fun operador(cargo: Funcionario.Cargo, empresaId: String) = FakeSessaoUsuario(
             ContextoUsuario(
                 usuario = Usuario(
                     id = "u-op",
@@ -38,9 +46,9 @@ class FakeSessaoUsuario(var contexto: ContextoUsuario? = null) : SessaoUsuario {
                 funcionario = Funcionario(
                     id = "f-op",
                     descricaoNome = "Operador",
-                    agencia = agencia,
-                    lotacao = "PORTO NORTE",
-                    cargo = cargo,
+                    agencia = empresaId,
+                    cargo = cargo.name,
+                    vinculos = listOf(Vinculo(empresaId, cargo)),
                 ),
             )
         )

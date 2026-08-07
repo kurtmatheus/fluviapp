@@ -20,16 +20,20 @@ import dev.matheus.fluviapp.ui.components.forms.areas.CommonAreaForm
 import dev.matheus.fluviapp.ui.components.forms.areas.funcionario.ContentFuncionarioForm
 import dev.matheus.fluviapp.ui.components.forms.buttons.CommonIconButton
 import dev.matheus.fluviapp.ui.screens.forms.CommonScreenNoBottom
+import dev.matheus.fluviapp.domain.operacoes.Funcionario
+import dev.matheus.fluviapp.domain.operacoes.Vinculo
+import dev.matheus.fluviapp.ui.states.EmpresaOpcao
 import dev.matheus.fluviapp.ui.states.FormFuncionarioUiState
 
 @Composable
 fun FormFuncionarioScreen(
     uiState: FormFuncionarioUiState,
-    onAgenciaChange: (String) -> Unit = {},
-    onFuncionarioChange: (String) -> Unit = {},
+    onNomeChange: (String) -> Unit = {},
     onEmailChange: (String) -> Unit = {},
-    onLotacaoChange: (String) -> Unit = {},
+    onEmpresaChange: (String) -> Unit = {},
     onCargoChange: (String) -> Unit = {},
+    onAdicionarVinculo: () -> Unit = {},
+    onRemoverVinculo: (String) -> Unit = {},
     onClickSalvar: () -> Unit = {},
     onClickVoltar: () -> Unit = {},
 ) {
@@ -54,11 +58,12 @@ fun FormFuncionarioScreen(
                 ContentFuncionarioForm(
                     modifier = modifier,
                     state = uiState,
-                    onAgenciaChange = onAgenciaChange,
-                    onFuncionarioChange = onFuncionarioChange,
+                    onNomeChange = onNomeChange,
                     onEmailChange = onEmailChange,
-                    onLotacaoChange = onLotacaoChange,
+                    onEmpresaChange = onEmpresaChange,
                     onCargoChange = onCargoChange,
+                    onAdicionarVinculo = onAdicionarVinculo,
+                    onRemoverVinculo = onRemoverVinculo,
                 )
             }
             Column(
@@ -88,10 +93,11 @@ fun FormFuncionarioScreen(
 private fun FormFuncionarioScreenPreview() {
     FormFuncionarioScreen(
         uiState = FormFuncionarioUiState(
-            agencia = "MATRIZ",
-            funcionario = "Agente Modelo",
+            nome = "Agente Modelo",
             email = "agente.modelo@fluviapp.com.br",
-            lotacao = "PORTO NORTE",
+            empresas = listOf(EmpresaOpcao("e1", "Navegação Norte")),
+            empresaEmEdicao = "Navegação Norte",
+            vinculos = listOf(Vinculo("e1", Funcionario.Cargo.AGENTE)),
         ),
     )
 }

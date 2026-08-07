@@ -33,7 +33,6 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import dev.matheus.fluviapp.R
-import dev.matheus.fluviapp.domain.operacoes.Agencia
 import dev.matheus.fluviapp.domain.screendata.DadosPassagem
 import dev.matheus.fluviapp.sampledata.dadosPassagemSample
 import dev.matheus.fluviapp.sampledata.dadosPassagemVeiculoSample
@@ -386,13 +385,13 @@ private fun SecaoVeiculo(
 @Preview(name = "Agência com marca", showBackground = true, heightDp = 940)
 @Composable
 private fun PassagemDigitalComMarcaPreview() {
-    ConteudoPassagemDigital(dadosPassagem = dadosPassagemSample.copy(agencia = Agencia.MATRIZ.name))
+    ConteudoPassagemDigital(dadosPassagem = dadosPassagemSample.copy(agencia = "MATRIZ"))
 }
 
 @Preview(name = "Sem marca — FluviApp", showBackground = true, heightDp = 940)
 @Composable
 private fun PassagemDigitalSemMarcaPreview() {
-    ConteudoPassagemDigital(dadosPassagem = dadosPassagemSample.copy(agencia = Agencia.AUTONOMO.name))
+    ConteudoPassagemDigital(dadosPassagem = dadosPassagemSample.copy(agencia = "SEM MARCA"))
 }
 
 @Preview(name = "Veículo", showBackground = true, heightDp = 940)

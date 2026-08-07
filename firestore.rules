@@ -137,31 +137,45 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // --- Equipe: o registro de negócio (ex-`agents`) — ADR-0015 §2.1/§8.5 ---
-    // Dois escritores, com alcances diferentes: a **plataforma** em qualquer agência, e o **supervisor**
-    // só na dele. Três invariantes que valem para os dois:
-    //  1. NINGUÉM muda o próprio cargo — nem um ADM no funcionário dele mesmo. É o anti-escalonamento do
-    //     eixo de negócio, já que cargo == SUPERVISOR concede editar-qualquer-passagem.
-    //  2. O supervisor NUNCA toca em cargo (nem no dos outros): promover é da plataforma.
-    //  3. O supervisor não move ninguém para fora nem traz de fora: agência de origem E de destino têm
-    //     de ser a dele, senão o isolamento por agência (§3) seria contornável por edição.
-    function agenciaDoAutor() {
+    // --- Equipe: o registro de negócio — ADR-0015 §2.1/§8.5, reescrito na F6.3 sobre VÍNCULOS ---
+    //
+    // A autoridade deixou de ser a String de agência e passou a ser o **vínculo** `{empresaId, cargo}`
+    // (ADR-0016 §6). Dois escritores, com alcances diferentes: a **plataforma** em qualquer empresa, e o
+    // **supervisor** só na dele. Três invariantes, os mesmos de antes com a coordenada nova:
+    //  1. NINGUÉM muda os próprios vínculos — nem um ADM no funcionário dele mesmo. É o anti-escalonamento
+    //     do eixo de negócio, já que cargo == SUPERVISOR concede editar-qualquer-passagem.
+    //  2. O supervisor NUNCA cria SUPERVISOR: promover é da plataforma.
+    //  3. O supervisor não move ninguém para fora nem traz de fora: os vínculos de origem E de destino
+    //     têm de ser só os dele, senão o isolamento por empresa (§3) seria contornável por edição.
+    //
+    // **Como isso é verificável numa regra**: a linguagem não itera array, mas compara elementos inteiros.
+    // Como o vínculo tem forma fechada (`{empresaId, cargo}`), `hasOnly([{...}])` diz exatamente
+    // *"todo vínculo desta pessoa é este"* — e é isso que fecha o cerco sem precisar de campo derivado
+    // extra só para a regra.
+    function vinculosDoAutor() {
       return funcionarioIdDoAutor() != ''
           && exists(/databases/$(database)/documents/funcionarios/$(funcionarioIdDoAutor()))
-        ? get(/databases/$(database)/documents/funcionarios/$(funcionarioIdDoAutor())).data.get('agencia', '')
-        : '';
+        ? get(/databases/$(database)/documents/funcionarios/$(funcionarioIdDoAutor())).data.get('vinculos', [])
+        : [];
     }
     function ehSupervisor() {
       return cargoDoAutor() == 'SUPERVISOR';
     }
-    function naAgenciaDoAutor(agencia) {
-      return agenciaDoAutor() != '' && agencia == agenciaDoAutor();
+    // Supervisiono esta empresa? (procura o par exato no MEU documento)
+    function souSupervisorDe(empresaId) {
+      return vinculosDoAutor().hasAny([{'empresaId': empresaId, 'cargo': 'SUPERVISOR'}]);
     }
-    function cargoInalterado() {
-      return request.resource.data.get('cargo', '') == resource.data.get('cargo', '');
+    // O alvo tem UM vínculo só, e ele é (empresa que eu supervisiono, AGENTE).
+    function soMeuAgente(vinculos) {
+      return vinculos.size() == 1
+          && souSupervisorDe(vinculos[0].empresaId)
+          && vinculos.hasOnly([{'empresaId': vinculos[0].empresaId, 'cargo': 'AGENTE'}]);
     }
-    function naoMexeNoProprioCargo(id) {
-      return !(funcionarioIdDoAutor() == id && !cargoInalterado());
+    function vinculosInalterados() {
+      return request.resource.data.get('vinculos', []) == resource.data.get('vinculos', []);
+    }
+    function naoMexeNosPropriosVinculos(id) {
+      return !(funcionarioIdDoAutor() == id && !vinculosInalterados());
     }
 
     match /funcionarios/{id} {
@@ -169,17 +183,15 @@ service cloud.firestore {
 
       allow create: if autenticado()
                     && (ehPapelPlataforma()
-                        || (ehSupervisor()
-                            && naAgenciaDoAutor(request.resource.data.get('agencia', ''))
-                            && request.resource.data.get('cargo', 'AGENTE') == 'AGENTE'));
+                        || (ehSupervisor() && soMeuAgente(request.resource.data.get('vinculos', []))));
 
       allow update: if autenticado()
                     && (ehPapelPlataforma()
                         || (ehSupervisor()
-                            && naAgenciaDoAutor(resource.data.get('agencia', ''))
-                            && naAgenciaDoAutor(request.resource.data.get('agencia', ''))
-                            && cargoInalterado()))
-                    && naoMexeNoProprioCargo(id);
+                            // Origem e destino: quem já era só meu agente continua sendo.
+                            && soMeuAgente(resource.data.get('vinculos', []))
+                            && soMeuAgente(request.resource.data.get('vinculos', []))))
+                    && naoMexeNosPropriosVinculos(id);
 
       // Remover membro é da plataforma: o supervisor edita, não apaga (§2.1).
       allow delete: if autenticado() && ehPapelPlataforma();

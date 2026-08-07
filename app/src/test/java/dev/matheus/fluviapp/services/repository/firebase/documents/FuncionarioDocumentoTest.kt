@@ -22,7 +22,6 @@ class FuncionarioDocumentoTest {
         id = "func-1",
         descricaoNome = "Ana Ribeiro",
         agencia = "MATRIZ",
-        lotacao = "PORTO_NORTE",
         cargo = Cargo.SUPERVISOR.name,
         email = "ana@fluviapp.com.br",
         vinculos = listOf(

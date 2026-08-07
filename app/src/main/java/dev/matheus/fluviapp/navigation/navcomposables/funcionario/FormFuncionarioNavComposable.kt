@@ -43,11 +43,12 @@ fun NavGraphBuilder.formFuncionarioNavComposable(
 
         FormFuncionarioScreen(
             uiState = uiState,
-            onAgenciaChange = viewModel::onAgenciaChange,
-            onFuncionarioChange = viewModel::onFuncionarioChange,
+            onNomeChange = viewModel::onNomeChange,
             onEmailChange = viewModel::onEmailChange,
-            onLotacaoChange = viewModel::onLotacaoChange,
+            onEmpresaChange = viewModel::onEmpresaChange,
             onCargoChange = viewModel::onCargoChange,
+            onAdicionarVinculo = viewModel::onAdicionarVinculo,
+            onRemoverVinculo = viewModel::onRemoverVinculo,
             onClickSalvar = viewModel::salvar,
             onClickVoltar = onClickVoltar,
         )

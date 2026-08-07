@@ -37,7 +37,6 @@ class PrimeiroAcessoViewModelTest {
         id = "f1",
         descricaoNome = "Ana Ribeiro",
         agencia = "MATRIZ",
-        lotacao = "PORTO NORTE",
         email = email,
     )
 

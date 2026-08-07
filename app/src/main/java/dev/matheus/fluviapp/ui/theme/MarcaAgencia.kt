@@ -2,7 +2,6 @@ package dev.matheus.fluviapp.ui.theme
 
 import androidx.annotation.DrawableRes
 import dev.matheus.fluviapp.R
-import dev.matheus.fluviapp.domain.operacoes.Agencia
 
 /**
  * Identidade visual da agência emissora no bilhete (ADR-0015 §5).
@@ -20,15 +19,18 @@ data class MarcaAgencia(
  * agência entra quando houver agência cadastrando o próprio logo — hoje seria infraestrutura para um
  * dado que ninguém edita.
  *
- * `null` significa **sem marca própria** e é o caso comum, não a exceção: a agência coringa
- * ([Agencia.AUTONOMO]) e todas as agências que ainda são texto livre no cadastro caem aqui. Quem não
- * tem marca emite com a marca do **FluviApp** — o bilhete nunca sai sem assinatura.
+ * **A chave é o nome, e desde a F6.3 ele vem da empresa do vínculo** (antes vinha do enum `Agencia`, que
+ * morreu com o cadastro por agência). O mapa não ficou mais frouxo por isso: ele sempre foi um bundle
+ * casado por rótulo — o que mudou é de onde o rótulo vem.
+ *
+ * `null` significa **sem marca própria**, e é o caso comum: quem não tem marca emite com a marca do
+ * **FluviApp** — o bilhete nunca sai sem assinatura.
  */
-fun marcaDaAgencia(agencia: String?): MarcaAgencia? = when (Agencia.de(agencia?.trim()?.uppercase())) {
-    Agencia.MATRIZ -> MarcaAgencia(
+fun marcaDaAgencia(agencia: String?): MarcaAgencia? = when (agencia?.trim()?.uppercase()) {
+    "MATRIZ" -> MarcaAgencia(
         logoTopo = R.drawable.agencia_matriz_logo1,
         marcaDagua = R.drawable.agencia_matriz_logo2,
     )
-    // AUTONOMO (a coringa) e desconhecidas: FluviApp.
+
     else -> null
 }
