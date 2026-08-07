@@ -29,13 +29,26 @@ import javax.inject.Inject
  * pura, sucesso por evento one-shot, cargas suspensas e sem Context.
  *
  * O que esta tela tem de próprio é **depender de outra entidade**. Duas consequências, e as duas estão
- * em [carregarFontes] e [carregar]:
+ * em [carregarLocalidades] e [carregar]:
  *
  * - o dropdown oferece só localidades **ativas** — inativar um município é dizer "não escolham mais
  *   este", e a lista de escolha é onde essa frase se cumpre;
  * - a edição **resolve por id, sem filtrar** ([garantirOpcaoDaLocalidadeAtual]). É o outro lado da mesma
  *   regra, e o porto é o primeiro a precisar dele: um porto cadastrado antes de a localidade sair de uso
  *   continua mostrando onde fica, em vez de abrir o formulário com o campo misteriosamente vazio.
+ *
+ * ### Por que as duas cargas são independentes
+ *
+ * Elas nasceram numa função só, sequencial, e isso produziu um bug em campo: com as regras da coleção
+ * `portos` ainda não publicadas, o servidor negava o listener, o primeiro snapshot **nunca chegava** —
+ * `obterTodos` espera por ele de propósito, para não confundir *vazio* com *ainda não chegou* — e a
+ * espera engolia junto a lista de **localidades**, que já tinha chegado. O sintoma foi um dropdown vazio
+ * acusando a coleção errada.
+ *
+ * Agora cada fonte tem a sua corrotina e o seu `update`: as localidades servem para **escolher**, os
+ * portos só para **não repetir**, e nada obriga a segunda a chegar para a primeira aparecer. O que se
+ * perde quando os portos não chegam é só a checagem de homônimo — que é verificação de cadastro, não
+ * garantia (a do servidor é a F8 do ADR-0016).
  */
 @HiltViewModel
 class FormPortoViewModel @Inject constructor(
@@ -54,28 +67,38 @@ class FormPortoViewModel @Inject constructor(
     val sucesso = _sucesso.receiveAsFlow()
 
     init {
-        // Sequenciado: a edição precisa das opções carregadas para exibir a localidade escolhida.
-        viewModelScope.launch {
-            carregarFontes()
-            if (idPorto.isNotBlank()) carregar()
-        }
+        // Duas corrotinas, e não uma sequência: uma fonte que demore (ou que o servidor negue) não pode
+        // segurar a outra. Ver o bloco "Por que as duas cargas são independentes", acima.
+        viewModelScope.launch { carregarLocalidades() }
+        viewModelScope.launch { carregarOutrosPortos() }
     }
 
     /**
-     * As duas fontes que o formulário consome: as localidades **para escolher** e os portos que já
-     * existem **para não repetir**.
+     * As localidades **para escolher** — e, na edição, o porto que está sendo editado.
      *
-     * `outrosPortos` exclui o que está sendo editado, e isso não é detalhe: sem a exclusão, salvar um
-     * porto sem renomeá-lo o acusaria de ser duplicata de si mesmo.
+     * O `update` das opções vem **antes** de carregar o porto: assim o dropdown já está utilizável
+     * mesmo que a leitura do porto demore, e a ordem também protege a opção inativa que
+     * [garantirOpcaoDaLocalidadeAtual] acrescenta — se as opções chegassem depois, elas a apagariam.
      */
-    private suspend fun carregarFontes() {
+    private suspend fun carregarLocalidades() {
         val opcoes = localidadeRepository.obterTodas()
             .filter { it.ativo }
             .map { it.paraOpcao() }
             .sortedBy { it.rotulo }
+
+        _uiState.update { it.copy(localidades = opcoes) }
+
+        if (idPorto.isNotBlank()) carregar()
+    }
+
+    /**
+     * Os portos que já existem, **para não repetir**. Exclui o que está sendo editado, e isso não é
+     * detalhe: sem a exclusão, salvar um porto sem renomeá-lo o acusaria de ser duplicata de si mesmo.
+     */
+    private suspend fun carregarOutrosPortos() {
         val outros = portoRepository.obterTodos().filterNot { it.id == idPorto }
 
-        _uiState.update { it.copy(localidades = opcoes, outrosPortos = outros) }
+        _uiState.update { it.copy(outrosPortos = outros) }
     }
 
     fun onNomeChange(v: String) = _uiState.update { it.copy(nome = v, erroNome = ErroNomePorto.NENHUM) }

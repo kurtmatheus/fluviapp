@@ -2,6 +2,7 @@ package dev.matheus.fluviapp.fakes
 
 import dev.matheus.fluviapp.domain.porto.Porto
 import dev.matheus.fluviapp.services.repository.cadastro.porto.PortoRepository
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -23,6 +24,16 @@ class FakePortoRepository : PortoRepository {
     val salvos = mutableListOf<Porto>()
     var falharAoSalvar = false
 
+    /**
+     * Simula o que a coleção faz quando o **primeiro snapshot não chega** — listener negado pela regra,
+     * rede fora: `obterTodos` fica suspenso, e não devolve lista vazia (`ColecaoFirestore` espera de
+     * propósito, para não confundir *vazio* com *ainda não chegou*).
+     *
+     * Existe porque isso aconteceu de verdade: as regras de `portos` ainda não estavam publicadas, e a
+     * espera por elas engolia a carga das **localidades** no formulário.
+     */
+    var travarObterTodos = false
+
     var sincronizou = false
         private set
 
@@ -39,7 +50,10 @@ class FakePortoRepository : PortoRepository {
         return id
     }
 
-    override suspend fun obterTodos(): List<Porto> = portos
+    override suspend fun obterTodos(): List<Porto> {
+        if (travarObterTodos) awaitCancellation()
+        return portos
+    }
 
     override suspend fun obterPorId(id: String): Porto? = portos.find { it.id == id }
 

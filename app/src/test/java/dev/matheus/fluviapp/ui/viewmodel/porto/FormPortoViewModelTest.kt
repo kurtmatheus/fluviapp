@@ -53,6 +53,26 @@ class FormPortoViewModelTest {
         assertEquals(listOf("Belém/PA", "Parintins/AM"), vm.uiState.value.localidades.map { it.rotulo })
     }
 
+    /**
+     * **A regressão da rc.3**, e a razão de as duas cargas serem independentes: as regras da coleção
+     * `portos` ainda não estavam publicadas, o servidor negava o listener e o primeiro snapshot nunca
+     * chegava. Como `obterTodos` espera por ele — de propósito, para não confundir *vazio* com *ainda
+     * não chegou* —, a espera engolia a lista de **localidades**, que já tinha chegado, e o dropdown
+     * aparecia vazio acusando a coleção errada.
+     *
+     * O que se perde quando os portos não chegam é só a checagem de homônimo; escolher a localidade,
+     * não.
+     */
+    @Test
+    fun `porto que nao chega nao impede o dropdown de localidades`() = runTest(mainRule.dispatcher) {
+        val portos = FakePortoRepository().apply { travarObterTodos = true }
+        val vm = viewModel(portos)
+        advanceUntilIdle()
+
+        assertEquals(listOf("Belém/PA", "Parintins/AM"), vm.uiState.value.localidades.map { it.rotulo })
+        assertTrue(vm.uiState.value.outrosPortos.isEmpty())
+    }
+
     /** Inativar um município é dizer "não escolham mais este" — e a lista de escolha é onde isso vale. */
     @Test
     fun `localidade inativa nao entra no dropdown`() = runTest(mainRule.dispatcher) {
