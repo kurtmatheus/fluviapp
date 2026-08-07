@@ -1,8 +1,9 @@
 # O painel da empresa — divisão do menu e as fases a partir da F5
 
-> **Status:** estudo. Registra o que a v0.0.4 fechou e organiza o que vem depois, a partir das decisões do
-> analista de 2026-08-07. Não é ADR: quando a divisão estiver acordada, ela vira revisão do plano de fases do
-> [ADR-0016](../adr/0016-dominio-da-plataforma.md).
+> **Status:** fechado → [**ADR-0022**](../adr/0022-painel-da-empresa-e-fases.md) (2026-08-07). Este estudo
+> é o caminho; a decisão está lá, e é ela que vale. A pergunta 1 do §6 foi respondida — plataforma e
+> `SUPERVISOR` escrevem, `AGENTE` só lê —, e o ADR precisou de um passo a mais que o estudo não tinha:
+> como rota e viagem são imutáveis, **escrever quer dizer criar**, e **desativar ficou com a plataforma**.
 
 ## 1. O que fechou: o painel da plataforma está completo
 
@@ -121,7 +122,9 @@ Nada disso é reescrita: a estrutura de menu já é domínio testável, e é nel
 
 ## 6. Perguntas para a próxima rodada
 
-1. **Quem escreve Rota e Viagem** — a leitura assumida em §2 é plataforma + supervisor; confirma?
+1. ~~**Quem escreve Rota e Viagem**~~ — **respondida** em 2026-08-07: plataforma + `SUPERVISOR` escrevem,
+   `AGENTE` só lê. Ver ADR-0022 D3, que precisa o alcance de "escrever" (criar sim, editar não existe,
+   desativar é da plataforma).
 2. **O que o Início mostra em cada painel.** Para a empresa é razoável supor as próximas viagens e a venda do
    dia; para a plataforma, o que exatamente? "Quantas empresas/portos existem" é inventário, não trabalho.
 3. **Passagem revitalizada ou adaptada.** Ela é a única seção que já existe em código antigo — e é a maior.
