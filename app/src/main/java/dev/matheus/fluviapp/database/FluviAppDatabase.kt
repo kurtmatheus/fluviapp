@@ -4,7 +4,6 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 import dev.matheus.fluviapp.database.dao.ContadorDao
 import dev.matheus.fluviapp.database.dao.cadastro.ConstanteDao
-import dev.matheus.fluviapp.database.dao.operacoes.FuncionarioDao
 import dev.matheus.fluviapp.database.dao.cadastro.viagem.TarifaViagemDao
 import dev.matheus.fluviapp.database.dao.cadastro.viagem.ViagemDao
 import dev.matheus.fluviapp.database.dao.operacoes.UsuarioDao
@@ -13,7 +12,6 @@ import dev.matheus.fluviapp.database.dao.passagem.PassagemDigitalDao
 import dev.matheus.fluviapp.database.dao.passagem.RascunhoPassagemDao
 import dev.matheus.fluviapp.domain.ContadorBilhete
 import dev.matheus.fluviapp.domain.cadastro.constantes.Constante
-import dev.matheus.fluviapp.domain.operacoes.Funcionario
 import dev.matheus.fluviapp.domain.operacoes.Usuario
 import dev.matheus.fluviapp.domain.passagem.Passagem
 import dev.matheus.fluviapp.domain.passagem.PassagemDigital
@@ -24,7 +22,6 @@ import dev.matheus.fluviapp.domain.viagem.Viagem
     entities = [
         Usuario::class,
         Constante::class,
-        Funcionario::class,
         Viagem::class,
         TarifaViagem::class,
         Passagem::class,
@@ -35,7 +32,9 @@ import dev.matheus.fluviapp.domain.viagem.Viagem
     // v3: a tabela Empresa saiu — a coleção passou a viver só no Firestore (ADR-0017 D1, ADR-0020 F5).
     // v4: a Embarcação (ex-`Navio`) segue o mesmo caminho, pela mesma razão. O que sobra aqui é cache do
     // Firestore e o resíduo local (rascunho, bilhete digital) — nenhum deles é fonte da verdade.
-    version = 4,
+    // v5: o Funcionário sai (F6.2), e a saída dele é a que destrava a forma nova — `vinculos` é lista, e
+    // lista em tabela pediria TypeConverter e migração para um formato que muda na fatia seguinte.
+    version = 5,
     exportSchema = true
 )
 abstract class FluviAppDatabase : RoomDatabase() {
@@ -43,7 +42,6 @@ abstract class FluviAppDatabase : RoomDatabase() {
     abstract fun constanteDao(): ConstanteDao
     abstract fun viagemDao(): ViagemDao
     abstract fun tarifaViagemDao(): TarifaViagemDao
-    abstract fun funcionarioDao(): FuncionarioDao
     abstract fun passagemDao(): PassagemDao
     abstract fun contadorDao(): ContadorDao
     abstract fun passagemDigitalDao(): PassagemDigitalDao

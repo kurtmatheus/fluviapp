@@ -8,7 +8,6 @@ import com.google.gson.Gson
 import dev.matheus.fluviapp.database.FluviAppDatabase
 import dev.matheus.fluviapp.database.dao.ContadorDao
 import dev.matheus.fluviapp.database.dao.cadastro.ConstanteDao
-import dev.matheus.fluviapp.database.dao.operacoes.FuncionarioDao
 import dev.matheus.fluviapp.database.dao.cadastro.viagem.TarifaViagemDao
 import dev.matheus.fluviapp.database.dao.cadastro.viagem.ViagemDao
 import dev.matheus.fluviapp.database.dao.operacoes.UsuarioDao
@@ -45,6 +44,25 @@ private const val DATABASE_NAME = "fluviApp.db"
 val MIGRATION_1_2 = object : Migration(1, 2) {
     override fun migrate(db: SupportSQLiteDatabase) {
         DDL_V2.forEach(db::execSQL)
+    }
+}
+
+/**
+ * **v4 → v5: a tabela do Funcionário é derrubada** (F6.2) — e esta é a **primeira migração escrita
+ * depois da primeira versão publicada**, que é exatamente o gatilho que o §9 previa.
+ *
+ * Até a v0.0.4 valia recriar: sem base instalada, não havia dado local a perder. Agora há aparelho com o
+ * app em produção, e o que mora neste banco não é só cache do Firestore — são o **rascunho de passagem** e
+ * o índice do **bilhete digital**, que existem só aqui. Cair no `fallbackToDestructiveMigration` levaria os
+ * dois junto com uma tabela que ninguém mais lê.
+ *
+ * Um `DROP TABLE` de uma tabela que virou espelho de nada é a migração mais barata que existe, e ela paga
+ * a diferença entre "o cadastro saiu do Room" e "o rascunho de alguém sumiu na atualização".
+ */
+val MIGRATION_4_5 = object : Migration(4, 5) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("DROP INDEX IF EXISTS `index_Funcionario_id`")
+        db.execSQL("DROP TABLE IF EXISTS `Funcionario`")
     }
 }
 
@@ -85,6 +103,7 @@ class DatabaseModule {
             DATABASE_NAME
         ).addMigrations(
             MIGRATION_1_2,
+            MIGRATION_4_5,
         )
             // Sem distribuição, não há base instalada cujo dado se possa perder: a v3 recria em vez de
             // migrar (decisão do analista). Este argumento VENCE na P3.5 — a partir da primeira entrega
@@ -116,11 +135,6 @@ class DatabaseModule {
     @Provides
     fun provideTarifaViagemDao(db: FluviAppDatabase): TarifaViagemDao {
         return db.tarifaViagemDao()
-    }
-
-    @Provides
-    fun provideFuncionarioDao(db: FluviAppDatabase): FuncionarioDao {
-        return db.funcionarioDao()
     }
 
     @Provides

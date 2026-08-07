@@ -38,11 +38,9 @@ fun DocumentoBruto.toEmpresaDocumento() = EmpresaDocumento(
     telefone2 = texto("telefone2"),
 )
 
-fun DocumentoBruto.toFuncionarioDocumento() = FuncionarioDocumento(
-    nome = texto("nome"),
-    agencia = texto("agencia"),
-    lotacao = texto("lotacao"),
-)
+// `toFuncionarioDocumento` saiu na F6.2, com o último chamador: a Equipe lê por `DocumentoBruto.toFuncionario()`,
+// como as quatro entidades já revitalizadas. Descarte progressivo — o que fica sem uso sai na fatia em que
+// deixou de ser necessário, e não numa limpeza final.
 
 fun DocumentoBruto.toConstanteDocumento() = ConstanteDocumento(
     descricao = texto("descricao"),

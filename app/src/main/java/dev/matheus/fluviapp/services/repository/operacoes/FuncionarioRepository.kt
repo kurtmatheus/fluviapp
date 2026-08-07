@@ -1,18 +1,33 @@
 package dev.matheus.fluviapp.services.repository.operacoes
 
 import dev.matheus.fluviapp.domain.operacoes.Funcionario
+import kotlinx.coroutines.flow.StateFlow
 
 /**
  * Porta do repositório de funcionários (DIP) — os ViewModels dependem desta interface, não da impl
  * Firestore. Testes usam um fake; produção usa [FuncionarioFirestoreRepository].
+ *
+ * Desde a F6.2 a coleção vive **só no Firestore** (ADR-0017 D1), e a porta ganhou o que faltava para
+ * isso: [observarTodos], a janela para o `StateFlow` que o listener alimenta. As duas consultas por
+ * agência ficaram, e ficaram marcadas — elas são do vocabulário antigo, e saem quando a agência virar o
+ * `empresaId` do vínculo (F6.3).
  */
 interface FuncionarioRepository {
     fun sincronizar()
-    suspend fun salvar(funcionario: Funcionario)
+    fun observarTodos(): StateFlow<List<Funcionario>>
+
+    /** Salva e devolve **o id** — necessário porque a criação o gera. */
+    suspend fun salvar(funcionario: Funcionario): String
+
     suspend fun obterPorId(id: String): Funcionario?
-    suspend fun obterTodasAgencias(): List<String>
     suspend fun obterTodosFuncionarios(): List<Funcionario>
+
+    /** **Legado** (F6.3): recorte por String de agência. */
+    suspend fun obterTodasAgencias(): List<String>
+
+    /** **Legado** (F6.3): idem. */
     suspend fun obterFuncionariosPorAgencia(agencia: String): List<Funcionario>
+
     suspend fun deletar(id: String)
 
     /**

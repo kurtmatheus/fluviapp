@@ -211,7 +211,13 @@ describe('users/{uid} — anti-escalonamento', () => {
 });
 
 // --- funcionarios/{id}: a Equipe (ADR-0015 §8.5) ---
-foraDoEscopo('funcionarios — escrita de plataforma e cargo não-autoescalável', () => {
+//
+// **Entrou no escopo na F6.2**, quando a Equipe começou a ser revitalizada — é a definição de pronto do
+// ADR-0022 D6 aplicada a esta fatia. A regra não mudou aqui: a fatia só acrescentou `vinculos` e
+// `empresaIds` ao documento, e o que a regra governa (agência do autor, cargo inalterado, delete de
+// plataforma) continua valendo campo a campo. Ela muda na F6.3, quando a escrita parar de carregar
+// `agencia` e `cargo` — e é este bloco que vai cobrar a mudança.
+describe('funcionarios — escrita de plataforma e cargo não-autoescalável', () => {
   test('operador LÊ funcionário (a UI resolve nome/agência por aqui) → OK', async () => {
     await assertSucceeds(getDoc(doc(asAgenteA(), 'funcionarios', F_B)));
   });

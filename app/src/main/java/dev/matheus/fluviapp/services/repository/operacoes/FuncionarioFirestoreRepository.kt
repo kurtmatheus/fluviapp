@@ -1,91 +1,85 @@
 package dev.matheus.fluviapp.services.repository.operacoes
 
 import android.util.Log
-import dev.matheus.fluviapp.database.dao.operacoes.FuncionarioDao
-import dev.matheus.fluviapp.domain.operacoes.Funcionario
-import dev.matheus.fluviapp.domain.operacoes.toDocumento
-import dev.matheus.fluviapp.services.repository.operacoes.FuncionarioRepository.Companion.COLLECTION_FUNCIONARIOS
-import dev.matheus.fluviapp.services.repository.firebase.FonteSnapshots
-import dev.matheus.fluviapp.services.repository.firebase.documents.FuncionarioDocumento
-import dev.matheus.fluviapp.services.repository.firebase.documents.toFuncionario
-import dev.matheus.fluviapp.services.repository.firebase.documents.toFuncionarioDocumento
+import com.google.firebase.firestore.FirebaseFirestore
 import dev.matheus.fluviapp.di.module.SyncScope
-import dev.matheus.fluviapp.services.repository.firebase.sincronizarColecao
+import dev.matheus.fluviapp.domain.operacoes.Funcionario
+import dev.matheus.fluviapp.services.repository.firebase.CodecFirestore
+import dev.matheus.fluviapp.services.repository.firebase.ColecaoFirestore
+import dev.matheus.fluviapp.services.repository.firebase.DocumentoBruto
+import dev.matheus.fluviapp.services.repository.firebase.FonteSnapshots
+import dev.matheus.fluviapp.services.repository.firebase.documents.paraMapa
+import dev.matheus.fluviapp.services.repository.firebase.documents.toFuncionario
+import dev.matheus.fluviapp.services.repository.operacoes.FuncionarioRepository.Companion.COLLECTION_FUNCIONARIOS
 import dev.matheus.fluviapp.telemetry.RegistroCadastro
 import dev.matheus.fluviapp.telemetry.RegistroSincronizacao
-import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import javax.inject.Singleton
 
-/** Impl Firestore da porta [FuncionarioRepository] — espelha no Room (ADR-0003), contrato do molde. */
+/** O codec do Funcionário: o pouco que é dele na fronteira (ADR-0019 D2). */
+private object FuncionarioCodec : CodecFirestore<Funcionario> {
+    override val colecao = COLLECTION_FUNCIONARIOS
+    override val entidade = "funcionario"
+    override fun deDocumento(bruto: DocumentoBruto) = bruto.toFuncionario()
+    override fun paraMapa(modelo: Funcionario) = modelo.paraMapa()
+    override fun id(modelo: Funcionario) = modelo.id
+    override fun comId(modelo: Funcionario, id: String) = modelo.copy(id = id)
+}
+
+/**
+ * Impl Firestore da porta [FuncionarioRepository] — **a quinta coleção sem Room**, e a última do caminho
+ * vivo a perder o espelho (ADR-0017 D1).
+ *
+ * O CRUD comum é composto da [ColecaoFirestore]. O que sobra de próprio é o que **não** é CRUD:
+ * [obterPorEmailDoServidor], que é uma consulta ao servidor no momento em que ainda não há listener
+ * ligado — e é por isso que ela não pôde virar leitura da coleção em memória.
+ *
+ * As duas consultas por agência viram **filtro em memória**, e não uma query nova. A coleção é pequena e
+ * já chega inteira pelo listener; criar uma query para recortá-la seria abrir um segundo caminho de
+ * leitura para o mesmo dado. Elas morrem na F6.3, quando a agência virar o `empresaId` do vínculo.
+ */
 @Singleton
 class FuncionarioFirestoreRepository @Inject constructor(
-    private val dao: FuncionarioDao,
     private val firestore: FirebaseFirestore,
-    private val registroCadastro: RegistroCadastro,
-    @SyncScope private val syncScope: CoroutineScope,
-    private val registroSincronizacao: RegistroSincronizacao,
-    private val fonteSnapshots: FonteSnapshots,
+    registroCadastro: RegistroCadastro,
+    @SyncScope syncScope: CoroutineScope,
+    registroSincronizacao: RegistroSincronizacao,
+    fonteSnapshots: FonteSnapshots,
 ) : FuncionarioRepository {
 
-    private var syncJob: Job? = null
+    private val colecao = ColecaoFirestore(
+        codec = FuncionarioCodec,
+        firestore = firestore,
+        fonteSnapshots = fonteSnapshots,
+        syncScope = syncScope,
+        registroCadastro = registroCadastro,
+        registroSincronizacao = registroSincronizacao,
+    )
 
-    override fun sincronizar() {
-        if (syncJob?.isActive == true) return
-        syncJob = sincronizarColecao(
-            fonte = fonteSnapshots,
-            colecao = COLLECTION_FUNCIONARIOS,
-            scope = syncScope,
-            registro = registroSincronizacao,
-            paraModelo = { it.toFuncionarioDocumento().toFuncionario(it.id) },
-            salvarTodos = { dao.salvarTodos(*it.toTypedArray()) },
-        )
-    }
+    override fun sincronizar() = colecao.sincronizar()
 
-    override suspend fun salvar(funcionario: Funcionario) {
-        val documento = if (funcionario.id.isBlank()) {
-            firestore.collection(COLLECTION_FUNCIONARIOS).document()
-        } else {
-            firestore.collection(COLLECTION_FUNCIONARIOS).document(funcionario.id)
-        }
-        val comId = funcionario.copy(id = documento.id)
+    override fun observarTodos(): StateFlow<List<Funcionario>> = colecao.observarTodos()
 
-        // FALHA: Room não gravou — desfecho não recuperável, propaga pro VM tratar.
-        try {
-            dao.salvar(comId)
-        } catch (e: Exception) {
-            registroCadastro.falhou(ENTIDADE, e)
-            throw RuntimeException("Falha ao salvar funcionario: ${e.message}", e)
-        }
+    override suspend fun salvar(funcionario: Funcionario): String = colecao.salvar(funcionario)
 
-        // Room já tem o dado (otimista). Aguarda o ack do Firestore: SUCESSO se confirmar,
-        // WARNING (pendente-sync) se rejeitar/offline — não relança, o dado local reconcilia.
-        try {
-            documento.set(comId.toDocumento()).await()
-            registroCadastro.salvou(ENTIDADE, comId.id)
-        } catch (e: Exception) {
-            registroCadastro.pendenteDeSync(ENTIDADE, comId.id, e)
-        }
-    }
+    override suspend fun obterPorId(id: String): Funcionario? = colecao.obterPorId(id)
 
-    override suspend fun obterPorId(id: String) = dao.obterPorId(id).first()
+    override suspend fun obterTodosFuncionarios(): List<Funcionario> = colecao.obterTodos()
 
     override suspend fun obterTodasAgencias(): List<String> =
-        dao.obterTodasAgencias().first().distinct()
+        colecao.obterTodos().map { it.agencia }.filter { it.isNotBlank() }.distinct()
 
-    override suspend fun obterTodosFuncionarios() = dao.obterTodos().first()
-
-    override suspend fun obterFuncionariosPorAgencia(agencia: String) =
-        dao.obterTodosPorAgencia(agencia).first()
+    override suspend fun obterFuncionariosPorAgencia(agencia: String): List<Funcionario> =
+        colecao.obterTodos().filter { it.agencia == agencia }
 
     /**
-     * Consulta o servidor por e-mail (ADR-0015 §2.1). Não passa pelo Room de propósito: no primeiro
-     * acesso o espelho ainda está vazio — sincronização só começa depois do login. Devolve `null` se
-     * não houver registro, que é o caso "autenticou mas não é da casa".
+     * Consulta o servidor por e-mail (ADR-0015 §2.1). **Não passa pela coleção em memória de propósito**:
+     * no primeiro acesso o listener ainda não subiu — sincronizar exige estar logado, e aqui a pessoa
+     * acabou de autenticar. Devolve `null` se não houver registro, que é o caso "autenticou mas não é da
+     * casa" — distinto de "ainda não chegou", que aqui não existe porque a leitura é direta.
      */
     override suspend fun obterPorEmailDoServidor(email: String): Funcionario? = try {
         firestore.collection(COLLECTION_FUNCIONARIOS)
@@ -93,25 +87,15 @@ class FuncionarioFirestoreRepository @Inject constructor(
             .limit(1)
             .get().await()
             .documents.firstOrNull()
-            ?.let { it.toObject(FuncionarioDocumento::class.java)?.toFuncionario(it.id) }
+            ?.let { DocumentoBruto(id = it.id, dados = it.data.orEmpty()).toFuncionario() }
     } catch (e: Exception) {
         Log.e(TAG, "obterPorEmailDoServidor($email): ${e.message}", e)
         null
     }
 
-    // Deleta local (otimista) + doc do Firestore. O listener de sessão (ADR-0009) reconcilia o Room.
-    // Falha no servidor não derruba a UI — só loga (o doc remanescente re-sincroniza depois).
-    override suspend fun deletar(id: String) {
-        dao.deletar(id)
-        try {
-            firestore.collection(COLLECTION_FUNCIONARIOS).document(id).delete().await()
-        } catch (e: Exception) {
-            Log.e(TAG, "deletar($id): ${e.message}", e)
-        }
-    }
+    override suspend fun deletar(id: String) = colecao.deletar(id)
 
     private companion object {
         const val TAG = "funcionarioRepository"
-        const val ENTIDADE = "funcionario"
     }
 }

@@ -2,15 +2,35 @@ package dev.matheus.fluviapp.fakes
 
 import dev.matheus.fluviapp.domain.operacoes.Funcionario
 import dev.matheus.fluviapp.services.repository.operacoes.FuncionarioRepository
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
-/** Fake da porta [FuncionarioRepository] para testes de ViewModel (sem Firestore/Room). */
+/** Fake da porta [FuncionarioRepository] para testes de ViewModel (sem Firestore). */
 class FakeFuncionarioRepository : FuncionarioRepository {
-    var funcionarios: List<Funcionario> = emptyList()
+    private val _funcionarios = MutableStateFlow<List<Funcionario>>(emptyList())
+
+    var funcionarios: List<Funcionario>
+        get() = _funcionarios.value
+        set(valor) { _funcionarios.value = valor }
+
     val salvos = mutableListOf<Funcionario>()
     val deletados = mutableListOf<String>()
 
-    override fun sincronizar() = Unit
-    override suspend fun salvar(funcionario: Funcionario) { salvos += funcionario }
+    var sincronizou = false
+        private set
+
+    override fun sincronizar() { sincronizou = true }
+
+    override fun observarTodos(): StateFlow<List<Funcionario>> = _funcionarios.asStateFlow()
+
+    override suspend fun salvar(funcionario: Funcionario): String {
+        salvos += funcionario
+        val id = funcionario.id.ifBlank { "id-gerado-${salvos.size}" }
+        funcionarios = funcionarios.filterNot { it.id == id } + funcionario.copy(id = id)
+        return id
+    }
+
     override suspend fun obterPorId(id: String): Funcionario? = funcionarios.find { it.id == id }
     override suspend fun obterTodasAgencias(): List<String> = funcionarios.map { it.agencia }.distinct()
     override suspend fun obterTodosFuncionarios(): List<Funcionario> = funcionarios

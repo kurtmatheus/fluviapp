@@ -21,6 +21,24 @@ data class DocumentoBruto(
     fun booleano(chave: String, padrao: Boolean = false): Boolean = dados[chave] as? Boolean ?: padrao
 
     /**
+     * Lista de mapas — a forma que o Firestore devolve um `array` de objetos (os `vinculos` do
+     * funcionário, ADR-0016 §6).
+     *
+     * Elemento que não é mapa é **descartado**, não coagido: um item estranho no meio do array é dado
+     * corrompido, e transformá-lo em mapa vazio criaria um vínculo sem empresa e sem cargo — que a
+     * fronteira do domínio recusaria de novo, mais adiante e com menos contexto. Ausente ou tipo errado
+     * → lista vazia, como os demais acessores.
+     */
+    fun listaDeMapas(chave: String): List<Map<String, Any?>> {
+        val bruto = dados[chave] as? List<*> ?: return emptyList()
+        return bruto.mapNotNull { item ->
+            (item as? Map<*, *>)?.entries?.mapNotNull { (k, v) ->
+                (k as? String)?.let { it to v }
+            }?.toMap()
+        }
+    }
+
+    /**
      * Mapa aninhado chave(String)→valor(Double) — a forma que o Firestore devolve um `map` de números
      * (ADR-0013, tabela de tarifas). Coage cada valor de Number→Double (Firestore devolve Long ou
      * Double); entradas com chave/valor de tipo inesperado são descartadas (defensivo, como os demais
