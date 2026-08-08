@@ -24,6 +24,7 @@ import dev.matheus.fluviapp.domain.operacoes.Atuacao
 import dev.matheus.fluviapp.domain.viagem.Embarcacao
 import dev.matheus.fluviapp.ui.components.forms.fields.FormTextFieldBrownNoIcon
 import dev.matheus.fluviapp.ui.states.FormEmpresaUiState
+import dev.matheus.fluviapp.ui.states.PortoOpcao
 import dev.matheus.fluviapp.util.visualtransformation.CnpjVisualTransformation
 
 @Composable
@@ -38,6 +39,7 @@ fun ContentEmpresaAreaForm(
     onTelefone2Change: (String) -> Unit,
     onAtuacaoToggle: (Atuacao) -> Unit = {},
     onEmbarcacaoToggle: (String) -> Unit = {},
+    onPortoToggle: (String) -> Unit = {},
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -127,6 +129,16 @@ fun ContentEmpresaAreaForm(
                 embarcacoes = state.embarcacoes,
                 concedidas = state.embarcacoesConcedidas,
                 onEmbarcacaoToggle = onEmbarcacaoToggle,
+            )
+        }
+
+        // A outra metade da concessão (F7): **onde** ela pode operar. Vem depois de "em quê" porque é
+        // a que a Rota consome — e a rota só existe depois de haver porto.
+        if (state.concedePortos) {
+            AreaPortosConcedidos(
+                portos = state.portos,
+                concedidos = state.portosConcedidos,
+                onPortoToggle = onPortoToggle,
             )
         }
     }
@@ -241,6 +253,61 @@ private fun AreaConcessoes(
                 )
                 Text(
                     text = "${embarcacao.descricaoNome} · ${embarcacao.tipo.rotulo}",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+            }
+        }
+    }
+}
+
+/**
+ * **Onde esta parte pode operar** — a segunda dimensão da concessão (ADR-0016 §7.1, F7).
+ *
+ * A lista é a de todos os portos ativos da plataforma, pela mesma razão da frota: operar num porto não é
+ * ser dono dele. E é daqui que sai a *linha ofertável*: quem tem os dois portos de uma rota pode
+ * vendê-la — a rota em si é do pool compartilhado, quem a criou não importa.
+ *
+ * Os inativos ficam de fora, e essa é a diferença para as atuações dormentes logo acima: atuação
+ * desabilitada é vocabulário que a plataforma conhece e ainda não usa; porto inativo é um registro
+ * aposentado — mantê-lo aqui seria oferecer conceder onde ninguém mais opera.
+ */
+@Composable
+private fun AreaPortosConcedidos(
+    portos: List<PortoOpcao>,
+    concedidos: Set<String>,
+    onPortoToggle: (String) -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(
+            text = stringResource(R.string.label_concessoes_portos),
+            style = MaterialTheme.typography.titleSmall,
+        )
+
+        if (portos.isEmpty()) {
+            Text(
+                text = stringResource(R.string.msg_sem_portos),
+                style = MaterialTheme.typography.bodySmall,
+            )
+            return@Column
+        }
+
+        portos.forEach { porto ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .toggleable(
+                        value = porto.id in concedidos,
+                        role = Role.Checkbox,
+                        onValueChange = { onPortoToggle(porto.id) },
+                    ),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Checkbox(
+                    checked = porto.id in concedidos,
+                    onCheckedChange = null,
+                )
+                Text(
+                    text = porto.rotulo,
                     style = MaterialTheme.typography.bodyMedium,
                 )
             }

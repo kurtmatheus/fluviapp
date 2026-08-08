@@ -12,7 +12,10 @@ import dev.matheus.fluviapp.domain.viagem.de
 import dev.matheus.fluviapp.navigation.navcomposables.empresa.ID_EMPRESA_ARGUMENT
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.EmbarcacaoRepository
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.EmpresaRepository
+import dev.matheus.fluviapp.services.repository.cadastro.localidade.LocalidadeRepository
+import dev.matheus.fluviapp.services.repository.cadastro.porto.PortoRepository
 import dev.matheus.fluviapp.ui.states.FormEmpresaUiState
+import dev.matheus.fluviapp.ui.states.PortoOpcao
 import dev.matheus.fluviapp.ui.viewmodel.helpers.empresa.validarEmpresa
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
@@ -29,14 +32,19 @@ import javax.inject.Inject
  * eventos são métodos (sem lambdas no state); validação pura; sucesso via evento one-shot
  * (consumido por LaunchedEffect na navegação). Sem Context, sem navegar-no-finally, sem runBlocking.
  *
- * Edita também a **concessão** (ADR-0016 §7.1): quais embarcações esta parte pode vender quando exerce
- * `AGENCIAMENTO`. Por isso conhece o repositório de embarcações — não para cadastrá-las, mas para
- * oferecer os candidatos.
+ * Edita também a **concessão** (ADR-0016 §7.1), que desde a F7 tem **duas dimensões**: *em quê* — quais
+ * embarcações esta parte pode vender — e *onde* — em quais portos ela pode operar. Por isso conhece os
+ * repositórios de embarcação e de porto: não para cadastrá-los, mas para oferecer os candidatos.
+ *
+ * É a segunda dimensão que faz a linha ofertável deixar de ser concedida diretamente e virar
+ * **consequência**: quem tem os dois portos pode ofertar a travessia entre eles; quem não tem, não pode.
  */
 @HiltViewModel
 class FormEmpresaViewModel @Inject constructor(
     private val empresaRepository: EmpresaRepository,
     private val embarcacaoRepository: EmbarcacaoRepository,
+    private val portoRepository: PortoRepository,
+    private val localidadeRepository: LocalidadeRepository,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
@@ -54,12 +62,44 @@ class FormEmpresaViewModel @Inject constructor(
         // concessão gravada apareceria como uma lista de ids sem nome ao lado.
         viewModelScope.launch {
             carregarFrota()
+            carregarPortos()
             if (idEmpresa.isNotBlank()) carregar()
         }
     }
 
     private suspend fun carregarFrota() {
         _uiState.update { it.copy(embarcacoes = embarcacaoRepository.obterTodos()) }
+    }
+
+    /**
+     * Os portos ativos — a outra metade da concessão (F7). O rótulo traz a cidade porque é ela que
+     * distingue homônimos: conceder "Porto Central" sem saber qual é conceder no escuro.
+     */
+    private suspend fun carregarPortos() {
+        val localidades = localidadeRepository.obterTodas().associate { it.id to it.rotulo }
+        val opcoes = portoRepository.obterTodos()
+            .filter { it.ativo }
+            .map { porto ->
+                PortoOpcao(
+                    id = porto.id,
+                    rotulo = listOfNotNull(porto.nome, localidades[porto.localidadeId])
+                        .filter { texto -> texto.isNotBlank() }
+                        .joinToString(" · "),
+                )
+            }
+            .sortedBy { it.rotulo }
+
+        _uiState.update { it.copy(portos = opcoes) }
+    }
+
+    /** Concede ou revoga **um** porto — mesmo gesto do toggle da embarcação, no outro eixo. */
+    fun onPortoToggle(portoId: String) = _uiState.update { estado ->
+        val concedidos = if (portoId in estado.portosConcedidos) {
+            estado.portosConcedidos - portoId
+        } else {
+            estado.portosConcedidos + portoId
+        }
+        estado.copy(portosConcedidos = concedidos)
     }
 
     fun onNomeChange(v: String) = _uiState.update { it.copy(nome = v, isNomeError = false) }
@@ -87,6 +127,7 @@ class FormEmpresaViewModel @Inject constructor(
             atuacoes = atuacoes,
             isAtuacoesError = false,
             embarcacoesConcedidas = if (Atuacao.AGENCIAMENTO in atuacoes) estado.embarcacoesConcedidas else emptySet(),
+            portosConcedidos = if (Atuacao.AGENCIAMENTO in atuacoes) estado.portosConcedidos else emptySet(),
         )
     }
 
@@ -118,6 +159,7 @@ class FormEmpresaViewModel @Inject constructor(
                     telefone2 = empresa.telefone2,
                     atuacoes = atuacoesGravadas.map { gravada -> gravada.atuacao }.toSet(),
                     embarcacoesConcedidas = atuacoesGravadas.de(Atuacao.AGENCIAMENTO)?.embarcacaoIds.orEmpty(),
+                    portosConcedidos = atuacoesGravadas.de(Atuacao.AGENCIAMENTO)?.portoIds.orEmpty(),
                 )
             }
         }
@@ -162,7 +204,11 @@ class FormEmpresaViewModel @Inject constructor(
                     empresaId = id,
                     atuacoes = s.atuacoes.map { atuacao ->
                         if (atuacao == Atuacao.AGENCIAMENTO) {
-                            AtuacaoDaEmpresa(atuacao, embarcacaoIds = s.embarcacoesConcedidas)
+                            AtuacaoDaEmpresa(
+                                atuacao = atuacao,
+                                embarcacaoIds = s.embarcacoesConcedidas,
+                                portoIds = s.portosConcedidos,
+                            )
                         } else {
                             gravadas[atuacao] ?: AtuacaoDaEmpresa(atuacao)
                         }

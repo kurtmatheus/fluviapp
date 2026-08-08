@@ -3,6 +3,11 @@ package dev.matheus.fluviapp.ui.viewmodel.empresa
 import androidx.lifecycle.SavedStateHandle
 import dev.matheus.fluviapp.fakes.FakeEmbarcacaoRepository
 import dev.matheus.fluviapp.fakes.FakeEmpresaRepository
+import dev.matheus.fluviapp.fakes.FakeLocalidadeRepository
+import dev.matheus.fluviapp.fakes.FakePortoRepository
+import dev.matheus.fluviapp.domain.localidade.Localidade
+import dev.matheus.fluviapp.domain.localidade.Uf
+import dev.matheus.fluviapp.domain.porto.Porto
 import dev.matheus.fluviapp.domain.operacoes.Atuacao
 import dev.matheus.fluviapp.domain.viagem.AtuacaoDaEmpresa
 import dev.matheus.fluviapp.domain.viagem.Embarcacao
@@ -292,23 +297,141 @@ class FormEmpresaViewModelTest {
             assertTrue(fake.salvos.isEmpty())
         }
 
+    // --- a outra metade da concessão: ONDE (F7, §7.1) ----------------------------------------------
+
     /**
-     * O VM conhece dois repositórios: a Empresa que ele cadastra e a **frota**, que ele só lê para
-     * oferecer os candidatos à concessão (ADR-0016 §7.1). Frota vazia é o caso comum aqui — quem não
-     * testa concessão não precisa declarar embarcação nenhuma.
+     * O rótulo do porto traz a cidade porque é ela que distingue homônimos: "Porto Central" em Belém e
+     * "Porto Central" em Manaus são duas concessões diferentes, e sem a cidade a escolha seria no escuro.
+     */
+    @Test
+    fun `o porto e oferecido com a cidade no rotulo`() = runTest(mainRule.dispatcher) {
+        val vm = viewModel(
+            FakeEmpresaRepository(),
+            portos = listOf(porto("p1", "PORTO CENTRAL", localidadeId = "loc-1")),
+            localidades = listOf(localidade("loc-1", "MANAUS")),
+        )
+        advanceUntilIdle()
+
+        assertEquals(listOf("PORTO CENTRAL · MANAUS/AM"), vm.uiState.value.portos.map { it.rotulo })
+    }
+
+    /**
+     * Porto inativo não é candidato — e é aí que ele difere da atuação dormente, que aparece desabilitada:
+     * atuação dormente é vocabulário que a plataforma ainda não usa; porto inativo é registro aposentado.
+     * Conceder onde ninguém mais opera seria escrever uma permissão nascida morta.
+     */
+    @Test
+    fun `porto inativo nao entra na lista de candidatos`() = runTest(mainRule.dispatcher) {
+        val vm = viewModel(
+            FakeEmpresaRepository(),
+            portos = listOf(porto("p1", "ATIVO"), porto("p2", "APOSENTADO", ativo = false)),
+            localidades = listOf(localidade("loc-1", "MANAUS")),
+        )
+        advanceUntilIdle()
+
+        assertEquals(listOf("p1"), vm.uiState.value.portos.map { it.id })
+    }
+
+    @Test
+    fun `conceder e revogar porto sao o mesmo gesto`() = runTest(mainRule.dispatcher) {
+        val vm = viewModel(FakeEmpresaRepository(), portos = listOf(porto("p1", "PORTO UM")))
+        advanceUntilIdle()
+
+        vm.onPortoToggle("p1")
+        assertEquals(setOf("p1"), vm.uiState.value.portosConcedidos)
+
+        vm.onPortoToggle("p1")
+        assertTrue(vm.uiState.value.portosConcedidos.isEmpty())
+    }
+
+    /** As duas dimensões vivem no mesmo documento da atuação, e uma escrita grava as duas. */
+    @Test
+    fun `as duas dimensoes da concessao sao gravadas juntas`() = runTest(mainRule.dispatcher) {
+        val fake = FakeEmpresaRepository()
+        val vm = viewModel(
+            fake,
+            frota = listOf(embarcacao("n1", "F/B UM")),
+            portos = listOf(porto("p1", "PORTO UM"), porto("p2", "PORTO DOIS")),
+        )
+        advanceUntilIdle()
+
+        preencherObrigatorios(vm)
+        vm.onAtuacaoToggle(Atuacao.AGENCIAMENTO)
+        vm.onEmbarcacaoToggle("n1")
+        vm.onPortoToggle("p1")
+        vm.onPortoToggle("p2")
+        vm.salvar()
+        advanceUntilIdle()
+
+        val id = fake.salvos.single().id.ifBlank { "id-gerado-1" }
+        assertEquals(
+            listOf(
+                AtuacaoDaEmpresa(
+                    Atuacao.AGENCIAMENTO,
+                    embarcacaoIds = setOf("n1"),
+                    portoIds = setOf("p1", "p2"),
+                )
+            ),
+            fake.atuacoesPorEmpresa[id],
+        )
+    }
+
+    @Test
+    fun `a edicao traz de volta os portos ja concedidos`() = runTest(mainRule.dispatcher) {
+        val fake = FakeEmpresaRepository()
+        fake.empresas = listOf(empresaValida("e1"))
+        fake.atuacoesPorEmpresa["e1"] =
+            listOf(AtuacaoDaEmpresa(Atuacao.AGENCIAMENTO, portoIds = setOf("p1")))
+        val vm = viewModel(fake, portos = listOf(porto("p1", "PORTO UM")), idEmpresa = "e1")
+        advanceUntilIdle()
+
+        assertEquals(setOf("p1"), vm.uiState.value.portosConcedidos)
+    }
+
+    /** Mesma razão da embarcação: a permissão não sobrevive à atuação que a justificava. */
+    @Test
+    fun `desmarcar agenciamento limpa tambem os portos`() = runTest(mainRule.dispatcher) {
+        val vm = viewModel(FakeEmpresaRepository(), portos = listOf(porto("p1", "PORTO UM")))
+        advanceUntilIdle()
+
+        vm.onAtuacaoToggle(Atuacao.AGENCIAMENTO)
+        vm.onPortoToggle("p1")
+        assertTrue(vm.uiState.value.concedePortos)
+
+        vm.onAtuacaoToggle(Atuacao.AGENCIAMENTO)
+
+        assertFalse(vm.uiState.value.concedePortos)
+        assertTrue(vm.uiState.value.portosConcedidos.isEmpty())
+    }
+
+    /**
+     * O VM conhece quatro repositórios: a Empresa que ele cadastra e três que ele só **lê** para oferecer
+     * candidatos — a frota e os portos da concessão (ADR-0016 §7.1), e a localidade, que só entra para
+     * dar nome de cidade ao rótulo do porto. Listas vazias são o caso comum: quem não testa concessão não
+     * precisa declarar nem embarcação nem porto.
      */
     private fun viewModel(
         empresaFake: FakeEmpresaRepository,
         frota: List<Embarcacao> = emptyList(),
+        portos: List<Porto> = emptyList(),
+        localidades: List<Localidade> = emptyList(),
         idEmpresa: String? = null,
     ) = FormEmpresaViewModel(
         empresaFake,
         FakeEmbarcacaoRepository().apply { embarcacoes = frota },
+        FakePortoRepository().apply { this.portos = portos },
+        FakeLocalidadeRepository().apply { this.localidades = localidades },
         if (idEmpresa == null) SavedStateHandle() else SavedStateHandle(mapOf("idEmpresa" to idEmpresa)),
     )
 
     private fun embarcacao(id: String, nome: String) =
         Embarcacao(id, nome, TipoEmbarcacao.FERRY_BOAT, 10, 2, 2, 2, "outra-empresa")
+
+    private fun porto(id: String, nome: String, localidadeId: String = "loc-1", ativo: Boolean = true) =
+        Porto(id = id, nome = nome, localidadeId = localidadeId, ativo = ativo)
+
+    private fun localidade(id: String, municipio: String) =
+        Localidade(id = id, municipio = municipio, uf = Uf.AM, codigoIbge = "", ativo = true)
 
     private fun preencherObrigatorios(vm: FormEmpresaViewModel) {
         vm.onNomeChange("EMPRESA MODELO")

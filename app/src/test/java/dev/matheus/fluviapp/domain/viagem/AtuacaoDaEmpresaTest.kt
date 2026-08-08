@@ -16,6 +16,7 @@ class AtuacaoDaEmpresaTest {
     private val agenciamento = AtuacaoDaEmpresa(
         atuacao = Atuacao.AGENCIAMENTO,
         embarcacaoIds = setOf("embarcacao-1", "embarcacao-2"),
+        portoIds = setOf("porto-manaus", "porto-parintins"),
     )
     private val transporte = AtuacaoDaEmpresa(atuacao = Atuacao.TRANSPORTE)
 
@@ -42,6 +43,36 @@ class AtuacaoDaEmpresaTest {
     @Test
     fun `atuacao sem concessao nao concede nada`() {
         assertFalse(transporte.concedeu("embarcacao-1"))
+    }
+
+    // --- a segunda dimensão: ONDE (F7, §7.1) ---
+
+    @Test
+    fun `porto concedido pode ser operado, e o de fora nao`() {
+        assertTrue(agenciamento.operaNoPorto("porto-manaus"))
+        assertFalse(agenciamento.operaNoPorto("porto-santarem"))
+    }
+
+    @Test
+    fun `porto ausente e negado — porto novo nasce fora, como a frota`() {
+        assertFalse(agenciamento.operaNoPorto(null))
+        assertFalse(agenciamento.operaNoPorto(""))
+        assertFalse(transporte.operaNoPorto("porto-manaus"))
+    }
+
+    /**
+     * O ponto da F7: a linha ofertável **não é concedida**, é *deduzida* dos dois portos. É o que permite
+     * a rota viver num pool compartilhado — quem a criou não importa; quem tem as duas pontas, vende.
+     */
+    @Test
+    fun `oferta a travessia quem tem os DOIS portos`() {
+        assertTrue(agenciamento.podeOfertar("porto-manaus", "porto-parintins"))
+    }
+
+    @Test
+    fun `uma ponta so nao basta — nos dois sentidos`() {
+        assertFalse(agenciamento.podeOfertar("porto-manaus", "porto-santarem"))
+        assertFalse(agenciamento.podeOfertar("porto-santarem", "porto-manaus"))
     }
 
     // --- o conjunto de atuações da parte ---

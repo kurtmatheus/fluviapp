@@ -37,6 +37,15 @@ data class FormEmpresaUiState(
     /** Ids concedidos à atuação de agenciamento desta parte (`atuacoes/AGENCIAMENTO.embarcacaoIds`). */
     val embarcacoesConcedidas: Set<String> = emptySet(),
 
+    /**
+     * Todos os portos ativos — os candidatos da **outra metade** da concessão (F7). Mesma lógica das
+     * embarcações: a lista é a da plataforma, porque operar num porto não é ser dono dele.
+     */
+    val portos: List<PortoOpcao> = emptyList(),
+
+    /** Ids concedidos (`atuacoes/AGENCIAMENTO.portoIds`) — **onde** esta parte pode operar. */
+    val portosConcedidos: Set<String> = emptySet(),
+
     val isProcessing: Boolean = false,
 ) {
 
@@ -48,4 +57,10 @@ data class FormEmpresaUiState(
      * não fica cinza, **não existe**.
      */
     val concedeEmbarcacoes: Boolean get() = Atuacao.AGENCIAMENTO in atuacoes
+
+    /**
+     * A concessão tem **duas dimensões** desde a F7 (§7.1): **em quê** (embarcações) e **onde** (portos).
+     * As duas dependem da mesma atuação, e é por isso que a pergunta é a mesma — o que muda é a resposta.
+     */
+    val concedePortos: Boolean get() = concedeEmbarcacoes
 }

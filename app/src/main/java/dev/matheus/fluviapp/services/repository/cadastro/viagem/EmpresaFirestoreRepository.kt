@@ -91,6 +91,13 @@ class EmpresaFirestoreRepository @Inject constructor(
                             ?.filterIsInstance<String>()
                             .orEmpty()
                             .toSet(),
+                        // A segunda dimensão da concessão (F7). Ausente = conjunto vazio = **nada
+                        // concedido**, que é o fail-closed correto para uma allow-list de segurança:
+                        // documento gravado antes deste campo não passa a conceder o mundo inteiro.
+                        portoIds = (doc.get(CAMPO_PORTO_IDS) as? List<*>)
+                            ?.filterIsInstance<String>()
+                            .orEmpty()
+                            .toSet(),
                     )
                 }
             }
@@ -111,7 +118,13 @@ class EmpresaFirestoreRepository @Inject constructor(
             // uma atuação seria inexprimível — o documento antigo sobreviveria à edição.
             firestore.runBatch { lote ->
                 desejadas.forEach { (id, atuacao) ->
-                    lote.set(colecao.document(id), mapOf(CAMPO_EMBARCACAO_IDS to atuacao.embarcacaoIds.toList()))
+                    lote.set(
+                        colecao.document(id),
+                        mapOf(
+                            CAMPO_EMBARCACAO_IDS to atuacao.embarcacaoIds.toList(),
+                            CAMPO_PORTO_IDS to atuacao.portoIds.toList(),
+                        ),
+                    )
                 }
                 (existentes - desejadas.keys).forEach { lote.delete(colecao.document(it)) }
             }.await()
@@ -135,5 +148,6 @@ class EmpresaFirestoreRepository @Inject constructor(
         const val ENTIDADE_ATUACAO = "empresa.atuacoes"
         const val SUBCOLECAO_ATUACOES = "atuacoes"
         const val CAMPO_EMBARCACAO_IDS = "embarcacaoIds"
+        const val CAMPO_PORTO_IDS = "portoIds"
     }
 }

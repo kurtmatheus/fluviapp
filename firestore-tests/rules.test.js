@@ -802,6 +802,21 @@ describe('empresas/atuacoes — cadastro de plataforma, id fechado', () => {
     await assertFails(updateDoc(atuacao(asAgenteA(), 'AGENCIAMENTO'), { embarcacaoIds: ['embarcação-9'] }));
   });
 
+  // A segunda dimensão da concessão (F7): ONDE a parte pode operar. Mesmo eixo de escrita da primeira —
+  // e é preciso que seja, porque é dela que a linha ofertável passa a ser deduzida: quem consegue
+  // escrever `portoIds` sozinho oferta a travessia que quiser, sem nunca tocar em `embarcacaoIds`.
+  test('ADM concede um porto à atuação existente → OK', async () => {
+    await assertSucceeds(updateDoc(atuacao(asAdm(), 'AGENCIAMENTO'), { portoIds: ['porto-manaus', 'porto-parintins'] }));
+  });
+
+  test('operador se autoconcede um porto → NEGADO (a outra metade da allow-list)', async () => {
+    await assertFails(updateDoc(atuacao(asAgenteA(), 'AGENCIAMENTO'), { portoIds: ['porto-manaus'] }));
+  });
+
+  test('SUPERVISOR se autoconcede um porto → NEGADO (a concessão é dada, não tomada)', async () => {
+    await assertFails(updateDoc(atuacao(asSupervisor(), 'AGENCIAMENTO'), { portoIds: ['porto-manaus'] }));
+  });
+
   test('ADM cria atuação com id DESCONHECIDO → NEGADO (fail-closed na origem)', async () => {
     await assertFails(setDoc(atuacao(asAdm(), 'ARMAZENAGEM'), { embarcacaoIds: [] }));
   });
