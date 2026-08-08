@@ -14,6 +14,12 @@ data class DocumentoBruto(
     fun inteiro(chave: String): Int = (dados[chave] as? Number)?.toInt() ?: 0
 
     /**
+     * Decimal — o Firestore devolve número como `Long` ou `Double` conforme o que foi gravado, então
+     * coagir de `Number` é a única leitura que funciona nos dois casos (distância e tempo da Rota).
+     */
+    fun decimal(chave: String): Double = (dados[chave] as? Number)?.toDouble() ?: 0.0
+
+    /**
      * Booleano com **padrão explícito**, e não `false` fixo: ausente pode significar coisas opostas
      * conforme o campo. No `ativo` do delete lógico, documento antigo sem o campo é um registro **em uso**
      * — assumir `false` esconderia dado bom. Quem chama declara o que a ausência quer dizer.

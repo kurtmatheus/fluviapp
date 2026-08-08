@@ -8,6 +8,8 @@ import dev.matheus.fluviapp.services.repository.cadastro.localidade.LocalidadeFi
 import dev.matheus.fluviapp.services.repository.cadastro.localidade.LocalidadeRepository
 import dev.matheus.fluviapp.services.repository.cadastro.porto.PortoFirestoreRepository
 import dev.matheus.fluviapp.services.repository.cadastro.porto.PortoRepository
+import dev.matheus.fluviapp.services.repository.cadastro.rota.RotaFirestoreRepository
+import dev.matheus.fluviapp.services.repository.cadastro.rota.RotaRepository
 import dev.matheus.fluviapp.services.repository.operacoes.ConviteFirestoreRepository
 import dev.matheus.fluviapp.services.repository.operacoes.ConviteRepository
 import dev.matheus.fluviapp.services.repository.operacoes.FuncionarioFirestoreRepository
@@ -62,6 +64,11 @@ abstract class RepositorioModule {
     @Binds
     @Singleton
     abstract fun bindPortoRepository(impl: PortoFirestoreRepository): PortoRepository
+
+    /** O pool compartilhado (ADR-0016 §7.1): a ligação entre dois portos, sem dono (F7). */
+    @Binds
+    @Singleton
+    abstract fun bindRotaRepository(impl: RotaFirestoreRepository): RotaRepository
 
     /** Quem pode entrar, e com que papel (F6.6) — a coleção que o `ADM` escreve. */
     @Binds
