@@ -40,8 +40,12 @@ import dev.matheus.fluviapp.navigation.navcomposables.localidade.resultSearchLoc
 import dev.matheus.fluviapp.extensions.navegaParaFormularioPorto
 import dev.matheus.fluviapp.extensions.navegaParaResultPesquisarPorto
 import dev.matheus.fluviapp.extensions.navegaParaSelecaoVinculo
+import dev.matheus.fluviapp.extensions.navegaParaFormularioUsuario
+import dev.matheus.fluviapp.extensions.navegaParaResultPesquisarUsuario
 import dev.matheus.fluviapp.navigation.navcomposables.porto.formPortoNavComposable
 import dev.matheus.fluviapp.navigation.navcomposables.porto.resultSearchPortoNavComposable
+import dev.matheus.fluviapp.navigation.navcomposables.usuario.formUsuarioNavComposable
+import dev.matheus.fluviapp.navigation.navcomposables.usuario.resultSearchUsuarioNavComposable
 import dev.matheus.fluviapp.navigation.graphs.pesquisarPassagemGraph
 import dev.matheus.fluviapp.navigation.graphs.pesquisarViagemGraph
 import dev.matheus.fluviapp.navigation.graphs.selecaoVinculoGraph
@@ -150,6 +154,12 @@ fun FluviAppNavHost(
             },
             onNavegaParaFormularioNovoPorto = {
                 navController.navegaParaFormularioPorto()
+            },
+            onNavegaParaFormularioNovoUsuario = {
+                navController.navegaParaFormularioUsuario()
+            },
+            onNavegaParaFormularioPesquisaUsuario = {
+                navController.navegaParaResultPesquisarUsuario()
             },
             onNavegaParaFormularioPesquisaPorto = {
                 navController.navegaParaResultPesquisarPorto()
@@ -318,6 +328,21 @@ fun FluviAppNavHost(
             },
             onNavegaParaEditorPorto = {
                 navController.navegaParaFormularioPorto(it)
+            }
+        )
+
+        formUsuarioNavComposable(
+            onNavegaParaMainScreen = {
+                navController.navegaParaMainScreenGraph()
+            },
+            onClickVoltar = {
+                navController.navigateUp()
+            }
+        )
+
+        resultSearchUsuarioNavComposable(
+            onClickVoltar = {
+                navController.navigateUp()
             }
         )
     }

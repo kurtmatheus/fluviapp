@@ -178,6 +178,18 @@
     <string name="label_menu_flotilha">Flotilha</string>
     <string name="label_menu_localidades">Localidades</string>
     <string name="label_menu_portos">Portos</string>
+    <string name="label_menu_usuarios">Usuários</string>
+
+    <!-- Usuários (o convite) -->
+    <string name="title_top_usuarios">Usuários</string>
+    <string name="subtitle_novo_usuario">Novo Usuário</string>
+    <string name="subtitle_pesquisar_usuarios">Pesquisar Usuários</string>
+    <string name="btn_novo_usuario">Novo Usuário</string>
+    <string name="btn_pesquisar_usuario">Pesquisar Usuário</string>
+    <string name="label_nome_usuario">Nome</string>
+    <string name="label_papel">Papel</string>
+    <string name="msg_convite_explicacao">A pessoa entra pelo primeiro acesso, com este e-mail, e cria a própria senha.</string>
+    <string name="msg_usuario_convidado">Usuário convidado.</string>
 
     <!-- Flotilha -->
     <string name="title_top_embarcacao">Flotilha</string>

@@ -5,8 +5,10 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.matheus.fluviapp.R
+import dev.matheus.fluviapp.domain.operacoes.Convite
 import dev.matheus.fluviapp.domain.operacoes.Funcionario
 import dev.matheus.fluviapp.domain.operacoes.Usuario
+import dev.matheus.fluviapp.services.repository.operacoes.ConviteRepository
 import dev.matheus.fluviapp.navigation.destinations.ARG_EMAIL_PRIMEIRO_ACESSO
 import dev.matheus.fluviapp.services.repository.firebase.autenticacao.AutenticacaoRepository
 import dev.matheus.fluviapp.services.repository.firebase.autenticacao.ResultadoAutenticacao
@@ -39,6 +41,7 @@ import javax.inject.Inject
 class PrimeiroAcessoViewModel @Inject constructor(
     private val autenticacaoRepository: AutenticacaoRepository,
     private val funcionarioRepository: FuncionarioRepository,
+    private val conviteRepository: ConviteRepository,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
@@ -46,13 +49,22 @@ class PrimeiroAcessoViewModel @Inject constructor(
 
     private var funcionario: Funcionario? = null
 
+    /**
+     * O convite (F6.6) — é dele que sai o **papel**. Ausente, cai no comportamento anterior: quem foi
+     * pré-cadastrado antes de os convites existirem continua entrando como `OPERADOR`.
+     */
+    private var convite: Convite? = null
+
     private val _uiState = MutableStateFlow(PrimeiroAcessoUiState())
     val uiState: StateFlow<PrimeiroAcessoUiState> = _uiState.asStateFlow()
 
     init {
         viewModelScope.launch {
+            convite = conviteRepository.obterPorEmail(email)
             funcionario = funcionarioRepository.obterPorEmailDoServidor(email)
-            _uiState.update { it.copy(nome = funcionario?.descricaoNome.orEmpty()) }
+            _uiState.update {
+                it.copy(nome = funcionario?.descricaoNome ?: convite?.nome.orEmpty())
+            }
         }
     }
 
@@ -76,10 +88,11 @@ class PrimeiroAcessoViewModel @Inject constructor(
             return
         }
 
-        val vinculo = funcionario
-        if (vinculo == null) {
-            // Sem funcionário não há perfil a criar — e trocar a senha sozinha deixaria a pessoa numa
-            // conta órfã. Melhor não começar.
+        // **Quem é de plataforma não precisa de funcionário** (§8.1) — e quem é da operação precisa: sem
+        // registro na equipe não há elo a criar, e trocar a senha sozinha deixaria uma conta órfã.
+        val papel = convite?.papel ?: Usuario.Papel.OPERADOR
+        val ehDePlataforma = convite?.ehDePlataforma == true
+        if (!ehDePlataforma && funcionario == null) {
             _uiState.update { it.copy(mensagemErro = R.string.error_sem_cadastro_na_equipe) }
             return
         }
@@ -87,7 +100,7 @@ class PrimeiroAcessoViewModel @Inject constructor(
         _uiState.update { it.copy(processando = true, mensagemErro = 0) }
         viewModelScope.launch {
             when (val resultado = autenticacaoRepository.alterarSenha(_uiState.value.senha)) {
-                is ResultadoAutenticacao.Sucesso -> nascerPerfil(vinculo)
+                is ResultadoAutenticacao.Sucesso -> nascerPerfil(papel, funcionario)
                 is ResultadoAutenticacao.Falha -> {
                     Log.e(TAG, "alterarSenha falhou: ${resultado.motivo}")
                     _uiState.update {
@@ -107,14 +120,17 @@ class PrimeiroAcessoViewModel @Inject constructor(
      * A regra self-create do ADR-0011 continua intacta: neste ponto ela já está autenticada como ela
      * mesma, então `request.auth.uid == uid` vale sem exceção nenhuma no servidor.
      */
-    private suspend fun nascerPerfil(funcionario: Funcionario) {
+    private suspend fun nascerPerfil(papel: Usuario.Papel, funcionario: Funcionario?) {
         try {
             autenticacaoRepository.criarPerfil(
                 email = email,
                 username = email.substringBefore('@'),
-                papel = Usuario.Papel.OPERADOR.name,
-                funcionarioId = funcionario.id,
+                papel = papel.name,
+                funcionarioId = funcionario?.id.orEmpty(),
             )
+            // O convite vira **registro**: marcá-lo como usado é o que a lista de usuários lê como
+            // situação. Falhar aqui não desfaz o acesso — o perfil já nasceu, e é ele que vale.
+            convite?.let { runCatching { conviteRepository.marcarComoUsado(email) } }
             // Sai da sessão: a senha nova só se prova no login seguinte, e é ele que abre a sessão pelo
             // caminho normal (perfil existente) — o passo de confirmação que o §2.1 pede.
             autenticacaoRepository.sair()

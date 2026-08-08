@@ -38,7 +38,7 @@ class EscopoRevitalizadoTest {
     // --- O escopo em si ---
 
     @Test
-    fun `estao revitalizadas as quatro do painel e a Equipe`() {
+    fun `estao revitalizadas as quatro do painel, a Equipe e os Usuarios`() {
         assertEquals(
             setOf(
                 SecaoMenu.EMPRESA,
@@ -46,9 +46,11 @@ class EscopoRevitalizadoTest {
                 SecaoMenu.LOCALIDADE,
                 SecaoMenu.PORTO,
                 SecaoMenu.EQUIPE,
+                SecaoMenu.USUARIOS,
             ),
             SECOES_REVITALIZADAS,
         )
+        assertTrue(estaRevitalizada(SecaoMenu.USUARIOS))
         assertTrue(estaRevitalizada(SecaoMenu.EMPRESA))
         assertTrue(estaRevitalizada(SecaoMenu.EMBARCACAO))
         assertTrue(estaRevitalizada(SecaoMenu.LOCALIDADE))
@@ -61,19 +63,23 @@ class EscopoRevitalizadoTest {
 
     // --- O menu que o painel monta ---
 
-    /** A ordem é a de [SecaoMenu] — parte, ativos, capacidades: a ordem em que se consegue cadastrar. */
+    /**
+     * A ordem é a de [SecaoMenu] — parte, ativos, capacidades, e o acesso por último.
+     *
+     * **`ADM` e `GESTOR` divergem pela primeira vez** (F6.6): administrar quem entra é do `ADM`
+     * (ADR-0021 D1), e nenhum dos dois vê a Equipe, que é da empresa.
+     */
     @Test
-    fun `plataforma ve as quatro do painel e a Equipe`() {
-        val esperado = listOf(
+    fun `a plataforma ve as quatro do painel, e so o ADM ve Usuarios`() {
+        val doPainel = listOf(
             SecaoMenu.EMPRESA,
             SecaoMenu.EMBARCACAO,
             SecaoMenu.LOCALIDADE,
             SecaoMenu.PORTO,
-            SecaoMenu.EQUIPE,
         )
 
-        assertEquals(esperado, secoesDoMenu(adm))
-        assertEquals(esperado, secoesDoMenu(gestor))
+        assertEquals(doPainel + SecaoMenu.USUARIOS, secoesDoMenu(adm))
+        assertEquals(doPainel, secoesDoMenu(gestor))
     }
 
     /**

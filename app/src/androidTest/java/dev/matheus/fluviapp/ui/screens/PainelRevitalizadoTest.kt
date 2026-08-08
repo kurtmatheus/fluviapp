@@ -105,11 +105,13 @@ class PainelRevitalizadoTest {
         composeTestRule.onNodeWithText(texto(SecaoMenu.EMBARCACAO.titulo)).assertIsDisplayed()
         composeTestRule.onNodeWithText(texto(SecaoMenu.LOCALIDADE.titulo)).assertIsDisplayed()
         composeTestRule.onNodeWithText(texto(SecaoMenu.PORTO.titulo)).assertIsDisplayed()
-        // A Equipe entrou na F6.4, com a seleção de contexto (ADR-0022 D5).
-        composeTestRule.onNodeWithText(texto(SecaoMenu.EQUIPE.titulo)).assertIsDisplayed()
+        // A seção da plataforma que faltava (F6.6): quem acessa o app e com que papel.
+        composeTestRule.onNodeWithText(texto(SecaoMenu.USUARIOS.titulo)).assertIsDisplayed()
 
         composeTestRule.onNodeWithText(texto(SecaoMenu.VIAGEM.titulo)).assertDoesNotExist()
         composeTestRule.onNodeWithText(texto(SecaoMenu.PASSAGEM.titulo)).assertDoesNotExist()
+        // **A Equipe é da empresa** (F6.6): o `ADM` não abre o quadro de pessoal de ninguém.
+        composeTestRule.onNodeWithText(texto(SecaoMenu.EQUIPE.titulo)).assertDoesNotExist()
     }
 
     /**
@@ -152,6 +154,6 @@ class PainelRevitalizadoTest {
         expandeENavega(SecaoMenu.PORTO, AcaoMenu.PORTO_PESQUISAR)
 
     @Test
-    fun menu_expandeEquipe_eNavegaPelaAcao() =
-        expandeENavega(SecaoMenu.EQUIPE, AcaoMenu.EQUIPE_NOVO)
+    fun menu_expandeUsuarios_eNavegaPelaAcao() =
+        expandeENavega(SecaoMenu.USUARIOS, AcaoMenu.USUARIO_NOVO)
 }

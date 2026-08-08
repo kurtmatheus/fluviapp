@@ -123,3 +123,11 @@ fun NavHostController.navegaParaResultPesquisarPorto() {
     navegaDireto(FluviAppNavComposableDestinations.ResultPesquisarPortoNavComposable.route)
 }
 
+fun NavHostController.navegaParaFormularioUsuario() {
+    navegaDireto(FluviAppNavComposableDestinations.FormUsuarioNavComposable.route)
+}
+
+fun NavHostController.navegaParaResultPesquisarUsuario() {
+    navegaDireto(FluviAppNavComposableDestinations.ResultPesquisarUsuarioNavComposable.route)
+}
+

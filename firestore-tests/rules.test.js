@@ -110,6 +110,13 @@ beforeEach(async () => {
       localidadeId: 'loc-1',
       ativo: true,
     });
+    // Convites (F6.6): o id É o e-mail — é assim que o convidado acha o próprio antes de ter perfil.
+    await setDoc(doc(db, 'convites', 'convidado@x.com'), {
+      nome: 'Convidado', papel: 'OPERADOR', empresaId: E_MATRIZ, cargo: 'AGENTE', usado: false,
+    });
+    await setDoc(doc(db, 'convites', 'convidado-adm@x.com'), {
+      nome: 'Convidado Adm', papel: 'ADM', empresaId: '', cargo: '', usado: false,
+    });
     // Passagem alheia (dono = funcionário B) e o contador.
     await setDoc(doc(db, 'passagens', 'alheia'), { funcionarioId: F_B, valor: 10 });
     await setDoc(doc(db, 'passagens', 'contador'), { numeroBilhete: 100 });
@@ -217,6 +224,92 @@ describe('users/{uid} — anti-escalonamento', () => {
 
   test('leitura de perfil por autenticado → OK', async () => {
     await assertSucceeds(getDoc(doc(asAgenteA(), 'users', AGENTE_B)));
+  });
+});
+
+// --- convites/{email}: quem pode entrar, e com que papel (F6.6) ---
+//
+// É a coleção que substitui o console para tudo menos o primeiro ADM. O que estes casos travam é a
+// razão de ela existir sem afrouxar nada: **o cliente continua não escolhendo o próprio papel**.
+describe('convites — só o ADM escreve, e o papel do perfil tem de bater com ele', () => {
+  const EMAIL_CONVIDADO = 'convidado@x.com';
+
+  /** O convidado lê o PRÓPRIO convite antes de existir `users/{uid}` — não há papel a consultar ali. */
+  test('convidado lê o próprio convite → OK', async () => {
+    const db = testEnv.authenticatedContext('novo-uid', { email: EMAIL_CONVIDADO }).firestore();
+    await assertSucceeds(getDoc(doc(db, 'convites', EMAIL_CONVIDADO)));
+  });
+
+  test('operador lê convite alheio → NEGADO', async () => {
+    await assertFails(getDoc(doc(asAgenteA(), 'convites', EMAIL_CONVIDADO)));
+  });
+
+  test('ADM lê qualquer convite → OK (é ele quem administra o acesso)', async () => {
+    await assertSucceeds(getDoc(doc(asAdm(), 'convites', EMAIL_CONVIDADO)));
+  });
+
+  test('ADM cria convite → OK', async () => {
+    await assertSucceeds(setDoc(doc(asAdm(), 'convites', 'outro@x.com'), { papel: 'GESTOR', nome: 'X' }));
+  });
+
+  /** GESTOR administra o negócio da plataforma, não o acesso a ela (ADR-0021 D1). */
+  test('GESTOR cria convite → NEGADO', async () => {
+    await assertFails(setDoc(doc(asGestor(), 'convites', 'outro@x.com'), { papel: 'ADM', nome: 'X' }));
+  });
+
+  test('SUPERVISOR cria convite → NEGADO', async () => {
+    await assertFails(setDoc(doc(asSupervisor(), 'convites', 'outro@x.com'), { papel: 'OPERADOR' }));
+  });
+
+  /** O convite vira registro: usado ou não, ele responde "por que esta pessoa tem este papel?". */
+  test('ADM apaga convite → NEGADO', async () => {
+    await assertFails(deleteDoc(doc(asAdm(), 'convites', EMAIL_CONVIDADO)));
+  });
+
+  test('convidado marca o próprio convite como usado → OK', async () => {
+    const db = testEnv.authenticatedContext('novo-uid', { email: EMAIL_CONVIDADO }).firestore();
+    await assertSucceeds(updateDoc(doc(db, 'convites', EMAIL_CONVIDADO), { usado: true }));
+  });
+
+  /** A brecha óbvia, fechada: usar o convite não é editar o convite. */
+  test('convidado muda o PAPEL do próprio convite → NEGADO', async () => {
+    const db = testEnv.authenticatedContext('novo-uid', { email: EMAIL_CONVIDADO }).firestore();
+    await assertFails(updateDoc(doc(db, 'convites', EMAIL_CONVIDADO), { papel: 'ADM' }));
+  });
+});
+
+// --- users/{uid}: o papel do perfil vem do convite (F6.6) ---
+describe('perfil no primeiro acesso — o papel vem do convite, não do cliente', () => {
+  const EMAIL_CONVIDADO = 'convidado@x.com';
+  const EMAIL_CONVIDADO_ADM = 'convidado-adm@x.com';
+
+  /**
+   * O caso que a F6.6 destrava: `ADM`/`GESTOR` passam a poder nascer pelo app — **desde que exista um
+   * convite**, que só o ADM escreve. Antes disso, só pelo console.
+   */
+  test('perfil de plataforma COM convite → OK, e sem exigir funcionário', async () => {
+    const db = testEnv.authenticatedContext('uid-adm-novo', { email: EMAIL_CONVIDADO_ADM }).firestore();
+    await assertSucceeds(setDoc(doc(db, 'users', 'uid-adm-novo'), {
+      email: EMAIL_CONVIDADO_ADM, username: 'convidado-adm', papel: 'ADM', funcionarioId: '',
+    }));
+  });
+
+  /** O anti-escalonamento, agora dito de outro jeito: o papel tem de **bater** com o convite. */
+  test('perfil com papel DIFERENTE do convite → NEGADO', async () => {
+    const db = testEnv.authenticatedContext('uid-novo', { email: EMAIL_CONVIDADO }).firestore();
+    await assertFails(setDoc(doc(db, 'users', 'uid-novo'), {
+      email: EMAIL_CONVIDADO, username: 'convidado', papel: 'ADM', funcionarioId: '',
+    }));
+  });
+
+  test('sem convite, o único papel possível continua sendo OPERADOR', async () => {
+    const db = testEnv.authenticatedContext('uid-sem-convite', { email: EMAIL_F_NOVO }).firestore();
+    await assertFails(setDoc(doc(db, 'users', 'uid-sem-convite'), {
+      email: EMAIL_F_NOVO, username: 'novo', papel: 'GESTOR', funcionarioId: F_NOVO,
+    }));
+    await assertSucceeds(setDoc(doc(db, 'users', 'uid-sem-convite'), {
+      email: EMAIL_F_NOVO, username: 'novo', papel: 'OPERADOR', funcionarioId: F_NOVO,
+    }));
   });
 });
 

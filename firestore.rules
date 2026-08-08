@@ -34,6 +34,24 @@ service cloud.firestore {
       return papel() in ['ADM', 'GESTOR'];
     }
 
+    // Administração de ACESSO é só do ADM (ADR-0021 D1): papel concede tudo, e erro aqui é sistêmico.
+    function ehAdm() {
+      return papel() == 'ADM';
+    }
+
+    // --- Convite (F6.6): quem pode entrar, e com que papel ---
+    // É ele que substitui o console para tudo, menos o primeiro ADM (que continua bootstrap, ADR-0021 D0).
+    function temConvite(email) {
+      return exists(/databases/$(database)/documents/convites/$(email));
+    }
+    // Sem convite, o papel possível é OPERADOR — que é exatamente o comportamento anterior à F6.6, e é
+    // o que mantém quem foi pré-cadastrado antes dela conseguindo entrar.
+    function papelDoConvite() {
+      return temConvite(request.auth.token.email)
+        ? get(/databases/$(database)/documents/convites/$(request.auth.token.email)).data.get('papel', 'OPERADOR')
+        : 'OPERADOR';
+    }
+
     // Espelha o enum Atuacao (ADR-0020 D5). Conjunto FECHADO: valor novo aqui exige deploy dos dois
     // lados, e é essa exigência que impede alguém cadastrar uma atuação que nenhum código sabe operar.
     function atuacaoConhecida(id) {
@@ -124,16 +142,46 @@ service cloud.firestore {
             && get(/databases/$(database)/documents/funcionarios/$(fid)).data.get('email', '')
                  == request.auth.token.email;
       }
+      // **O papel vem do CONVITE** (F6.6), e não mais fixo em OPERADOR. O anti-escalonamento continua
+      // inteiro: o cliente não escolhe o próprio papel — ele tem de bater com um documento que só o ADM
+      // escreve. Sem convite, o único papel possível segue sendo OPERADOR.
+      // O elo com a operação é exigido **só de quem opera**: ADM/GESTOR não têm funcionário (§8.1).
       allow create: if autenticado()
                     && request.auth.uid == uid
-                    && request.resource.data.papel == 'OPERADOR'
-                    && vinculoConfereComOEmail(request.resource.data.get('funcionarioId', ''));
+                    && request.resource.data.papel == papelDoConvite()
+                    && (request.resource.data.papel != 'OPERADOR'
+                        || vinculoConfereComOEmail(request.resource.data.get('funcionarioId', '')));
       // Edita o próprio perfil, mas NUNCA o papel nem o vínculo (ambos são operação de console/gestão).
       allow update: if autenticado()
                     && request.auth.uid == uid
                     && request.resource.data.papel == resource.data.papel
                     && request.resource.data.get('funcionarioId', '')
                          == resource.data.get('funcionarioId', '');
+      allow delete: if false;
+    }
+
+    // --- Convites: quem pode entrar, e com que papel (F6.6) ---
+    //
+    // O id **é o e-mail**, e isso é o que torna a regra possível: o convidado lê o próprio convite com um
+    // `get` direto, **antes** de existir `users/{uid}` — não há papel a consultar nesse instante, então a
+    // única autoridade disponível é o e-mail do token.
+    match /convites/{email} {
+      // O próprio convidado lê o dele; a plataforma lê todos (é ela quem administra o acesso).
+      allow get: if autenticado() && (request.auth.token.email == email || ehAdm());
+      allow list: if autenticado() && ehAdm();
+
+      allow create: if autenticado() && ehAdm();
+
+      // Duas escritas possíveis, e a segunda é estreita de propósito: o convidado só marca o convite
+      // como **usado**, e nada mais. A ordem das cláusulas importa — a do dono vem primeiro porque ela
+      // não depende de `users/{uid}`, que nesse momento ainda não existe.
+      allow update: if autenticado()
+                    && ((request.auth.token.email == email
+                         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['usado'])
+                         && request.resource.data.usado == true)
+                        || ehAdm());
+
+      // O convite **vira registro**: usado ou não, ele responde "por que esta pessoa tem este papel?".
       allow delete: if false;
     }
 

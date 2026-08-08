@@ -16,16 +16,22 @@ class MenuDaAtuacaoTest {
         assertTrue(SecaoMenu.PASSAGEM in secoesDa(Atuacao.AGENCIAMENTO))
     }
 
+    /**
+     * **Nada atravessa mais os dois lados** (F6.6). A `EQUIPE` era a única, e o efeito em tela era o
+     * `ADM` abrindo o quadro de pessoal de uma empresa. O que desfez o nó foi o convite: a plataforma
+     * cria *quem entra*, e a empresa se gere a partir daí — cada painel com o seu.
+     */
     @Test
-    fun `equipe atravessa as atuacoes operantes — e e a unica que atravessa`() {
+    fun `equipe e das atuacoes, e nao do painel — nada atravessa`() {
         Atuacao.operantes().forEach { atuacao ->
             assertTrue(
                 "Equipe deveria estar em $atuacao",
                 SecaoMenu.EQUIPE in secoesDa(atuacao),
             )
         }
-        assertTrue(SecaoMenu.EQUIPE in secoesDoPainel())
-        assertEquals(setOf(SecaoMenu.EQUIPE), SECOES_TRANSVERSAIS)
+        assertTrue(SecaoMenu.EQUIPE !in secoesDoPainel())
+        assertTrue(SecaoMenu.USUARIOS in secoesDoPainel())
+        assertEquals(emptySet<SecaoMenu>(), SECOES_TRANSVERSAIS)
     }
 
     @Test
@@ -34,9 +40,10 @@ class MenuDaAtuacaoTest {
         assertEquals(emptySet<SecaoMenu>(), secoesDa(Atuacao.PORTUARIA_ARRENDAMENTO))
     }
 
+    /** O transporte ainda não vende nada — mas tem quadro próprio, como qualquer operação (F6.6). */
     @Test
-    fun `o transporte ainda nao tem secao propria — a frota nao existe como cadastro`() {
-        assertEquals(SECOES_TRANSVERSAIS, secoesDa(Atuacao.TRANSPORTE))
+    fun `o transporte tem a Equipe, e nada mais — a frota nao existe como cadastro`() {
+        assertEquals(setOf(SecaoMenu.EQUIPE), secoesDa(Atuacao.TRANSPORTE))
     }
 
     @Test

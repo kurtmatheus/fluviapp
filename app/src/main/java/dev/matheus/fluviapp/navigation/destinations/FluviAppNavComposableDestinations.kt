@@ -22,4 +22,6 @@ sealed class FluviAppNavComposableDestinations(val route: String) {
     data object ResultPesquisarLocalidadeNavComposable : FluviAppNavComposableDestinations("pesquisarLocalidade")
     data object FormPortoNavComposable : FluviAppNavComposableDestinations("formPorto")
     data object ResultPesquisarPortoNavComposable : FluviAppNavComposableDestinations("pesquisarPorto")
+    data object FormUsuarioNavComposable : FluviAppNavComposableDestinations("formUsuario")
+    data object ResultPesquisarUsuarioNavComposable : FluviAppNavComposableDestinations("pesquisarUsuario")
 }

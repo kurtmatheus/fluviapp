@@ -26,7 +26,12 @@ enum class SecaoMenu(
     PORTO(R.string.label_menu_portos, R.drawable.ic_porto_24),
     PASSAGEM(R.string.btn_menu_passagens, R.drawable.ic_bilhete),
     VIAGEM(R.string.label_menu_viagens, R.drawable.ic_embarcacao_75),
-    // "Equipe" (ADR-0015 §8.1): o coletivo dos Funcionario — as pessoas na operação, com cargo, agência
-    // e lotação. O nome AGENTE saiu daqui para não colidir com o cargo Funcionario.Cargo.AGENTE.
+    // "Equipe" (ADR-0015 §8.1): o coletivo dos Funcionario — as pessoas na operação, com cargo e
+    // vínculo. É **da empresa**: quem a gere é o supervisor dela (ADR-0022 D2).
     EQUIPE(R.string.label_menu_equipe, R.drawable.ic_user_75),
+
+    // "Usuários" é a seção equivalente **do outro lado** (F6.6): quem acessa o app e com que papel. A
+    // plataforma não tem equipe — tem usuários; a empresa não tem usuários — tem funcionários. Vem por
+    // último no painel porque é administração de acesso, não cadastro de negócio.
+    USUARIOS(R.string.label_menu_usuarios, R.drawable.ic_user_75),
 }

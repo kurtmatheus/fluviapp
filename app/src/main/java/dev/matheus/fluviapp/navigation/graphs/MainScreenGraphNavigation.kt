@@ -26,7 +26,9 @@ fun NavGraphBuilder.mainScreenGraph(
     onNavegaParaFormularioNovaLocalidade: () -> Unit,
     onNavegaParaFormularioPesquisaLocalidade: () -> Unit,
     onNavegaParaFormularioNovoPorto: () -> Unit,
-    onNavegaParaFormularioPesquisaPorto: () -> Unit
+    onNavegaParaFormularioPesquisaPorto: () -> Unit,
+    onNavegaParaFormularioNovoUsuario: () -> Unit,
+    onNavegaParaFormularioPesquisaUsuario: () -> Unit
 ) {
     navigation(
         route = FluviAppGraphDestinations.MainScreenGraph.route,
@@ -50,7 +52,9 @@ fun NavGraphBuilder.mainScreenGraph(
             onNavegaParaFormularioNovaLocalidade = onNavegaParaFormularioNovaLocalidade,
             onNavegaParaFormularioPesquisaLocalidade = onNavegaParaFormularioPesquisaLocalidade,
             onNavegaParaFormularioNovoPorto = onNavegaParaFormularioNovoPorto,
-            onNavegaParaFormularioPesquisaPorto = onNavegaParaFormularioPesquisaPorto
+            onNavegaParaFormularioPesquisaPorto = onNavegaParaFormularioPesquisaPorto,
+            onNavegaParaFormularioNovoUsuario = onNavegaParaFormularioNovoUsuario,
+            onNavegaParaFormularioPesquisaUsuario = onNavegaParaFormularioPesquisaUsuario
         )
     }
 }

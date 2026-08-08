@@ -44,7 +44,17 @@ object PermissoesUsuario {
      */
     fun podeAcessar(secao: SecaoMenu, papel: String?, cargo: String? = null): Boolean = when (secao) {
         SecaoMenu.PASSAGEM -> true
-        SecaoMenu.EQUIPE -> podeCadastrarFuncionario(papel, cargo)
+
+        // A **Equipe é da empresa** (F6.6): quem a abre é o cargo de gestão dela. A plataforma não entra
+        // aqui — não porque perdeu autoridade (a regra do servidor continua admitindo-a, e é ela quem
+        // conserta o que a empresa não consegue), mas porque **este não é o trabalho dela**: o que a
+        // plataforma administra é quem acessa o app, e isso agora tem seção própria.
+        SecaoMenu.EQUIPE -> Cargo.de(cargo) == Cargo.SUPERVISOR
+
+        // **`ADM`-only** (ADR-0021 D1): papel concede tudo, e erro aqui é sistêmico. O `GESTOR` administra
+        // o negócio da plataforma, não o acesso a ela.
+        SecaoMenu.USUARIOS -> Papel.de(papel) == ADM
+
         SecaoMenu.VIAGEM, SecaoMenu.EMPRESA, SecaoMenu.EMBARCACAO,
         SecaoMenu.LOCALIDADE, SecaoMenu.PORTO,
         -> ehPapelPlataforma(papel)

@@ -34,24 +34,36 @@ val SECOES_DO_PAINEL: Set<SecaoMenu> = setOf(
     // O `PORTO` está aqui pelo mesmo motivo, e apesar de a atuação portuária existir no modelo: o cais é
     // infraestrutura (da plataforma), e o que a empresa tem nele é a **atuação**, não o porto (§5).
     SecaoMenu.PORTO,
+    // Quem acessa o app e com que papel (F6.6). É o par da `EQUIPE` visto do lado da plataforma — e é
+    // por ele existir que a Equipe pôde deixar de ser transversal.
+    SecaoMenu.USUARIOS,
     SecaoMenu.VIAGEM,
 )
 
 /**
- * A seção que **atravessa** painel e atuações — a única, e por uma razão de domínio: o supervisor gere os
- * membros de onde atua, então Equipe existe dos dois lados (ADR-0015 §2.2, ADR-0016 §2).
+ * **Nenhuma seção atravessa mais os dois lados** (F6.6).
+ *
+ * A `EQUIPE` era a única, e por uma razão que parecia de domínio: o supervisor gere os membros de onde
+ * atua, e a plataforma também precisava cadastrar alguém. O efeito em tela era o `ADM` abrindo o quadro
+ * de pessoal de uma empresa — a plataforma não tem equipe.
+ *
+ * O que desfez o nó foi o **convite** (`Convite`): a plataforma passa a criar *quem entra*, com papel e,
+ * quando é da operação, com empresa e cargo; a partir daí a empresa se gere sozinha. Cada painel voltou
+ * a ter o seu, e o conjunto ficou vazio — que é o estado correto quando os dois contextos estão
+ * separados de verdade (ADR-0015 §8.1).
  */
-val SECOES_TRANSVERSAIS: Set<SecaoMenu> = setOf(SecaoMenu.EQUIPE)
+val SECOES_TRANSVERSAIS: Set<SecaoMenu> = emptySet()
 
 /**
  * As seções da família de uma atuação. Atuação dormente devolve **conjunto vazio** — não é omissão, é o
  * fail-closed do ADR-0016 §8: valor que existe no modelo mas não tem operação não ganha painel sozinho.
  */
 fun secoesDa(atuacao: Atuacao): Set<SecaoMenu> = when (atuacao) {
-    // O agenciamento é o segmento operante: vende passagem.
-    Atuacao.AGENCIAMENTO -> setOf(SecaoMenu.PASSAGEM) + SECOES_TRANSVERSAIS
-    // O transporte é dono da frota; a seção dele nasce quando o cadastro de frota existir.
-    Atuacao.TRANSPORTE -> SECOES_TRANSVERSAIS
+    // O agenciamento é o segmento operante: vende passagem — e cuida da própria equipe (F6.6).
+    Atuacao.AGENCIAMENTO -> setOf(SecaoMenu.PASSAGEM, SecaoMenu.EQUIPE)
+    // O transporte é dono da frota; a seção dele nasce quando o cadastro de frota existir. A equipe é
+    // dele também: quem opera num segmento tem quadro próprio.
+    Atuacao.TRANSPORTE -> setOf(SecaoMenu.EQUIPE)
     // Portuárias dormentes (ADR-0016 §5): é onde o check-in vai morar.
     Atuacao.PORTUARIA_OPERACAO, Atuacao.PORTUARIA_ARRENDAMENTO -> emptySet()
 }

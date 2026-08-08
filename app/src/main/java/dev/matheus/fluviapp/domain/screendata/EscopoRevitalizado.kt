@@ -45,6 +45,9 @@ val SECOES_REVITALIZADAS: Set<SecaoMenu> = setOf(
     // A **Equipe** entra com a seleção de contexto (F6.4), e não antes: até ela existir, o supervisor com
     // dois vínculos abriria o cadastro sem empresa nenhuma. Seção meio viva não entra no andaime.
     SecaoMenu.EQUIPE,
+    // A seção da plataforma que faltava (F6.6): sem ela, o `ADM` abria a Equipe — o quadro de pessoal de
+    // uma empresa — como se a plataforma tivesse equipe.
+    SecaoMenu.USUARIOS,
 )
 
 /** Se a seção já foi refeita ponta a ponta. */

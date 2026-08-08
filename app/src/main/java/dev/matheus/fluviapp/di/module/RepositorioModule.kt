@@ -8,6 +8,8 @@ import dev.matheus.fluviapp.services.repository.cadastro.localidade.LocalidadeFi
 import dev.matheus.fluviapp.services.repository.cadastro.localidade.LocalidadeRepository
 import dev.matheus.fluviapp.services.repository.cadastro.porto.PortoFirestoreRepository
 import dev.matheus.fluviapp.services.repository.cadastro.porto.PortoRepository
+import dev.matheus.fluviapp.services.repository.operacoes.ConviteFirestoreRepository
+import dev.matheus.fluviapp.services.repository.operacoes.ConviteRepository
 import dev.matheus.fluviapp.services.repository.operacoes.FuncionarioFirestoreRepository
 import dev.matheus.fluviapp.services.repository.operacoes.FuncionarioRepository
 import dev.matheus.fluviapp.services.repository.operacoes.SessaoUsuario
@@ -60,6 +62,11 @@ abstract class RepositorioModule {
     @Binds
     @Singleton
     abstract fun bindPortoRepository(impl: PortoFirestoreRepository): PortoRepository
+
+    /** Quem pode entrar, e com que papel (F6.6) — a coleção que o `ADM` escreve. */
+    @Binds
+    @Singleton
+    abstract fun bindConviteRepository(impl: ConviteFirestoreRepository): ConviteRepository
 
     /**
      * Preenchimento pelo IBGE — **porta de fora**, e a única do app. Fica ao lado dos repositórios porque

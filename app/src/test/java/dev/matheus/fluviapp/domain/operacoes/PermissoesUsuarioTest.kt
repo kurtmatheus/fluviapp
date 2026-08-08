@@ -90,10 +90,19 @@ class PermissoesUsuarioTest {
 
     // --- Eixo seção (menu): puramente de sistema ---
 
+    /**
+     * **A plataforma deixou de ver a Equipe** (F6.6): o quadro de pessoal é da empresa, e o que a
+     * plataforma administra é *quem acessa o app* — que agora tem seção própria, `USUARIOS`. E ela é
+     * `ADM`-only, então o `GESTOR` vê uma seção a menos que o `ADM`: é a primeira vez que os dois papéis
+     * de plataforma divergem (ADR-0021 D1).
+     */
     @Test
-    fun `papel de plataforma ve todas as secoes`() {
-        assertEquals(SecaoMenu.entries, PermissoesUsuario.secoesVisiveis(adm))
-        assertEquals(SecaoMenu.entries, PermissoesUsuario.secoesVisiveis(gestor))
+    fun `papel de plataforma ve tudo menos a Equipe — e so o ADM ve Usuarios`() {
+        assertEquals(SecaoMenu.entries - SecaoMenu.EQUIPE, PermissoesUsuario.secoesVisiveis(adm))
+        assertEquals(
+            SecaoMenu.entries - SecaoMenu.EQUIPE - SecaoMenu.USUARIOS,
+            PermissoesUsuario.secoesVisiveis(gestor),
+        )
     }
 
     @Test
@@ -120,7 +129,7 @@ class PermissoesUsuarioTest {
     fun `sem atuacao, o comportamento e o de antes — a familia nao filtra nada`() {
         // O caminho de compatibilidade: o vínculo só existe a partir da F4. Enquanto não existir,
         // esta fatia não pode mudar uma linha do que aparece em tela.
-        assertEquals(SecaoMenu.entries, PermissoesUsuario.secoesVisiveis(adm, atuacao = null))
+        assertEquals(SecaoMenu.entries - SecaoMenu.EQUIPE, PermissoesUsuario.secoesVisiveis(adm, atuacao = null))
         assertEquals(
             listOf(SecaoMenu.PASSAGEM),
             PermissoesUsuario.secoesVisiveis(operador, agente, atuacao = null),
@@ -144,12 +153,15 @@ class PermissoesUsuarioTest {
                 // que a empresa tem nele é a atuação, não o porto.
                 SecaoMenu.PORTO,
                 SecaoMenu.VIAGEM,
-                SecaoMenu.EQUIPE,
+                // A `EQUIPE` saiu daqui na F6.6 e no lugar dela entrou `USUARIOS`: a plataforma
+                // administra **quem acessa o app**, não o quadro de pessoal de uma empresa.
+                SecaoMenu.USUARIOS,
             ),
             visiveis,
         )
         // ADM administra a plataforma; emitir passagem exige vínculo de funcionário (ADR-0016 §2).
         assertFalse(SecaoMenu.PASSAGEM in visiveis)
+        assertFalse(SecaoMenu.EQUIPE in visiveis)
     }
 
     @Test

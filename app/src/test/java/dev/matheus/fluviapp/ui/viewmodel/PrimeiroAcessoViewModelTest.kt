@@ -2,7 +2,9 @@ package dev.matheus.fluviapp.ui.viewmodel
 
 import androidx.lifecycle.SavedStateHandle
 import dev.matheus.fluviapp.R
+import dev.matheus.fluviapp.fakes.FakeConviteRepository
 import dev.matheus.fluviapp.fakes.FakeFuncionarioRepository
+import dev.matheus.fluviapp.domain.operacoes.Convite
 import dev.matheus.fluviapp.domain.operacoes.Funcionario
 import dev.matheus.fluviapp.domain.operacoes.Usuario
 import dev.matheus.fluviapp.navigation.destinations.ARG_EMAIL_PRIMEIRO_ACESSO
@@ -43,9 +45,11 @@ class PrimeiroAcessoViewModelTest {
         auth: FakeAutenticacaoRepository = FakeAutenticacaoRepository(),
         funcionarios: List<Funcionario> = listOf(funcionario),
         emailRota: String = email,
+        convites: FakeConviteRepository = FakeConviteRepository(),
     ) = PrimeiroAcessoViewModel(
         auth,
         FakeFuncionarioRepository().apply { this.funcionarios = funcionarios },
+        convites,
         SavedStateHandle(mapOf(ARG_EMAIL_PRIMEIRO_ACESSO to emailRota)),
     )
 
@@ -160,5 +164,71 @@ class PrimeiroAcessoViewModelTest {
         assertNull(auth.senhaAlterada)
         assertNull(auth.perfilCriado)
         assertEquals(R.string.error_sem_cadastro_na_equipe, vm.uiState.value.mensagemErro)
+    }
+
+    // --- O convite (F6.6): é dele que sai o papel ---
+
+    /**
+     * **Papel de plataforma entra sem funcionário** (§8.1) — e é justamente por não ter registro na
+     * operação que ele não emite passagem. Sem o convite, este caminho não existiria: o perfil nascia
+     * sempre `OPERADOR`, e `ADM`/`GESTOR` só pelo console.
+     */
+    @Test
+    fun `convite de plataforma cria o perfil com o papel dele, sem exigir funcionario`() =
+        runTest(mainRule.dispatcher) {
+            val auth = FakeAutenticacaoRepository()
+            val convites = FakeConviteRepository().apply {
+                convites = listOf(Convite(email = email, nome = "Ana", papel = Usuario.Papel.GESTOR))
+            }
+            val vm = vm(auth, funcionarios = emptyList(), convites = convites)
+            advanceUntilIdle()
+
+            vm.onSenhaChange("senha123")
+            vm.onConfirmacaoChange("senha123")
+            vm.confirmar()
+            advanceUntilIdle()
+
+            assertEquals(listOf(email, "ana.ribeiro", Usuario.Papel.GESTOR.name, ""), auth.perfilCriado)
+            assertTrue(vm.uiState.value.concluido)
+        }
+
+    /** O convite vira **registro**: usado, e não apagado — é o que a lista de usuários lê como situação. */
+    @Test
+    fun `primeiro acesso marca o convite como usado`() = runTest(mainRule.dispatcher) {
+        val convites = FakeConviteRepository().apply {
+            convites = listOf(
+                Convite(
+                    email = email,
+                    nome = "Ana Ribeiro",
+                    papel = Usuario.Papel.OPERADOR,
+                    empresaId = "empresa-1",
+                    cargo = Funcionario.Cargo.AGENTE,
+                )
+            )
+        }
+        val vm = vm(convites = convites)
+        advanceUntilIdle()
+
+        vm.onSenhaChange("senha123")
+        vm.onConfirmacaoChange("senha123")
+        vm.confirmar()
+        advanceUntilIdle()
+
+        assertTrue(convites.obterPorEmail(email)!!.usado)
+    }
+
+    /** Sem convite, o comportamento é o de antes: quem foi pré-cadastrado continua entrando. */
+    @Test
+    fun `sem convite, o perfil ainda nasce OPERADOR`() = runTest(mainRule.dispatcher) {
+        val auth = FakeAutenticacaoRepository()
+        val vm = vm(auth)
+        advanceUntilIdle()
+
+        vm.onSenhaChange("senha123")
+        vm.onConfirmacaoChange("senha123")
+        vm.confirmar()
+        advanceUntilIdle()
+
+        assertEquals(listOf(email, "ana.ribeiro", Usuario.Papel.OPERADOR.name, "f1"), auth.perfilCriado)
     }
 }
