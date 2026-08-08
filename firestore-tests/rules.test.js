@@ -339,10 +339,38 @@ describe('funcionarios — escrita por vínculo, e o supervisor que não fabrica
     }));
   });
 
-  test('SUPERVISOR cria alguém já como SUPERVISOR → NEGADO (não fabrica par)', async () => {
-    await assertFails(setDoc(doc(asSupervisor(), 'funcionarios', 'novo'), {
+  /**
+   * **Mudou na F6.7**: o supervisor gere a equipe dele por inteiro, e promover concede poder **dentro
+   * de uma empresa só** — decisão de negócio dela. O que segura é o resto: só na empresa dele, e nunca
+   * nos próprios vínculos.
+   */
+  test('SUPERVISOR cria alguém já como SUPERVISOR na PRÓPRIA empresa → OK', async () => {
+    await assertSucceeds(setDoc(doc(asSupervisor(), 'funcionarios', 'novo'), {
       nome: 'X', vinculos: [SUPERVISOR_NA_MATRIZ], empresaIds: [E_MATRIZ],
     }));
+  });
+
+  test('SUPERVISOR promove membro da própria empresa → OK', async () => {
+    await assertSucceeds(updateDoc(doc(asSupervisor(), 'funcionarios', F_A), {
+      vinculos: [SUPERVISOR_NA_MATRIZ], empresaIds: [E_MATRIZ],
+    }));
+  });
+
+  test('SUPERVISOR remove membro da própria empresa → OK', async () => {
+    await assertSucceeds(deleteDoc(doc(asSupervisor(), 'funcionarios', F_A)));
+  });
+
+  test('SUPERVISOR remove membro de OUTRA empresa → NEGADO', async () => {
+    await assertFails(deleteDoc(doc(asSupervisor(), 'funcionarios', F_OUTRA_AGENCIA)));
+  });
+
+  /** Um supervisor que se removesse deixaria a empresa sem quem a gerisse, sem ninguém decidir isso. */
+  test('SUPERVISOR remove a SI MESMO → NEGADO', async () => {
+    await assertFails(deleteDoc(doc(asSupervisor(), 'funcionarios', F_SUPERVISOR)));
+  });
+
+  test('AGENTE remove membro da própria empresa → NEGADO (não gere ninguém)', async () => {
+    await assertFails(deleteDoc(doc(asAgenteA(), 'funcionarios', F_B)));
   });
 
   /**
@@ -375,14 +403,11 @@ describe('funcionarios — escrita por vínculo, e o supervisor que não fabrica
     }));
   });
 
-  test('SUPERVISOR promove membro da própria empresa → NEGADO (cargo é da plataforma)', async () => {
-    await assertFails(updateDoc(doc(asSupervisor(), 'funcionarios', F_A), {
-      vinculos: [SUPERVISOR_NA_MATRIZ], empresaIds: [E_MATRIZ],
+  /** O que NÃO mudou na F6.7: ninguém mexe nos próprios vínculos — nem quem gere a equipe. */
+  test('SUPERVISOR se promove (mexe nos próprios vínculos) → NEGADO', async () => {
+    await assertFails(updateDoc(doc(asSupervisor(), 'funcionarios', F_SUPERVISOR), {
+      vinculos: [AGENTE_NA_MARE], empresaIds: [E_MARE],
     }));
-  });
-
-  test('SUPERVISOR deleta membro da própria empresa → NEGADO (edita, não apaga)', async () => {
-    await assertFails(deleteDoc(doc(asSupervisor(), 'funcionarios', F_A)));
   });
 
   test('AGENTE edita membro da própria empresa → NEGADO (não é cargo de gestão)', async () => {

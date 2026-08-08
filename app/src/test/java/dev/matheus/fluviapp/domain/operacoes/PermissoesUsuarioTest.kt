@@ -205,17 +205,13 @@ class PermissoesUsuarioTest {
     }
 
     @Test
-    fun `escolher agencia, definir cargo, deletar e ver todas as agencias sao SO da plataforma`() {
+    fun `escolher a empresa e ver todas continuam SO da plataforma`() {
         listOf(adm, gestor).forEach { papel ->
             assertTrue(PermissoesUsuario.podeEscolherAgencia(papel))
-            assertTrue(PermissoesUsuario.podeDefinirCargo(papel))
-            assertTrue(PermissoesUsuario.podeDeletarFuncionario(papel))
             assertTrue(PermissoesUsuario.podeVerTodasAgencias(papel))
         }
-        // O supervisor cadastra, mas na agência dele, sem promover ninguém e sem apagar.
+        // O supervisor cadastra **na empresa dele**: sem seletor, e sem atravessar empresas.
         assertFalse(PermissoesUsuario.podeEscolherAgencia(operador))
-        assertFalse(PermissoesUsuario.podeDefinirCargo(operador))
-        assertFalse(PermissoesUsuario.podeDeletarFuncionario(operador))
         assertFalse(PermissoesUsuario.podeVerTodasAgencias(operador))
     }
 
@@ -231,6 +227,26 @@ class PermissoesUsuarioTest {
         assertTrue(PermissoesUsuario.podeCadastrarMembro(operador, naEmpresaA))
         assertFalse(PermissoesUsuario.podeCadastrarMembro(operador, agenteNaB))
         assertFalse(PermissoesUsuario.podeCadastrarMembro(operador, vinculo = null))
+    }
+
+    /**
+     * **O supervisor gere a equipe dele por inteiro** (F6.7): cadastra, promove e remove. O §8.5
+     * reservava cargo à plataforma porque ele concede editar-qualquer-passagem — e o argumento
+     * encolheu junto com o alcance: hoje o poder é **dentro de uma empresa**, e isso é decisão de
+     * negócio dela. O que segura tudo é o outro lado, que não mudou: ninguém mexe nos próprios vínculos.
+     */
+    @Test
+    fun `promover e remover sao de quem gere a equipe — plataforma ou supervisor`() {
+        assertTrue(PermissoesUsuario.podeDefinirCargo(adm, vinculo = null))
+        assertTrue(PermissoesUsuario.podeRemoverMembro(adm, vinculo = null))
+
+        assertTrue(PermissoesUsuario.podeDefinirCargo(operador, naEmpresaA))
+        assertTrue(PermissoesUsuario.podeRemoverMembro(operador, naEmpresaA))
+
+        // O agente não gere ninguém.
+        assertFalse(PermissoesUsuario.podeDefinirCargo(operador, agenteNaB))
+        assertFalse(PermissoesUsuario.podeRemoverMembro(operador, agenteNaB))
+        assertFalse(PermissoesUsuario.podeDefinirCargo(operador, vinculo = null))
     }
 
     @Test

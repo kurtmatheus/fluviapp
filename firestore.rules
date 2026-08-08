@@ -191,9 +191,10 @@ service cloud.firestore {
     // (ADR-0016 §6). Dois escritores, com alcances diferentes: a **plataforma** em qualquer empresa, e o
     // **supervisor** só na dele. Três invariantes, os mesmos de antes com a coordenada nova:
     //  1. NINGUÉM muda os próprios vínculos — nem um ADM no funcionário dele mesmo. É o anti-escalonamento
-    //     do eixo de negócio, já que cargo == SUPERVISOR concede editar-qualquer-passagem.
-    //  2. O supervisor NUNCA cria SUPERVISOR: promover é da plataforma.
-    //  3. O supervisor não move ninguém para fora nem traz de fora: os vínculos de origem E de destino
+    //     do eixo de negócio, já que cargo == SUPERVISOR concede editar-qualquer-passagem;
+    //  2. o supervisor **gere a equipe dele por inteiro** (F6.7): cadastra, promove e remove — dentro da
+    //     empresa dele. Promover concede poder numa empresa só, e isso é decisão de negócio dela;
+    //  3. o supervisor não move ninguém para fora nem traz de fora: os vínculos de origem E de destino
     //     têm de ser só os dele, senão o isolamento por empresa (§3) seria contornável por edição.
     //
     // **Como isso é verificável numa regra**: a linguagem não itera array, mas compara elementos inteiros.
@@ -213,11 +214,16 @@ service cloud.firestore {
     function souSupervisorDe(empresaId) {
       return vinculosDoAutor().hasAny([{'empresaId': empresaId, 'cargo': 'SUPERVISOR'}]);
     }
-    // O alvo tem UM vínculo só, e ele é (empresa que eu supervisiono, AGENTE).
-    function soMeuAgente(vinculos) {
+    // O alvo é **exclusivamente da minha empresa**: um vínculo só, e numa empresa que eu supervisiono.
+    //
+    // O cargo dele pode ser AGENTE **ou SUPERVISOR** desde a F6.7: promover concede poder dentro de uma
+    // empresa só, e isso é decisão de negócio dela. O que continua impossível é o supervisor mexer nos
+    // PRÓPRIOS vínculos (`naoMexeNosPropriosVinculos`) e alcançar quem serve a duas empresas — porque
+    // metade dos vínculos dessa pessoa não é dele.
+    function soDaMinhaEmpresa(vinculos) {
       return vinculos.size() == 1
           && souSupervisorDe(vinculos[0].empresaId)
-          && vinculos.hasOnly([{'empresaId': vinculos[0].empresaId, 'cargo': 'AGENTE'}]);
+          && vinculos[0].cargo in ['AGENTE', 'SUPERVISOR'];
     }
     function vinculosInalterados() {
       return request.resource.data.get('vinculos', []) == resource.data.get('vinculos', []);
@@ -231,18 +237,23 @@ service cloud.firestore {
 
       allow create: if autenticado()
                     && (ehPapelPlataforma()
-                        || (ehSupervisor() && soMeuAgente(request.resource.data.get('vinculos', []))));
+                        || (ehSupervisor() && soDaMinhaEmpresa(request.resource.data.get('vinculos', []))));
 
       allow update: if autenticado()
                     && (ehPapelPlataforma()
                         || (ehSupervisor()
-                            // Origem e destino: quem já era só meu agente continua sendo.
-                            && soMeuAgente(resource.data.get('vinculos', []))
-                            && soMeuAgente(request.resource.data.get('vinculos', []))))
+                            // Origem e destino: quem já era só da minha empresa continua sendo.
+                            && soDaMinhaEmpresa(resource.data.get('vinculos', []))
+                            && soDaMinhaEmpresa(request.resource.data.get('vinculos', []))))
                     && naoMexeNosPropriosVinculos(id);
 
-      // Remover membro é da plataforma: o supervisor edita, não apaga (§2.1).
-      allow delete: if autenticado() && ehPapelPlataforma();
+      // **Remover também é de quem gere** (F6.7): quem cuida da equipe cuida dela por inteiro. Duas
+      // barreiras ficam: só alcança quem é exclusivamente da empresa dele, e **ninguém se apaga** — um
+      // supervisor que se removesse deixaria a empresa sem quem a gerisse, sem ninguém decidir isso.
+      allow delete: if autenticado()
+                    && funcionarioIdDoAutor() != id
+                    && (ehPapelPlataforma()
+                        || (ehSupervisor() && soDaMinhaEmpresa(resource.data.get('vinculos', []))));
     }
 
     // --- Catálogos / master data: leitura p/ todo autenticado (venda lê), escrita só papel de plataforma ---

@@ -99,14 +99,9 @@ object PermissoesUsuario {
      */
     fun podeEscolherAgencia(papel: String?): Boolean = ehPapelPlataforma(papel)
 
-    /**
-     * Definir o **cargo** de um membro (§8.5, decisão do analista): só a plataforma. O supervisor gere a
-     * própria agência, mas não fabrica outro supervisor — cargo concede editar-qualquer-passagem (§8.2).
-     */
-    fun podeDefinirCargo(papel: String?): Boolean = ehPapelPlataforma(papel)
-
-    /** Remover membro é operação de plataforma; o supervisor edita, não apaga (§2.1). */
-    fun podeDeletarFuncionario(papel: String?): Boolean = ehPapelPlataforma(papel)
+    // As duas perguntas sobre a Equipe passaram a ser feitas **pelo vínculo** na F6.7 — ver
+    // `podeDefinirCargo(papel, vinculo)` e `podeRemoverMembro` mais abaixo. As versões por papel só
+    // saíram do caminho vivo; nada aqui as substituiu por acaso.
 
     /**
      * Enxergar **todas as agências** (listagem da Equipe e das passagens — §4.1). O supervisor vê só a
@@ -127,6 +122,28 @@ object PermissoesUsuario {
      * fica quando a outra sair (F6.3).
      */
     fun podeCadastrarMembro(papel: String?, vinculo: Vinculo?): Boolean =
+        ehPapelPlataforma(papel) || vinculo?.cargo == Cargo.SUPERVISOR
+
+    /**
+     * **Definir o cargo de um membro** — e aqui a regra mudou (F6.7).
+     *
+     * O ADR-0015 §8.5 reservava isto à plataforma, porque cargo concede editar-qualquer-passagem. O
+     * argumento continua verdadeiro, mas o **alcance** dele encolheu: desde que o escopo passou a ser
+     * por empresa (F6.1/F6.3), promover alguém concede poder **dentro de uma empresa só** — e isso é
+     * decisão de negócio dela, não de segurança da plataforma.
+     *
+     * O que impediu a mudança até agora era o inverso: com a plataforma na seção, ela promovia. Ao sair
+     * dela (F6.6), ninguém promovia — nem o supervisor, nem quem já não tinha a tela. Um poder sem dono
+     * é pior do que um poder distribuído.
+     *
+     * O anti-escalonamento continua inteiro por outro caminho, e é o mesmo do servidor: **ninguém mexe
+     * nos próprios vínculos**, e o supervisor só alcança quem é exclusivamente da empresa dele.
+     */
+    fun podeDefinirCargo(papel: String?, vinculo: Vinculo?): Boolean =
+        ehPapelPlataforma(papel) || vinculo?.cargo == Cargo.SUPERVISOR
+
+    /** Remover membro: mesma regra do cargo (F6.7) — quem gere a equipe, gere-a por inteiro. */
+    fun podeRemoverMembro(papel: String?, vinculo: Vinculo?): Boolean =
         ehPapelPlataforma(papel) || vinculo?.cargo == Cargo.SUPERVISOR
 
     /**

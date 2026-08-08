@@ -142,10 +142,25 @@ class PesquisaFuncionarioViewModelTest {
         assertEquals(setOf("Ana", "Carla"), vm.uiState.value.resultados.map { it.nome }.toSet())
     }
 
+    /** **Quem gere a equipe, gere por inteiro** (F6.7): o supervisor também remove — na empresa dele. */
     @Test
-    fun `supervisor nao deleta membro`() = runTest(mainRule.dispatcher) {
+    fun `supervisor remove membro da propria empresa`() = runTest(mainRule.dispatcher) {
         val fake = FakeFuncionarioRepository().apply { funcionarios = amostra }
         val vm = vm(fake, FakeSessaoUsuario.supervisor(empresaId = "empresa-1"))
+        advanceUntilIdle()
+
+        vm.onDeletar("1")
+        advanceUntilIdle()
+
+        assertTrue(vm.uiState.value.podeDeletar)
+        assertTrue(fake.deletados.contains("1"))
+    }
+
+    /** O agente não gere ninguém — e a barreira é dupla: a tela esconde, e o VM recusa. */
+    @Test
+    fun `agente nao remove membro`() = runTest(mainRule.dispatcher) {
+        val fake = FakeFuncionarioRepository().apply { funcionarios = amostra }
+        val vm = vm(fake, FakeSessaoUsuario.agente(empresaId = "empresa-1"))
         advanceUntilIdle()
 
         vm.onDeletar("1")

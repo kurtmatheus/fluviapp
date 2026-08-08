@@ -241,24 +241,28 @@ class FormFuncionarioViewModelTest {
             assertEquals("Rio Sul", s.empresaEmEdicao)
         }
 
+    /**
+     * **O supervisor gere a equipe dele por inteiro** (F6.7) — inclusive promovendo. O §8.5 reservava o
+     * cargo à plataforma porque ele concede editar-qualquer-passagem; com o escopo por empresa, esse
+     * poder passou a valer **dentro de uma empresa só**, e isso é decisão de negócio dela. O que
+     * continua impossível é mexer nos próprios vínculos — e essa barreira é do servidor.
+     */
     @Test
-    fun `supervisor nao define cargo — o membro nasce AGENTE mesmo se o evento for disparado`() =
-        runTest(mainRule.dispatcher) {
-            val fake = FakeFuncionarioRepository()
-            val vm = vm(fake, FakeSessaoUsuario.supervisor(empresaId = "empresa-2"))
-            advanceUntilIdle()
+    fun `supervisor promove dentro da propria empresa`() = runTest(mainRule.dispatcher) {
+        val fake = FakeFuncionarioRepository()
+        val vm = vm(fake, FakeSessaoUsuario.supervisor(empresaId = "empresa-2"))
+        advanceUntilIdle()
 
-            vm.onNomeChange("Carla")
-            vm.onEmailChange("carla@fluviapp.com.br")
-            // A tela nem desenha o seletor; o VM ignora o evento se ele vier por outro caminho.
-            vm.onCargoChange(Cargo.SUPERVISOR.name)
-            vm.onAdicionarVinculo()
-            vm.salvar()
-            advanceUntilIdle()
+        vm.onNomeChange("Carla")
+        vm.onEmailChange("carla@fluviapp.com.br")
+        vm.onCargoChange(Cargo.SUPERVISOR.name)
+        vm.onAdicionarVinculo()
+        vm.salvar()
+        advanceUntilIdle()
 
-            assertFalse(vm.uiState.value.podeDefinirCargo)
-            assertEquals(listOf(Vinculo("empresa-2", Cargo.AGENTE)), fake.salvos.single().vinculos)
-        }
+        assertTrue(vm.uiState.value.podeDefinirCargo)
+        assertEquals(listOf(Vinculo("empresa-2", Cargo.SUPERVISOR)), fake.salvos.single().vinculos)
+    }
 
     /** O supervisor não escapa do recorte trocando a empresa por outro caminho. */
     @Test

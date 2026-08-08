@@ -58,7 +58,7 @@ class PesquisaFuncionarioViewModel @Inject constructor(
         _uiState.update {
             it.copy(
                 podeFiltrarPorEmpresa = veTodas,
-                podeDeletar = PermissoesUsuario.podeDeletarFuncionario(contexto?.papel),
+                podeDeletar = PermissoesUsuario.podeRemoverMembro(contexto?.papel, contexto?.vinculoAtivo),
             )
         }
     }

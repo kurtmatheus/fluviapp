@@ -71,7 +71,7 @@ class FormFuncionarioViewModel @Inject constructor(
      */
     private fun aplicarRecorte(contexto: dev.matheus.fluviapp.domain.operacoes.ContextoUsuario?) {
         val podeEscolherEmpresa = PermissoesUsuario.podeEscolherAgencia(contexto?.papel)
-        val podeDefinirCargo = PermissoesUsuario.podeDefinirCargo(contexto?.papel)
+        val podeDefinirCargo = PermissoesUsuario.podeDefinirCargo(contexto?.papel, contexto?.vinculoAtivo)
         _uiState.update {
             it.copy(
                 podeEscolherEmpresa = podeEscolherEmpresa,
