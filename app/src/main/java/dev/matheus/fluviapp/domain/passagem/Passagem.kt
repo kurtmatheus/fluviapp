@@ -32,6 +32,20 @@ data class Passagem(
      * fato só criam a chance de discordarem.
      */
     val agencia: String = "",
+    /**
+     * **A agência emissora por id** — o `empresaId` do vínculo ativo de quem emitiu, congelado como o
+     * resto do snapshot (F7).
+     *
+     * Ele nasce antes de ter leitor porque o campo ao lado não serve para recortar: [agencia] é um
+     * **nome**, e nome muda, repete e não relaciona. Enquanto ele for a única coordenada, "as passagens
+     * da minha empresa" é uma comparação de texto — e o recorte por empresa da F9 precisa de um id que
+     * já esteja gravado nos bilhetes de antes dela.
+     *
+     * Não confundir com [empresaId], que é a empresa **da viagem** (quem transporta). Aqui é quem
+     * **vendeu**: numa mesma saída, as duas costumam ser diferentes, e é justamente por isso que a
+     * ocupação atravessa empresas e o faturamento não.
+     */
+    val agenciaId: String = "",
     val valorPix: Double? = null,
     val valorDinheiro: Double? = null,
     val valorDebito: Double? = null,

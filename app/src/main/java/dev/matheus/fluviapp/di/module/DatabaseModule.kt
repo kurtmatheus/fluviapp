@@ -66,6 +66,20 @@ val MIGRATION_4_5 = object : Migration(4, 5) {
     }
 }
 
+/**
+ * **v5 → v6: a passagem ganha `agenciaId`** (F7) — a agência emissora por id, ao lado do nome que já
+ * era congelado.
+ *
+ * Migração aditiva de uma coluna, e é o formato que o §9 previa para depois da primeira versão
+ * publicada: `ADD COLUMN` com default, sem tocar em nada existente. O bilhete antigo fica com o campo
+ * vazio, que é a verdade — ele foi emitido quando não havia id a congelar.
+ */
+val MIGRATION_5_6 = object : Migration(5, 6) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE `Passagem` ADD COLUMN `agenciaId` TEXT NOT NULL DEFAULT ''")
+    }
+}
+
 /** DDL da v2 — cópia fiel do `createSql` exportado pelo Room (uma linha por tabela/índice). */
 private val DDL_V2 = listOf(
     "CREATE TABLE IF NOT EXISTS `Usuario` (`id` TEXT NOT NULL, `email` TEXT NOT NULL, `username` TEXT NOT NULL, `papel` TEXT NOT NULL, `funcionarioId` TEXT NOT NULL, `ultimoUsuarioLogado` INTEGER NOT NULL, PRIMARY KEY(`id`))",
@@ -104,6 +118,7 @@ class DatabaseModule {
         ).addMigrations(
             MIGRATION_1_2,
             MIGRATION_4_5,
+            MIGRATION_5_6,
         )
             // Sem distribuição, não há base instalada cujo dado se possa perder: a v3 recria em vez de
             // migrar (decisão do analista). Este argumento VENCE na P3.5 — a partir da primeira entrega

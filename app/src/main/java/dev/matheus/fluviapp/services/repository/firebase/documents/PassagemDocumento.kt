@@ -15,6 +15,8 @@ data class PassagemDocumento(
     val passageiro3: PassageiroDocumento? = null,
     val veiculo: VeiculoDocumento? = null,
     val agencia: String = "",
+    /** A mesma agência, **por id** (F7): é ela que a F9 vai usar para recortar por empresa. */
+    val agenciaId: String = "",
     val valorPix: Double? = null,
     val valorDinheiro: Double? = null,
     val valorDebito: Double? = null,
@@ -51,6 +53,7 @@ fun PassagemDocumento.toPassagem(id: String): Passagem {
         dataViagem = dataViagem,
         horaViagem = horaViagem,
         agencia = agencia,
+        agenciaId = agenciaId,
         valorPix = valorPix,
         valorDinheiro = valorDinheiro,
         valorDebito = valorDebito,

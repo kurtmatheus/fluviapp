@@ -209,8 +209,10 @@ class FormPassagemViewModel @Inject constructor(
                 funcionarioResponsavel = it.descricaoNome,
                 funcionarioId = it.id,
                 // A agência do bilhete vem do **vínculo ativo** (F6.5), não de um campo do funcionário:
-                // quem serve a duas empresas emite em nome daquela em que está operando agora.
+                // quem serve a duas empresas emite em nome daquela em que está operando agora. O nome
+                // é o que se imprime; o id (F7) é o que vai recortar por empresa quando a F9 chegar.
                 agenciaEmissora = contexto.agencia,
+                agenciaIdEmissora = contexto.vinculoAtivo?.empresaId.orEmpty(),
             )
             // promoção volátil/cacheada -> sólida: descarta o rascunho (invariante snapshot ⇔ rascunho).
             rascunhoStore.remover()

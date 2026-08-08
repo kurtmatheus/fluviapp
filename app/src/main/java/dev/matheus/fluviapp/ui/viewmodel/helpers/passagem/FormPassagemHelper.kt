@@ -362,13 +362,15 @@ class FormPassagemHelper(
         funcionarioResponsavel: String,
         funcionarioId: String,
         agenciaEmissora: String,
+        agenciaIdEmissora: String,
     ): String {
 
         val passagem = montarPassagem(
             idPassagem = idPassagem,
             funcionarioResponsavel = funcionarioResponsavel,
             funcionarioId = funcionarioId,
-            agenciaEmissora = agenciaEmissora
+            agenciaEmissora = agenciaEmissora,
+            agenciaIdEmissora = agenciaIdEmissora,
         )
 
         return passagemRepository.salvar(idPassagem, passagem)
@@ -379,6 +381,7 @@ class FormPassagemHelper(
         funcionarioResponsavel: String,
         funcionarioId: String,
         agenciaEmissora: String,
+        agenciaIdEmissora: String,
     ): Passagem {
         val statePassagem = uiStatePassagem.value
         val statePassageiro = uiStatePassageiro.value
@@ -417,6 +420,9 @@ class FormPassagemHelper(
             // Agência DERIVADA do emissor (ADR-0015 §3), não digitada. Na edição preserva a que foi
             // congelada: o bilhete é histórico, e reabri-lo por outra pessoa não muda quem vendeu.
             agencia = passagemExistente?.agencia ?: agenciaEmissora,
+            // O mesmo fato, pelo id (F7): é ele que a F9 vai usar para recortar por empresa. Congela
+            // junto e pela mesma regra — quem reabre o bilhete não passa a ser quem vendeu.
+            agenciaId = passagemExistente?.agenciaId?.takeIf { it.isNotBlank() } ?: agenciaIdEmissora,
             valorPix = statePassagem.valorPix.toDoubleOrNull(),
             valorDinheiro = statePassagem.valorDinheiro.toDoubleOrNull(),
             valorDebito = statePassagem.valorDebito.toDoubleOrNull(),

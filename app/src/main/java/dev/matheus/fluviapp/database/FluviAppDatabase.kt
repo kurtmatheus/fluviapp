@@ -34,7 +34,7 @@ import dev.matheus.fluviapp.domain.viagem.Viagem
     // Firestore e o resíduo local (rascunho, bilhete digital) — nenhum deles é fonte da verdade.
     // v5: o Funcionário sai (F6.2), e a saída dele é a que destrava a forma nova — `vinculos` é lista, e
     // lista em tabela pediria TypeConverter e migração para um formato que muda na fatia seguinte.
-    version = 5,
+    version = 6,
     exportSchema = true
 )
 abstract class FluviAppDatabase : RoomDatabase() {
