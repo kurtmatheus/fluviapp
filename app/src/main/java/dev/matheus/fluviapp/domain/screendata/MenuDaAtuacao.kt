@@ -37,6 +37,9 @@ val SECOES_DO_PAINEL: Set<SecaoMenu> = setOf(
     // Quem acessa o app e com que papel (F6.6). É o par da `EQUIPE` visto do lado da plataforma — e é
     // por ele existir que a Equipe pôde deixar de ser transversal.
     SecaoMenu.USUARIOS,
+    // **Compartilhada** (ADR-0022 D2): aparece nos dois painéis, porque o pool não tem dono. Não é
+    // exceção ao critério — é o critério: entidade sem dono é de todos.
+    SecaoMenu.ROTA,
     SecaoMenu.VIAGEM,
 )
 
@@ -59,8 +62,9 @@ val SECOES_TRANSVERSAIS: Set<SecaoMenu> = emptySet()
  * fail-closed do ADR-0016 §8: valor que existe no modelo mas não tem operação não ganha painel sozinho.
  */
 fun secoesDa(atuacao: Atuacao): Set<SecaoMenu> = when (atuacao) {
-    // O agenciamento é o segmento operante: vende passagem — e cuida da própria equipe (F6.6).
-    Atuacao.AGENCIAMENTO -> setOf(SecaoMenu.PASSAGEM, SecaoMenu.EQUIPE)
+    // O agenciamento é o segmento operante: vende passagem, monta as rotas que vai ofertar (F7) e
+    // cuida da própria equipe (F6.6).
+    Atuacao.AGENCIAMENTO -> setOf(SecaoMenu.ROTA, SecaoMenu.PASSAGEM, SecaoMenu.EQUIPE)
     // O transporte é dono da frota; a seção dele nasce quando o cadastro de frota existir. A equipe é
     // dele também: quem opera num segmento tem quadro próprio.
     Atuacao.TRANSPORTE -> setOf(SecaoMenu.EQUIPE)

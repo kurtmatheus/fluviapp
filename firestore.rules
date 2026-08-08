@@ -160,6 +160,35 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // --- Rotas: o pool compartilhado (ADR-0016 §7.1, ADR-0022 D3 — F7) ---
+    //
+    // Sem dono, legível por todos, e com três verbos governados por três autoridades diferentes:
+    //
+    //  1. **criar** é da plataforma e do SUPERVISOR, em qualquer par de portos (decisão do analista): a
+    //     rota é a *ligação*, e ela existe no mundo independentemente de quem pode vendê-la. O recorte
+    //     do que a empresa oferta é da viagem (F8), onde a concessão entra;
+    //  2. **editar não existe para ninguém.** A única alteração admitida é o campo `ativo` — corrigir é
+    //     criar outra e inativar esta. Um `update` livre mudaria, retroativamente, o significado de
+    //     viagens e bilhetes de terceiros;
+    //  3. **inativar é só da plataforma**: é o único ato daqui que atinge quem nem sabe que a rota
+    //     existe. Quem quer apenas não vê-la usa a lista de negadas da própria atuação (F8).
+    //
+    // **O que esta regra NÃO impõe, e por quê:** a unicidade do par. Regra não consulta coleção, e a
+    // saída usual — derivar o id do documento do par — brigaria com a recriação: inativada uma rota,
+    // recriar o mesmo par colidiria com o id da anterior, e é exatamente esse gesto que a imutabilidade
+    // exige. A verificação fica no cadastro (impede o acidente, não a corrida), como no Porto.
+    match /rotas/{doc} {
+      allow read: if autenticado();
+
+      allow create: if autenticado() && (ehPapelPlataforma() || cargoDoAutor() == 'SUPERVISOR');
+
+      allow update: if autenticado()
+                    && ehPapelPlataforma()
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ativo']);
+
+      allow delete: if false;
+    }
+
     // --- Convites: quem pode entrar, e com que papel (F6.6) ---
     //
     // O id **é o e-mail**, e isso é o que torna a regra possível: o convidado lê o próprio convite com um

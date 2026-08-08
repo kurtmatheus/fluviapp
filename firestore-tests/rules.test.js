@@ -110,6 +110,11 @@ beforeEach(async () => {
       localidadeId: 'loc-1',
       ativo: true,
     });
+    // Rota (F7): o pool compartilhado, sem dono.
+    await setDoc(doc(db, 'rotas', 'rota-1'), {
+      portoOrigemId: 'porto-1', portoDestinoId: 'porto-2',
+      distanciaMn: 420, tempoMedioH: 30, criadoPor: F_SUPERVISOR, ativo: true,
+    });
     // Convites (F6.6): o id É o e-mail — é assim que o convidado acha o próprio antes de ter perfil.
     await setDoc(doc(db, 'convites', 'convidado@x.com'), {
       nome: 'Convidado', papel: 'OPERADOR', empresaId: E_MATRIZ, cargo: 'AGENTE', usado: false,
@@ -224,6 +229,66 @@ describe('users/{uid} — anti-escalonamento', () => {
 
   test('leitura de perfil por autenticado → OK', async () => {
     await assertSucceeds(getDoc(doc(asAgenteA(), 'users', AGENTE_B)));
+  });
+});
+
+// --- rotas/{id}: o pool compartilhado (ADR-0016 §7.1, F7) ---
+//
+// Três verbos, três autoridades — e o caso mais interessante é o do meio: **editar não existe**.
+describe('rotas — pool sem dono, imutável, e o inativar que é da plataforma', () => {
+  const novaRota = { portoOrigemId: 'porto-1', portoDestinoId: 'porto-2', distanciaMn: 420, tempoMedioH: 30, ativo: true };
+
+  test('operador LÊ rota (o pool é de todos) → OK', async () => {
+    await assertSucceeds(getDoc(doc(asAgenteA(), 'rotas', 'rota-1')));
+  });
+
+  test('não autenticado LÊ rota → NEGADO', async () => {
+    await assertFails(getDoc(doc(asAnon(), 'rotas', 'rota-1')));
+  });
+
+  test('plataforma cria rota → OK', async () => {
+    await assertSucceeds(setDoc(doc(asAdm(), 'rotas', 'rota-nova'), novaRota));
+  });
+
+  /** Decisão do analista: o supervisor cria **qualquer** rota — a ligação existe independente de quem vende. */
+  test('SUPERVISOR cria rota em qualquer par de portos → OK', async () => {
+    await assertSucceeds(setDoc(doc(asSupervisor(), 'rotas', 'rota-nova'), novaRota));
+  });
+
+  test('AGENTE cria rota → NEGADO (vê o pool, não o monta)', async () => {
+    await assertFails(setDoc(doc(asAgenteA(), 'rotas', 'rota-nova'), novaRota));
+  });
+
+  /** **Editar não existe para ninguém** — nem para o ADM. Corrigir é criar outra e inativar esta. */
+  test('plataforma EDITA a distância de uma rota → NEGADO', async () => {
+    await assertFails(updateDoc(doc(asAdm(), 'rotas', 'rota-1'), { distanciaMn: 999 }));
+  });
+
+  test('plataforma inativa rota → OK', async () => {
+    await assertSucceeds(updateDoc(doc(asAdm(), 'rotas', 'rota-1'), { ativo: false }));
+  });
+
+  /** Tirar do pool afeta quem nem sabe que a rota existe: é o único ato daqui que atinge terceiros. */
+  test('SUPERVISOR inativa rota do pool → NEGADO', async () => {
+    await assertFails(updateDoc(doc(asSupervisor(), 'rotas', 'rota-1'), { ativo: false }));
+  });
+
+  /** Inativar não pode virar cavalo de Troia para editar o resto. */
+  test('plataforma inativa E muda a distância na mesma escrita → NEGADO', async () => {
+    await assertFails(updateDoc(doc(asAdm(), 'rotas', 'rota-1'), { ativo: false, distanciaMn: 999 }));
+  });
+
+  test('ninguém apaga rota — o descartado vira registro', async () => {
+    await assertFails(deleteDoc(doc(asAdm(), 'rotas', 'rota-1')));
+  });
+
+  /**
+   * **Limite conhecido**: a unicidade do par não é imposta pelo servidor. Regra não consulta coleção, e
+   * derivar o id do par brigaria com a recriação que a imutabilidade exige. A verificação vive no
+   * cadastro — impede o acidente, não a corrida.
+   */
+  test('plataforma cria rota duplicada do mesmo par → OK (limite conhecido)', async () => {
+    await assertSucceeds(setDoc(doc(asAdm(), 'rotas', 'rota-duplicada'), novaRota));
   });
 });
 

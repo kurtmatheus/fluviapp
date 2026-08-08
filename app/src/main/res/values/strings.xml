@@ -179,6 +179,27 @@
     <string name="label_menu_localidades">Localidades</string>
     <string name="label_menu_portos">Portos</string>
     <string name="label_menu_usuarios">Usuários</string>
+    <string name="label_menu_rotas">Rotas</string>
+
+    <!-- Rota (o pool compartilhado) -->
+    <string name="title_top_rotas">Rotas</string>
+    <string name="subtitle_nova_rota">Nova Rota</string>
+    <string name="subtitle_pesquisar_rotas">Pesquisar Rotas</string>
+    <string name="btn_nova_rota">Nova Rota</string>
+    <string name="btn_pesquisar_rota">Pesquisar Rota</string>
+    <string name="label_porto_origem">Porto de origem</string>
+    <string name="label_porto_destino">Porto de destino</string>
+    <string name="label_distancia_mn">Distância (milhas náuticas)</string>
+    <string name="label_tempo_medio_h">Tempo médio (horas)</string>
+    <string name="label_porto">Porto</string>
+    <string name="error_rota_mesmo_porto">Origem e destino têm de ser portos diferentes.</string>
+    <string name="error_rota_duplicada">Já existe uma rota ativa entre estes dois portos.</string>
+    <string name="error_medida_invalida">Informe um número maior que zero.</string>
+    <string name="msg_rota_criada">Rota criada.</string>
+    <string name="msg_rota_inativa">Inativa</string>
+    <string name="msg_confirmar_inativar_rota">Inativar esta rota? Ela some dos seletores e continua valendo para o que já aponta para ela.</string>
+    <string name="btn_inativar">Inativar</string>
+    <string name="msg_rota_imutavel">A rota não é editada: para corrigir, crie outra e inative esta.</string>
 
     <!-- Usuários (o convite) -->
     <string name="title_top_usuarios">Usuários</string>

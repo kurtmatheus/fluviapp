@@ -45,7 +45,10 @@ enum class AcaoMenu(
     PORTO_PESQUISAR(SecaoMenu.PORTO, R.string.btn_pesquisar_porto, R.drawable.ic_lupa_75),
 
     USUARIO_NOVO(SecaoMenu.USUARIOS, R.string.btn_novo_usuario, R.drawable.ic_add_75),
-    USUARIO_PESQUISAR(SecaoMenu.USUARIOS, R.string.btn_pesquisar_usuario, R.drawable.ic_lupa_75);
+    USUARIO_PESQUISAR(SecaoMenu.USUARIOS, R.string.btn_pesquisar_usuario, R.drawable.ic_lupa_75),
+
+    ROTA_NOVA(SecaoMenu.ROTA, R.string.btn_nova_rota, R.drawable.ic_add_75),
+    ROTA_PESQUISAR(SecaoMenu.ROTA, R.string.btn_pesquisar_rota, R.drawable.ic_lupa_75);
 
     companion object {
         /** As ações desta seção, na ordem declarada. */

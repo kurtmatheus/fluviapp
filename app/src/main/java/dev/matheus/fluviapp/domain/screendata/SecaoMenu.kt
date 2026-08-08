@@ -24,6 +24,9 @@ enum class SecaoMenu(
     // O PORTO vem logo depois da LOCALIDADE porque depende dela: não se cadastra um cais sem a cidade
     // em que ele fica. A ordem do enum continua sendo a ordem em que se consegue cadastrar.
     PORTO(R.string.label_menu_portos, R.drawable.ic_porto_24),
+    // A primeira seção **compartilhada** (ADR-0022 D2): o pool não tem dono, então plataforma e empresa
+    // enxergam a mesma coisa. Vem depois do Porto porque é dele que ela é feita.
+    ROTA(R.string.label_menu_rotas, R.drawable.ic_rota_24),
     PASSAGEM(R.string.btn_menu_passagens, R.drawable.ic_bilhete),
     VIAGEM(R.string.label_menu_viagens, R.drawable.ic_embarcacao_75),
     // "Equipe" (ADR-0015 §8.1): o coletivo dos Funcionario — as pessoas na operação, com cargo e

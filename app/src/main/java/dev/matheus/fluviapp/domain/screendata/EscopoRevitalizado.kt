@@ -48,6 +48,8 @@ val SECOES_REVITALIZADAS: Set<SecaoMenu> = setOf(
     // A seção da plataforma que faltava (F6.6): sem ela, o `ADM` abria a Equipe — o quadro de pessoal de
     // uma empresa — como se a plataforma tivesse equipe.
     SecaoMenu.USUARIOS,
+    // A primeira do **pool compartilhado** (F7): mesma seção nos dois painéis, porque o pool não tem dono.
+    SecaoMenu.ROTA,
 )
 
 /** Se a seção já foi refeita ponta a ponta. */

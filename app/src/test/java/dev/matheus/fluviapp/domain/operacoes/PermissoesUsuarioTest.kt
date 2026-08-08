@@ -106,8 +106,14 @@ class PermissoesUsuarioTest {
     }
 
     @Test
-    fun `agente so ve Passagem`() {
-        assertEquals(listOf(SecaoMenu.PASSAGEM), PermissoesUsuario.secoesVisiveis(operador, agente))
+    fun `agente ve a Rota compartilhada e a Passagem`() {
+        // A Rota é do pool sem dono (F7): o agente **vê** e não cria — quem cria é a plataforma ou o
+        // supervisor, e essa é outra pergunta da política.
+        assertEquals(
+            listOf(SecaoMenu.ROTA, SecaoMenu.PASSAGEM),
+            PermissoesUsuario.secoesVisiveis(operador, agente),
+        )
+        assertFalse(PermissoesUsuario.podeCriarRota(operador, null))
         assertFalse(PermissoesUsuario.podeAcessar(SecaoMenu.EQUIPE, operador, agente))
     }
 
@@ -116,7 +122,7 @@ class PermissoesUsuarioTest {
         // A Equipe é a única seção que olha o cargo: ela existe para o supervisor gerir a própria
         // agência (§2.2). Viagem/Empresa/Embarcacao continuam sendo cadastro de plataforma.
         assertEquals(
-            listOf(SecaoMenu.PASSAGEM, SecaoMenu.EQUIPE),
+            listOf(SecaoMenu.ROTA, SecaoMenu.PASSAGEM, SecaoMenu.EQUIPE),
             PermissoesUsuario.secoesVisiveis(operador, supervisor),
         )
         assertFalse(PermissoesUsuario.podeAcessar(SecaoMenu.VIAGEM, operador, supervisor))
@@ -131,7 +137,7 @@ class PermissoesUsuarioTest {
         // esta fatia não pode mudar uma linha do que aparece em tela.
         assertEquals(SecaoMenu.entries - SecaoMenu.EQUIPE, PermissoesUsuario.secoesVisiveis(adm, atuacao = null))
         assertEquals(
-            listOf(SecaoMenu.PASSAGEM),
+            listOf(SecaoMenu.ROTA, SecaoMenu.PASSAGEM),
             PermissoesUsuario.secoesVisiveis(operador, agente, atuacao = null),
         )
     }
@@ -152,6 +158,8 @@ class PermissoesUsuarioTest {
                 // O Porto, idem — e apesar de a atuação portuária existir: o cais é infraestrutura, e o
                 // que a empresa tem nele é a atuação, não o porto.
                 SecaoMenu.PORTO,
+                // A Rota é compartilhada: aparece nos dois painéis, porque o pool não tem dono (F7).
+                SecaoMenu.ROTA,
                 SecaoMenu.VIAGEM,
                 // A `EQUIPE` saiu daqui na F6.6 e no lugar dela entrou `USUARIOS`: a plataforma
                 // administra **quem acessa o app**, não o quadro de pessoal de uma empresa.
@@ -165,9 +173,9 @@ class PermissoesUsuarioTest {
     }
 
     @Test
-    fun `com atuacao, o agente do agenciamento ve so a passagem`() {
+    fun `com atuacao, o agente do agenciamento ve a rota e a passagem`() {
         assertEquals(
-            listOf(SecaoMenu.PASSAGEM),
+            listOf(SecaoMenu.ROTA, SecaoMenu.PASSAGEM),
             PermissoesUsuario.secoesVisiveis(operador, agente, Atuacao.AGENCIAMENTO),
         )
     }

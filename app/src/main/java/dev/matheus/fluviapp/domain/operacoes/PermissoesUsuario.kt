@@ -55,6 +55,10 @@ object PermissoesUsuario {
         // o negócio da plataforma, não o acesso a ela.
         SecaoMenu.USUARIOS -> Papel.de(papel) == ADM
 
+        // **Rotas é compartilhada** (ADR-0022 D2): o pool não tem dono, então plataforma e operação
+        // enxergam o mesmo. Quem pode **criar** e quem pode **inativar** são outras perguntas, abaixo.
+        SecaoMenu.ROTA -> ehPapelPlataforma(papel) || Cargo.de(cargo) != null
+
         SecaoMenu.VIAGEM, SecaoMenu.EMPRESA, SecaoMenu.EMBARCACAO,
         SecaoMenu.LOCALIDADE, SecaoMenu.PORTO,
         -> ehPapelPlataforma(papel)
@@ -145,6 +149,27 @@ object PermissoesUsuario {
     /** Remover membro: mesma regra do cargo (F6.7) — quem gere a equipe, gere-a por inteiro. */
     fun podeRemoverMembro(papel: String?, vinculo: Vinculo?): Boolean =
         ehPapelPlataforma(papel) || vinculo?.cargo == Cargo.SUPERVISOR
+
+    // --- O pool compartilhado (ADR-0016 §7.1, ADR-0022 D3 — F7) ---
+
+    /**
+     * **Criar rota**: plataforma e supervisor, em qualquer par de portos (decisão do analista).
+     *
+     * Não se recorta pela concessão de propósito: a rota é a *ligação*, e ela existe no mundo
+     * independentemente de quem pode vendê-la. O recorte do que a empresa oferta é da **viagem** (F8),
+     * onde a concessão entra — e é lá que ele significa alguma coisa.
+     */
+    fun podeCriarRota(papel: String?, vinculo: Vinculo?): Boolean =
+        ehPapelPlataforma(papel) || vinculo?.cargo == Cargo.SUPERVISOR
+
+    /**
+     * **Inativar rota é só da plataforma** (ADR-0022 D3).
+     *
+     * É o único poder deste conjunto que **atinge terceiros**: tirar do pool uma rota que outra empresa
+     * está vendendo. Quem quer apenas não vê-la usa a lista de negadas da própria atuação (F8), que é
+     * conforto de tela e não muda o pool de ninguém.
+     */
+    fun podeInativarRota(papel: String?): Boolean = ehPapelPlataforma(papel)
 
     /**
      * O **escopo de empresa** de uma listagem — o que o [EscopoAgencia] vira quando a agência deixa de

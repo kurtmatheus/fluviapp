@@ -42,10 +42,14 @@ import dev.matheus.fluviapp.extensions.navegaParaResultPesquisarPorto
 import dev.matheus.fluviapp.extensions.navegaParaSelecaoVinculo
 import dev.matheus.fluviapp.extensions.navegaParaFormularioUsuario
 import dev.matheus.fluviapp.extensions.navegaParaResultPesquisarUsuario
+import dev.matheus.fluviapp.extensions.navegaParaFormularioRota
+import dev.matheus.fluviapp.extensions.navegaParaResultPesquisarRota
 import dev.matheus.fluviapp.navigation.navcomposables.porto.formPortoNavComposable
 import dev.matheus.fluviapp.navigation.navcomposables.porto.resultSearchPortoNavComposable
 import dev.matheus.fluviapp.navigation.navcomposables.usuario.formUsuarioNavComposable
 import dev.matheus.fluviapp.navigation.navcomposables.usuario.resultSearchUsuarioNavComposable
+import dev.matheus.fluviapp.navigation.navcomposables.rota.formRotaNavComposable
+import dev.matheus.fluviapp.navigation.navcomposables.rota.resultSearchRotaNavComposable
 import dev.matheus.fluviapp.navigation.graphs.pesquisarPassagemGraph
 import dev.matheus.fluviapp.navigation.graphs.pesquisarViagemGraph
 import dev.matheus.fluviapp.navigation.graphs.selecaoVinculoGraph
@@ -154,6 +158,12 @@ fun FluviAppNavHost(
             },
             onNavegaParaFormularioNovoPorto = {
                 navController.navegaParaFormularioPorto()
+            },
+            onNavegaParaFormularioNovaRota = {
+                navController.navegaParaFormularioRota()
+            },
+            onNavegaParaFormularioPesquisaRota = {
+                navController.navegaParaResultPesquisarRota()
             },
             onNavegaParaFormularioNovoUsuario = {
                 navController.navegaParaFormularioUsuario()
@@ -341,6 +351,21 @@ fun FluviAppNavHost(
         )
 
         resultSearchUsuarioNavComposable(
+            onClickVoltar = {
+                navController.navigateUp()
+            }
+        )
+
+        formRotaNavComposable(
+            onNavegaParaMainScreen = {
+                navController.navegaParaMainScreenGraph()
+            },
+            onClickVoltar = {
+                navController.navigateUp()
+            }
+        )
+
+        resultSearchRotaNavComposable(
             onClickVoltar = {
                 navController.navigateUp()
             }

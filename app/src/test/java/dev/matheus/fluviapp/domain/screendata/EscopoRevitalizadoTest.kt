@@ -47,6 +47,7 @@ class EscopoRevitalizadoTest {
                 SecaoMenu.PORTO,
                 SecaoMenu.EQUIPE,
                 SecaoMenu.USUARIOS,
+                SecaoMenu.ROTA,
             ),
             SECOES_REVITALIZADAS,
         )
@@ -78,8 +79,9 @@ class EscopoRevitalizadoTest {
             SecaoMenu.PORTO,
         )
 
-        assertEquals(doPainel + SecaoMenu.USUARIOS, secoesDoMenu(adm))
-        assertEquals(doPainel, secoesDoMenu(gestor))
+        // A Rota entra no meio, na ordem do enum: ela vem do Porto, e é compartilhada (F7).
+        assertEquals(doPainel + SecaoMenu.ROTA + SecaoMenu.USUARIOS, secoesDoMenu(adm))
+        assertEquals(doPainel + SecaoMenu.ROTA, secoesDoMenu(gestor))
     }
 
     /**
@@ -89,8 +91,12 @@ class EscopoRevitalizadoTest {
      */
     @Test
     fun `o supervisor ve a Equipe e o agente segue sem menu`() {
-        assertEquals(listOf(SecaoMenu.EQUIPE), secoesDoMenu(operador, supervisor, Atuacao.AGENCIAMENTO))
-        assertEquals(emptyList<SecaoMenu>(), secoesDoMenu(operador, agente, Atuacao.AGENCIAMENTO))
+        assertEquals(
+            listOf(SecaoMenu.ROTA, SecaoMenu.EQUIPE),
+            secoesDoMenu(operador, supervisor, Atuacao.AGENCIAMENTO),
+        )
+        // O agente ganhou a Rota (vê o pool, não cria); a Passagem dele segue fora do andaime.
+        assertEquals(listOf(SecaoMenu.ROTA), secoesDoMenu(operador, agente, Atuacao.AGENCIAMENTO))
     }
 
     @Test
