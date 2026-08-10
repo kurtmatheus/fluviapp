@@ -1,6 +1,7 @@
 package dev.matheus.fluviapp.domain.viagem
 
 import dev.matheus.fluviapp.domain.operacoes.Atuacao
+import dev.matheus.fluviapp.domain.rota.Rota
 
 /**
  * **O que uma [Empresa] faz** — o par `(parte, atuação)` do eixo do [ADR-0016] §4, com as concessões que
@@ -45,11 +46,23 @@ data class AtuacaoDaEmpresa(
      * **A rota é ofertável por esta parte?** — os dois portos concedidos.
      *
      * É aqui que a concessão deixa de recortar *o que ela cria* e passa a recortar *o que ela pode
-     * vender* (§7.1): a rota é do pool e qualquer um a monta, mas ofertá-la exige ter os dois lados. A
-     * outra metade da checagem — a embarcação — entra na Viagem (F8), que é onde ela existe.
+     * vender* (§7.1): a rota é do pool e qualquer um a monta, mas ofertá-la exige ter os dois lados.
      */
     fun podeOfertar(portoOrigemId: String?, portoDestinoId: String?): Boolean =
         operaNoPorto(portoOrigemId) && operaNoPorto(portoDestinoId)
+
+    /**
+     * **A viagem é ofertável por esta parte?** — a pergunta completa, e a que a F7 deixou pela metade.
+     *
+     * Os dois eixos da concessão se encontram aqui, e é a viagem que os junta porque é ela que tem os
+     * dois: **onde** vem dos portos da [rota], **em quê** é a embarcação da partida. Nem a rota sozinha
+     * (não sabe o navio) nem a embarcação sozinha (não sabe o trajeto) respondem.
+     *
+     * Desde a decisão do analista de 2026-08-10, esta função responde também *o que a empresa **vê***, e
+     * não só o que ela vende — ver e vender viraram a mesma pergunta (ver [EscopoDoPool]).
+     */
+    fun podeOfertar(viagem: Viagem, rota: Rota): Boolean =
+        concedeu(viagem.embarcacaoId) && podeOfertar(rota.portoOrigemId, rota.portoDestinoId)
 }
 
 /** Esta parte exerce esta atuação? */

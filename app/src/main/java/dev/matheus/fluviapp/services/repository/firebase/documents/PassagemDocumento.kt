@@ -7,7 +7,7 @@ data class PassagemDocumento(
     // FK da Passagem -> Viagem por id (ADR-0008). Fica top-level (é ponteiro que a passagem possui),
     // separado do `viagem` embutido, que é o snapshot por valor. Default "" cobre docs antigos.
     val viagemId: String = "",
-    val viagem: ViagemDocumento? = null,
+    val viagem: ViagemCongeladaDocumento? = null,
     val dataViagem: String = "",
     val horaViagem: String = "",
     val passageiro1: PassageiroDocumento? = null,
@@ -42,7 +42,7 @@ fun PassagemDocumento.toPassagem(id: String): Passagem {
         id = id,
         numero = numero,
         viagemId = viagemId,
-        // embarcacaoId/empresaId vêm do snapshot embutido (ViagemDocumento já os carrega — ADR-0008 Fase 0).
+        // embarcacaoId/empresaId vêm do snapshot embutido (ViagemCongeladaDocumento já os carrega — ADR-0008 Fase 0).
         embarcacaoId = viagem?.embarcacaoId.orEmpty(),
         empresaId = viagem?.empresaId.orEmpty(),
         codigoViagem = viagem?.codigo.orEmpty(),

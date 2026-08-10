@@ -9,7 +9,7 @@ import dev.matheus.fluviapp.services.repository.firebase.DocumentoBruto
  */
 
 // `toViagemDocumento` saiu na F8.0, com o último chamador: o repositório da Viagem-trecho. O
-// `ViagemDocumento` continua vivo, mas só como snapshot dentro da Passagem — e lá ele é lido pelo
+// snapshot dentro da Passagem sobreviveu como `ViagemCongeladaDocumento` — e lá ele é lido pelo
 // `toObject` do Firestore, não por aqui. Mesmo descarte progressivo do `toFuncionarioDocumento`.
 
 fun DocumentoBruto.toEmbarcacaoDocumento() = EmbarcacaoDocumento(

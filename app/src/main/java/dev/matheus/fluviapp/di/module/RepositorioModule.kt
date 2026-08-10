@@ -10,6 +10,8 @@ import dev.matheus.fluviapp.services.repository.cadastro.porto.PortoFirestoreRep
 import dev.matheus.fluviapp.services.repository.cadastro.porto.PortoRepository
 import dev.matheus.fluviapp.services.repository.cadastro.rota.RotaFirestoreRepository
 import dev.matheus.fluviapp.services.repository.cadastro.rota.RotaRepository
+import dev.matheus.fluviapp.services.repository.cadastro.viagem.ViagemFirestoreRepository
+import dev.matheus.fluviapp.services.repository.cadastro.viagem.ViagemRepository
 import dev.matheus.fluviapp.services.repository.operacoes.ConviteFirestoreRepository
 import dev.matheus.fluviapp.services.repository.operacoes.ConviteRepository
 import dev.matheus.fluviapp.services.repository.operacoes.FuncionarioFirestoreRepository
@@ -63,6 +65,11 @@ abstract class RepositorioModule {
     @Binds
     @Singleton
     abstract fun bindRotaRepository(impl: RotaFirestoreRepository): RotaRepository
+
+    /** O outro habitante do pool: a partida física sobre a rota (F8). */
+    @Binds
+    @Singleton
+    abstract fun bindViagemRepository(impl: ViagemFirestoreRepository): ViagemRepository
 
     /** Quem pode entrar, e com que papel (F6.6) — a coleção que o `ADM` escreve. */
     @Binds
