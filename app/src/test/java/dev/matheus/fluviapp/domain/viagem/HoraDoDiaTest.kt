@@ -47,15 +47,22 @@ class HoraDoDiaTest {
         assertEquals(23 * 60 + 59, minutosDaHora("23:59"))
     }
 
-    /** Sem o zero à esquerda é o que se digita. */
-    @Test
-    fun `aceita hora de um digito`() {
-        assertEquals(8 * 60 + 5, minutosDaHora("8:05"))
-    }
-
     @Test
     fun `ignora espaco em volta`() {
         assertEquals(6 * 60, minutosDaHora("  06:00 "))
+    }
+
+    /**
+     * **Hora pela metade é hora incompleta, não hora abreviada.** A versão anterior aceitava `"8:05"`
+     * "porque é o que se digita" — com a máscara não é mais: quem digita `805` vê `"80:5"`. Manter a
+     * tolerância abriria a armadilha oposta: parar em três dígitos e gravar `"18:3"` como **18:03**
+     * quando se queria 18:30, sem avisar.
+     */
+    @Test
+    fun `hora pela metade nao vale`() {
+        assertNull(minutosDaHora("8:05"))
+        assertNull(minutosDaHora("18:3"))
+        assertNull(minutosDaHora("1:2"))
     }
 
     /**
@@ -84,6 +91,57 @@ class HoraDoDiaTest {
     fun `ida e volta preserva o valor`() {
         (0 until MINUTOS_POR_DIA step 7).forEach { minutos ->
             assertEquals(minutos, minutosDaHora(formatarHora(minutos)))
+        }
+    }
+
+    // --- A máscara ---
+
+    /**
+     * Ela existe porque **o teclado numérico do Android não tem `:`** (achado em homologação): o campo
+     * pedia `HH:mm` e oferecia um teclado onde o separador não existe. O `:` deixou de ser digitado e
+     * passou a ser escrito pelo campo.
+     */
+    @Test
+    fun `a mascara escreve o separador enquanto se digita`() {
+        assertEquals("", mascararHora(""))
+        assertEquals("1", mascararHora("1"))
+        assertEquals("18", mascararHora("18"))
+        assertEquals("18:3", mascararHora("183"))
+        assertEquals("18:30", mascararHora("1830"))
+    }
+
+    /** Digitar rápido demais não deve mudar o que já está certo: o excedente é descartado. */
+    @Test
+    fun `a mascara para em quatro digitos`() {
+        assertEquals("18:30", mascararHora("18305"))
+        assertEquals("18:30", mascararHora("1830999"))
+    }
+
+    /**
+     * Apagar não tem regra à parte: o campo devolve o texto sem o último caractere, a máscara reescreve
+     * a partir dos dígitos que sobraram, e o `:` some sozinho quando restam dois.
+     */
+    @Test
+    fun `apagar desfaz pelo mesmo caminho`() {
+        assertEquals("18:3", mascararHora("18:3"))
+        assertEquals("18", mascararHora("18:"))
+        assertEquals("1", mascararHora("1"))
+    }
+
+    /** O que não é dígito é ignorado — inclusive um `:` colado de outro lugar. */
+    @Test
+    fun `a mascara ignora o que nao e digito`() {
+        assertEquals("18:30", mascararHora("18h30m"))
+        assertEquals("18:30", mascararHora("18:30"))
+        assertEquals("", mascararHora("abc"))
+    }
+
+    /** O que a máscara completa, o leitor aceita: é o contrato entre os dois. */
+    @Test
+    fun `o que a mascara completa, minutosDaHora le`() {
+        (0 until MINUTOS_POR_DIA step 13).forEach { minutos ->
+            val digitado = formatarHora(minutos).filter { it.isDigit() }
+            assertEquals(minutos, minutosDaHora(mascararHora(digitado)))
         }
     }
 

@@ -25,16 +25,42 @@ fun formatarHora(minutos: Int): String {
 }
 
 /**
+ * **Máscara de digitação**: o que a pessoa digita (só dígitos) vira `HH:mm` enquanto ela digita.
+ *
+ * Ela existe por um motivo bem concreto, achado em homologação: **o teclado numérico do Android não tem
+ * `:`**. O campo pedia `HH:mm` e oferecia um teclado onde os dois-pontos não existem — não era um atrito,
+ * era um campo intransponível. Trocar o teclado para o completo resolveria o sintoma e pioraria o resto
+ * (letras num campo de hora); a máscara resolve a causa: **o separador deixa de ser digitado e passa a
+ * ser escrito pelo campo**.
+ *
+ * Quatro dígitos, no máximo — é o tamanho de uma hora. O que passa disso é descartado em vez de empurrar
+ * a hora para a esquerda, porque digitar rápido demais não deve mudar o que já está certo.
+ *
+ * Apagar funciona pelo mesmo caminho, sem regra à parte: `"18:30"` menos um caractere é `"18:3"`, que
+ * são os dígitos `183`, que a máscara reescreve como `"18:3"`. O `:` some sozinho quando sobram dois.
+ */
+fun mascararHora(texto: String): String {
+    val digitos = texto.filter { it.isDigit() }.take(4)
+    return if (digitos.length <= 2) digitos else "${digitos.take(2)}:${digitos.drop(2)}"
+}
+
+/**
  * `HH:mm` → minutos, ou **`null` quando não é uma hora**.
  *
  * Devolve `null` em vez de zero de propósito: `"00:00"` é meia-noite, um horário legítimo de saída de
- * balsa, e confundi-lo com "não digitou" faria o formulário aceitar campo vazio como madrugada. Aceita
- * `8:05` sem o zero à esquerda (é o que se digita), e recusa 24h ou 60min — fora do relógio não é hora
- * mal escrita, é outra coisa.
+ * balsa, e confundi-lo com "não digitou" faria o formulário aceitar campo vazio como madrugada. Recusa
+ * 24h ou 60min — fora do relógio não é hora mal escrita, é outra coisa.
+ *
+ * **Exige dois dígitos de cada lado**, e essa exigência nasceu com a [mascararHora]. Antes ela aceitava
+ * `"8:05"` "porque é o que se digita" — com a máscara, não é: quem digita `805` vê `"80:5"`. O que a
+ * tolerância passaria a permitir é a armadilha oposta: parar em três dígitos e gravar `"18:3"` como
+ * **18:03** quando se queria 18:30, silenciosamente. Hora pela metade é hora incompleta, não hora
+ * abreviada.
  */
 fun minutosDaHora(texto: String): Int? {
     val partes = texto.trim().split(":")
     if (partes.size != 2) return null
+    if (partes[0].length != 2 || partes[1].length != 2) return null
 
     val hora = partes[0].toIntOrNull() ?: return null
     val minuto = partes[1].toIntOrNull() ?: return null

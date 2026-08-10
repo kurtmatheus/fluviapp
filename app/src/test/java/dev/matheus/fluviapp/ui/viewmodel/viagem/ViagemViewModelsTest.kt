@@ -281,15 +281,66 @@ class ViagemViewModelsTest {
         assertEquals(ErroHoraViagem.DUPLICADA, vm.uiState.value.erroHora)
     }
 
-    /** O que o teclado devolve não é o que a hora aceita: o campo filtra na entrada. */
+    /**
+     * **O teclado numérico do Android não tem `:`** (achado em homologação, 2026-08-10), e o campo pedia
+     * `HH:mm` — não era atrito, era um campo que não se conseguia preencher. Quem escreve o separador
+     * agora é a máscara: a pessoa digita quatro dígitos.
+     */
     @Test
-    fun `o campo de hora so aceita digito e separador`() = runTest(mainRule.dispatcher) {
+    fun `digitar quatro digitos preenche a hora`() = runTest(mainRule.dispatcher) {
         val vm = formVm()
         advanceUntilIdle()
 
-        vm.onHoraChange("18h30m")
+        vm.onHoraChange("1")
+        assertEquals("1", vm.uiState.value.hora)
 
-        assertEquals("1830", vm.uiState.value.hora)
+        vm.onHoraChange("18")
+        assertEquals("18", vm.uiState.value.hora)
+
+        vm.onHoraChange("183")
+        assertEquals("18:3", vm.uiState.value.hora)
+
+        vm.onHoraChange("1830")
+        assertEquals("18:30", vm.uiState.value.hora)
+    }
+
+    /** E o que a máscara escreveu é o que a gravação lê — sem tradução no meio. */
+    @Test
+    fun `a hora mascarada chega ao documento como minuto`() = runTest(mainRule.dispatcher) {
+        val viagens = FakeViagemRepository()
+        val vm = formVm(viagens = viagens)
+        advanceUntilIdle()
+
+        vm.onRotaChange(rotuloRotaConcedida)
+        vm.onEmbarcacaoChange("F/B Modelo")
+        vm.onDiaSemanaChange(DayOfWeek.TUESDAY.rotulo)
+        vm.onHoraChange("0605")
+        vm.salvar()
+        advanceUntilIdle()
+
+        assertEquals("06:05", vm.uiState.value.hora)
+        assertEquals(6 * 60 + 5, viagens.criadas.single().horaMin)
+    }
+
+    /**
+     * Parar em três dígitos **não grava** 18:03 por engano — a hora fica incompleta e a tela acusa.
+     * É o par da decisão de `minutosDaHora` exigir dois dígitos de cada lado.
+     */
+    @Test
+    fun `hora incompleta nao grava`() = runTest(mainRule.dispatcher) {
+        val viagens = FakeViagemRepository()
+        val vm = formVm(viagens = viagens)
+        advanceUntilIdle()
+
+        vm.onRotaChange(rotuloRotaConcedida)
+        vm.onEmbarcacaoChange("F/B Modelo")
+        vm.onDiaSemanaChange(DayOfWeek.TUESDAY.rotulo)
+        vm.onHoraChange("183")
+        vm.salvar()
+        advanceUntilIdle()
+
+        assertTrue(viagens.criadas.isEmpty())
+        assertEquals(ErroHoraViagem.INVALIDA, vm.uiState.value.erroHora)
     }
 
     // --- A busca ---

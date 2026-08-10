@@ -8,6 +8,7 @@ import dev.matheus.fluviapp.domain.porto.Porto
 import dev.matheus.fluviapp.domain.rota.Rota
 import dev.matheus.fluviapp.domain.viagem.DIAS_DA_SEMANA
 import dev.matheus.fluviapp.domain.viagem.concedeu
+import dev.matheus.fluviapp.domain.viagem.mascararHora
 import dev.matheus.fluviapp.domain.viagem.Viagem
 import dev.matheus.fluviapp.domain.viagem.noEscopo
 import dev.matheus.fluviapp.domain.viagem.rotulo
@@ -123,12 +124,14 @@ class FormViagemViewModel @Inject constructor(
         it.copy(diaSemana = v, isDiaSemanaError = false, erroHora = ErroHoraViagem.NENHUM)
     }
 
-    /** Só dígitos e o separador: o resto do teclado não escreve hora. */
+    /**
+     * A pessoa digita **só dígitos**; o `:` é escrito pela máscara.
+     *
+     * O campo pedia `HH:mm` com teclado numérico — e o teclado numérico do Android não tem dois-pontos.
+     * Era um campo que não se conseguia preencher (achado em homologação, 2026-08-10).
+     */
     fun onHoraChange(v: String) = _uiState.update {
-        it.copy(
-            hora = v.filter { c -> c.isDigit() || c == ':' },
-            erroHora = ErroHoraViagem.NENHUM,
-        )
+        it.copy(hora = mascararHora(v), erroHora = ErroHoraViagem.NENHUM)
     }
 
     fun salvar() {
