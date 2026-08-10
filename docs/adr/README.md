@@ -2,17 +2,17 @@
 
 Cada arquivo desta pasta é um **ADR**: uma decisão tomada, com o contexto que a justificou e as
 consequências assumidas. ADR não se apaga e não se reescreve quando muda de ideia — **escreve-se outro**, e
-o antigo passa a valer como história. Este índice existe para responder, sem abrir os dezessete arquivos,
+o antigo passa a valer como história. Este índice existe para responder, sem abrir os vinte e um arquivos,
 **o que ainda está valendo e o que deixou de valer**.
 
 > Regra de precedência: **ADR vence estudo** (`docs/design/`), e **ADR mais novo vence ADR mais velho** no
 > ponto em que se cruzam — nunca no documento inteiro. Por isso a coluna *o que caiu* é específica: quase
 > nenhum ADR foi superado por completo.
 
-**Revisado em 2026-08-01**, contra as últimas revisões do domínio: o
-[ADR-0016](0016-dominio-da-plataforma.md) (plataforma, 9 rodadas), o
-[ADR-0017](0017-eixo-de-storage-firestore-only.md) (storage) e o
-[ADR-0018](0018-agregado-passagem-participantes-modo-e-lancamentos.md) (agregado Passagem).
+**Revisado em 2026-08-10**, depois da execução das fases **F6 (Equipe)**, **F7 (Rotas)** e **F8
+(Viagens)** do [ADR-0022](0022-painel-da-empresa-e-fases.md). A revisão anterior (2026-08-01) media o
+índice contra os ADRs recém-escritos; esta mede contra **código no ar**, e é por isso que ela derruba mais:
+três decisões do [ADR-0016](0016-dominio-da-plataforma.md) §7.1 caíram ao serem construídas.
 
 ---
 
@@ -36,20 +36,48 @@ o antigo passa a valer como história. Este índice existe para responder, sem a
 | [0008](0008-relacionamentos-por-identidade.md) | Id para relacionar × valor para lembrar | **vigente** | — e **estendido**: o ADR-0018 D1 aplica o mesmo par aos participantes da passagem |
 | [0009](0009-sincronizacao-reativa-firestore-room.md) | Pipeline reativo único | **vigente · parcial** | o **destino** muda: o DAO deixa de ser a fonte reativa e vira `StateFlow` — ADR-0017 D1. Ciclo de vida, porta `FonteSnapshots` e telemetria seguem |
 | [0010](0010-autorizacao-por-cargo.md) | Política única de autorização | **vigente · parcial** | os cargos foram **renomeados** (ADR-0015) e a política ganhou a **atuação** como terceira coordenada (ADR-0016, 8ª rodada) |
-| [0011](0011-regras-firestore-por-cargo.md) | Regras no servidor | **vigente** | — cresce com cada coleção nova (catálogo, clientes, veículos, unicidade de rota/viagem) |
+| [0011](0011-regras-firestore-por-cargo.md) | Regras no servidor | **vigente** | — cresce com cada coleção nova. Duas notas da execução: `funcionarios` foi **reescrita sobre vínculos** (F6.3) e `viagens` foi a primeira regra **corrigida** em vez de escrita (F8.2) — o `allow write` único que estava lá admitia editar e apagar. A **unicidade de rota/viagem não é imposta pelo servidor**: regra não consulta coleção, e derivar o id do documento da chave brigaria com a recriação que a imutabilidade exige; fica no cadastro, com caso de emulador documentando o limite |
 | [0012](0012-ciclo-de-vida-passagem-e-embarque-qr.md) | FSM da passagem + embarque por QR | **vigente · parcial** | **cancelar deixa de ser *delete* físico** e vira estado — ADR-0018 D17. O carimbo de embarque vira sub-objeto — D14 |
-| [0013](0013-tabela-de-tarifa-e-tipo-tarifario.md) | Tarifa tabelada e tipo tarifário | **dormente (a tabela) · vigente (as funções)** | a **tabela cadastrada não será construída** e `SemTarifa` morre — ADR-0016 §7.2. As funções puras vivem: muda a **fonte** da base |
+| [0013](0013-tabela-de-tarifa-e-tipo-tarifario.md) | Tarifa tabelada e tipo tarifário | **superada (a tabela) · vigente (as funções)** | a tabela cadastrada era **dormente** desde o ADR-0016 §7.2; a **F8.0 a apagou**: `TarifaViagem`, a tabela do Room e o mapa `tarifas` do documento saíram com a Viagem-trecho. As funções puras vivem — muda a **fonte** da base, que passa a ser inferida por agregação. O `tarifas` do `ViagemCongeladaDocumento` sobrevive como **resíduo de leitura**: os bilhetes antigos o carregam. `ResultadoEmissao.SemTarifa` **ainda existe em código** — o §7.2 o condena, e quem o remove é a F9 |
 | [0014](0014-balanco-financeiro-da-travessia.md) | Balanço financeiro | **vigente · parcial** | a **régua** muda (esperada vem da inferência, não do tabelado — ADR-0016 §7.2); agrega por **ocorrência** e exclui canceladas — ADR-0018 D9/D18 |
 | [0015](0015-rework-agente-equipe.md) | Equipe, agência, cargo | **vigente · parcial** | o cargo passa a ser **por vínculo `(empresa, atuação)`**, não por pessoa — ADR-0016 (8ª rodada) |
-| [0016](0016-dominio-da-plataforma.md) | Domínio da plataforma | **vigente · parcial** | **o `Catalogo` não nasce** — ADR-0020 D1: caem §3 inteiro, a exceção do tipo de embarcação (§8), a coleção `catalogo/` do mapa (§4), o catálogo embutido na `Localidade` (§5), a linha "Catálogo — só `ADM`" (§6) e a **F1** do plano. O eixo, o critério de colocação e as 9 rodadas seguem. O **§8 saiu do papel**: o tipo de embarcação virou campo de `Embarcacao`, e o cadastro já esconde a capacidade de veículo de quem não leva veículo. A **§7.1 também**: a concessão (`atuacoes/AGENCIAMENTO.embarcacaoIds`) ganhou editor no form da Empresa — era allow-list de segurança sem ninguém que a escrevesse, e toda embarcação nascia invendável. A **F4 fechou as capacidades da plataforma**: a `Localidade` existe (com `Uf` tipado e `codigoIbge` obrigatório, o que dispensa a unicidade `(categoria, descricao)` que o §5 previa) e o **`Porto` também** — `nome` + `localidadeId` por referência (nunca cópia), delete lógico como o dela, e a unicidade `(nome, localidade)` verificada **no cadastro**; a paridade dessa unicidade no servidor continua pendente. **Com a v0.0.4 (produção, 2026-08-07), F4 e F5 estão feitas e o painel da plataforma está completo** — Empresas, Flotilha, Localidades e Portos. O plano de fases daqui em diante é redividido por seção do painel da **empresa** (Equipe → Início → Rotas → Viagens → Passagens), e a antiga "F8 — regras e suíte" deixa de ser fase: vira definição de pronto de cada fatia, lição cobrada pela rc.3 do Porto. Ver [`docs/design/painel-da-empresa.md`](../design/painel-da-empresa.md) |
-| [0017](0017-eixo-de-storage-firestore-only.md) | Firestore-only | **vigente · em execução** | o **piloto** deixa de ser `Catalogo` e passa a ser **Empresa** — ADR-0020 D10. F1 vira "coleção que *perde* o espelho", não "que nasce sem". **Empresa (schema v3) e Embarcação (v4) já saíram do Room**; o CRUD comum virou `ColecaoFirestore<T>` + `CodecFirestore<T>` — cada entidade nova declara um codec e compõe, e o codec pode **recusar** um documento (`deDocumento` devolve `T?`), que é como um invariante de domínio chega à fronteira sem derrubar a coleção |
+| [0016](0016-dominio-da-plataforma.md) | Domínio da plataforma | **vigente · parcial** | **o `Catalogo` não nasce** — ADR-0020 D1: caem §3 inteiro, a exceção do tipo de embarcação (§8), a coleção `catalogo/` do mapa (§4), o catálogo embutido na `Localidade` (§5), a linha "Catálogo — só `ADM`" (§6) e a **F1** do plano. O eixo, o critério de colocação e as 9 rodadas seguem. O **§8 saiu do papel**: o tipo de embarcação virou campo de `Embarcacao`, e o cadastro já esconde a capacidade de veículo de quem não leva veículo. A **§7.1 também**: a concessão (`atuacoes/AGENCIAMENTO.embarcacaoIds`) ganhou editor no form da Empresa — era allow-list de segurança sem ninguém que a escrevesse, e toda embarcação nascia invendável. A **F4 fechou as capacidades da plataforma**: a `Localidade` existe (com `Uf` tipado e `codigoIbge` obrigatório, o que dispensa a unicidade `(categoria, descricao)` que o §5 previa) e o **`Porto` também** — `nome` + `localidadeId` por referência (nunca cópia), delete lógico como o dela, e a unicidade `(nome, localidade)` verificada **no cadastro**; a paridade dessa unicidade no servidor continua pendente. **Com a v0.0.4 (produção, 2026-08-07), F4 e F5 estão feitas e o painel da plataforma está completo** — Empresas, Flotilha, Localidades e Portos. O plano de fases daqui em diante é redividido por seção do painel da **empresa** (Equipe → Início → Rotas → Viagens → Passagens), e a antiga "F8 — regras e suíte" deixa de ser fase: vira definição de pronto de cada fatia, lição cobrada pela rc.3 do Porto. Ver [`docs/design/painel-da-empresa.md`](../design/painel-da-empresa.md). **O §7.1 caiu em três pontos ao ser construído (F7/F8) — ver a seção *[O que a execução do §7.1 derrubou](#o-que-a-execução-do-71-derrubou)* abaixo.** O §6 também se ajustou: o `Vinculo` tem **dois** campos (`empresaId`, `cargo`) e não três — a atuação é **derivada** do cargo (§6.1, conjuntos disjuntos), e o campo ao lado seria contraditório, não redundante |
+| [0017](0017-eixo-de-storage-firestore-only.md) | Firestore-only | **vigente · em execução** | o **piloto** deixa de ser `Catalogo` e passa a ser **Empresa** — ADR-0020 D10. F1 vira "coleção que *perde* o espelho", não "que nasce sem". O CRUD comum virou `ColecaoFirestore<T>` + `CodecFirestore<T>` — cada entidade nova declara um codec e compõe, e o codec pode **recusar** um documento (`deDocumento` devolve `T?`), que é como um invariante de domínio chega à fronteira sem derrubar a coleção. **Nenhuma tabela do Room espelha coleção**: Empresa (v3), Embarcação (v4), Funcionário (v5) e, com a demolição da Viagem-trecho, `Viagem`+`TarifaViagem` (**v7**, F8.0) — as duas últimas. O que resta no banco ou só existe ali (rascunho, bilhete digital) ou espera a vez (`Usuario`, `Constante`, `Passagem`, contador). Desde a v0.0.4 as migrações são **escritas**, não recriadas: o `fallbackToDestructiveMigration` levaria o rascunho de quem tem o app instalado |
 | [0018](0018-agregado-passagem-participantes-modo-e-lancamentos.md) | O agregado Passagem | **vigente** · D6/D7 já em código | **D6 (`ModoPassagem`) e D7 (`ClasseVeiculo`) foram implementados** junto do ADR-0020, antes das fases do próprio 0018 — os tipos vieram primeiro porque o catálogo dependia deles. O `forma` do lançamento (D11) fica confirmado como tipo (ADR-0020 D3), sem código ainda |
 | [0019](0019-camada-de-dados-dinamica-e-dto-por-caso-de-uso.md) | `Map` na fronteira, DTO por caso de uso | **vigente · parcial** | a **F1** deixa de ser `Catalogo` e passa a ser Empresa — ADR-0020 D10. O regime não muda. Realiza o *passo 2* que o ADR-0003 previu |
 | [0020](0020-fim-do-catalogo-e-o-contexto-do-painel.md) | O fim do Catálogo; o painel deriva da atuação | **vigente** · F1 e F2 feitas | o **D2 foi emendado** na execução (a máscara do CPF esconde os 6 primeiros dígitos, não as pontas). **F2 fechada em 2026-08-03**: o `SeedFirestore` foi removido. O rename `Navio` → **`Embarcacao`**, que o ADR adiava, foi executado em 2026-08-04 e foi até a fronteira (coleção `embarcacoes`, campo `embarcacaoIds`); a seção do menu chama-se **Flotilha**. O **D4 fechou** em 2026-08-05: `TipoEmbarcacao` deixou de ser tipo sem portador e virou campo **não-nulo** da entidade — *não existe embarcação sem tipo* —, com o formulário exigindo e a fronteira **recusando** o documento que não o declara |
 | [0021](0021-usuarios-da-plataforma-adm-only.md) | Usuários da plataforma (`ADM`-only) | **direção · FORA DO MVP** (D0) | **não implementar**: o cadastro no console vira **princípio** — a administração da plataforma vive fora do app, somando P2.2c + anti-escalonamento + fim do seed + ADR-0016 §10. D1–D4 valem como desenho de quando a seção nascer: primeira divergência entre `ADM` e `GESTOR`, só leitura, e `allow read` de `users` restrito |
-| [0022](0022-painel-da-empresa-e-fases.md) | O painel da empresa e as fases da F5 em diante | **vigente · direção** (2026-08-07) | registra que **F4 e F5 fecharam** com a v0.0.4 (painel da plataforma completo) e divide o resto: menu = **núcleo compartilhado** (Início, Rotas, Viagens) + **duas exclusivas da empresa** (Passagens, Equipe), pelo critério *entidade com dono → seção da empresa*. **Revisa o ADR-0016 §2** (`VIAGEM` volta ao menu, com o sentido do §7.1). Escrita de rota/viagem = plataforma + `SUPERVISOR`, e **escrever é criar**: editar não existe (imutabilidade do §7.1) e **desativar é da plataforma**; `AGENTE` só lê. Fases **F6 Equipe → F7 Rotas → F8 Viagens → F9 Passagens → F10 Início**, com a Equipe primeiro por ser onde a política vira `(papel, atuação, cargo)` e o **Início por último** (emenda do analista: é *sumário* por papel/empresa/cargo, e sumário vem depois do que resume). A antiga **F8 "regras e suíte" deixa de ser fase** e vira definição de pronto |
+| [0022](0022-painel-da-empresa-e-fases.md) | O painel da empresa e as fases da F5 em diante | **vigente · direção** (2026-08-07) | registra que **F4 e F5 fecharam** com a v0.0.4 (painel da plataforma completo) e divide o resto: menu = **núcleo compartilhado** (Início, Rotas, Viagens) + **duas exclusivas da empresa** (Passagens, Equipe), pelo critério *entidade com dono → seção da empresa*. **Revisa o ADR-0016 §2** (`VIAGEM` volta ao menu, com o sentido do §7.1). Escrita de rota/viagem = plataforma + `SUPERVISOR`, e **escrever é criar**: editar não existe (imutabilidade do §7.1) e **desativar é da plataforma**; `AGENTE` só lê. Fases **F6 Equipe → F7 Rotas → F8 Viagens → F9 Passagens → F10 Início**, com a Equipe primeiro por ser onde a política vira `(papel, atuação, cargo)` e o **Início por último** (emenda do analista: é *sumário* por papel/empresa/cargo, e sumário vem depois do que resume). A antiga **F8 "regras e suíte" deixa de ser fase** e vira definição de pronto. **F6, F7 e F8 estão FEITAS** (2026-08-07 a 2026-08-10) — e a execução emendou o próprio ADR em três lugares: (1) a **D3 foi revisada** — o supervisor deixou de criar rota em qualquer par, porque com a lista recortada pela atuação isso criava uma travessia que sumia da própria lista (**criar virou subconjunto de ver**); (2) a **F6.6 abriu uma seção que o ADR não previa** (`USUARIOS`, ADM-only) ao desfazer o nó *usuário é da plataforma, funcionário é da empresa*, e com ela `SECOES_TRANSVERSAIS` ficou vazio; (3) o **Início foi parcialmente antecipado** para a F8.4 — o da empresa é a lista de `ViagemSemana` sob *Viagens Disponíveis*, cumprindo o "cada seção trata do seu próprio início na vez dela"; o da plataforma continua sendo a F10 |
 
 ---
+
+## O que a execução do §7.1 derrubou
+
+O [ADR-0016](0016-dominio-da-plataforma.md) §7.1 desenhou o **pool compartilhado** — rota e viagem sem
+dono, para que duas agências que vendem a mesma linha usem *a mesma* viagem e a ocupação seja uma conta
+só. **Esse núcleo vale inteiro.** O que caiu foi o mecanismo de *recorte* que ele propunha junto, e caiu
+por decisão do analista em **2026-08-10**, ao ser construído:
+
+> *"O painel da empresa é gerenciar informações relacionadas àquela empresa; nem faz sentido ver outras
+> embarcações ou rotas ou viagens que não estão dentro da atuação da empresa."*
+
+| O que o §7.1 dizia | O que vale | Por quê |
+|---|---|---|
+| *"Visualização = pool − negadas; venda = concessão"* | **visualização = venda = concessão** | eram duas perguntas com risco permanente de discordarem: a lista mostrava o que a emissão depois recusava |
+| `rotasNegadas[]` / `viagensNegadas[]` na atuação | **não são construídas** | com a visualização já recortada, a *deny-list* ficou sem trabalho — e some o par assimétrico *allow-list no servidor × deny-list na tela* |
+| *"filtrar a visualização pela concessão faria a agência nova ver tela vazia"* | **é exatamente o que acontece, e é aceito** | provisionar deixou de ser conveniência e virou **pré-requisito**; a tela diz isso em vez de mostrar seletor vazio |
+
+O que substitui os três é um tipo: **`EscopoDoPool`** (`Todo` = plataforma · `Concedido(atuacao)` ·
+`Nenhum`), com a porta `EscopoDaSessao` resolvendo `contexto → vínculo → empresa → atuação → escopo` num
+lugar só. Ele **não é** o `EscopoEmpresa` da política — aquele recorta por *dono*, e o pool não tem dono;
+este recorta por *concessão*. Uma assimetria sobrevive de propósito: **a plataforma vê o pool inteiro**,
+inclusive a viagem órfã — quem cura precisa enxergar o que conserta. E some junto a *nota de escala* do
+§7.1 (a previsão de que negar uma a uma viraria trabalho num pool grande): sem deny-list, o gatilho que
+ela registrava não existe.
+
+*Duas formas que o §7.1 não fixava, e que a construção fixou (decisões do analista, 2026-08-10):
+`horaMin` em **minutos desde a meia-noite** — é o único horário do app sobre o qual se faz conta — e
+`diaSemana` como `java.time.DayOfWeek` **não-nulo**, pelo precedente de `Embarcacao.tipo`.*
 
 ## O que mudou de nome ou de dono (o vocabulário)
 
@@ -66,8 +94,12 @@ A maior fonte de confusão ao ler um ADR antigo não é a decisão — é a **pa
 | `Constante.Categoria.VEICULO` | **`ClasseVeiculo`** | ADR-0018 D7, implementado em `5580b48` |
 | `Navio` (a entidade) | **`Embarcacao`** — rename **executado** em 2026-08-04 (`4694a54`). `NAVIO` sobrevive como **valor** de `TipoEmbarcacao`: gênero e espécie deixaram de disputar a mesma palavra | ADR-0020 D4 |
 | "atuação é categoria do catálogo" | `Atuacao` é **tipo**; a atuação *da empresa* continua **cadastrada** (`atuacoes/{ATUACAO}`) | ADR-0020 D5 |
-| `Viagem` (a entidade antiga) | **Rota** (o onde) + **Viagem** (o quando e em quê, atômica) + **ocorrência** `(viagemId, data)` | ADR-0016 §7.1 |
+| `Viagem` (a entidade antiga) | **Rota** (o onde) + **Viagem** (o quando e em quê, atômica) + **ocorrência** `(viagemId, data)`. A entidade antiga foi **demolida** em `07286a6`, não migrada | ADR-0016 §7.1 · F8.0 |
+| a ocorrência `(viagemId, data)` | **`ViagemSemana`** — *"viagem_semana"* na palavra do analista. **Calculada, não persistida**: não há coleção | F8.4 |
+| `ViagemDocumento` (o snapshot na Passagem) | **`ViagemCongeladaDocumento`** — o nome foi liberado para o documento da Viagem nova. Rename invisível no Firestore, que mapeia por nome de **campo** | F8.1 |
+| "lista de negadas" (`rotasNegadas`, `viagensNegadas`) | **não existe** — a visualização já é a concessão | decisão do analista, 2026-08-10 |
 | `Trecho` | **dissolvido** — o par de cidades é derivável dos portos | ADR-0016 (7ª rodada) |
+| `Funcionario.agencia` / `.lotacao` / `Agencia` (entidade) | **`Vinculo(empresaId, cargo)`**; a agência do bilhete vem do **vínculo ativo** | ADR-0016 §6 · F6.1–F6.5 |
 | `model/` (pacote) | `domain/` | rename de 2026-07-31 |
 | Room como *datasource* | cache do SDK + `StateFlow` por coleção | ADR-0017 |
 | `acomodacao` + `isVeiculoChecked` | **modo** da passagem, um eixo de quatro valores exclusivos | ADR-0018 D6 |
@@ -91,6 +123,13 @@ roadmap: **da tela nascem as fronteiras e as camadas**, nunca o contrário.
 **modo**, pôs a capacidade no navio, fixou a numeração por ocorrência, trocou os quatro campos de pagamento
 por **lançamentos** e transformou o cancelamento em estado, porque **manter histórico é prioridade**.
 
+**A execução do ADR-0022 — a quarta, e a que reescreveu por construir.** As outras três reescreveram o
+passado com outro documento; esta o reescreveu **ao levantar o código**. Três emendas que só apareceram
+quando a tela existiu: o recorte do pool pela atuação (que matou a deny-list, acima), *criar virou
+subconjunto de ver* (F8.3, revisando a própria D3), e a seção `USUARIOS` que nenhum ADR previa — ela
+nasceu do incômodo de o `ADM` estar vendo a Equipe, e desfez o nó **usuário é da plataforma; funcionário
+é da empresa**.
+
 ## O que está esperando decisão
 
 - **O método da inferência tarifária** — janela, mínimo de bilhetes, viagem sem histórico, cálculo na
@@ -99,6 +138,12 @@ por **lançamentos** e transformou o cancelamento em estado, porque **manter his
   tudo, e a inferência tarifária vai pedir número.
 - **O módulo faturamento** — conciliação, taxa e prazo, conta corrente do pagador, estorno, fechamento de
   caixa.
+- **O que o Início da *plataforma* mostra** (F10). O da empresa foi resolvido na F8.4 — *Viagens
+  Disponíveis*, a lista de ocorrências da semana. O da plataforma continua sendo a pergunta aberta do
+  ADR-0022 D5, e ela não tem entidade: nasce de *"o que eu faço agora?"*, não de um cadastro.
+- **Se a Passagem da F9 é reescrita no molde ou adaptada** (ADR-0022 D5). A F8.0 deixou o
+  `FormPassagemHelper` **podado**, com `// REVITALIZAÇÃO:` nos dois pontos que a F9 retoma: os nomes do
+  snapshot (que passam a vir de Viagem → Rota → Portos) e a tarifa (que o §7.2 tornou inferida).
 
 ## Como escrever o próximo
 
