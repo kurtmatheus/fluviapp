@@ -55,11 +55,13 @@ object PermissoesUsuario {
         // o negócio da plataforma, não o acesso a ela.
         SecaoMenu.USUARIOS -> Papel.de(papel) == ADM
 
-        // **Rotas é compartilhada** (ADR-0022 D2): o pool não tem dono, então plataforma e operação
-        // enxergam o mesmo. Quem pode **criar** e quem pode **inativar** são outras perguntas, abaixo.
-        SecaoMenu.ROTA -> ehPapelPlataforma(papel) || Cargo.de(cargo) != null
+        // **Rotas e Viagens são compartilhadas** (ADR-0022 D2): o pool não tem dono, então plataforma e
+        // operação abrem a mesma seção. Quem pode **criar** e quem pode **inativar** são outras perguntas,
+        // abaixo — e *o que cada um enxerga lá dentro* é uma terceira, que a política não responde: essa é
+        // da concessão (`EscopoDoPool`). Autorizar a seção não é autorizar o conteúdo.
+        SecaoMenu.ROTA, SecaoMenu.VIAGEM -> ehPapelPlataforma(papel) || Cargo.de(cargo) != null
 
-        SecaoMenu.VIAGEM, SecaoMenu.EMPRESA, SecaoMenu.EMBARCACAO,
+        SecaoMenu.EMPRESA, SecaoMenu.EMBARCACAO,
         SecaoMenu.LOCALIDADE, SecaoMenu.PORTO,
         -> ehPapelPlataforma(papel)
     }
@@ -166,10 +168,31 @@ object PermissoesUsuario {
      * **Inativar rota é só da plataforma** (ADR-0022 D3).
      *
      * É o único poder deste conjunto que **atinge terceiros**: tirar do pool uma rota que outra empresa
-     * está vendendo. Quem quer apenas não vê-la usa a lista de negadas da própria atuação (F8), que é
-     * conforto de tela e não muda o pool de ninguém.
+     * está vendendo.
+     *
+     * *A "lista de negadas" que esta nota citava não existe mais: desde a decisão do analista de
+     * 2026-08-10, a empresa já só vê o que a atuação dela concede (`EscopoDoPool`), e não sobrou trabalho
+     * para uma deny-list.*
      */
     fun podeInativarRota(papel: String?): Boolean = ehPapelPlataforma(papel)
+
+    /**
+     * **Criar viagem**: plataforma e supervisor — o mesmo eixo da rota (ADR-0022 D3).
+     *
+     * A diferença está no que o formulário **oferece**, não em quem pode abri-lo: a rota se cria em
+     * qualquer par de portos, e a viagem só sobre rota e embarcação **concedidas** (decisão do analista,
+     * 2026-08-10). O recorte é do `EscopoDoPool`, não desta função — política responde *quem*, concessão
+     * responde *sobre o quê*, e misturá-las faria a permissão mentir para quem tem cargo e não tem frota.
+     */
+    fun podeCriarViagem(papel: String?, vinculo: Vinculo?): Boolean =
+        ehPapelPlataforma(papel) || vinculo?.cargo == Cargo.SUPERVISOR
+
+    /**
+     * **Inativar viagem é só da plataforma**, e aqui o argumento é mais forte que na rota: a viagem é o
+     * que a **passagem** aponta. Tirá-la do ar atinge bilhetes já emitidos por quem nem sabe que ela
+     * existe.
+     */
+    fun podeInativarViagem(papel: String?): Boolean = ehPapelPlataforma(papel)
 
     /**
      * O **escopo de empresa** de uma listagem — o que o [EscopoAgencia] vira quando a agência deixa de

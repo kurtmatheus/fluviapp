@@ -115,6 +115,11 @@ beforeEach(async () => {
       portoOrigemId: 'porto-1', portoDestinoId: 'porto-2',
       distanciaMn: 420, tempoMedioH: 30, criadoPor: F_SUPERVISOR, ativo: true,
     });
+    // Viagem (F8): a partida física sobre a rota — o outro habitante do pool.
+    await setDoc(doc(db, 'viagens', 'viagem-1'), {
+      rotaId: 'rota-1', embarcacaoId: 'emb-1', diaSemana: 'TUESDAY', horaMin: 1080,
+      criadoPor: F_SUPERVISOR, ativo: true,
+    });
     // Convites (F6.6): o id É o e-mail — é assim que o convidado acha o próprio antes de ter perfil.
     await setDoc(doc(db, 'convites', 'convidado@x.com'), {
       nome: 'Convidado', papel: 'OPERADOR', empresaId: E_MATRIZ, cargo: 'AGENTE', usado: false,
@@ -289,6 +294,92 @@ describe('rotas — pool sem dono, imutável, e o inativar que é da plataforma'
    */
   test('plataforma cria rota duplicada do mesmo par → OK (limite conhecido)', async () => {
     await assertSucceeds(setDoc(doc(asAdm(), 'rotas', 'rota-duplicada'), novaRota));
+  });
+});
+
+// --- viagens/{id}: a partida física (ADR-0016 §7.1, ADR-0022 D3 — F8) ---
+//
+// A **única regra do arquivo que a F8 corrigiu** em vez de escrever: o que estava aqui era um `write`
+// único da Viagem-trecho, que admitia editar e apagar. Os casos abaixo travam os três verbos, e o do
+// meio é o que mais importa — a viagem é o que a **passagem** aponta.
+describe('viagens — a partida do pool: cria supervisor, altera ninguém, inativa a plataforma', () => {
+  const novaViagem = { rotaId: 'rota-1', embarcacaoId: 'emb-1', diaSemana: 'FRIDAY', horaMin: 360, ativo: true };
+
+  test('operador LÊ viagem (o pool é de todos) → OK', async () => {
+    await assertSucceeds(getDoc(doc(asAgenteA(), 'viagens', 'viagem-1')));
+  });
+
+  test('não autenticado LÊ viagem → NEGADO', async () => {
+    await assertFails(getDoc(doc(asAnon(), 'viagens', 'viagem-1')));
+  });
+
+  test('plataforma cria viagem → OK', async () => {
+    await assertSucceeds(setDoc(doc(asAdm(), 'viagens', 'viagem-nova'), novaViagem));
+  });
+
+  /**
+   * O supervisor cria — é ele quem sabe que saída existe. O `write` antigo o deixava de fora, e cada
+   * linha nova virava um chamado para a plataforma.
+   */
+  test('SUPERVISOR cria viagem → OK', async () => {
+    await assertSucceeds(setDoc(doc(asSupervisor(), 'viagens', 'viagem-nova'), novaViagem));
+  });
+
+  test('AGENTE cria viagem → NEGADO (vende sobre o que existe, não o cria)', async () => {
+    await assertFails(setDoc(doc(asAgenteA(), 'viagens', 'viagem-nova'), novaViagem));
+  });
+
+  /**
+   * **Editar não existe para ninguém**, e aqui pelo motivo mais forte do modelo: mudar a hora mudaria o
+   * horário impresso em bilhete já emitido — por terceiros, retroativamente.
+   */
+  test('plataforma EDITA a hora de uma viagem → NEGADO', async () => {
+    await assertFails(updateDoc(doc(asAdm(), 'viagens', 'viagem-1'), { horaMin: 720 }));
+  });
+
+  test('plataforma EDITA a embarcação de uma viagem → NEGADO', async () => {
+    await assertFails(updateDoc(doc(asAdm(), 'viagens', 'viagem-1'), { embarcacaoId: 'emb-9' }));
+  });
+
+  test('plataforma inativa viagem → OK', async () => {
+    await assertSucceeds(updateDoc(doc(asAdm(), 'viagens', 'viagem-1'), { ativo: false }));
+  });
+
+  /** Tirar do ar uma saída atinge quem já vendeu nela — é ato de plataforma. */
+  test('SUPERVISOR inativa viagem do pool → NEGADO', async () => {
+    await assertFails(updateDoc(doc(asSupervisor(), 'viagens', 'viagem-1'), { ativo: false }));
+  });
+
+  /** Inativar não pode virar cavalo de Troia para editar o resto. */
+  test('plataforma inativa E muda a hora na mesma escrita → NEGADO', async () => {
+    await assertFails(updateDoc(doc(asAdm(), 'viagens', 'viagem-1'), { ativo: false, horaMin: 720 }));
+  });
+
+  /** Apagar destruiria o registro para o qual as passagens antigas apontam. */
+  test('ninguém apaga viagem — o descartado vira registro', async () => {
+    await assertFails(deleteDoc(doc(asAdm(), 'viagens', 'viagem-1')));
+  });
+
+  /**
+   * **Limite conhecido**, herdado da rota: a unicidade da chave `(rota, embarcação, dia, hora)` não é
+   * imposta pelo servidor. Regra não consulta coleção, e derivar o id do documento da chave brigaria com
+   * a recriação que a imutabilidade exige. Vive no cadastro — impede o acidente, não a corrida.
+   */
+  test('plataforma cria viagem duplicada da mesma chave → OK (limite conhecido)', async () => {
+    await assertSucceeds(setDoc(doc(asAdm(), 'viagens', 'viagem-dup'), {
+      rotaId: 'rota-1', embarcacaoId: 'emb-1', diaSemana: 'TUESDAY', horaMin: 1080, ativo: true,
+    }));
+  });
+
+  /**
+   * **Limite conhecido, e mais amplo**: a regra não confere a **concessão**. Criar viagem sobre rota
+   * alheia produz um documento inútil, não um acesso indevido — o que protege a venda é a concessão
+   * sendo relida na emissão (F9), e o que protege a tela é o `EscopoDoPool`, que nem a oferece.
+   */
+  test('SUPERVISOR cria viagem em rota que não lhe foi concedida → OK (limite conhecido)', async () => {
+    await assertSucceeds(setDoc(doc(asSupervisor(), 'viagens', 'viagem-alheia'), {
+      rotaId: 'rota-de-outra-empresa', embarcacaoId: 'emb-alheia', diaSemana: 'MONDAY', horaMin: 60, ativo: true,
+    }));
   });
 });
 

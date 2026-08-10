@@ -26,10 +26,11 @@ enum class AcaoMenu(
     PASSAGEM_PESQUISAR(SecaoMenu.PASSAGEM, R.string.btn_pesquisar_passagens, R.drawable.ic_lupa_75),
     PASSAGEM_CONTAGEM(SecaoMenu.PASSAGEM, R.string.btn_contagem_passagem, R.drawable.ic_relatorio_75),
 
-    // REVITALIZAÇÃO (F8.0): as ações da Viagem-trecho saíram com ela. `SecaoMenu.VIAGEM` fica sem ação
-    // nenhuma até a F8.2 — e é isso que faz a seção sumir do painel mesmo de quem tem permissão, porque
-    // `acoesPorSecao` a devolve vazia. O andaime (`SECOES_REVITALIZADAS`) já a excluía; agora as duas
-    // barreiras concordam.
+    // A Viagem volta com as ações da partida física (F8.2). São as mesmas duas de qualquer cadastro do
+    // molde — e **não há uma terceira**: não existe "editar viagem" para ninguém (ADR-0016 §7.1).
+    VIAGEM_NOVA(SecaoMenu.VIAGEM, R.string.btn_nova_viagem, R.drawable.ic_add_75),
+    VIAGEM_PESQUISAR(SecaoMenu.VIAGEM, R.string.btn_pesquisar_viagens, R.drawable.ic_lupa_75),
+
     EQUIPE_NOVO(SecaoMenu.EQUIPE, R.string.btn_novo_agente, R.drawable.ic_add_75),
     EQUIPE_PESQUISAR(SecaoMenu.EQUIPE, R.string.btn_pesquisar_agente, R.drawable.ic_lupa_75),
 

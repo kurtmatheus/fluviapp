@@ -341,9 +341,39 @@ service cloud.firestore {
       allow create, update: if autenticado() && ehPapelPlataforma();
       allow delete: if false;
     }
+    // --- Viagens: a partida física sobre a rota (ADR-0016 §7.1, ADR-0022 D3 — F8) ---
+    //
+    // **Esta é a única regra do arquivo que a F8 corrige em vez de escrever.** O que estava aqui era um
+    // `write` único da Viagem-trecho, e ele contrariava a D3 em três pontos ao mesmo tempo: não separava
+    // criar de alterar, admitia **editar** (que não existe para ninguém) e admitia **apagar** (que
+    // destruiria o registro para o qual as passagens apontam). Também deixava o `SUPERVISOR` de fora, e
+    // é ele quem sabe que saída existe.
+    //
+    // Os três verbos e as três autoridades são os mesmos da rota, com o argumento elevado num deles:
+    //
+    //  1. **criar** é da plataforma e do SUPERVISOR. O que ele pode criar é recortado pela concessão, mas
+    //     esse recorte é do cliente — a regra não consulta a atuação porque não é ela que impede o dano:
+    //     criar viagem sobre rota alheia produz um documento inútil, não um acesso indevido, e o que
+    //     protege a venda é a concessão sendo relida na emissão (F9);
+    //  2. **editar não existe para ninguém**, e aqui pelo motivo mais forte do modelo: a viagem é o que a
+    //     `Passagem` aponta. Um `update` livre mudaria a hora impressa em bilhete já emitido — por
+    //     terceiros, retroativamente. A única alteração admitida é o campo `ativo`;
+    //  3. **inativar é só da plataforma**: tirar do ar uma saída atinge quem já vendeu nela.
+    //
+    // **O que esta regra NÃO impõe, e por quê:** a unicidade da chave `(rotaId, embarcacaoId, diaSemana,
+    // horaMin)`. Mesmo limite da rota, e a mesma saída recusada — derivar o id do documento da chave
+    // brigaria com a recriação que a imutabilidade exige. Fica no cadastro, com caso de emulador
+    // documentando o limite.
     match /viagens/{doc} {
       allow read: if autenticado();
-      allow write: if autenticado() && ehPapelPlataforma();
+
+      allow create: if autenticado() && (ehPapelPlataforma() || cargoDoAutor() == 'SUPERVISOR');
+
+      allow update: if autenticado()
+                    && ehPapelPlataforma()
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ativo']);
+
+      allow delete: if false;
     }
 
     // --- Passagens: create sem forjar dono; update/delete por posse ou editar-qualquer ---

@@ -22,4 +22,9 @@ sealed class FluviAppNavComposableDestinations(val route: String) {
     data object ResultPesquisarUsuarioNavComposable : FluviAppNavComposableDestinations("pesquisarUsuario")
     data object FormRotaNavComposable : FluviAppNavComposableDestinations("formRota")
     data object ResultPesquisarRotaNavComposable : FluviAppNavComposableDestinations("pesquisarRota")
+
+    // Sem `?idViagem=` — o destino antigo o tinha para editar, e editar não existe (§7.1).
+    data object FormViagemNavComposable : FluviAppNavComposableDestinations("formViagem")
+    data object ResultPesquisarViagemNavComposable :
+        FluviAppNavComposableDestinations("pesquisarViagem")
 }

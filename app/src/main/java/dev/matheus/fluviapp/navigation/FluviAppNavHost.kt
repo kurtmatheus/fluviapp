@@ -46,6 +46,10 @@ import dev.matheus.fluviapp.navigation.navcomposables.usuario.formUsuarioNavComp
 import dev.matheus.fluviapp.navigation.navcomposables.usuario.resultSearchUsuarioNavComposable
 import dev.matheus.fluviapp.navigation.navcomposables.rota.formRotaNavComposable
 import dev.matheus.fluviapp.navigation.navcomposables.rota.resultSearchRotaNavComposable
+import dev.matheus.fluviapp.navigation.navcomposables.viagem.formViagemNavComposable
+import dev.matheus.fluviapp.navigation.navcomposables.viagem.resultSearchViagemNavComposable
+import dev.matheus.fluviapp.extensions.navegaParaFormularioViagem
+import dev.matheus.fluviapp.extensions.navegaParaResultPesquisarViagem
 import dev.matheus.fluviapp.navigation.graphs.pesquisarPassagemGraph
 import dev.matheus.fluviapp.navigation.graphs.selecaoVinculoGraph
 import dev.matheus.fluviapp.navigation.graphs.splashGraph
@@ -153,6 +157,12 @@ fun FluviAppNavHost(
             onNavegaParaFormularioPesquisaRota = {
                 navController.navegaParaResultPesquisarRota()
             },
+            onNavegaParaFormularioNovaViagem = {
+                navController.navegaParaFormularioViagem()
+            },
+            onNavegaParaFormularioPesquisaViagem = {
+                navController.navegaParaResultPesquisarViagem()
+            },
             onNavegaParaFormularioNovoUsuario = {
                 navController.navegaParaFormularioUsuario()
             },
@@ -163,10 +173,6 @@ fun FluviAppNavHost(
                 navController.navegaParaResultPesquisarPorto()
             }
         )
-
-        // REVITALIZAÇÃO (F8.0): os quatro destinos da Viagem-trecho saíram — form, pesquisa, resultados e
-        // detalhes. A seção volta na F8.2, com a forma da Rota: um form e uma busca, sem tela de detalhes
-        // e sem destino que receba id para editar (a Viagem nova também é imutável).
 
         formPassagemNavComposable(
             onCLickVoltar = {
@@ -327,6 +333,21 @@ fun FluviAppNavHost(
         )
 
         resultSearchRotaNavComposable(
+            onClickVoltar = {
+                navController.navigateUp()
+            }
+        )
+
+        formViagemNavComposable(
+            onNavegaParaMainScreen = {
+                navController.navegaParaMainScreenGraph()
+            },
+            onClickVoltar = {
+                navController.navigateUp()
+            }
+        )
+
+        resultSearchViagemNavComposable(
             onClickVoltar = {
                 navController.navigateUp()
             }

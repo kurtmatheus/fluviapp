@@ -42,7 +42,9 @@ fun NavGraphBuilder.mainScreenNavComposable(
     onNavegaParaFormularioNovoUsuario: () -> Unit,
     onNavegaParaFormularioPesquisaUsuario: () -> Unit,
     onNavegaParaFormularioNovaRota: () -> Unit,
-    onNavegaParaFormularioPesquisaRota: () -> Unit
+    onNavegaParaFormularioPesquisaRota: () -> Unit,
+    onNavegaParaFormularioNovaViagem: () -> Unit,
+    onNavegaParaFormularioPesquisaViagem: () -> Unit,
 ) {
     composable(
         route = FluviAppNavComposableDestinations.MainScreenNavComposable.route
@@ -90,6 +92,8 @@ fun NavGraphBuilder.mainScreenNavComposable(
             AcaoMenu.USUARIO_PESQUISAR -> onNavegaParaFormularioPesquisaUsuario()
             AcaoMenu.ROTA_NOVA -> onNavegaParaFormularioNovaRota()
             AcaoMenu.ROTA_PESQUISAR -> onNavegaParaFormularioPesquisaRota()
+            AcaoMenu.VIAGEM_NOVA -> onNavegaParaFormularioNovaViagem()
+            AcaoMenu.VIAGEM_PESQUISAR -> onNavegaParaFormularioPesquisaViagem()
         }
 
         MainScreen(

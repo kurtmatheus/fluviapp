@@ -106,27 +106,41 @@ class PermissoesUsuarioTest {
     }
 
     @Test
-    fun `agente ve a Rota compartilhada e a Passagem`() {
-        // A Rota é do pool sem dono (F7): o agente **vê** e não cria — quem cria é a plataforma ou o
-        // supervisor, e essa é outra pergunta da política.
+    fun `agente ve o pool compartilhado e a Passagem`() {
+        // Rota e Viagem são do pool sem dono (F7/F8): o agente **vê** e não cria — quem cria é a
+        // plataforma ou o supervisor, e essa é outra pergunta da política.
         assertEquals(
-            listOf(SecaoMenu.ROTA, SecaoMenu.PASSAGEM),
+            listOf(SecaoMenu.ROTA, SecaoMenu.VIAGEM, SecaoMenu.PASSAGEM),
             PermissoesUsuario.secoesVisiveis(operador, agente),
         )
         assertFalse(PermissoesUsuario.podeCriarRota(operador, null))
+        assertFalse(PermissoesUsuario.podeCriarViagem(operador, null))
         assertFalse(PermissoesUsuario.podeAcessar(SecaoMenu.EQUIPE, operador, agente))
     }
 
     @Test
     fun `supervisor ve Passagem e EQUIPE — e nada de cadastro de plataforma`() {
         // A Equipe é a única seção que olha o cargo: ela existe para o supervisor gerir a própria
-        // agência (§2.2). Viagem/Empresa/Embarcacao continuam sendo cadastro de plataforma.
+        // agência (§2.2). Empresa/Embarcacao continuam sendo cadastro de plataforma.
         assertEquals(
-            listOf(SecaoMenu.ROTA, SecaoMenu.PASSAGEM, SecaoMenu.EQUIPE),
+            listOf(SecaoMenu.ROTA, SecaoMenu.VIAGEM, SecaoMenu.PASSAGEM, SecaoMenu.EQUIPE),
             PermissoesUsuario.secoesVisiveis(operador, supervisor),
         )
-        assertFalse(PermissoesUsuario.podeAcessar(SecaoMenu.VIAGEM, operador, supervisor))
         assertFalse(PermissoesUsuario.podeAcessar(SecaoMenu.EMBARCACAO, operador, supervisor))
+    }
+
+    /**
+     * A **Viagem tem os mesmos três verbos da Rota**, com o mesmo recorte — e o par de asserções que
+     * importa é o segundo: quem cria não é quem tira do ar.
+     */
+    @Test
+    fun `a viagem se cria como a rota, e so a plataforma a inativa`() {
+        assertTrue(PermissoesUsuario.podeCriarViagem(adm, null))
+        assertTrue(PermissoesUsuario.podeCriarViagem(operador, Vinculo("empresa-a", Cargo.SUPERVISOR)))
+        assertFalse(PermissoesUsuario.podeCriarViagem(operador, Vinculo("empresa-a", Cargo.AGENTE)))
+
+        assertTrue(PermissoesUsuario.podeInativarViagem(adm))
+        assertFalse(PermissoesUsuario.podeInativarViagem(operador))
     }
 
     // --- Família da atuação × permissão (ADR-0016 §2, ADR-0020 F3) ---
@@ -137,7 +151,7 @@ class PermissoesUsuarioTest {
         // esta fatia não pode mudar uma linha do que aparece em tela.
         assertEquals(SecaoMenu.entries - SecaoMenu.EQUIPE, PermissoesUsuario.secoesVisiveis(adm, atuacao = null))
         assertEquals(
-            listOf(SecaoMenu.ROTA, SecaoMenu.PASSAGEM),
+            listOf(SecaoMenu.ROTA, SecaoMenu.VIAGEM, SecaoMenu.PASSAGEM),
             PermissoesUsuario.secoesVisiveis(operador, agente, atuacao = null),
         )
     }
@@ -175,7 +189,7 @@ class PermissoesUsuarioTest {
     @Test
     fun `com atuacao, o agente do agenciamento ve a rota e a passagem`() {
         assertEquals(
-            listOf(SecaoMenu.ROTA, SecaoMenu.PASSAGEM),
+            listOf(SecaoMenu.ROTA, SecaoMenu.VIAGEM, SecaoMenu.PASSAGEM),
             PermissoesUsuario.secoesVisiveis(operador, agente, Atuacao.AGENCIAMENTO),
         )
     }

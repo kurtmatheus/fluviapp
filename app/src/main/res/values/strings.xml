@@ -51,7 +51,7 @@
     <string name="subtitle_editar_passagem">Editar Passagem</string>
     <string name="subtitle_cadastrar_nova_viagem">Cadastrar Nova Viagem</string>
     <string name="subtitle_editar_viagem">Editar Viagem</string>
-    <string name="subtitle_pesquisar_viagens">Pesquisar Viagem</string>
+    <string name="subtitle_pesquisar_viagens">Pesquisar Viagens</string>
     <string name="subtitle_detalhes_viagem">Detalhes da Viagem</string>
     <string name="subtitle_resultados">Resultados</string>
     <string name="subtitle_detalhes_passagem">Detalhes da Passagem</string>
@@ -200,6 +200,22 @@
     <string name="msg_confirmar_inativar_rota">Inativar esta rota? Ela some dos seletores e continua valendo para o que já aponta para ela.</string>
     <string name="btn_inativar">Inativar</string>
     <string name="msg_rota_imutavel">A rota não é editada: para corrigir, crie outra e inative esta.</string>
+
+    <!-- Viagem (a partida física sobre a rota) -->
+    <string name="title_top_viagens">Viagens</string>
+    <string name="subtitle_nova_viagem">Nova Viagem</string>
+    <string name="label_rota">Rota</string>
+    <string name="label_dia_semana">Dia da semana</string>
+    <string name="label_hora_partida">Hora da partida (HH:mm)</string>
+    <string name="label_rota_ou_embarcacao">Rota ou embarcação</string>
+    <string name="error_hora_invalida">Informe a hora no formato HH:mm.</string>
+    <string name="error_viagem_duplicada">Já existe esta saída: mesma rota, embarcação, dia e hora.</string>
+    <string name="msg_viagem_criada">Viagem criada.</string>
+    <string name="msg_viagem_inativa">Inativa</string>
+    <string name="msg_chegada_estimada">Chegada estimada: %1$s</string>
+    <string name="msg_confirmar_inativar_viagem">Inativar esta viagem? Ela some dos seletores e continua valendo para as passagens já emitidas.</string>
+    <string name="msg_viagem_imutavel">A viagem não é editada: para corrigir, crie outra e inative esta. O horário está impresso em bilhetes já emitidos.</string>
+    <string name="msg_viagem_sem_concessao">Esta empresa ainda não tem portos e embarcações concedidos — sem eles não há viagem a ofertar. Quem concede é a administração da plataforma.</string>
 
     <!-- Usuários (o convite) -->
     <string name="title_top_usuarios">Usuários</string>

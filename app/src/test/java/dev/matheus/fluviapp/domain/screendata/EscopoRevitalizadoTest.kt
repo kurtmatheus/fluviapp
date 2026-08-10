@@ -48,6 +48,7 @@ class EscopoRevitalizadoTest {
                 SecaoMenu.EQUIPE,
                 SecaoMenu.USUARIOS,
                 SecaoMenu.ROTA,
+                SecaoMenu.VIAGEM,
             ),
             SECOES_REVITALIZADAS,
         )
@@ -58,7 +59,10 @@ class EscopoRevitalizadoTest {
         assertTrue(estaRevitalizada(SecaoMenu.PORTO))
         // Entrou na F6.4, junto com a seleção de contexto — não antes (ADR-0022 D5).
         assertTrue(estaRevitalizada(SecaoMenu.EQUIPE))
-        assertFalse(estaRevitalizada(SecaoMenu.VIAGEM))
+        // O pool inteiro entrou: a Rota na F7, a Viagem na F8 — e a segunda é a que dá sentido à
+        // primeira, porque a ligação sem partida não vende nada.
+        assertTrue(estaRevitalizada(SecaoMenu.ROTA))
+        assertTrue(estaRevitalizada(SecaoMenu.VIAGEM))
         assertFalse(estaRevitalizada(SecaoMenu.PASSAGEM))
     }
 
@@ -79,9 +83,12 @@ class EscopoRevitalizadoTest {
             SecaoMenu.PORTO,
         )
 
-        // A Rota entra no meio, na ordem do enum: ela vem do Porto, e é compartilhada (F7).
-        assertEquals(doPainel + SecaoMenu.ROTA + SecaoMenu.USUARIOS, secoesDoMenu(adm))
-        assertEquals(doPainel + SecaoMenu.ROTA, secoesDoMenu(gestor))
+        // Rota e Viagem entram no meio, na ordem do enum: a Rota vem do Porto, a Viagem vem da Rota, e
+        // as duas são compartilhadas (F7/F8).
+        val pool = listOf(SecaoMenu.ROTA, SecaoMenu.VIAGEM)
+
+        assertEquals(doPainel + pool + SecaoMenu.USUARIOS, secoesDoMenu(adm))
+        assertEquals(doPainel + pool, secoesDoMenu(gestor))
     }
 
     /**
@@ -90,13 +97,17 @@ class EscopoRevitalizadoTest {
      * não foi revitalizada —, e isso não é bug: é o app agindo como recém-implementado.
      */
     @Test
-    fun `o supervisor ve a Equipe e o agente segue sem menu`() {
+    fun `o supervisor ve o pool e a Equipe, e o agente so o pool`() {
         assertEquals(
-            listOf(SecaoMenu.ROTA, SecaoMenu.EQUIPE),
+            listOf(SecaoMenu.ROTA, SecaoMenu.VIAGEM, SecaoMenu.EQUIPE),
             secoesDoMenu(operador, supervisor, Atuacao.AGENCIAMENTO),
         )
-        // O agente ganhou a Rota (vê o pool, não cria); a Passagem dele segue fora do andaime.
-        assertEquals(listOf(SecaoMenu.ROTA), secoesDoMenu(operador, agente, Atuacao.AGENCIAMENTO))
+        // O agente vê o pool inteiro e não cria nada nele; a Passagem dele segue fora do andaime — é a
+        // primeira vez que alguém tem menu **só de leitura**, e isso é o desenho, não falta.
+        assertEquals(
+            listOf(SecaoMenu.ROTA, SecaoMenu.VIAGEM),
+            secoesDoMenu(operador, agente, Atuacao.AGENCIAMENTO),
+        )
     }
 
     @Test

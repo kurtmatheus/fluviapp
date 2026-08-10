@@ -27,8 +27,11 @@ enum class SecaoMenu(
     // A primeira seção **compartilhada** (ADR-0022 D2): o pool não tem dono, então plataforma e empresa
     // enxergam a mesma coisa. Vem depois do Porto porque é dele que ela é feita.
     ROTA(R.string.label_menu_rotas, R.drawable.ic_rota_24),
-    PASSAGEM(R.string.btn_menu_passagens, R.drawable.ic_bilhete),
+    // A `VIAGEM` vem **logo depois da ROTA**, e não onde estava (F8.2): ela é a partida sobre uma rota, e
+    // a ordem do enum é a ordem em que se consegue cadastrar. Onde ela estava era herança do trecho
+    // disfarçado, que a plataforma administrava sozinha.
     VIAGEM(R.string.label_menu_viagens, R.drawable.ic_embarcacao_75),
+    PASSAGEM(R.string.btn_menu_passagens, R.drawable.ic_bilhete),
     // "Equipe" (ADR-0015 §8.1): o coletivo dos Funcionario — as pessoas na operação, com cargo e
     // vínculo. É **da empresa**: quem a gere é o supervisor dela (ADR-0022 D2).
     EQUIPE(R.string.label_menu_equipe, R.drawable.ic_user_75),

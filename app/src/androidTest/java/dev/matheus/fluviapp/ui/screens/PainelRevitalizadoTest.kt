@@ -107,8 +107,11 @@ class PainelRevitalizadoTest {
         composeTestRule.onNodeWithText(texto(SecaoMenu.PORTO.titulo)).assertIsDisplayed()
         // A seção da plataforma que faltava (F6.6): quem acessa o app e com que papel.
         composeTestRule.onNodeWithText(texto(SecaoMenu.USUARIOS.titulo)).assertIsDisplayed()
+        // O **pool compartilhado** (F7/F8): as duas aparecem no painel da plataforma porque não têm dono,
+        // e é ela quem os cura. É a única parte do menu que o outro painel também mostra.
+        composeTestRule.onNodeWithText(texto(SecaoMenu.ROTA.titulo)).assertIsDisplayed()
+        composeTestRule.onNodeWithText(texto(SecaoMenu.VIAGEM.titulo)).assertIsDisplayed()
 
-        composeTestRule.onNodeWithText(texto(SecaoMenu.VIAGEM.titulo)).assertDoesNotExist()
         composeTestRule.onNodeWithText(texto(SecaoMenu.PASSAGEM.titulo)).assertDoesNotExist()
         // **A Equipe é da empresa** (F6.6): o `ADM` não abre o quadro de pessoal de ninguém.
         composeTestRule.onNodeWithText(texto(SecaoMenu.EQUIPE.titulo)).assertDoesNotExist()
@@ -156,4 +159,13 @@ class PainelRevitalizadoTest {
     @Test
     fun menu_expandeUsuarios_eNavegaPelaAcao() =
         expandeENavega(SecaoMenu.USUARIOS, AcaoMenu.USUARIO_NOVO)
+
+    /** O pool compartilhado, que a F7 pôs no menu e este arquivo ainda não cobria. */
+    @Test
+    fun menu_expandeRotas_eNavegaPelaAcao() =
+        expandeENavega(SecaoMenu.ROTA, AcaoMenu.ROTA_PESQUISAR)
+
+    @Test
+    fun menu_expandeViagens_eNavegaPelaAcao() =
+        expandeENavega(SecaoMenu.VIAGEM, AcaoMenu.VIAGEM_NOVA)
 }

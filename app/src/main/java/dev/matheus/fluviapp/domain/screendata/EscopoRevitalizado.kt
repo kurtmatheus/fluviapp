@@ -50,6 +50,10 @@ val SECOES_REVITALIZADAS: Set<SecaoMenu> = setOf(
     SecaoMenu.USUARIOS,
     // A primeira do **pool compartilhado** (F7): mesma seção nos dois painéis, porque o pool não tem dono.
     SecaoMenu.ROTA,
+    // A segunda, e a que dá sentido à primeira (F8.2): a rota é a ligação, a **viagem** é a partida que a
+    // percorre. Entra junto com o recorte por concessão — o painel da empresa passa a mostrar só o que a
+    // atuação dela alcança, que é o que faz uma seção compartilhada não ser uma seção genérica.
+    SecaoMenu.VIAGEM,
 )
 
 /** Se a seção já foi refeita ponta a ponta. */

@@ -16,6 +16,8 @@ import dev.matheus.fluviapp.services.repository.operacoes.ConviteFirestoreReposi
 import dev.matheus.fluviapp.services.repository.operacoes.ConviteRepository
 import dev.matheus.fluviapp.services.repository.operacoes.FuncionarioFirestoreRepository
 import dev.matheus.fluviapp.services.repository.operacoes.FuncionarioRepository
+import dev.matheus.fluviapp.services.repository.operacoes.EscopoDaSessao
+import dev.matheus.fluviapp.services.repository.operacoes.EscopoDaSessaoPadrao
 import dev.matheus.fluviapp.services.repository.operacoes.SessaoUsuario
 import dev.matheus.fluviapp.services.repository.operacoes.SessaoUsuarioRoom
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.EmpresaFirestoreRepository
@@ -89,6 +91,11 @@ abstract class RepositorioModule {
     @Binds
     @Singleton
     abstract fun bindSessaoUsuario(impl: SessaoUsuarioRoom): SessaoUsuario
+
+    /** Quanto do pool compartilhado quem está operando enxerga (F8.2). */
+    @Binds
+    @Singleton
+    abstract fun bindEscopoDaSessao(impl: EscopoDaSessaoPadrao): EscopoDaSessao
 
     /** Fonte de snapshots (seam testável do sync — §10 Nível 2). */
     @Binds
