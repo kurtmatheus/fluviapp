@@ -94,12 +94,35 @@ class HoraDoDiaTest {
         }
     }
 
+    // --- Os dígitos que a tela guarda ---
+
+    @Test
+    fun `o campo guarda so digito, e no maximo quatro`() {
+        assertEquals("1830", digitosDaHora("18h30m"))
+        assertEquals("1830", digitosDaHora("18:30"))
+        assertEquals("", digitosDaHora("abc"))
+    }
+
+    /** Digitar rápido demais não deve mudar o que já está certo: o excedente é descartado. */
+    @Test
+    fun `o quinto digito e descartado, nao empurra os outros`() {
+        assertEquals("1830", digitosDaHora("18305"))
+    }
+
+    @Test
+    fun `os digitos viram minuto sem passar pela tela`() {
+        assertEquals(18 * 60 + 30, minutosDosDigitos("1830"))
+        assertEquals(0, minutosDosDigitos("0000"))
+        assertNull(minutosDosDigitos("183"))
+        assertNull(minutosDosDigitos(""))
+    }
+
     // --- A máscara ---
 
     /**
      * Ela existe porque **o teclado numérico do Android não tem `:`** (achado em homologação): o campo
-     * pedia `HH:mm` e oferecia um teclado onde o separador não existe. O `:` deixou de ser digitado e
-     * passou a ser escrito pelo campo.
+     * pedia `HH:mm` e oferecia um teclado onde o separador não existe. Hoje ela é de **exibição** — o
+     * valor guardado são os dígitos, e o `:` é desenhado pela `HoraVisualTransformation`.
      */
     @Test
     fun `a mascara escreve o separador enquanto se digita`() {
@@ -110,7 +133,6 @@ class HoraDoDiaTest {
         assertEquals("18:30", mascararHora("1830"))
     }
 
-    /** Digitar rápido demais não deve mudar o que já está certo: o excedente é descartado. */
     @Test
     fun `a mascara para em quatro digitos`() {
         assertEquals("18:30", mascararHora("18305"))
@@ -118,22 +140,26 @@ class HoraDoDiaTest {
     }
 
     /**
-     * Apagar não tem regra à parte: o campo devolve o texto sem o último caractere, a máscara reescreve
-     * a partir dos dígitos que sobraram, e o `:` some sozinho quando restam dois.
+     * Apagar não tem regra à parte: some um dígito do valor, a máscara reescreve o que sobrou, e o `:`
+     * desaparece sozinho quando restam dois.
      */
     @Test
     fun `apagar desfaz pelo mesmo caminho`() {
-        assertEquals("18:3", mascararHora("18:3"))
-        assertEquals("18", mascararHora("18:"))
+        assertEquals("18:3", mascararHora("183"))
+        assertEquals("18", mascararHora("18"))
         assertEquals("1", mascararHora("1"))
     }
 
-    /** O que não é dígito é ignorado — inclusive um `:` colado de outro lugar. */
+    /**
+     * **O comprimento é o que o `OffsetMapping` da tela assume**: um caractere a mais a partir do
+     * terceiro dígito, e nenhum antes disso. Se esta relação mudar, o cursor volta a errar — e o mapa,
+     * que é o que traduz as duas réguas, passa a mentir.
+     */
     @Test
-    fun `a mascara ignora o que nao e digito`() {
-        assertEquals("18:30", mascararHora("18h30m"))
-        assertEquals("18:30", mascararHora("18:30"))
-        assertEquals("", mascararHora("abc"))
+    fun `a mascara acrescenta exatamente um caractere, e so a partir do terceiro digito`() {
+        listOf("", "1", "18").forEach { assertEquals(it.length, mascararHora(it).length) }
+        listOf("183", "1830").forEach { assertEquals(it.length + 1, mascararHora(it).length) }
+        assertEquals(2, mascararHora("1830").indexOf(':'))
     }
 
     /** O que a máscara completa, o leitor aceita: é o contrato entre os dois. */

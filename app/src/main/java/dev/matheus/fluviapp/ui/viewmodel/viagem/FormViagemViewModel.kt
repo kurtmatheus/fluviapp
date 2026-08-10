@@ -8,7 +8,7 @@ import dev.matheus.fluviapp.domain.porto.Porto
 import dev.matheus.fluviapp.domain.rota.Rota
 import dev.matheus.fluviapp.domain.viagem.DIAS_DA_SEMANA
 import dev.matheus.fluviapp.domain.viagem.concedeu
-import dev.matheus.fluviapp.domain.viagem.mascararHora
+import dev.matheus.fluviapp.domain.viagem.digitosDaHora
 import dev.matheus.fluviapp.domain.viagem.Viagem
 import dev.matheus.fluviapp.domain.viagem.noEscopo
 import dev.matheus.fluviapp.domain.viagem.rotulo
@@ -125,13 +125,15 @@ class FormViagemViewModel @Inject constructor(
     }
 
     /**
-     * A pessoa digita **só dígitos**; o `:` é escrito pela máscara.
+     * O estado guarda **só os dígitos**; o `:` é desenhado pela `HoraVisualTransformation`.
      *
-     * O campo pedia `HH:mm` com teclado numérico — e o teclado numérico do Android não tem dois-pontos.
-     * Era um campo que não se conseguia preencher (achado em homologação, 2026-08-10).
+     * Duas correções empilhadas, e a segunda desfez a primeira: o campo pedia `HH:mm` num teclado
+     * numérico, que não tem `:` (homologação); passou a mascarar o **valor**, e aí o cursor caía atrás do
+     * separador a cada terceiro dígito (teste manual). Guardar dígito e pintar o resto resolve os dois —
+     * não há separador a digitar nem caractere novo a reposicionar.
      */
     fun onHoraChange(v: String) = _uiState.update {
-        it.copy(hora = mascararHora(v), erroHora = ErroHoraViagem.NENHUM)
+        it.copy(horaDigitada = digitosDaHora(v), erroHora = ErroHoraViagem.NENHUM)
     }
 
     fun salvar() {

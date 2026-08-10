@@ -25,24 +25,45 @@ fun formatarHora(minutos: Int): String {
 }
 
 /**
- * **Máscara de digitação**: o que a pessoa digita (só dígitos) vira `HH:mm` enquanto ela digita.
+ * **Os dígitos que a tela guarda** — no máximo quatro, que é o tamanho de uma hora.
  *
- * Ela existe por um motivo bem concreto, achado em homologação: **o teclado numérico do Android não tem
- * `:`**. O campo pedia `HH:mm` e oferecia um teclado onde os dois-pontos não existem — não era um atrito,
- * era um campo intransponível. Trocar o teclado para o completo resolveria o sintoma e pioraria o resto
- * (letras num campo de hora); a máscara resolve a causa: **o separador deixa de ser digitado e passa a
- * ser escrito pelo campo**.
+ * O excedente é descartado em vez de empurrar a hora para a esquerda: digitar rápido demais não deve
+ * mudar o que já está certo.
+ */
+fun digitosDaHora(texto: String): String = texto.filter { it.isDigit() }.take(4)
+
+/**
+ * **A máscara `HH:mm` sobre os dígitos** — e ela é de **exibição**, não de digitação.
  *
- * Quatro dígitos, no máximo — é o tamanho de uma hora. O que passa disso é descartado em vez de empurrar
- * a hora para a esquerda, porque digitar rápido demais não deve mudar o que já está certo.
+ * A distinção custou uma rodada de homologação e vale escrita. O problema original era que **o teclado
+ * numérico do Android não tem `:`**: o campo pedia `HH:mm` e oferecia um teclado onde o separador não
+ * existe — não era atrito, era um campo intransponível.
  *
- * Apagar funciona pelo mesmo caminho, sem regra à parte: `"18:30"` menos um caractere é `"18:3"`, que
- * são os dígitos `183`, que a máscara reescreve como `"18:3"`. O `:` some sozinho quando sobram dois.
+ * A primeira correção aplicou esta função **ao valor do campo**, e trocou um defeito por outro: com
+ * `TextField(value: String)`, o Compose reposiciona o cursor calculando sobre o texto que ele acabou de
+ * enviar. Inserir o `:` no meio faz o cursor cair **atrás** dele, e o dígito seguinte entra no lugar
+ * errado. Foi o que o teste manual pegou.
+ *
+ * A correção certa é não guardar o separador: o estado fica com os dígitos ([digitosDaHora]) e o `:` é
+ * **desenhado** por uma `VisualTransformation`. Sem caractere novo no valor, não há cursor a
+ * reposicionar — o problema deixa de existir em vez de ser compensado.
+ *
+ * Apagar segue sem regra à parte: some um dígito, a máscara reescreve, e o `:` desaparece sozinho
+ * quando sobram dois.
  */
 fun mascararHora(texto: String): String {
-    val digitos = texto.filter { it.isDigit() }.take(4)
+    val digitos = digitosDaHora(texto)
     return if (digitos.length <= 2) digitos else "${digitos.take(2)}:${digitos.drop(2)}"
 }
+
+/**
+ * Os dígitos que a tela guarda → minutos. É a ponte entre o que o campo tem (`"1830"`) e o que o domínio
+ * lê (`"18:30"`), num lugar só — para que a validação e a gravação não a reconstruam cada uma à sua
+ * maneira.
+ *
+ * Herda a exigência de [minutosDaHora]: três dígitos não viram hora.
+ */
+fun minutosDosDigitos(digitos: String): Int? = minutosDaHora(mascararHora(digitos))
 
 /**
  * `HH:mm` → minutos, ou **`null` quando não é uma hora**.

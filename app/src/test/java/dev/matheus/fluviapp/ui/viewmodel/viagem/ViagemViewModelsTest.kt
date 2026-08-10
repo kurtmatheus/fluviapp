@@ -198,7 +198,7 @@ class ViagemViewModelsTest {
         vm.onRotaChange(rotuloRotaConcedida)
         vm.onEmbarcacaoChange("F/B Modelo")
         vm.onDiaSemanaChange(DayOfWeek.TUESDAY.rotulo)
-        vm.onHoraChange("18:00")
+        vm.onHoraChange("1800")
         vm.salvar()
         advanceUntilIdle()
 
@@ -219,7 +219,7 @@ class ViagemViewModelsTest {
         vm.onRotaChange(rotuloRotaConcedida)
         vm.onEmbarcacaoChange("F/B Modelo")
         vm.onDiaSemanaChange(DayOfWeek.TUESDAY.rotulo)
-        vm.onHoraChange("18:00")
+        vm.onHoraChange("1800")
         vm.salvar()
         advanceUntilIdle()
 
@@ -241,7 +241,7 @@ class ViagemViewModelsTest {
         vm.onRotaChange(rotuloRotaConcedida)
         vm.onEmbarcacaoChange("F/B Modelo")
         vm.onDiaSemanaChange(DayOfWeek.TUESDAY.rotulo)
-        vm.onHoraChange("18:00")
+        vm.onHoraChange("1800")
         vm.salvar()
         advanceUntilIdle()
 
@@ -273,7 +273,7 @@ class ViagemViewModelsTest {
         vm.onRotaChange(rotuloRotaConcedida)
         vm.onEmbarcacaoChange("F/B Modelo")
         vm.onDiaSemanaChange(DayOfWeek.TUESDAY.rotulo)
-        vm.onHoraChange("18:00")
+        vm.onHoraChange("1800")
         vm.salvar()
         advanceUntilIdle()
 
@@ -283,30 +283,46 @@ class ViagemViewModelsTest {
 
     /**
      * **O teclado numérico do Android não tem `:`** (achado em homologação, 2026-08-10), e o campo pedia
-     * `HH:mm` — não era atrito, era um campo que não se conseguia preencher. Quem escreve o separador
-     * agora é a máscara: a pessoa digita quatro dígitos.
+     * `HH:mm` — não era atrito, era um campo que não se conseguia preencher.
+     *
+     * O estado guarda **só os dígitos**: o separador é desenhado. A primeira correção o guardava no
+     * valor, e foi o que quebrou o cursor — inserir caractere no meio faz o Compose recalcular a seleção
+     * sobre o texto anterior.
      */
     @Test
-    fun `digitar quatro digitos preenche a hora`() = runTest(mainRule.dispatcher) {
+    fun `o estado guarda digito, nao o separador`() = runTest(mainRule.dispatcher) {
         val vm = formVm()
         advanceUntilIdle()
 
         vm.onHoraChange("1")
-        assertEquals("1", vm.uiState.value.hora)
-
-        vm.onHoraChange("18")
-        assertEquals("18", vm.uiState.value.hora)
+        assertEquals("1", vm.uiState.value.horaDigitada)
 
         vm.onHoraChange("183")
-        assertEquals("18:3", vm.uiState.value.hora)
+        assertEquals("183", vm.uiState.value.horaDigitada)
 
         vm.onHoraChange("1830")
-        assertEquals("18:30", vm.uiState.value.hora)
+        assertEquals("1830", vm.uiState.value.horaDigitada)
     }
 
-    /** E o que a máscara escreveu é o que a gravação lê — sem tradução no meio. */
+    /**
+     * **O caso do cursor, visto de onde dá para vê-lo em JVM.** Digitar em duas levas só termina em
+     * `1830` se cada dígito entrar no fim; com o separador guardado no valor, o terceiro caía antes do
+     * `:` e a hora saía embaralhada.
+     */
     @Test
-    fun `a hora mascarada chega ao documento como minuto`() = runTest(mainRule.dispatcher) {
+    fun `digitar em duas levas termina no fim, nao no meio`() = runTest(mainRule.dispatcher) {
+        val vm = formVm()
+        advanceUntilIdle()
+
+        vm.onHoraChange("18")
+        vm.onHoraChange(vm.uiState.value.horaDigitada + "30")
+
+        assertEquals("1830", vm.uiState.value.horaDigitada)
+    }
+
+    /** E o que o campo guardou é o que a gravação lê — a tradução acontece num lugar só. */
+    @Test
+    fun `os digitos chegam ao documento como minuto`() = runTest(mainRule.dispatcher) {
         val viagens = FakeViagemRepository()
         val vm = formVm(viagens = viagens)
         advanceUntilIdle()
@@ -318,7 +334,7 @@ class ViagemViewModelsTest {
         vm.salvar()
         advanceUntilIdle()
 
-        assertEquals("06:05", vm.uiState.value.hora)
+        assertEquals("0605", vm.uiState.value.horaDigitada)
         assertEquals(6 * 60 + 5, viagens.criadas.single().horaMin)
     }
 

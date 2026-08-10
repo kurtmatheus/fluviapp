@@ -28,8 +28,15 @@ data class FormViagemUiState(
     val diaSemana: String = "",
     val isDiaSemanaError: Boolean = false,
 
-    /** `HH:mm` — texto só aqui, na fronteira; por dentro é minuto (ADR-0016 §7.1). */
-    val hora: String = "",
+    /**
+     * **Os dígitos**, no máximo quatro — `"1830"`, e não `"18:30"`.
+     *
+     * O nome diz o que ele guarda de propósito. O separador é **desenhado** pela
+     * `HoraVisualTransformation`, e guardá-lo aqui foi o que quebrou o cursor: um caractere inserido no
+     * meio do valor faz o Compose recalcular a seleção sobre o texto anterior. Por dentro, mais adiante,
+     * a hora é minuto (ADR-0016 §7.1) — este campo é a fronteira de digitação, não a de domínio.
+     */
+    val horaDigitada: String = "",
     val erroHora: ErroHoraViagem = ErroHoraViagem.NENHUM,
 
     val rotas: List<RotaOpcao> = emptyList(),

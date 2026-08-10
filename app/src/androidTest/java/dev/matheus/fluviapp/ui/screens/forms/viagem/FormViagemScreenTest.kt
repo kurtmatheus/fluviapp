@@ -11,12 +11,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import dev.matheus.fluviapp.R
 import dev.matheus.fluviapp.domain.viagem.DIAS_DA_SEMANA
-import dev.matheus.fluviapp.domain.viagem.mascararHora
+import dev.matheus.fluviapp.domain.viagem.digitosDaHora
 import dev.matheus.fluviapp.domain.viagem.rotulo
 import dev.matheus.fluviapp.ui.states.EmbarcacaoOpcao
 import dev.matheus.fluviapp.ui.states.FormViagemUiState
 import dev.matheus.fluviapp.ui.states.RotaOpcao
 import dev.matheus.fluviapp.ui.theme.FluviAppTheme
+import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 
@@ -37,10 +38,13 @@ class FormViagemScreenTest {
 
     private val rotaOpcao = RotaOpcao("r1", "Porto A · Belém/PA → Porto B · Parintins/AM")
 
+    /** O que o campo guardou — é sobre ele que as asserções falam, não sobre o texto pintado. */
+    private var digitado: String = ""
+
     /**
-     * Monta a tela com o **mesmo caminho do ViewModel** para a hora: o `onHoraChange` real aplica
-     * `mascararHora`, e replicá-lo aqui é o que faz este teste medir a digitação, e não uma tela que
-     * aceita qualquer texto.
+     * Monta a tela com o **mesmo caminho do ViewModel** para a hora: o `onHoraChange` real guarda só os
+     * dígitos, e replicá-lo aqui é o que faz este teste medir a digitação, e não uma tela que aceita
+     * qualquer texto.
      */
     private fun montar() {
         composeTestRule.setContent {
@@ -57,29 +61,41 @@ class FormViagemScreenTest {
 
                 FormViagemScreen(
                     uiState = state,
-                    onHoraChange = { state = state.copy(hora = mascararHora(it)) },
+                    onHoraChange = {
+                        digitado = digitosDaHora(it)
+                        state = state.copy(horaDigitada = digitado)
+                    },
                 )
             }
         }
     }
 
-    /** Quatro dígitos, e o `:` aparece sozinho — que é o que o teclado numérico permite digitar. */
+    /**
+     * **O caso do cursor**, que é o que só a tela pega.
+     *
+     * `performTextInput` insere na posição do cursor. Se ele não terminar no fim depois do terceiro
+     * dígito — que foi o defeito da máscara-no-valor —, a segunda leva entra no meio e o resultado sai
+     * embaralhado. Com o separador apenas desenhado, o cursor anda sobre os quatro dígitos e a digitação
+     * fracionada termina onde deveria.
+     */
     @Test
-    fun hora_digitadaSoComNumeros_ganhaOSeparador() {
+    fun hora_digitadaEmDuasLevas_terminaNoFim() {
+        montar()
+
+        composeTestRule.onNodeWithText(texto(R.string.label_hora_partida)).performTextInput("18")
+        composeTestRule.onNodeWithText(texto(R.string.label_hora_partida)).performTextInput("30")
+
+        composeTestRule.runOnIdle { assertEquals("1830", digitado) }
+    }
+
+    /** O campo guarda dígito; o `:` que aparece é pintura da `HoraVisualTransformation`. */
+    @Test
+    fun hora_guardaDigito_naoOSeparador() {
         montar()
 
         composeTestRule.onNodeWithText(texto(R.string.label_hora_partida)).performTextInput("1830")
 
-        composeTestRule.onNodeWithText("18:30").assertIsDisplayed()
-    }
-
-    @Test
-    fun hora_incompleta_naoInventaSeparador() {
-        montar()
-
-        composeTestRule.onNodeWithText(texto(R.string.label_hora_partida)).performTextInput("18")
-
-        composeTestRule.onNodeWithText("18").assertIsDisplayed()
+        composeTestRule.runOnIdle { assertEquals("1830", digitado) }
     }
 
     /** A tela diz que não há edição — quem procurar por ela precisa saber o que fazer no lugar. */

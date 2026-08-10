@@ -24,6 +24,7 @@ import dev.matheus.fluviapp.ui.components.forms.areas.CommonAreaForm
 import dev.matheus.fluviapp.ui.components.forms.buttons.CommonIconButton
 import dev.matheus.fluviapp.ui.components.forms.dropdowns.DropDownFormField
 import dev.matheus.fluviapp.ui.components.forms.fields.FormTextFieldBrownNoIcon
+import dev.matheus.fluviapp.ui.components.forms.fields.HoraVisualTransformation
 import dev.matheus.fluviapp.ui.components.texts.TextRegularBrown
 import dev.matheus.fluviapp.ui.screens.forms.CommonScreenNoBottom
 import dev.matheus.fluviapp.ui.states.EmbarcacaoOpcao
@@ -88,14 +89,17 @@ fun FormViagemScreen(
                         isError = uiState.isDiaSemanaError,
                         onValueChange = onDiaSemanaChange,
                     )
+                    // O campo guarda dígitos e **desenha** o `HH:mm`: o teclado numérico não tem `:` para
+                    // digitar, e guardá-lo no valor punha o cursor atrás dele a cada terceiro dígito.
                     FormTextFieldBrownNoIcon(
                         modifier = it.fillMaxWidth(),
-                        value = uiState.hora,
+                        value = uiState.horaDigitada,
                         label = R.string.label_hora_partida,
                         onValueChange = onHoraChange,
                         isError = uiState.erroHora.existe,
                         textoErro = uiState.erroHora.mensagem,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        visualTransformation = HoraVisualTransformation,
                     )
 
                     // A tela diz que não há edição — quem procurar por ela precisa saber o que fazer no
@@ -143,7 +147,7 @@ private fun FormViagemScreenPreview() {
             embarcacao = "F/B Modelo",
             diasDaSemana = DIAS_DA_SEMANA.map { it.rotulo },
             diaSemana = DIAS_DA_SEMANA[1].rotulo,
-            hora = "18:00",
+            horaDigitada = "1800",
         ),
     )
 }

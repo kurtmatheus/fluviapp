@@ -3,7 +3,7 @@ package dev.matheus.fluviapp.ui.viewmodel.helpers.viagem
 import dev.matheus.fluviapp.domain.viagem.Viagem
 import dev.matheus.fluviapp.domain.viagem.ativaComChave
 import dev.matheus.fluviapp.domain.viagem.diaSemanaPorRotulo
-import dev.matheus.fluviapp.domain.viagem.minutosDaHora
+import dev.matheus.fluviapp.domain.viagem.minutosDosDigitos
 import dev.matheus.fluviapp.ui.states.ErroHoraViagem
 import dev.matheus.fluviapp.ui.states.FormViagemUiState
 
@@ -46,7 +46,7 @@ fun chaveDaViagem(state: FormViagemUiState): Viagem.Chave? {
     val rotaId = idDaRota(state) ?: return null
     val embarcacaoId = idDaEmbarcacao(state) ?: return null
     val dia = diaSemanaPorRotulo(state.diaSemana) ?: return null
-    val horaMin = minutosDaHora(state.hora) ?: return null
+    val horaMin = minutosDosDigitos(state.horaDigitada) ?: return null
 
     return Viagem.Chave(rotaId, embarcacaoId, dia, horaMin)
 }
@@ -58,8 +58,8 @@ private fun idDaEmbarcacao(state: FormViagemUiState): String? =
     state.embarcacoes.firstOrNull { it.rotulo == state.embarcacao }?.id?.takeIf { it.isNotBlank() }
 
 private fun erroDaHora(state: FormViagemUiState): ErroHoraViagem {
-    if (state.hora.isBlank()) return ErroHoraViagem.OBRIGATORIA
-    if (minutosDaHora(state.hora) == null) return ErroHoraViagem.INVALIDA
+    if (state.horaDigitada.isBlank()) return ErroHoraViagem.OBRIGATORIA
+    if (minutosDosDigitos(state.horaDigitada) == null) return ErroHoraViagem.INVALIDA
 
     // Duplicidade só faz sentido com a chave inteira: com um dropdown por escolher, ainda não se sabe
     // qual saída é esta, e "já existe" seria dito sobre uma partida que não está determinada.
