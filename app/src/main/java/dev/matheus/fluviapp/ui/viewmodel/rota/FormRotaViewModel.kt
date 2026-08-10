@@ -5,9 +5,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.matheus.fluviapp.domain.rota.Rota
+import dev.matheus.fluviapp.domain.viagem.operaNo
 import dev.matheus.fluviapp.services.repository.cadastro.localidade.LocalidadeRepository
 import dev.matheus.fluviapp.services.repository.cadastro.porto.PortoRepository
 import dev.matheus.fluviapp.services.repository.cadastro.rota.RotaRepository
+import dev.matheus.fluviapp.services.repository.operacoes.EscopoDaSessao
 import dev.matheus.fluviapp.services.repository.operacoes.SessaoUsuario
 import dev.matheus.fluviapp.ui.states.ErroParRota
 import dev.matheus.fluviapp.ui.states.FormRotaUiState
@@ -40,6 +42,7 @@ class FormRotaViewModel @Inject constructor(
     private val rotaRepository: RotaRepository,
     private val portoRepository: PortoRepository,
     private val localidadeRepository: LocalidadeRepository,
+    private val escopoDaSessao: EscopoDaSessao,
     private val sessaoUsuario: SessaoUsuario,
 ) : ViewModel() {
 
@@ -55,14 +58,24 @@ class FormRotaViewModel @Inject constructor(
     }
 
     /**
-     * Os portos **ativos**, com o rótulo que a pessoa lê — "Porto de Val-de-Cães · Belém/PA". A
-     * localidade entra no rótulo porque é ela que distingue homônimos, e escolher entre dois "Porto
+     * Os portos **ativos e concedidos**, com o rótulo que a pessoa lê — "Porto de Val-de-Cães · Belém/PA".
+     * A localidade entra no rótulo porque é ela que distingue homônimos, e escolher entre dois "Porto
      * Central" sem saber a cidade é escolher no escuro.
+     *
+     * O recorte por concessão entrou na **F8.3**, e ele revisa o desenho da F7 — lá o supervisor criava
+     * rota em qualquer par, pelo argumento de que a ligação existe no mundo independentemente de quem a
+     * vende. O argumento continua verdadeiro, mas passou a produzir um gesto incoerente: com a busca
+     * recortada pela atuação, criar uma rota fora dela seria criar algo que some da própria lista no
+     * instante seguinte. **Criar virou subconjunto de ver.**
+     *
+     * A plataforma continua com o universo inteiro: é ela quem monta o que as agências vão operar.
      */
     private suspend fun carregarPortos() {
+        val escopo = escopoDaSessao.atual()
+
         val localidades = localidadeRepository.obterTodas().associate { it.id to it.rotulo }
         val opcoes = portoRepository.obterTodos()
-            .filter { it.ativo }
+            .filter { it.ativo && escopo.operaNo(it.id) }
             .map { porto ->
                 PortoOpcao(
                     id = porto.id,
@@ -73,7 +86,8 @@ class FormRotaViewModel @Inject constructor(
             }
             .sortedBy { it.rotulo }
 
-        _uiState.update { it.copy(portos = opcoes) }
+        // Um porto só não monta travessia: com menos de dois, não há par a oferecer.
+        _uiState.update { it.copy(portos = opcoes, semConcessao = opcoes.size < 2) }
     }
 
     private suspend fun carregarRotas() {

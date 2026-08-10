@@ -7,7 +7,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.matheus.fluviapp.domain.porto.Porto
 import dev.matheus.fluviapp.domain.rota.Rota
 import dev.matheus.fluviapp.domain.viagem.DIAS_DA_SEMANA
-import dev.matheus.fluviapp.domain.viagem.EscopoDoPool
+import dev.matheus.fluviapp.domain.viagem.concedeu
 import dev.matheus.fluviapp.domain.viagem.Viagem
 import dev.matheus.fluviapp.domain.viagem.noEscopo
 import dev.matheus.fluviapp.domain.viagem.rotulo
@@ -176,13 +176,6 @@ class FormViagemViewModel @Inject constructor(
     private companion object {
         const val TAG = "formViagemViewModel"
     }
-}
-
-/** A embarcação está concedida a quem olha? Plataforma vê tudo; sem escopo, nada. */
-internal fun EscopoDoPool.concedeu(embarcacaoId: String): Boolean = when (this) {
-    EscopoDoPool.Todo -> true
-    EscopoDoPool.Nenhum -> false
-    is EscopoDoPool.Concedido -> atuacao.concedeu(embarcacaoId)
 }
 
 /** O rótulo do porto para a rota: nome e cidade, que é o que distingue homônimos. */

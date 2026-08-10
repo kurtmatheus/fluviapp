@@ -200,6 +200,7 @@
     <string name="msg_confirmar_inativar_rota">Inativar esta rota? Ela some dos seletores e continua valendo para o que já aponta para ela.</string>
     <string name="btn_inativar">Inativar</string>
     <string name="msg_rota_imutavel">A rota não é editada: para corrigir, crie outra e inative esta.</string>
+    <string name="msg_rota_sem_concessao">Esta empresa ainda não tem dois portos concedidos — sem eles não há travessia a montar. Quem concede é a administração da plataforma.</string>
 
     <!-- Viagem (a partida física sobre a rota) -->
     <string name="title_top_viagens">Viagens</string>

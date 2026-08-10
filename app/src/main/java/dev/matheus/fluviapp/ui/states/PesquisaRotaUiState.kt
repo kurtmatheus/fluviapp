@@ -10,6 +10,11 @@ data class PesquisaRotaUiState(
     val resultados: List<RotaResultado> = emptyList(),
     /** Inativar é ato de plataforma (ADR-0022 D3): tira do pool o que todo mundo enxerga. */
     val podeInativar: Boolean = false,
+    /**
+     * Sem porto concedido não há ligação a mostrar, e a tela precisa dizer isso — vazio por falta de
+     * provisionamento se resolve com a plataforma, vazio por pool novo se resolve com o botão de criar.
+     */
+    val semConcessao: Boolean = false,
 )
 
 /**

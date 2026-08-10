@@ -4,6 +4,7 @@ import dev.matheus.fluviapp.domain.localidade.Localidade
 import dev.matheus.fluviapp.domain.localidade.Uf
 import dev.matheus.fluviapp.domain.porto.Porto
 import dev.matheus.fluviapp.domain.rota.Rota
+import dev.matheus.fluviapp.fakes.FakeEscopoDaSessao
 import dev.matheus.fluviapp.fakes.FakeLocalidadeRepository
 import dev.matheus.fluviapp.fakes.FakePortoRepository
 import dev.matheus.fluviapp.fakes.FakeRotaRepository
@@ -43,16 +44,22 @@ class RotaViewModelsTest {
     private fun portos(lista: List<Porto> = listOf(portoBelem, portoParintins)) =
         FakePortoRepository().apply { portos = lista }
 
+    /** A empresa que recebeu os dois portos do cenário — e nada além deles. */
+    private fun concedido() =
+        FakeEscopoDaSessao.concedido(portoIds = setOf("porto-a", "porto-b"), embarcacaoIds = emptySet())
+
     private fun formVm(
         rotas: FakeRotaRepository = FakeRotaRepository(),
         portos: FakePortoRepository = portos(),
+        escopo: FakeEscopoDaSessao = FakeEscopoDaSessao.plataforma(),
         sessao: FakeSessaoUsuario = FakeSessaoUsuario.supervisor(),
-    ) = FormRotaViewModel(rotas, portos, locais(), sessao)
+    ) = FormRotaViewModel(rotas, portos, locais(), escopo, sessao)
 
     private fun buscaVm(
         rotas: FakeRotaRepository,
+        escopo: FakeEscopoDaSessao = FakeEscopoDaSessao.plataforma(),
         sessao: FakeSessaoUsuario = FakeSessaoUsuario.plataforma(),
-    ) = PesquisaRotaViewModel(rotas, portos(), locais(), sessao)
+    ) = PesquisaRotaViewModel(rotas, portos(), locais(), escopo, sessao)
 
     // --- Criação ---
 
@@ -185,13 +192,12 @@ class RotaViewModelsTest {
 
     /**
      * **Inativar é o único poder do pool que atinge terceiros** (ADR-0022 D3): tira do ar algo que outra
-     * empresa pode estar vendendo. O supervisor cria; para "não quero ver esta", o instrumento é a lista
-     * de negadas da atuação (F8).
+     * empresa pode estar vendendo. O supervisor cria; não tira.
      */
     @Test
     fun `supervisor nao inativa rota do pool`() = runTest(mainRule.dispatcher) {
         val rotas = poolComDuas()
-        val vm = buscaVm(rotas, FakeSessaoUsuario.supervisor())
+        val vm = buscaVm(rotas, sessao = FakeSessaoUsuario.supervisor())
         advanceUntilIdle()
 
         vm.onInativar("r1")
@@ -199,5 +205,84 @@ class RotaViewModelsTest {
 
         assertFalse(vm.uiState.value.podeInativar)
         assertTrue(vm.uiState.value.resultados.first { it.id == "r1" }.ativa)
+    }
+
+    // --- O recorte por concessão (F8.3), alinhando a Rota à Viagem ---
+
+    /**
+     * A empresa vê as ligações entre **portos concedidos**, e só elas. A rota que toca Santarém existe no
+     * pool e é de outra pessoa — some da lista dela, não do mundo.
+     */
+    @Test
+    fun `a empresa so ve rota entre portos concedidos`() = runTest(mainRule.dispatcher) {
+        val rotas = FakeRotaRepository().apply {
+            rotas = listOf(
+                Rota("minha", "porto-a", "porto-b", 420.5, 30.0),
+                Rota("alheia", "porto-a", "porto-santarem", 100.0, 6.0),
+            )
+        }
+        val vm = buscaVm(rotas, escopo = concedido())
+        advanceUntilIdle()
+
+        assertEquals(listOf("minha"), vm.uiState.value.resultados.map { it.id })
+    }
+
+    /** Quem cura o pool precisa enxergá-lo inteiro — o que ela não vê, não conserta. */
+    @Test
+    fun `a plataforma continua vendo o pool inteiro`() = runTest(mainRule.dispatcher) {
+        val rotas = FakeRotaRepository().apply {
+            rotas = listOf(
+                Rota("minha", "porto-a", "porto-b", 420.5, 30.0),
+                Rota("alheia", "porto-a", "porto-santarem", 100.0, 6.0),
+            )
+        }
+        val vm = buscaVm(rotas, escopo = FakeEscopoDaSessao.plataforma())
+        advanceUntilIdle()
+
+        assertEquals(2, vm.uiState.value.resultados.size)
+        assertFalse(vm.uiState.value.semConcessao)
+    }
+
+    @Test
+    fun `sem atuacao, a busca nao mostra rota nenhuma e diz por que`() = runTest(mainRule.dispatcher) {
+        val vm = buscaVm(poolComDuas(), escopo = FakeEscopoDaSessao.semNada())
+        advanceUntilIdle()
+
+        assertTrue(vm.uiState.value.resultados.isEmpty())
+        assertTrue(vm.uiState.value.semConcessao)
+    }
+
+    /**
+     * **Criar virou subconjunto de ver** (F8.3): o seletor só oferece porto concedido. É a revisão do
+     * desenho da F7 — lá o supervisor montava qualquer par, o que agora produziria uma rota que some da
+     * própria lista no instante seguinte.
+     */
+    @Test
+    fun `o seletor so oferece porto concedido`() = runTest(mainRule.dispatcher) {
+        val portoSantarem = Porto("porto-santarem", "Porto de Santarém", "loc-belem")
+        val vm = formVm(
+            portos = portos(listOf(portoBelem, portoParintins, portoSantarem)),
+            escopo = concedido(),
+        )
+        advanceUntilIdle()
+
+        assertEquals(
+            listOf("Porto de Parintins · Parintins/AM", "Porto de Val-de-Cães · Belém/PA"),
+            vm.uiState.value.portos.map { it.rotulo },
+        )
+    }
+
+    /** Um porto só não monta travessia: com menos de dois, a tela diz o que falta. */
+    @Test
+    fun `um porto concedido nao forma par`() = runTest(mainRule.dispatcher) {
+        val vm = formVm(
+            escopo = FakeEscopoDaSessao.concedido(
+                portoIds = setOf("porto-a"),
+                embarcacaoIds = emptySet(),
+            ),
+        )
+        advanceUntilIdle()
+
+        assertTrue(vm.uiState.value.semConcessao)
     }
 }

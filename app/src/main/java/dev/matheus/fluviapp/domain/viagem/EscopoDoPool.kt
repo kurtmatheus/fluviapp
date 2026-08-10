@@ -53,11 +53,29 @@ fun escopoDoPool(papel: String?, atuacao: AtuacaoDaEmpresa?): EscopoDoPool = whe
 }
 
 /**
+ * Este porto está ao alcance de quem olha? É o que recorta o **seletor** do cadastro de rota (F8.3) —
+ * criar virou subconjunto de ver, e um seletor que oferecesse porto não concedido produziria uma rota
+ * que some da lista de quem a criou.
+ */
+fun EscopoDoPool.operaNo(portoId: String): Boolean = when (this) {
+    EscopoDoPool.Todo -> true
+    EscopoDoPool.Nenhum -> false
+    is EscopoDoPool.Concedido -> atuacao.operaNoPorto(portoId)
+}
+
+/** Idem para a embarcação — o outro eixo da concessão, que recorta o seletor do cadastro de viagem. */
+fun EscopoDoPool.concedeu(embarcacaoId: String): Boolean = when (this) {
+    EscopoDoPool.Todo -> true
+    EscopoDoPool.Nenhum -> false
+    is EscopoDoPool.Concedido -> atuacao.concedeu(embarcacaoId)
+}
+
+/**
  * As rotas que este escopo enxerga — ligações entre **dois portos concedidos**.
  *
- * A rota continua sendo criável em qualquer par (ADR-0022 D3, e isso não muda): criar é povoar o mundo,
- * ver é operar nele. O que muda é que a empresa deixa de encontrar na lista dela ligações que não pode
- * ofertar.
+ * *A F7 deixava a rota criável em qualquer par — "criar é povoar o mundo, ver é operar nele". A F8.3
+ * desfez essa assimetria: com a lista recortada, criar fora do alcance produziria uma ligação que some no
+ * instante seguinte. Ver e criar passaram a ter o mesmo limite (ver [operaNo]).*
  */
 fun List<Rota>.noEscopo(escopo: EscopoDoPool): List<Rota> = when (escopo) {
     EscopoDoPool.Todo -> this

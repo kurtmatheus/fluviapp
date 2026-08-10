@@ -30,6 +30,13 @@ data class FormRotaUiState(
     val portos: List<PortoOpcao> = emptyList(),
     val rotasExistentes: List<Rota> = emptyList(),
 
+    /**
+     * Menos de dois portos concedidos — não há par a formar (F8.3). É o preço declarado de recortar o
+     * painel pela atuação: provisionar virou pré-requisito, e a tela diz isso em vez de mostrar dois
+     * dropdowns vazios que pareceriam defeito.
+     */
+    val semConcessao: Boolean = false,
+
     val isProcessing: Boolean = false,
 )
 

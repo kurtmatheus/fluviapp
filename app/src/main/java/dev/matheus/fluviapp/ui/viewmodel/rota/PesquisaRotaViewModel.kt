@@ -6,9 +6,12 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.matheus.fluviapp.domain.operacoes.PermissoesUsuario
 import dev.matheus.fluviapp.domain.porto.Porto
 import dev.matheus.fluviapp.domain.rota.Rota
+import dev.matheus.fluviapp.domain.viagem.EscopoDoPool
+import dev.matheus.fluviapp.domain.viagem.noEscopo
 import dev.matheus.fluviapp.services.repository.cadastro.localidade.LocalidadeRepository
 import dev.matheus.fluviapp.services.repository.cadastro.porto.PortoRepository
 import dev.matheus.fluviapp.services.repository.cadastro.rota.RotaRepository
+import dev.matheus.fluviapp.services.repository.operacoes.EscopoDaSessao
 import dev.matheus.fluviapp.services.repository.operacoes.SessaoUsuario
 import dev.matheus.fluviapp.ui.states.PesquisaRotaUiState
 import dev.matheus.fluviapp.ui.states.RotaResultado
@@ -20,21 +23,25 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
- * Busca de rotas — o pool compartilhado visto por inteiro.
+ * Busca de rotas — o pool compartilhado **recortado pela atuação** de quem olha.
  *
- * Duas coisas a separam das outras buscas do app:
+ * Três coisas a separam das outras buscas do app:
  *
+ * - o recorte por concessão (F8.3, alinhando a Rota à Viagem): a empresa vê as ligações entre portos que
+ *   lhe foram concedidos; a plataforma vê o pool inteiro, porque é ela quem o cura. *A versão da F7
+ *   mostrava tudo a todos e falava numa "lista de negadas" — ela não existe mais: com a visualização já
+ *   recortada, não sobrou trabalho para uma deny-list;*
  * - ela mostra **também as inativas**, marcadas. O descartado é registro (§7.1): um pool em que só se
  *   vê o que está em uso não responde por que um bilhete antigo aponta para onde aponta;
  * - **inativar é ato de plataforma** (ADR-0022 D3). Tirar uma rota do pool afeta quem nem sabe que ela
- *   existe — é o único poder deste conjunto que atinge terceiros. O supervisor cria; para "não quero
- *   ver esta", o instrumento é a lista de negadas da atuação (F8).
+ *   existe — é o único poder deste conjunto que atinge terceiros.
  */
 @HiltViewModel
 class PesquisaRotaViewModel @Inject constructor(
     private val rotaRepository: RotaRepository,
     private val portoRepository: PortoRepository,
     private val localidadeRepository: LocalidadeRepository,
+    private val escopoDaSessao: EscopoDaSessao,
     private val sessaoUsuario: SessaoUsuario,
 ) : ViewModel() {
 
@@ -69,11 +76,20 @@ class PesquisaRotaViewModel @Inject constructor(
     }
 
     private suspend fun carregar() {
+        val escopo = escopoDaSessao.atual()
+
         val localidades = localidadeRepository.obterTodas().associate { it.id to it.rotulo }
         portosPorId = portoRepository.obterTodos().associate { it.id to it.rotuloCom(localidades) }
-        rotas = rotaRepository.obterTodas()
+        rotas = rotaRepository.obterTodas().noEscopo(escopo)
 
-        _uiState.update { it.copy(resultados = filtrar(it.porto)) }
+        _uiState.update {
+            it.copy(
+                resultados = filtrar(it.porto),
+                // Distingue "não recebeu porto nenhum" de "não há rota entre os que recebeu": a primeira
+                // se resolve com a plataforma, a segunda com o botão de criar.
+                semConcessao = escopo == EscopoDoPool.Nenhum,
+            )
+        }
     }
 
     /** Casa o texto contra **os dois** portos: "o que liga daqui" inclui chegar aqui. */

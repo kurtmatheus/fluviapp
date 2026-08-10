@@ -52,69 +52,78 @@ fun FormRotaScreen(
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             CommonAreaForm(modifier = modifier, titleArea = R.string.subtitle_nova_rota) {
-                // Os dois portos são um par: o erro é do conjunto, e por isso a mensagem aparece uma
-                // vez — no destino, que é onde a escolha se completa.
-                DropDownFormField(
-                    modifier = it.fillMaxWidth(),
-                    listaItens = uiState.portos.map { porto -> porto.rotulo },
-                    label = R.string.label_porto_origem,
-                    value = uiState.portoOrigem,
-                    isError = uiState.erroPar.existe,
-                    onValueChange = onPortoOrigemChange,
-                )
-                DropDownFormField(
-                    modifier = it.fillMaxWidth(),
-                    listaItens = uiState.portos.map { porto -> porto.rotulo },
-                    label = R.string.label_porto_destino,
-                    value = uiState.portoDestino,
-                    isError = uiState.erroPar.existe,
-                    onValueChange = onPortoDestinoChange,
-                )
-                if (uiState.erroPar.existe) {
-                    TextRegularBrown(text = stringResource(uiState.erroPar.mensagem))
+                if (uiState.semConcessao) {
+                    // Menos de dois portos concedidos não formam par (F8.3). A mensagem manda a pessoa
+                    // ao lugar certo: quem provisiona é a plataforma.
+                    TextRegularBrown(text = stringResource(R.string.msg_rota_sem_concessao))
+                } else {
+                    // Os dois portos são um par: o erro é do conjunto, e por isso a mensagem aparece uma
+                    // vez — no destino, que é onde a escolha se completa.
+                    DropDownFormField(
+                        modifier = it.fillMaxWidth(),
+                        listaItens = uiState.portos.map { porto -> porto.rotulo },
+                        label = R.string.label_porto_origem,
+                        value = uiState.portoOrigem,
+                        isError = uiState.erroPar.existe,
+                        onValueChange = onPortoOrigemChange,
+                    )
+                    DropDownFormField(
+                        modifier = it.fillMaxWidth(),
+                        listaItens = uiState.portos.map { porto -> porto.rotulo },
+                        label = R.string.label_porto_destino,
+                        value = uiState.portoDestino,
+                        isError = uiState.erroPar.existe,
+                        onValueChange = onPortoDestinoChange,
+                    )
+                    if (uiState.erroPar.existe) {
+                        TextRegularBrown(text = stringResource(uiState.erroPar.mensagem))
+                    }
+
+                    // Os dois fatos que justificam a Rota existir em vez de sair dos portos (§7.1).
+                    FormTextFieldBrownNoIcon(
+                        modifier = it.fillMaxWidth(),
+                        value = uiState.distanciaMn,
+                        label = R.string.label_distancia_mn,
+                        onValueChange = onDistanciaChange,
+                        isError = uiState.isDistanciaError,
+                        textoErro = R.string.error_medida_invalida,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    )
+                    FormTextFieldBrownNoIcon(
+                        modifier = it.fillMaxWidth(),
+                        value = uiState.tempoMedioH,
+                        label = R.string.label_tempo_medio_h,
+                        onValueChange = onTempoChange,
+                        isError = uiState.isTempoError,
+                        textoErro = R.string.error_medida_invalida,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    )
+
+                    // A tela diz que não há edição — quem procurar por ela precisa saber o que fazer no
+                    // lugar.
+                    TextRegularBrown(text = stringResource(R.string.msg_rota_imutavel))
                 }
-
-                // Os dois fatos que justificam a Rota existir em vez de sair dos portos (§7.1).
-                FormTextFieldBrownNoIcon(
-                    modifier = it.fillMaxWidth(),
-                    value = uiState.distanciaMn,
-                    label = R.string.label_distancia_mn,
-                    onValueChange = onDistanciaChange,
-                    isError = uiState.isDistanciaError,
-                    textoErro = R.string.error_medida_invalida,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                )
-                FormTextFieldBrownNoIcon(
-                    modifier = it.fillMaxWidth(),
-                    value = uiState.tempoMedioH,
-                    label = R.string.label_tempo_medio_h,
-                    onValueChange = onTempoChange,
-                    isError = uiState.isTempoError,
-                    textoErro = R.string.error_medida_invalida,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                )
-
-                // A tela diz que não há edição — quem procurar por ela precisa saber o que fazer no lugar.
-                TextRegularBrown(text = stringResource(R.string.msg_rota_imutavel))
             }
 
-            Column(
-                modifier = modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                CommonIconButton(
-                    modifier = modifier,
-                    onClick = onClickSalvar,
-                    text = stringResource(id = R.string.btn_salvar),
-                    icon = {
-                        Icon(
-                            imageVector = Icons.Filled.Check,
-                            contentDescription = stringResource(id = R.string.description_confirmacao),
-                        )
-                    },
-                    color = MaterialTheme.colorScheme.primary,
-                    isProcessing = uiState.isProcessing,
-                )
+            if (!uiState.semConcessao) {
+                Column(
+                    modifier = modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    CommonIconButton(
+                        modifier = modifier,
+                        onClick = onClickSalvar,
+                        text = stringResource(id = R.string.btn_salvar),
+                        icon = {
+                            Icon(
+                                imageVector = Icons.Filled.Check,
+                                contentDescription = stringResource(id = R.string.description_confirmacao),
+                            )
+                        },
+                        color = MaterialTheme.colorScheme.primary,
+                        isProcessing = uiState.isProcessing,
+                    )
+                }
             }
         }
     }

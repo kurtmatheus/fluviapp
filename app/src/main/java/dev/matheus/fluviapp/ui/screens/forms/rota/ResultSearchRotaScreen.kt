@@ -58,32 +58,39 @@ fun ResultSearchRotaScreen(
         Column {
             CommonTopRow(modifier = modifier, titulo = titulo)
 
-            Column(
-                modifier = modifier.padding(10.dp, 10.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                // Um campo só, casando contra os dois portos: "o que liga daqui" inclui chegar aqui.
-                FormTextFieldBrownNoIcon(
-                    modifier = modifier.fillMaxWidth(),
-                    value = uiState.porto,
-                    label = R.string.label_porto,
-                    onValueChange = onPortoChange,
-                    keyboardOptions = KeyboardOptions(
-                        capitalization = KeyboardCapitalization.Words,
-                        imeAction = ImeAction.Search,
-                    ),
-                )
-            }
-            FormDashedDivider(modifier = modifier.fillMaxWidth())
-
-            LazyColumn {
-                items(uiState.resultados) { rota ->
-                    CardResultRota(
-                        modifier = modifier,
-                        rota = rota,
-                        podeInativar = uiState.podeInativar,
-                        onInativar = { rotaParaInativar = it },
+            if (uiState.semConcessao) {
+                // O vazio que a plataforma resolve, distinto do vazio que o botão de criar resolve.
+                Column(modifier = modifier.padding(10.dp, 10.dp)) {
+                    TextRegularBrown(text = stringResource(R.string.msg_rota_sem_concessao))
+                }
+            } else {
+                Column(
+                    modifier = modifier.padding(10.dp, 10.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    // Um campo só, casando contra os dois portos: "o que liga daqui" inclui chegar aqui.
+                    FormTextFieldBrownNoIcon(
+                        modifier = modifier.fillMaxWidth(),
+                        value = uiState.porto,
+                        label = R.string.label_porto,
+                        onValueChange = onPortoChange,
+                        keyboardOptions = KeyboardOptions(
+                            capitalization = KeyboardCapitalization.Words,
+                            imeAction = ImeAction.Search,
+                        ),
                     )
+                }
+                FormDashedDivider(modifier = modifier.fillMaxWidth())
+
+                LazyColumn {
+                    items(uiState.resultados) { rota ->
+                        CardResultRota(
+                            modifier = modifier,
+                            rota = rota,
+                            podeInativar = uiState.podeInativar,
+                            onInativar = { rotaParaInativar = it },
+                        )
+                    }
                 }
             }
         }
