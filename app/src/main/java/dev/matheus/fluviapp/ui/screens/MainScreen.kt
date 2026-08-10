@@ -27,9 +27,8 @@ import dev.matheus.fluviapp.domain.screendata.AcaoMenu
 import dev.matheus.fluviapp.domain.screendata.SECOES_REVITALIZADAS
 import dev.matheus.fluviapp.domain.screendata.SecaoMenu
 import dev.matheus.fluviapp.domain.screendata.acoesPorSecao
+import dev.matheus.fluviapp.ui.components.contents.InicioContent
 import dev.matheus.fluviapp.ui.components.drawer.FluviMenuDrawer
-// REVITALIZAÇÃO: voltam com a seção Viagem.
-// import dev.matheus.fluviapp.ui.components.contents.HomeContent
 import dev.matheus.fluviapp.ui.states.MainScreenState
 import dev.matheus.fluviapp.ui.states.MainScreenUiState
 
@@ -96,38 +95,23 @@ fun MainScreen(
                         )
                     }
 
-                    // REVITALIZAÇÃO: no lugar da lista de viagens, o painel vazio.
-                    // is MainScreenState.HOME -> HomeContent(
-                    //     modifier = modifier,
-                    //     titulo = titulo,
-                    //     listaViagens = state.listaViagens,
-                    //     onClickNovaPassagem = onClickAdicionarPassagem,
-                    // )
-                    is MainScreenState.HOME -> PainelVazio(modifier = modifier)
+                    // O Início voltou na F8.4, e **quem decide o que ele mostra é o domínio**: a tela
+                    // recebe um `InicioDaTela` já resolvido e desenha a face dele. A divisão entre
+                    // plataforma e empresa não mora mais aqui.
+                    is MainScreenState.HOME -> InicioContent(
+                        modifier = modifier,
+                        inicio = state.inicio,
+                        // onClickViagem levará à emissão sobre a ocorrência — é da F9.
+                    )
                 }
             }
         },
     )
 }
 
-/**
- * O painel enquanto só a Empresa existe. Diz o que fazer em vez de mostrar uma lista vazia — lista vazia
- * se lê como falha de carregamento, e não é isso que está acontecendo.
- */
-@Composable
-private fun PainelVazio(modifier: Modifier) {
-    Box(modifier = modifier.fillMaxSize()) {
-        Text(
-            modifier = Modifier
-                .align(Alignment.Center)
-                .padding(horizontal = 32.dp),
-            text = stringResource(R.string.msg_painel_sem_secao),
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onBackground,
-            textAlign = TextAlign.Center,
-        )
-    }
-}
+// O `PainelVazio` saiu na F8.4: cada face do Início agora tem o próprio recado dentro do
+// `InicioContent`, e um "painel vazio" genérico apagaria justamente a distinção que o domínio passou a
+// fazer — a plataforma sem lista, a empresa sem saída e a empresa sem concessão são três coisas.
 
 @Composable
 private fun BannerSincronizacaoOffline() {

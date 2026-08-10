@@ -20,6 +20,8 @@ import dev.matheus.fluviapp.services.repository.operacoes.EscopoDaSessao
 import dev.matheus.fluviapp.services.repository.operacoes.EscopoDaSessaoPadrao
 import dev.matheus.fluviapp.services.repository.operacoes.SessaoUsuario
 import dev.matheus.fluviapp.services.repository.operacoes.SessaoUsuarioRoom
+import dev.matheus.fluviapp.util.Relogio
+import dev.matheus.fluviapp.util.RelogioDoSistema
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.EmpresaFirestoreRepository
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.EmpresaRepository
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.EmbarcacaoFirestoreRepository
@@ -96,6 +98,11 @@ abstract class RepositorioModule {
     @Binds
     @Singleton
     abstract fun bindEscopoDaSessao(impl: EscopoDaSessaoPadrao): EscopoDaSessao
+
+    /** O instante presente — porta fina para "a saída das 06:00 já partiu" virar teste (F8.4). */
+    @Binds
+    @Singleton
+    abstract fun bindRelogio(impl: RelogioDoSistema): Relogio
 
     /** Fonte de snapshots (seam testável do sync — §10 Nível 2). */
     @Binds

@@ -376,7 +376,7 @@
     <string name="card_title_detalhes_viagem">Detalhamento de Viagem</string>
 
     <!-- Mensagens -->
-    <string name="msg_nenhuma_viagem">Nenhuma Viagem cadastrada Em Aberto.</string>
+    <string name="msg_nenhuma_viagem">Nenhuma saída nos próximos sete dias. Cadastre uma viagem na seção Viagens.</string>
     <string name="msg_retornar_emissao">Deseja retornar ao Menu principal?</string>
     <string name="msg_confirmar_exclusao">Tem certeza que deseja excluir este item?</string>
     <string name="msg_nenhum_resultado_pesquisa">Nenhum Resultado à Pesquisa selecionada.</string>
@@ -388,6 +388,7 @@
     <string name="msg_emissao_bem_sucedida">Emissão Bem sucedida.</string>
     <string name="msg_sincronizacao_offline">Sem conexão — mostrando dados salvos.</string>
     <string name="msg_painel_sem_secao">Abra o menu para começar.</string>
+    <string name="msg_painel_plataforma">Você administra a plataforma. Abra o menu para cadastrar empresas, embarcações, localidades, portos, rotas e viagens.</string>
     <string name="msg_empresa_salva">Empresa salva.</string>
     <string name="msg_embarcacao_salva">Embarcação salva.</string>
     <string name="msg_localidade_salva">Localidade salva.</string>

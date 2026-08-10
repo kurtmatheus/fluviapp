@@ -13,8 +13,10 @@ import dev.matheus.fluviapp.domain.screendata.SecaoMenu
 import dev.matheus.fluviapp.domain.screendata.acoesPorSecao
 import dev.matheus.fluviapp.domain.screendata.secoesDoMenu
 import dev.matheus.fluviapp.ui.components.drawer.FluviMenuDrawer
+import dev.matheus.fluviapp.ui.states.InicioDaTela
 import dev.matheus.fluviapp.ui.states.MainScreenState
 import dev.matheus.fluviapp.ui.states.MainScreenUiState
+import dev.matheus.fluviapp.ui.states.ViagemDisponivelCard
 import dev.matheus.fluviapp.ui.theme.FluviAppTheme
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -42,13 +44,14 @@ class PainelRevitalizadoTest {
     /** O menu de quem mais enxerga no app: se nem para o ADM vazou, não vazou para ninguém. */
     private val secoesDoAdm = secoesDoMenu(Papel.ADM.name)
 
-    private fun montarPainel() {
+    private fun montarPainel(inicio: InicioDaTela = InicioDaTela.DaPlataforma) {
         composeTestRule.setContent {
             FluviAppTheme {
                 MainScreen(
                     state = MainScreenUiState(
                         userName = "Odair",
                         secoesVisiveis = secoesDoAdm,
+                        inicio = inicio,
                         mainScreenState = MainScreenState.HOME,
                     ),
                     acoesPorSecao = acoesPorSecao(secoesDoAdm),
@@ -76,22 +79,55 @@ class PainelRevitalizadoTest {
 
     // --- O painel ---
 
+    /**
+     * **O Início da plataforma não é uma lista de saídas** (F8.4): ela monta o universo e não vende. O
+     * sumário do painel dela é a F10; até lá, o convite a abrir o menu.
+     */
     @Test
-    fun painel_semSecaoAberta_convidaAAbrirOMenu() {
-        montarPainel()
+    fun painel_daPlataforma_convidaAAbrirOMenu() {
+        montarPainel(InicioDaTela.DaPlataforma)
 
-        composeTestRule.onNodeWithText(texto(R.string.msg_painel_sem_secao)).assertIsDisplayed()
+        composeTestRule.onNodeWithText(texto(R.string.msg_painel_plataforma)).assertIsDisplayed()
+        composeTestRule.onNodeWithText(texto(R.string.subtitle_viagens_disponiveis)).assertDoesNotExist()
+    }
+
+    /** O Início da empresa é "Viagens Disponíveis" — a ocorrência datada, não o cadastro. */
+    @Test
+    fun painel_daEmpresa_mostraViagensDisponiveis() {
+        montarPainel(InicioDaTela.DaEmpresa(listOf(SAIDA_DE_EXEMPLO)))
+
+        composeTestRule.onNodeWithText(texto(R.string.subtitle_viagens_disponiveis)).assertIsDisplayed()
+        composeTestRule.onNodeWithText(SAIDA_DE_EXEMPLO.partida).assertIsDisplayed()
+        composeTestRule.onNodeWithText(SAIDA_DE_EXEMPLO.embarcacao).assertIsDisplayed()
     }
 
     /**
-     * O que saiu do painel junto com os domínios que o alimentavam: a lista de próximas viagens e o
-     * embarque (que lê o QR de uma passagem). Um app recém-implementado não teria nem um nem outro.
+     * **Os dois vazios não podem virar a mesma tela**: um manda esperar a próxima semana, o outro manda
+     * procurar a plataforma. É a distinção que o `InicioDaTela` existe para preservar.
+     */
+    @Test
+    fun painel_daEmpresa_distingueSemSaidaDeSemConcessao() {
+        montarPainel(InicioDaTela.DaEmpresa(emptyList()))
+        composeTestRule.onNodeWithText(texto(R.string.msg_nenhuma_viagem)).assertIsDisplayed()
+        composeTestRule.onNodeWithText(texto(R.string.msg_viagem_sem_concessao)).assertDoesNotExist()
+    }
+
+    @Test
+    fun painel_semConcessao_mandaProcurarAPlataforma() {
+        montarPainel(InicioDaTela.SemConcessao)
+
+        composeTestRule.onNodeWithText(texto(R.string.msg_viagem_sem_concessao)).assertIsDisplayed()
+        composeTestRule.onNodeWithText(texto(R.string.msg_nenhuma_viagem)).assertDoesNotExist()
+    }
+
+    /**
+     * O embarque saiu do painel com o domínio que o alimenta (lê o QR de uma passagem) e ainda não voltou:
+     * a Passagem é a F9.
      */
     @Test
     fun painel_naoOfereceOQueNaoFoiRevitalizado() {
         montarPainel()
 
-        composeTestRule.onNodeWithText(texto(R.string.subtitle_viagens_disponiveis)).assertDoesNotExist()
         composeTestRule.onNodeWithContentDescription(texto(R.string.btn_embarque)).assertDoesNotExist()
     }
 
@@ -169,3 +205,12 @@ class PainelRevitalizadoTest {
     fun menu_expandeViagens_eNavegaPelaAcao() =
         expandeENavega(SecaoMenu.VIAGEM, AcaoMenu.VIAGEM_NOVA)
 }
+
+private val SAIDA_DE_EXEMPLO = ViagemDisponivelCard(
+    id = "v1@2026-08-11",
+    viagemId = "v1",
+    partida = "Terça-feira, 11/08 · 18:00",
+    rota = "Porto de Val-de-Cães · Belém/PA → Porto de Parintins · Parintins/AM",
+    embarcacao = "F/B Modelo",
+    chegada = "Qui 00:00",
+)

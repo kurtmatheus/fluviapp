@@ -14,8 +14,18 @@ import dev.matheus.fluviapp.telemetry.EstadoSincronizacao
 // REVITALIZAÇÃO: voltam com as seções Passagem / Equipe.
 // import dev.matheus.fluviapp.services.repository.operacoes.FuncionarioRepository
 // import dev.matheus.fluviapp.services.repository.firebase.PassagemFirestoreRepository
+import dev.matheus.fluviapp.domain.viagem.inicioDoPainel
+import dev.matheus.fluviapp.ui.viewmodel.helpers.inicio.paraTela
+import dev.matheus.fluviapp.ui.viewmodel.helpers.inicio.rotuloCom
+import dev.matheus.fluviapp.services.repository.cadastro.localidade.LocalidadeRepository
+import dev.matheus.fluviapp.services.repository.cadastro.porto.PortoRepository
+import dev.matheus.fluviapp.services.repository.cadastro.rota.RotaRepository
+import dev.matheus.fluviapp.services.repository.cadastro.viagem.EmbarcacaoRepository
+import dev.matheus.fluviapp.services.repository.cadastro.viagem.ViagemRepository
+import dev.matheus.fluviapp.services.repository.operacoes.EscopoDaSessao
 import dev.matheus.fluviapp.ui.states.MainScreenState
 import dev.matheus.fluviapp.ui.states.MainScreenUiState
+import dev.matheus.fluviapp.util.Relogio
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -35,10 +45,14 @@ import javax.inject.Inject
  * a seção correspondente entrar em [dev.matheus.fluviapp.domain.screendata.SECOES_REVITALIZADAS], e assim
  * a volta é uma leitura, não uma arqueologia no histórico.
  *
- * **A da viagem não volta assim** (F8.0): o `viagemRepository` e o `viagemMapper` que estavam aqui eram da
- * Viagem-trecho, e ela foi demolida. Restaurar as linhas comentadas apontaria para tipos que não existem —
- * então elas saíram, e não ficaram fingindo que esperam. O que a home mostra é a **F10**, e ela nasce do
- * contexto escolhido (papel, empresa, cargo), não de uma lista de próximas viagens.
+ * **A lista de viagens voltou na F8.4 — outra** (decisão do analista, 2026-08-10). O `viagemRepository` e
+ * o `viagemMapper` que estavam aqui eram da Viagem-trecho, e restaurá-los teria sido ressuscitar o que a
+ * F8.0 demoliu. O que voltou é o **Início da empresa**: a lista de `ViagemSemana` — ocorrências datadas —
+ * recortada pela concessão, sob o subtítulo *Viagens Disponíveis*.
+ *
+ * E ela não é mais uma lista só para todo mundo: **quem decide o que a tela mostra é o domínio**
+ * (`inicioDoPainel`), pelo mesmo `EscopoDoPool` que recorta busca e cadastro. A plataforma não vê saídas
+ * porque não vende; o sumário do painel dela continua sendo a **F10**.
  */
 @HiltViewModel
 class MainScreenViewModel @Inject constructor(
@@ -46,6 +60,13 @@ class MainScreenViewModel @Inject constructor(
     // REVITALIZAÇÃO: voltam com as seções Passagem / Equipe.
     // private val passagemRepository: PassagemFirestoreRepository,
     // private val funcionarioRepository: FuncionarioRepository,
+    private val viagemRepository: ViagemRepository,
+    private val rotaRepository: RotaRepository,
+    private val embarcacaoRepository: EmbarcacaoRepository,
+    private val portoRepository: PortoRepository,
+    private val localidadeRepository: LocalidadeRepository,
+    private val escopoDaSessao: EscopoDaSessao,
+    private val relogio: Relogio,
     private val firebaseAuth: FirebaseAuth,
     private val sincronizacaoSessao: SincronizacaoSessao,
     private val estadoSincronizacao: EstadoSincronizacao,
@@ -56,11 +77,39 @@ class MainScreenViewModel @Inject constructor(
         get() = _uiState.asStateFlow()
 
     init {
-        // Sem viagens a observar, o painel não tem o que carregar: nasce em HOME. Antes quem tirava o
-        // estado de LOADING era a primeira emissão de `observarViagens` — desligá-la sem isto deixaria o
-        // spinner girando para sempre.
         obterUsuario()
         observarSincronizacao()
+        carregarInicio()
+    }
+
+    /**
+     * O Início, decidido pelo domínio.
+     *
+     * As quatro leituras são de coleções pequenas e a junção é em memória — mesma escolha do "Porto X —
+     * Belém/PA", e a única possível num pool sem `empresaId`. A alternativa (uma consulta por linha) não
+     * existe no Firestore, e um índice denormalizado seria uma segunda verdade sobre a concessão.
+     */
+    private fun carregarInicio() {
+        viewModelScope.launch {
+            val escopo = escopoDaSessao.atual()
+
+            val localidades = localidadeRepository.obterTodas().associate { it.id to it.rotulo }
+            val portosPorId = portoRepository.obterTodos()
+                .associate { it.id to it.rotuloCom(localidades) }
+            val rotasPorId = rotaRepository.obterTodas().associateBy { it.id }
+            val embarcacoes = embarcacaoRepository.obterTodos().associate { it.id to it.descricaoNome }
+
+            val inicio = inicioDoPainel(
+                escopo = escopo,
+                viagens = viagemRepository.obterTodas(),
+                rotasPorId = rotasPorId,
+                agora = relogio.agora(),
+            )
+
+            _uiState.update {
+                it.copy(inicio = inicio.paraTela(rotasPorId, portosPorId, embarcacoes))
+            }
+        }
     }
 
     // D4: reflete a saúde do sync (EstadoSincronizacao) num flag de UI — o banner offline-first é
@@ -97,13 +146,6 @@ class MainScreenViewModel @Inject constructor(
         }
     }
 
-    // REVITALIZAÇÃO (F8.0): `observarViagens()` saiu de vez, e não fica comentado esperando.
-    //
-    // Ele coletava o espelho Room da Viagem-trecho e montava cards de "próximas viagens". As três peças
-    // que ele usava morreram juntas: a entidade, o espelho (o Room deixou de ter a tabela) e o card. O que
-    // a **F10** puser aqui parte de outra pergunta — o que este usuário faz agora, dado papel, empresa e
-    // cargo —, e não de uma lista de cadastros.
-
     fun irParaHome() {
         _uiState.update { it.copy(mainScreenState = MainScreenState.HOME) }
     }
@@ -124,10 +166,9 @@ class MainScreenViewModel @Inject constructor(
         }
     }
 
-    // REVITALIZAÇÃO: sem lista na home, não há o que puxar para atualizar — o pull-to-refresh saiu da tela
-    // junto (ADR-0020), e o `refresh()` que o servia saiu com ele na F8.0. Ele forçava `Source.SERVER` no
-    // repositório da Viagem-trecho para reencher o Room; nenhuma das duas coisas existe mais. Se o Início
-    // da F10 quiser atualizar à mão, será sobre o `StateFlow` do listener (ADR-0017), não sobre o Room.
+    // REVITALIZAÇÃO: o pull-to-refresh saiu da tela com a lista antiga (ADR-0020) e não voltou com a nova.
+    // Ele forçava `Source.SERVER` para reencher o Room, e nem o Room nem aquele repositório existem — o
+    // que reabastece a lista de hoje é o listener do ADR-0017. Reintroduzi-lo é decisão da F10.
 
     // REVITALIZAÇÃO: sincronizar coleção que nenhuma tela viva consome é pagar listener por nada. A
     // Empresa tem a própria sincronização, disparada por quem a usa (EmpresaFirestoreRepository).
