@@ -145,6 +145,21 @@ nasceu do incômodo de o `ADM` estar vendo a Equipe, e desfez o nó **usuário �
   `FormPassagemHelper` **podado**, com `// REVITALIZAÇÃO:` nos dois pontos que a F9 retoma: os nomes do
   snapshot (que passam a vir de Viagem → Rota → Portos) e a tarifa (que o §7.2 tornou inferida).
 
+## Pendência de execução — antes de fasear a Passagem (F9)
+
+**Rodar e verificar o `FormViagemScreenTest`**, e com ele a suíte instrumentada inteira. Ele foi escrito
+em `9c2c386` junto da correção da máscara de hora e **nunca foi executado**: o AVD travou na sessão
+(caiu duas vezes no meio da suíte e depois não completou o boot). Ele compila e segue o molde dos testes
+de tela que passam — mas *compila* não é *passa*, e o CI não roda instrumentado, então ninguém descobre
+sozinho.
+
+**Por que isto vira pré-requisito da F9, e não um item solto:** os dois únicos defeitos que chegaram ao
+tester nesta linha de trabalho passaram por todas as suítes de JVM e morreram só na tela — o dropdown
+vazio do Porto (rc.3 da fase anterior) e o **teclado numérico sem dois-pontos** (rc.3 desta). Nos dois,
+nenhuma camada mentia isoladamente; o defeito estava no encontro delas com o aparelho. A Passagem é a
+seção com mais formulário do app, e entrar nela com a rede de tela furada é escolher descobrir na
+homologação de novo.
+
 ## Como escrever o próximo
 
 1. O estudo vem antes (`docs/design/`), mapeando o código como está — com arquivo e linha.
