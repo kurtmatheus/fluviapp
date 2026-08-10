@@ -10,11 +10,25 @@ import org.junit.Test
  */
 class AcaoMenuTest {
 
+    /**
+     * A `VIAGEM` está **em obras** (F8.0): as ações da Viagem-trecho saíram com ela, e as da Viagem nova
+     * chegam na F8.2. É a única seção do enum nesse estado, e ela é a exceção declarada aqui em vez de o
+     * invariante ser afrouxado — quem acrescentar seção nova continua obrigado a lhe dar ação.
+     */
     @Test
     fun `toda secao oferece ao menos uma acao — nenhuma abre vazia`() {
-        SecaoMenu.entries.forEach { secao ->
+        (SecaoMenu.entries - SecaoMenu.VIAGEM).forEach { secao ->
             assertTrue("$secao sem ações", AcaoMenu.de(secao).isNotEmpty())
         }
+    }
+
+    /**
+     * O contrapeso da exceção acima, e um **estopim**: quando a F8.2 der ações à Viagem, este teste fica
+     * vermelho e cobra que a exceção saia junto. Sem ele, o buraco ficaria aberto por esquecimento.
+     */
+    @Test
+    fun `a viagem esta em obras — sem acao ate a F8 ponto 2`() {
+        assertEquals(emptyList<AcaoMenu>(), AcaoMenu.de(SecaoMenu.VIAGEM))
     }
 
     @Test
@@ -35,7 +49,7 @@ class AcaoMenuTest {
     @Test
     fun `os cadastros oferecem novo e pesquisar, nessa ordem`() {
         listOf(
-            SecaoMenu.VIAGEM,
+            // `SecaoMenu.VIAGEM` volta a esta lista na F8.2 — ver `a viagem esta em obras`.
             SecaoMenu.EQUIPE,
             SecaoMenu.EMPRESA,
             SecaoMenu.EMBARCACAO,

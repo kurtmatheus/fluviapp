@@ -43,24 +43,8 @@ fun NavHostController.navegaParaPrimeiroAcesso(email: String) {
     navigate("${FluviAppGraphDestinations.PrimeiroAcesso.route}?$ARG_EMAIL_PRIMEIRO_ACESSO=$email")
 }
 
-fun NavHostController.navegaParaPesquisarViagemGraph() {
-    navegaDireto(FluviAppGraphDestinations.PesquisarViagemGraph.route)
-}
-
 fun NavHostController.navegaParaPesquisarPassagemGraph() {
     navegaDireto(FluviAppGraphDestinations.PesquisarPassagemGraph.route)
-}
-
-fun NavHostController.navegaParaFormularioViagem(idViagem: String = "") {
-    navegaDireto("${FluviAppNavComposableDestinations.FormViagemNavComposable.route}?idViagem=$idViagem")
-}
-
-fun NavHostController.navegaParaResultadosPesquisarViagem() {
-    navegaDireto(FluviAppNavComposableDestinations.ResultPesquisarViagemNavComposable.route)
-}
-
-fun NavHostController.navegaParaDetalhesViagem(idViagem: String) {
-    navegaDireto("${FluviAppNavComposableDestinations.DetalhesViagemNavComposable.route}/$idViagem")
 }
 
 fun NavHostController.navegarParaFormularioPassagemComViagem(idViagem: String, idPassagem: String? = null) {

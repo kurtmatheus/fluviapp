@@ -18,7 +18,6 @@ import dev.matheus.fluviapp.services.repository.operacoes.FuncionarioRepository
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.EmpresaRepository
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.EmbarcacaoRepository
 import dev.matheus.fluviapp.services.repository.firebase.PassagemFirestoreRepository
-import dev.matheus.fluviapp.services.repository.firebase.ViagemFirestoreRepository
 import dev.matheus.fluviapp.services.repository.firebase.autenticacao.AutenticacaoRepository
 import dev.matheus.fluviapp.services.repository.firebase.autenticacao.PerfilAutenticado
 import dev.matheus.fluviapp.services.repository.firebase.autenticacao.ResultadoAutenticacao
@@ -44,7 +43,6 @@ class LoginViewModel @Inject constructor(
     private val empresaRepository: EmpresaRepository,
     private val embarcacaoRepository: EmbarcacaoRepository,
     private val funcionarioRepository: FuncionarioRepository,
-    private val viagemRepository: ViagemFirestoreRepository,
     private val passagemRepository: PassagemFirestoreRepository,
 ) : ViewModel() {
 
@@ -177,6 +175,10 @@ class LoginViewModel @Inject constructor(
      * restam estão em Viagem e Equipe, que o menu não alcança. Um listener anexado a cada login numa
      * coleção sem leitor é custo sem contrapartida, e some sem que nada em tela mude.
      *
+     * A `viagens` **saiu na F8.0**, pela mesma razão e um passo adiante: a coleção que ela aquecia é a do
+     * trecho disfarçado, que deixou de ter entidade. A `Viagem` da F8 ligará o próprio listener na tela
+     * dela, como fazem a Rota, o Porto e a Localidade.
+     *
      * A `localidades` **não entra**: quem a observa é o ViewModel da própria seção, que liga o listener ao
      * abrir a busca. Sincronizar tudo no login é o hábito antigo, de quando o Room precisava estar cheio
      * antes de alguém olhar — com o cache do SDK, cada tela liga o que usa (ADR-0017 D1).
@@ -186,7 +188,6 @@ class LoginViewModel @Inject constructor(
             funcionarioRepository.sincronizar()
             empresaRepository.sincronizar()
             embarcacaoRepository.sincronizar()
-            viagemRepository.sincronizar()
             passagemRepository.sincronizarNumeroBilheteEmTempoReal()
             onNavegaParaMainScreen()
         } catch (e: Exception) {

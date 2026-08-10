@@ -4,14 +4,11 @@ import dev.matheus.fluviapp.R
 import dev.matheus.fluviapp.extensions.isTextoNaoNulo
 import dev.matheus.fluviapp.extensions.preencherCampo
 import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.MOTO
-import dev.matheus.fluviapp.domain.mappers.ViagemDadosViagemMapper
 import dev.matheus.fluviapp.domain.passagem.Passagem
 import dev.matheus.fluviapp.domain.passagem.ResultadoEmissao
 import dev.matheus.fluviapp.domain.passagem.StatusPassagem
 import dev.matheus.fluviapp.domain.passagem.tarifaMotoBase
-import dev.matheus.fluviapp.domain.viagem.Viagem
 import dev.matheus.fluviapp.services.repository.firebase.PassagemFirestoreRepository
-import dev.matheus.fluviapp.services.repository.firebase.ViagemFirestoreRepository
 import dev.matheus.fluviapp.ui.states.passagem.FormPassageiroUiState
 import dev.matheus.fluviapp.ui.states.passagem.FormPassagemUiState
 import dev.matheus.fluviapp.ui.states.passagem.FormVeiculoUiState
@@ -22,12 +19,12 @@ class FormPassagemHelper(
     private val uiStatePassagem: MutableStateFlow<FormPassagemUiState>,
     private val uiStatePassageiro: MutableStateFlow<FormPassageiroUiState>,
     private val uiStateVeiculo: MutableStateFlow<FormVeiculoUiState>,
-    private val viagemRepository: ViagemFirestoreRepository,
     private val passagemRepository: PassagemFirestoreRepository,
-    private val viagemDadosViagemMapper: ViagemDadosViagemMapper,
 ) {
 
-    lateinit var viagem: Viagem
+    // REVITALIZAÇÃO (F8.0): `viagem: Viagem`, o `viagemRepository` e o `viagemDadosViagemMapper` saíram
+    // com a Viagem-trecho. O helper deixou de ler a entidade viva — o que ele ainda usa da viagem é o que
+    // já está no `UiState` (ids e nomes), e é a **F9** que decide de onde isso passa a vir.
 
     // `carregarListas()` saiu inteira (ADR-0020 F2): as quatro listas que ela buscava — documento,
     // pagamento, status e categoria — são tipos do domínio, e o UiState já nasce com elas. A carga
@@ -307,24 +304,17 @@ class FormPassagemHelper(
         }
     }
 
-    suspend fun atualizarDadosViagemPorId(idViagem: String) {
-        viagem = viagemRepository.obterPorId(idViagem)
-
-        // A Viagem relaciona por id (ADR-0008 Fase 3); resolve os nomes p/ o snapshot da Passagem via
-        // o mapper (mesma resolução do card). Esses nomes são congelados na Passagem na emissão.
-        val card = viagemDadosViagemMapper.map(viagem)
-        atualizarViagemId(viagem.id)
-        atualizarIdsViagem(embarcacaoId = viagem.embarcacaoId, empresaId = viagem.empresaId)
-        atualizarEmpresaViagem(card.empresa)
-        atualizarEmbarcacaoViagem(card.embarcacao)
-        atualizarOrigemViagem(card.origem)
-        atualizarDestinoViagem(card.destino)
-        atualizarCodigoViagem(card.codigo)
-
-        // Tabela de tarifas da viagem (ADR-0013): alimenta o preview de valor e a tarifaBase congelada.
-        val tarifas = viagemRepository.obterTarifas(viagem.id).associate { it.chave to it.valor }
-        uiStatePassagem.update { it.copy(tarifasViagem = tarifas) }
-    }
+    // REVITALIZAÇÃO (F8.0): `atualizarDadosViagemPorId` fazia duas coisas, e as duas mudam de forma.
+    //
+    // 1. **os nomes do snapshot** — vinham do `ViagemDadosViagemMapper` sobre a entidade viva. Na F9 eles
+    //    saem de uma junção diferente: Viagem → Rota → Portos → Localidades, mais a Embarcação;
+    // 2. **a tabela de tarifas** — morreu no ADR-0016 §7.2. A base deixa de ser célula cadastrada e passa
+    //    a ser *inferida por agregação* das inteiras já emitidas.
+    //
+    // Os setters individuais (`atualizarViagemId`, `atualizarEmpresaViagem`, …) ficam de pé: quem os
+    // chama é o editor de passagem existente, que lê o snapshot congelado.
+    //
+    // suspend fun atualizarDadosViagemPorId(idViagem: String) { … }
 
     /**
      * Guardas de emissão (ADR-0013 §2b), fail-closed. Roda antes de montar/salvar:
@@ -461,12 +451,17 @@ class FormPassagemHelper(
     }
 
     /**
-     * Tarifa da inteira da célula (viagem × chave tarifária) na tabela cadastrada (ADR-0013). A **chave** é
-     * a acomodação (passageiro) ou o tipo de veículo (CARRO/CARRETA/CAMINHAO). Lê o espelho local das
-     * tarifas da viagem. Moto cai em null aqui: não há célula — sua tarifa é a regra por cilindrada (próxima
-     * fatia da Fase 3). Chave em branco ou célula sem tarifa cadastrada → null (o fail-closed é passo à parte).
+     * Tarifa da inteira da célula (viagem × chave tarifária). A **chave** é a acomodação (passageiro) ou o
+     * tipo de veículo (CARRO/CARRETA/CAMINHAO). Moto cai em null aqui: não há célula — sua tarifa é a
+     * regra por cilindrada. Chave em branco ou célula ausente → null.
+     *
+     * REVITALIZAÇÃO (F8.0): passou a ler `statePassagem.tarifasViagem` em vez de ir ao repositório da
+     * Viagem-trecho. O mapa é o mesmo que a tela já usava para o preview de valor — só que agora **nada o
+     * preenche**, porque a tabela cadastrada morreu no ADR-0016 §7.2. Enquanto a F9 não reescreve a
+     * emissão, isto resolve sempre `null` para quem não é moto, e a guarda a jusante bloqueia — que é o
+     * comportamento honesto para uma tela fora do painel, e não uma base inventada.
      */
-    private suspend fun resolverTarifaBase(
+    private fun resolverTarifaBase(
         statePassagem: FormPassagemUiState,
         statePassageiro: FormPassageiroUiState,
         stateVeiculo: FormVeiculoUiState,
@@ -481,8 +476,7 @@ class FormPassagemHelper(
 
         val chave = if (ehVeiculo) stateVeiculo.tipoVeiculo else statePassageiro.acomodacao
         if (chave.isBlank()) return null
-        return viagemRepository.obterTarifas(statePassagem.viagemId)
-            .firstOrNull { it.chave == chave }?.valor
+        return statePassagem.tarifasViagem[chave]
     }
 
     fun preencherDadosPassagem(

@@ -1,33 +1,28 @@
 package dev.matheus.fluviapp.services.repository.firebase.documents
 
-import dev.matheus.fluviapp.domain.viagem.Viagem
-
+/**
+ * **O snapshot da viagem congelado dentro da Passagem** — e, desde a F8.0, *só* isso.
+ *
+ * Ele sobreviveu à demolição do trecho disfarçado por não ser espelho de entidade nenhuma: é o valor por
+ * cópia que o bilhete imprime (ADR-0008), e um bilhete emitido não muda de significado porque a entidade
+ * de origem morreu. Por isso não há mais `toViagem(id)`: não existe entidade viva com esta forma para
+ * onde voltar, e a `Viagem` da F8 é outra coisa (`rotaId`, `embarcacaoId`, dia e hora).
+ *
+ * Os campos ficam como estão, com os nomes que os documentos já gravados usam. Rescrevê-los agora
+ * quebraria a leitura do histórico sem entregar nada — quem decide a forma do snapshot novo é a **F9**,
+ * que é onde a emissão volta a montá-lo.
+ *
+ * [tarifas] é o resíduo mais visível disso: a tabela cadastrada morreu no ADR-0016 §7.2 (a base passa a
+ * ser *inferida* por agregação), mas os bilhetes antigos a carregam, e ler o que está gravado é a razão
+ * de este arquivo existir.
+ */
 data class ViagemDocumento(
     val codigo: String = "",
     val empresa: String = "",
     val embarcacao: String = "",
     val origem: String = "",
     val destino: String = "",
-    // Vínculo vivo por id (ADR-0008). empresa/embarcacao (nomes) coexistem: são substrato do snapshot da
-    // Passagem e da derivação do código. Default "" cobre docs antigos (schemaless).
     val empresaId: String = "",
     val embarcacaoId: String = "",
-    // Tabela de tarifas da inteira (ADR-0013) na forma natural do Firestore: mapa aninhado chave→valor
-    // (acomodação REDE/SUITE/CAMAROTE p/ passageiro; classe CARRO/CARRETA/CAMINHAO p/ veículo — moto é
-    // por regra). Espelha a tabela-filha TarifaViagem no Room; o mapper achata mapa↔linhas
-    // (TarifaViagemExtensions). Default vazio cobre docs antigos (schemaless).
     val tarifas: Map<String, Double> = emptyMap(),
 )
-
-fun ViagemDocumento.toViagem(id: String): Viagem {
-    // empresa/embarcacao (nomes) do doc são ignorados na entidade — o vínculo é por id (ADR-0008 Fase 3);
-    // os nomes seguem no doc só para o papel de snapshot embutido na Passagem.
-    return Viagem(
-        id = id,
-        codigo = codigo,
-        origem = origem,
-        destino = destino,
-        empresaId = empresaId,
-        embarcacaoId = embarcacaoId,
-    )
-}

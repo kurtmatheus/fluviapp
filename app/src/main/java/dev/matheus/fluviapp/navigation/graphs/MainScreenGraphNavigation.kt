@@ -11,8 +11,6 @@ import dev.matheus.fluviapp.navigation.navcomposables.mainScreenNavComposable
 @RequiresApi(Build.VERSION_CODES.S)
 fun NavGraphBuilder.mainScreenGraph(
     onNavegaParaLogin: () -> Unit,
-    onNavegaParaFormularioNovaViagem: () -> Unit,
-    onNavegaParaFormularioPesquisaViagem: () -> Unit,
     onNavegaParaFormularioNovaPassagemComViagem: (String) -> Unit,
     onNavegaParaFormularioPesquisaPassagem: () -> Unit,
     onNavegaParaEmbarque: () -> Unit,
@@ -39,8 +37,6 @@ fun NavGraphBuilder.mainScreenGraph(
     ) {
         mainScreenNavComposable(
             onNavegaParaLogin = onNavegaParaLogin,
-            onNavegaParaFormularioNovaViagem = onNavegaParaFormularioNovaViagem,
-            onNavegaParaFormularioPesquisaViagem = onNavegaParaFormularioPesquisaViagem,
             onNavegaParaFormularioNovaPassagemComViagem = onNavegaParaFormularioNovaPassagemComViagem,
             onNavegaParaFormularioPesquisaPassagem = onNavegaParaFormularioPesquisaPassagem,
             onNavegaParaEmbarque = onNavegaParaEmbarque,

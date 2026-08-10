@@ -8,20 +8,16 @@ import androidx.navigation.compose.NavHost
 import dev.matheus.fluviapp.extensions.navegaParaContagemPassagem
 import dev.matheus.fluviapp.extensions.navegaParaEmbarque
 import dev.matheus.fluviapp.extensions.navegaParaDetalhesPassagem
-import dev.matheus.fluviapp.extensions.navegaParaDetalhesViagem
 import dev.matheus.fluviapp.extensions.navegaParaFormularioFuncionario
-import dev.matheus.fluviapp.extensions.navegaParaFormularioViagem
 import dev.matheus.fluviapp.extensions.navegaParaLoginGraph
 import dev.matheus.fluviapp.extensions.navegaParaMainScreenGraph
 import dev.matheus.fluviapp.extensions.navegaParaPesquisarPassagemGraph
-import dev.matheus.fluviapp.extensions.navegaParaPesquisarViagemGraph
 import dev.matheus.fluviapp.extensions.navegaParaPrimeiroAcesso
 import dev.matheus.fluviapp.extensions.navegaParaRecuperarSenha
 import dev.matheus.fluviapp.extensions.navegaParaFormularioEmpresa
 import dev.matheus.fluviapp.extensions.navegaParaFormularioEmbarcacao
 import dev.matheus.fluviapp.extensions.navegaParaResultPesquisarFuncionario
 import dev.matheus.fluviapp.extensions.navegaParaResultadosPesquisarPassagem
-import dev.matheus.fluviapp.extensions.navegaParaResultadosPesquisarViagem
 import dev.matheus.fluviapp.extensions.navegarParaFormularioPassagemComViagem
 import dev.matheus.fluviapp.navigation.destinations.ARG_EMAIL_PREFILL
 import dev.matheus.fluviapp.navigation.destinations.FluviAppGraphDestinations
@@ -51,7 +47,6 @@ import dev.matheus.fluviapp.navigation.navcomposables.usuario.resultSearchUsuari
 import dev.matheus.fluviapp.navigation.navcomposables.rota.formRotaNavComposable
 import dev.matheus.fluviapp.navigation.navcomposables.rota.resultSearchRotaNavComposable
 import dev.matheus.fluviapp.navigation.graphs.pesquisarPassagemGraph
-import dev.matheus.fluviapp.navigation.graphs.pesquisarViagemGraph
 import dev.matheus.fluviapp.navigation.graphs.selecaoVinculoGraph
 import dev.matheus.fluviapp.navigation.graphs.splashGraph
 import dev.matheus.fluviapp.navigation.navcomposables.contagem.contagemPassagemNavComposable
@@ -59,7 +54,6 @@ import dev.matheus.fluviapp.navigation.navcomposables.funcionario.formFuncionari
 import dev.matheus.fluviapp.navigation.navcomposables.funcionario.resultSearchFuncionarioNavComposable
 import dev.matheus.fluviapp.navigation.navcomposables.passagem.formPassagemNavComposable
 import dev.matheus.fluviapp.navigation.navcomposables.passagem.embarqueNavComposable
-import dev.matheus.fluviapp.navigation.navcomposables.viagem.formViagemNavComposable
 
 @RequiresApi(Build.VERSION_CODES.S)
 @Composable
@@ -113,12 +107,6 @@ fun FluviAppNavHost(
         mainScreenGraph(
             onNavegaParaLogin = {
                 navController.navegaParaLoginGraph()
-            },
-            onNavegaParaFormularioNovaViagem = {
-                navController.navegaParaFormularioViagem()
-            },
-            onNavegaParaFormularioPesquisaViagem = {
-                navController.navegaParaPesquisarViagemGraph()
             },
             onNavegaParaFormularioNovaPassagemComViagem = { idViagem ->
                 navController.navegarParaFormularioPassagemComViagem(idViagem)
@@ -176,36 +164,9 @@ fun FluviAppNavHost(
             }
         )
 
-        formViagemNavComposable(
-            onClickVoltar = {
-                navController.navigateUp()
-            },
-            onNavegaParaMainScreen = {
-                navController.navegaParaMainScreenGraph()
-            }
-        )
-
-        pesquisarViagemGraph(
-            navController = navController,
-            onClickVoltar = {
-                navController.navigateUp()
-            },
-            onNavegaParaMainScreen = {
-                navController.navegaParaMainScreenGraph()
-            },
-            onNavegaParaResultadosPesquisa = {
-                navController.navegaParaResultadosPesquisarViagem()
-            },
-            onNavegaParaDetalhesViagem = {
-                navController.navegaParaDetalhesViagem(it)
-            },
-            onNavegaParaFormularioViagem = {
-                navController.navegaParaFormularioViagem(it)
-            },
-            onNavegaParaFormularioPassagem = {
-                navController.navegarParaFormularioPassagemComViagem(it)
-            }
-        )
+        // REVITALIZAÇÃO (F8.0): os quatro destinos da Viagem-trecho saíram — form, pesquisa, resultados e
+        // detalhes. A seção volta na F8.2, com a forma da Rota: um form e uma busca, sem tela de detalhes
+        // e sem destino que receba id para editar (a Viagem nova também é imutável).
 
         formPassagemNavComposable(
             onCLickVoltar = {

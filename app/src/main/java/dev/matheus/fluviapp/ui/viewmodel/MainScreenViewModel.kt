@@ -11,11 +11,9 @@ import dev.matheus.fluviapp.preferences.PreferencesKey
 import com.google.firebase.auth.FirebaseAuth
 import dev.matheus.fluviapp.services.repository.firebase.SincronizacaoSessao
 import dev.matheus.fluviapp.telemetry.EstadoSincronizacao
-// REVITALIZAÇÃO: voltam com as seções Viagem / Passagem / Equipe.
-// import dev.matheus.fluviapp.domain.mappers.ViagemDadosViagemMapper
+// REVITALIZAÇÃO: voltam com as seções Passagem / Equipe.
 // import dev.matheus.fluviapp.services.repository.operacoes.FuncionarioRepository
 // import dev.matheus.fluviapp.services.repository.firebase.PassagemFirestoreRepository
-// import dev.matheus.fluviapp.services.repository.firebase.ViagemFirestoreRepository
 import dev.matheus.fluviapp.ui.states.MainScreenState
 import dev.matheus.fluviapp.ui.states.MainScreenUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -36,13 +34,16 @@ import javax.inject.Inject
  * As linhas comentadas ficam no lugar de propósito, com o repositório real ao lado: cada uma volta quando
  * a seção correspondente entrar em [dev.matheus.fluviapp.domain.screendata.SECOES_REVITALIZADAS], e assim
  * a volta é uma leitura, não uma arqueologia no histórico.
+ *
+ * **A da viagem não volta assim** (F8.0): o `viagemRepository` e o `viagemMapper` que estavam aqui eram da
+ * Viagem-trecho, e ela foi demolida. Restaurar as linhas comentadas apontaria para tipos que não existem —
+ * então elas saíram, e não ficaram fingindo que esperam. O que a home mostra é a **F10**, e ela nasce do
+ * contexto escolhido (papel, empresa, cargo), não de uma lista de próximas viagens.
  */
 @HiltViewModel
 class MainScreenViewModel @Inject constructor(
     private val dataStore: DataStore<Preferences>,
-    // REVITALIZAÇÃO: voltam com as seções Viagem / Passagem / Equipe.
-    // private val viagemRepository: ViagemFirestoreRepository,
-    // private val viagemMapper: ViagemDadosViagemMapper,
+    // REVITALIZAÇÃO: voltam com as seções Passagem / Equipe.
     // private val passagemRepository: PassagemFirestoreRepository,
     // private val funcionarioRepository: FuncionarioRepository,
     private val firebaseAuth: FirebaseAuth,
@@ -96,26 +97,12 @@ class MainScreenViewModel @Inject constructor(
         }
     }
 
-    // REVITALIZAÇÃO: a home não lista viagens enquanto a seção Viagem não for refeita.
+    // REVITALIZAÇÃO (F8.0): `observarViagens()` saiu de vez, e não fica comentado esperando.
     //
-    // Coleta reativa do espelho Room (SSOT — estudo sincronizacao-firestore-room.md, D1). A UI
-    // atualiza sozinha quando o listener grava dados novos; sem delay(1000) nem leitura one-shot. O
-    // mapper é suspend (ADR-0008) e encaixa no Flow.map. Encerra o refresh quando a emissão chega.
-    // private fun observarViagens() {
-    //     viewModelScope.launch {
-    //         viagemRepository.observarTodas()
-    //             .map { viagens -> viagens.map { viagemMapper.map(it) } }
-    //             .collect { cards ->
-    //                 _uiState.update {
-    //                     it.copy(
-    //                         listaViagens = cards,
-    //                         mainScreenState = MainScreenState.HOME,
-    //                         isRefreshing = false,
-    //                     )
-    //                 }
-    //             }
-    //     }
-    // }
+    // Ele coletava o espelho Room da Viagem-trecho e montava cards de "próximas viagens". As três peças
+    // que ele usava morreram juntas: a entidade, o espelho (o Room deixou de ter a tabela) e o card. O que
+    // a **F10** puser aqui parte de outra pergunta — o que este usuário faz agora, dado papel, empresa e
+    // cargo —, e não de uma lista de cadastros.
 
     fun irParaHome() {
         _uiState.update { it.copy(mainScreenState = MainScreenState.HOME) }
@@ -137,28 +124,15 @@ class MainScreenViewModel @Inject constructor(
         }
     }
 
-    // REVITALIZAÇÃO: sem lista na home, não há o que puxar para atualizar — o pull-to-refresh sai da tela
-    // junto (ADR-0020). Volta com a seção Viagem.
-    //
-    // fun refresh() {
-    //     // D5: pull-to-refresh força a busca no servidor (get(Source.SERVER)); grava no Room e o Flow
-    //     // reativo (observarViagens) reflete. O spinner fica até a busca concluir. Erro (offline) é
-    //     // reportado pelo repo → EstadoSincronizacao → banner (D4).
-    //     viewModelScope.launch {
-    //         _uiState.update { it.copy(isRefreshing = true) }
-    //         try {
-    //             viagemRepository.atualizarDoServidor()
-    //         } finally {
-    //             _uiState.update { it.copy(isRefreshing = false) }
-    //         }
-    //     }
-    // }
+    // REVITALIZAÇÃO: sem lista na home, não há o que puxar para atualizar — o pull-to-refresh saiu da tela
+    // junto (ADR-0020), e o `refresh()` que o servia saiu com ele na F8.0. Ele forçava `Source.SERVER` no
+    // repositório da Viagem-trecho para reencher o Room; nenhuma das duas coisas existe mais. Se o Início
+    // da F10 quiser atualizar à mão, será sobre o `StateFlow` do listener (ADR-0017), não sobre o Room.
 
     // REVITALIZAÇÃO: sincronizar coleção que nenhuma tela viva consome é pagar listener por nada. A
     // Empresa tem a própria sincronização, disparada por quem a usa (EmpresaFirestoreRepository).
     //
     // private fun sincronizarFirestore() {
-    //     viagemRepository.sincronizar()
     //     passagemRepository.sincronizarNumeroBilheteEmTempoReal()
     //     funcionarioRepository.sincronizar()
     // }

@@ -25,8 +25,6 @@ import kotlinx.coroutines.launch
 @RequiresApi(Build.VERSION_CODES.S)
 fun NavGraphBuilder.mainScreenNavComposable(
     onNavegaParaLogin: () -> Unit,
-    onNavegaParaFormularioNovaViagem: () -> Unit,
-    onNavegaParaFormularioPesquisaViagem: () -> Unit,
     onNavegaParaFormularioNovaPassagemComViagem: (String) -> Unit,
     onNavegaParaFormularioPesquisaPassagem: () -> Unit,
     onNavegaParaEmbarque: () -> Unit,
@@ -78,8 +76,6 @@ fun NavGraphBuilder.mainScreenNavComposable(
         fun navegar(acao: AcaoMenu) = when (acao) {
             AcaoMenu.PASSAGEM_PESQUISAR -> onNavegaParaFormularioPesquisaPassagem()
             AcaoMenu.PASSAGEM_CONTAGEM -> onNavegaParaContagemPassagem()
-            AcaoMenu.VIAGEM_NOVA -> onNavegaParaFormularioNovaViagem()
-            AcaoMenu.VIAGEM_PESQUISAR -> onNavegaParaFormularioPesquisaViagem()
             AcaoMenu.EQUIPE_NOVO -> onNavegaParaFormularioNovoFuncionario()
             AcaoMenu.EQUIPE_PESQUISAR -> onNavegaParaFormularioPesquisaFuncionario()
             AcaoMenu.EMPRESA_NOVA -> onNavegaParaFormularioNovaEmpresa()

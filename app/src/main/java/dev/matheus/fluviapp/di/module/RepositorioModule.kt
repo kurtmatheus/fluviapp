@@ -22,8 +22,6 @@ import dev.matheus.fluviapp.services.repository.cadastro.viagem.EmbarcacaoFirest
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.EmbarcacaoRepository
 import dev.matheus.fluviapp.services.repository.firebase.FonteSnapshots
 import dev.matheus.fluviapp.services.repository.firebase.FonteSnapshotsFirestore
-import dev.matheus.fluviapp.services.repository.firebase.ViagemFirestoreRepository
-import dev.matheus.fluviapp.services.repository.firebase.ViagemRepository
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -42,10 +40,6 @@ abstract class RepositorioModule {
     @Binds
     @Singleton
     abstract fun bindEmpresaRepository(impl: EmpresaFirestoreRepository): EmpresaRepository
-
-    @Binds
-    @Singleton
-    abstract fun bindViagemRepository(impl: ViagemFirestoreRepository): ViagemRepository
 
     @Binds
     @Singleton

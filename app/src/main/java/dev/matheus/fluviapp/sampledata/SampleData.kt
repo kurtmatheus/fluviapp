@@ -20,52 +20,11 @@ import dev.matheus.fluviapp.domain.operacoes.Usuario
 import dev.matheus.fluviapp.domain.screendata.DadosContagemPassagem
 import dev.matheus.fluviapp.domain.screendata.DadosImpressora
 import dev.matheus.fluviapp.domain.screendata.DadosPassagem
-import dev.matheus.fluviapp.domain.screendata.DadosViagemCard
 import dev.matheus.fluviapp.domain.viagem.Empresa
 import dev.matheus.fluviapp.domain.viagem.Embarcacao
 import dev.matheus.fluviapp.domain.viagem.TipoEmbarcacao
 import java.math.BigDecimal
 
-val listaDadosDadosViagemHomeSampleCards = listOf(
-    DadosViagemCard(
-        embarcacao = "F/B Modelo",
-        codigo = "PN-IC-001",
-        origem = "Porto Norte",
-        destino = "Ilha Central",
-        capacidadeVeiculos = "50",
-        capacidadeSuites = "12",
-        capacidadeCamarotes = "6"
-    ),
-    DadosViagemCard(
-        embarcacao = "F/B Modelo",
-        codigo = "PN-IC-001",
-        origem = "Porto Norte",
-        destino = "Ilha Central",
-        capacidadeVeiculos = "50",
-        capacidadeSuites = "12",
-        capacidadeCamarotes = "6"
-    ),
-    DadosViagemCard(
-        embarcacao = "F/B Modelo",
-        codigo = "PN-IC-001",
-        origem = "Porto Norte",
-        destino = "Ilha Central",
-        capacidadeVeiculos = "50",
-        capacidadeSuites = "12",
-        capacidadeCamarotes = "6"
-    ),
-    DadosViagemCard(
-        embarcacao = "F/B Modelo",
-        codigo = "PN-IC-001",
-        origem = "Porto Norte",
-        destino = "Ilha Central",
-        capacidadeVeiculos = "60",
-        capacidadeSuites = "9",
-        capacidadeSuites2Pessoas = "8",
-        capacidadeSuites3Pessoas = "1",
-        capacidadeCamarotes = "4"
-    )
-)
 
 val listaTipoDocumentosSample =
     listOf(

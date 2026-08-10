@@ -8,16 +8,9 @@ import dev.matheus.fluviapp.services.repository.firebase.DocumentoBruto
  * `to<Modelo>(id)` de cada Documento seguem fazendo a ponte Documento→modelo.
  */
 
-fun DocumentoBruto.toViagemDocumento() = ViagemDocumento(
-    codigo = texto("codigo"),
-    origem = texto("origem"),
-    destino = texto("destino"),
-    empresa = texto("empresa"),
-    embarcacao = texto("embarcacao"),
-    empresaId = texto("empresaId"),
-    embarcacaoId = texto("embarcacaoId"),
-    tarifas = mapaDeDoubles("tarifas"),
-)
+// `toViagemDocumento` saiu na F8.0, com o último chamador: o repositório da Viagem-trecho. O
+// `ViagemDocumento` continua vivo, mas só como snapshot dentro da Passagem — e lá ele é lido pelo
+// `toObject` do Firestore, não por aqui. Mesmo descarte progressivo do `toFuncionarioDocumento`.
 
 fun DocumentoBruto.toEmbarcacaoDocumento() = EmbarcacaoDocumento(
     nome = texto("nome"),

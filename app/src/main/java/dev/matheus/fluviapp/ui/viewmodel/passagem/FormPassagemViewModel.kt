@@ -9,14 +9,12 @@ import dev.matheus.fluviapp.extensions.isTextoNaoNulo
 import dev.matheus.fluviapp.extensions.toastMessage
 import dev.matheus.fluviapp.domain.passagem.Passagem
 import dev.matheus.fluviapp.domain.passagem.ResultadoEmissao
-import dev.matheus.fluviapp.domain.mappers.ViagemDadosViagemMapper
 import dev.matheus.fluviapp.domain.rascunho.aplicarEm
 import dev.matheus.fluviapp.domain.rascunho.montarRascunho
 import dev.matheus.fluviapp.navigation.navcomposables.passagem.EDIT_PASSAGEM_ARGUMENT
 import dev.matheus.fluviapp.navigation.navcomposables.passagem.FORM_PASSAGEM_ARGUMENT
 import dev.matheus.fluviapp.services.repository.operacoes.SessaoUsuario
 import dev.matheus.fluviapp.services.repository.firebase.PassagemFirestoreRepository
-import dev.matheus.fluviapp.services.repository.firebase.ViagemFirestoreRepository
 import dev.matheus.fluviapp.services.repository.rascunho.RascunhoStore
 import dev.matheus.fluviapp.telemetry.Telemetry
 import dev.matheus.fluviapp.ui.states.passagem.FormPassageiroUiState
@@ -46,12 +44,10 @@ import javax.inject.Inject
 
 @HiltViewModel
 class FormPassagemViewModel @Inject constructor(
-    private val viagemRepository: ViagemFirestoreRepository,
     private val sessaoUsuario: SessaoUsuario,
     private val passagemRepository: PassagemFirestoreRepository,
     private val rascunhoStore: RascunhoStore,
     private val emissaoTelemetry: Telemetry,
-    private val viagemDadosViagemMapper: ViagemDadosViagemMapper,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
@@ -67,6 +63,9 @@ class FormPassagemViewModel @Inject constructor(
     val uiStateVeiculo: StateFlow<FormVeiculoUiState>
         get() = _uiStateVeiculo.asStateFlow()
 
+    // Continua sendo lido do destino (a rota de navegação não mudou) — quem o consumia era
+    // `preencherViagem()`, e é a F9 que decide o que a emissão faz com ele.
+    @Suppress("unused")
     private val idViagem: String = checkNotNull(savedStateHandle[FORM_PASSAGEM_ARGUMENT])
     private val idPassagem: String = checkNotNull(savedStateHandle[EDIT_PASSAGEM_ARGUMENT])
 
@@ -77,7 +76,6 @@ class FormPassagemViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             inicializarHelpers()
-            preencherViagem()
             inicializarEditor()
             // Rascunho (ADR-0004) só no fluxo de NOVA passagem; editar carrega a verdade do repo.
             if (!idPassagem.isTextoNaoNulo()) {
@@ -125,9 +123,7 @@ class FormPassagemViewModel @Inject constructor(
             uiStatePassagem = _uiStatePassagem,
             uiStatePassageiro = _uiStatePassageiro,
             uiStateVeiculo = _uiStateVeiculo,
-            viagemRepository = viagemRepository,
             passagemRepository = passagemRepository,
-            viagemDadosViagemMapper = viagemDadosViagemMapper,
         )
         formPassageiroHelper = FormPassageiroHelper(
             uiState = _uiStatePassageiro,
@@ -143,9 +139,19 @@ class FormPassagemViewModel @Inject constructor(
     // domínio (ADR-0020 F2 + ModoPassagem), então **não há mais lista a carregar**. Com ela some a última
     // leitura de catálogo desta tela — e a emissão passa a abrir sem depender de nenhuma coleção.
 
-    private suspend fun preencherViagem() {
-        formPassagemHelper.atualizarDadosViagemPorId(idViagem)
-    }
+    // REVITALIZAÇÃO (F8.0): `preencherViagem()` saiu junto com a Viagem-trecho. Ela lia a entidade viva
+    // para copiar código/origem/destino/empresa/embarcação para o state e carregar a tabela de tarifas.
+    //
+    // Nenhuma das duas metades volta como era: a tabela cadastrada morreu no ADR-0016 §7.2 (a base passa
+    // a ser inferida por agregação), e os nomes passam a vir de uma junção diferente — Viagem → Rota →
+    // Portos → Localidades. É a **F9** que reescreve isto, com a Viagem nova já de pé.
+    //
+    // Enquanto isso o form abre sem viagem preenchida. É coerente com onde ele está: `PASSAGEM` não está
+    // em `SECOES_REVITALIZADAS`, então esta tela não é alcançável pelo painel.
+    //
+    // private suspend fun preencherViagem() {
+    //     formPassagemHelper.atualizarDadosViagemPorId(idViagem)
+    // }
 
     private fun inicializarEditor() {
         if (idPassagem.isTextoNaoNulo()) {

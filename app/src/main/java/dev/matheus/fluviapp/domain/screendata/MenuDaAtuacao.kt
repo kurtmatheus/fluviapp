@@ -21,9 +21,14 @@ import dev.matheus.fluviapp.domain.operacoes.Atuacao
 /**
  * O painel da plataforma: o que `ADM`/`GESTOR` administram — as partes e os ativos.
  *
- * `VIAGEM` está aqui porque é onde ela está hoje (`PermissoesUsuario.podeAcessar`). O ADR-0016 §7 a
- * dissolve em **Rota** + **Viagem** e a passa para o agenciamento; enquanto essas entidades não existirem,
- * mover a seção seria mudar quem pode o quê sem que o cadastro correspondente exista.
+ * `VIAGEM` continua aqui, mas o que ela significa mudou de baixo para cima. Até a F8.0 ela estava neste
+ * conjunto **por herança** — era a Viagem-trecho, que só a plataforma administrava. O trecho foi demolido,
+ * e a Viagem que volta na F8.2 é a **partida física** do ADR-0016 §7.1: compartilhada, como a Rota, e
+ * escrita também pelo `SUPERVISOR` (ADR-0022 D3).
+ *
+ * Ela fica no conjunto no intervalo entre as duas fatias porque `AcaoMenu` já a esvaziou: seção sem ação
+ * não aparece no painel de ninguém. Mover a permissão antes de existir o cadastro seria mudar quem pode o
+ * quê sem que haja o quê.
  */
 val SECOES_DO_PAINEL: Set<SecaoMenu> = setOf(
     SecaoMenu.EMPRESA,

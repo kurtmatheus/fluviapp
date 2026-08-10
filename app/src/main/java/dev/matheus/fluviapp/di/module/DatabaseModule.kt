@@ -8,8 +8,6 @@ import com.google.gson.Gson
 import dev.matheus.fluviapp.database.FluviAppDatabase
 import dev.matheus.fluviapp.database.dao.ContadorDao
 import dev.matheus.fluviapp.database.dao.cadastro.ConstanteDao
-import dev.matheus.fluviapp.database.dao.cadastro.viagem.TarifaViagemDao
-import dev.matheus.fluviapp.database.dao.cadastro.viagem.ViagemDao
 import dev.matheus.fluviapp.database.dao.operacoes.UsuarioDao
 import dev.matheus.fluviapp.database.dao.passagem.PassagemDao
 import dev.matheus.fluviapp.database.dao.passagem.PassagemDigitalDao
@@ -80,6 +78,27 @@ val MIGRATION_5_6 = object : Migration(5, 6) {
     }
 }
 
+/**
+ * **v6 → v7: a `Viagem` do trecho disfarçado e a tabela de tarifas caem** (F8.0).
+ *
+ * As duas eram espelho Room de coleção Firestore — as **últimas** com esse papel. O que sobra no banco
+ * deixa de ser cache de cadastro e passa a ser só o que existe **só aqui**: o rascunho de passagem e o
+ * índice do bilhete digital (mais `Usuario`, `Constante`, `Passagem` e o contador, que a F9/F10 resolvem).
+ *
+ * Dois `DROP TABLE`, pela mesma razão da 4→5: há aparelho com a v0.0.4 instalada, e cair no
+ * `fallbackToDestructiveMigration` levaria o rascunho de alguém junto com tabelas que ninguém mais lê.
+ *
+ * A coleção `viagens/` no Firestore **não é tocada** — ela continua lá, invisível, como `navios/` ficou
+ * depois do rename da Flotilha. O que a F8 escreve é uma entidade nova no mesmo nome de coleção.
+ */
+val MIGRATION_6_7 = object : Migration(6, 7) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("DROP INDEX IF EXISTS `index_Viagem_id`")
+        db.execSQL("DROP TABLE IF EXISTS `Viagem`")
+        db.execSQL("DROP TABLE IF EXISTS `TarifaViagem`")
+    }
+}
+
 /** DDL da v2 — cópia fiel do `createSql` exportado pelo Room (uma linha por tabela/índice). */
 private val DDL_V2 = listOf(
     "CREATE TABLE IF NOT EXISTS `Usuario` (`id` TEXT NOT NULL, `email` TEXT NOT NULL, `username` TEXT NOT NULL, `papel` TEXT NOT NULL, `funcionarioId` TEXT NOT NULL, `ultimoUsuarioLogado` INTEGER NOT NULL, PRIMARY KEY(`id`))",
@@ -119,6 +138,7 @@ class DatabaseModule {
             MIGRATION_1_2,
             MIGRATION_4_5,
             MIGRATION_5_6,
+            MIGRATION_6_7,
         )
             // Sem distribuição, não há base instalada cujo dado se possa perder: a v3 recria em vez de
             // migrar (decisão do analista). Este argumento VENCE na P3.5 — a partir da primeira entrega
@@ -141,16 +161,6 @@ class DatabaseModule {
         return db.constanteDao()
     }
 
-
-    @Provides
-    fun provideViagemDao(db: FluviAppDatabase): ViagemDao {
-        return db.viagemDao()
-    }
-
-    @Provides
-    fun provideTarifaViagemDao(db: FluviAppDatabase): TarifaViagemDao {
-        return db.tarifaViagemDao()
-    }
 
     @Provides
     fun providePassagemDao(db: FluviAppDatabase): PassagemDao {

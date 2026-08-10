@@ -29,7 +29,6 @@ import dev.matheus.fluviapp.domain.screendata.SecaoMenu
 import dev.matheus.fluviapp.domain.screendata.acoesPorSecao
 import dev.matheus.fluviapp.ui.components.drawer.FluviMenuDrawer
 // REVITALIZAÇÃO: voltam com a seção Viagem.
-// import dev.matheus.fluviapp.sampledata.listaDadosDadosViagemHomeSampleCards
 // import dev.matheus.fluviapp.ui.components.contents.HomeContent
 import dev.matheus.fluviapp.ui.states.MainScreenState
 import dev.matheus.fluviapp.ui.states.MainScreenUiState
