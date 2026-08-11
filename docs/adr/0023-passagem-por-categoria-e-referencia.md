@@ -1,6 +1,7 @@
 # ADR-0023: A Passagem por categoria — sub-domínios, tudo por referência, e a porta aberta para a Carga
 
-**Status:** Aceita em direção (decisões do analista em 2026-08-11) · sem código
+**Status:** Aceita em direção (decisões do analista em 2026-08-11) · sem código · **os quatro pontos que este
+ADR marcava como pressupostos foram aceitos** no mesmo dia — não há mais nada em aberto aqui
 
 **Estudos que prepararam:** [`docs/design/f9-passagens-terreno.md`](../design/f9-passagens-terreno.md) (o
 terreno medido) e [`docs/design/dominio-passagem.md`](../design/dominio-passagem.md) (o agregado em detalhe)
@@ -302,10 +303,11 @@ fica garantido que **cabe sem reforma**.
 - **O método da inferência tarifária** — segue no módulo faturamento; o que se decidiu hoje foi o **lugar**
   (análise sobre o agregado), não o método.
 
-### Os pontos que assumi para o agregado fechar, e que preciso confirmar
+### Os pontos que eu havia assumido — **aceitos pelo analista em 2026-08-11**
 
-Estão marcados porque **não foram decididos** — são leituras minhas, e cada uma muda código. O nº 2 nasceu
-aqui e já saiu: um ADR anterior o respondia.
+Nasceram como leituras minhas e **foram confirmados como decisão** no mesmo dia. Ficam registrados com a
+origem, porque a diferença importa: eles não vieram do enunciado do domínio, vieram de o agregado não fechar
+sem eles. O nº 2 nasceu aqui e saiu antes da confirmação — um ADR anterior já o respondia.
 
 1. **O ponteiro é a ocorrência, não a viagem.** O modelo dado diz `viagemId`; a `Viagem` é semanal, então sem
    a **data** dois bilhetes de terças diferentes ficam indistinguíveis, e numeração, ocupação e balanço perdem
