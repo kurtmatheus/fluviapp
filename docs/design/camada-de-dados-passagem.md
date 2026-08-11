@@ -1,9 +1,13 @@
 # A camada de dados da Passagem — o padrão das sete, e os cinco desvios dela
 
-> **Status:** **aberto · pronto para virar ADR** — mede a camada como ela existe em `1bbcd1d` (2026-08-11) e
-> expõe as decisões que faltavam. **As cinco foram respondidas no mesmo dia** (§5); a segunda virou o
-> aprofundamento do §3.3, que **corrigiu uma afirmação do ADR-0024** — a junção tem dois regimes, e o *lookup em
-> memória* não cobre os pools.
+> **Status:** **fechado** → [**ADR-0025**](../adr/0025-camada-de-dados-da-passagem.md) (2026-08-11). Mede a
+> camada como ela existia em `1bbcd1d` e fica como **registro do caminho**: os cinco desvios, os dois estilos de
+> junção em código real e as opções com o custo de cada uma. Quando ele e o ADR discordarem, **o ADR vence**.
+>
+> Duas coisas que só existem aqui e vale ler: o **aprofundamento do §3.3**, que corrigiu uma afirmação do
+> ADR-0024 (a junção tem **dois regimes** — o *lookup em memória* não cobre os pools), e a **poda dos custos
+> projetados**, feita depois da correção de método do analista: *"nenhum custo é real porque eles ainda nem
+> apareceram"*. O que sobrou de justificativa é o que se verifica no código de hoje.
 >
 > É o **terceiro passo** da ordem que o analista fixou: **domínio** ([ADR-0023](../adr/0023-passagem-por-categoria-e-referencia.md))
 > → **fronteira** ([ADR-0024](../adr/0024-fronteira-de-dados-da-passagem.md)) → **camada**. A fronteira decidiu
