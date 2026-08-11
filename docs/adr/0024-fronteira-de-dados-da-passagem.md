@@ -205,6 +205,34 @@ reutilizável, em vez de reinventada por consumidor.
 Com as quatro primeiras linhas, **o Room fica com `Usuario` e `Constante`** — e as duas são resíduo de decisões
 já tomadas. A F6 do ADR-0017 (remover o Room) passa a estar a duas remoções.
 
+### D11 — Delete físico não existe na fronteira: só cancelamento
+
+*(lembrete do analista, 2026-08-11 — e ele tem um fato medido por trás)*
+
+A remoção física **não é uma operação da Passagem em nenhuma camada**: não existe no repositório, não existe na
+porta que os ViewModels conhecem, e **é negada pelo servidor**. O que existe é o **cancelamento**, que é
+**estado** da FSM (ADR-0018 D17/D18): cancelada não ocupa, não fatura, não renumera, e **fica com o número** —
+sequência com buraco é o normal de uma numeração que registra fatos.
+
+O estado do servidor hoje mostra o quanto isso está fora de linha: **seis coleções já declaram
+`allow delete: if false`** — `users`, `rotas`, `convites`, `localidades`, `portos` e `viagens` — enquanto
+`/passagens` ainda permite (`firestore.rules:414`). Entre os dados que **registram um fato**, a passagem é a
+última exceção; as outras duas coleções que permitem delete são cadastros administrados pela plataforma
+(`funcionarios`, `empresas/atuacoes`).
+
+Duas consequências práticas, e a segunda é a que costuma passar batida:
+
+- **a regra vira `allow delete: if false`**, entrando na lista das seis. Não é um `if` com condição de cargo:
+  se ninguém deve apagar, a condição é `false`, e isso é auditável de relance;
+- **um caso da suíte de emulador inverte de sinal.** Hoje existe, entre os 26 `skipped` de `passagens`, o caso
+  *"dono deleta a própria passagem → OK"*. Ele não volta como está: passa a afirmar o oposto — **negado** —, e
+  essa inversão é parte da fatia, não uma limpeza posterior. Um teste que afirma o contrário da decisão é pior
+  do que teste nenhum, porque ele defende o comportamento errado.
+
+O `ColecaoFirestore.deletar` continua existindo para quem legitimamente o usa (a atuação que a plataforma
+retira). O que este ADR fixa é que **a Passagem não o compõe** — e, como ela também não compõe o
+`observarTodos` (D9), o que ela toma do contrato compartilhado é exatamente o codec e a escrita.
+
 ## Consequências
 
 **O que se ganha**
