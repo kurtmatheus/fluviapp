@@ -47,7 +47,7 @@ três decisões do [ADR-0016](0016-dominio-da-plataforma.md) §7.1 caíram ao se
 | [0019](0019-camada-de-dados-dinamica-e-dto-por-caso-de-uso.md) | `Map` na fronteira, DTO por caso de uso | **vigente · parcial** | a **F1** deixa de ser `Catalogo` e passa a ser Empresa — ADR-0020 D10. O regime não muda. Realiza o *passo 2* que o ADR-0003 previu |
 | [0020](0020-fim-do-catalogo-e-o-contexto-do-painel.md) | O fim do Catálogo; o painel deriva da atuação | **vigente** · F1 e F2 feitas | o **D2 foi emendado** na execução (a máscara do CPF esconde os 6 primeiros dígitos, não as pontas). **F2 fechada em 2026-08-03**: o `SeedFirestore` foi removido. O rename `Navio` → **`Embarcacao`**, que o ADR adiava, foi executado em 2026-08-04 e foi até a fronteira (coleção `embarcacoes`, campo `embarcacaoIds`); a seção do menu chama-se **Flotilha**. O **D4 fechou** em 2026-08-05: `TipoEmbarcacao` deixou de ser tipo sem portador e virou campo **não-nulo** da entidade — *não existe embarcação sem tipo* —, com o formulário exigindo e a fronteira **recusando** o documento que não o declara |
 | [0021](0021-usuarios-da-plataforma-adm-only.md) | Usuários da plataforma (`ADM`-only) | **direção · FORA DO MVP** (D0) | **não implementar**: o cadastro no console vira **princípio** — a administração da plataforma vive fora do app, somando P2.2c + anti-escalonamento + fim do seed + ADR-0016 §10. D1–D4 valem como desenho de quando a seção nascer: primeira divergência entre `ADM` e `GESTOR`, só leitura, e `allow read` de `users` restrito |
-| [0022](0022-painel-da-empresa-e-fases.md) | O painel da empresa e as fases da F5 em diante | **vigente · direção** (2026-08-07) | registra que **F4 e F5 fecharam** com a v0.0.4 (painel da plataforma completo) e divide o resto: menu = **núcleo compartilhado** (Início, Rotas, Viagens) + **duas exclusivas da empresa** (Passagens, Equipe), pelo critério *entidade com dono → seção da empresa*. **Revisa o ADR-0016 §2** (`VIAGEM` volta ao menu, com o sentido do §7.1). Escrita de rota/viagem = plataforma + `SUPERVISOR`, e **escrever é criar**: editar não existe (imutabilidade do §7.1) e **desativar é da plataforma**; `AGENTE` só lê. Fases **F6 Equipe → F7 Rotas → F8 Viagens → F9 Passagens → F10 Início**, com a Equipe primeiro por ser onde a política vira `(papel, atuação, cargo)` e o **Início por último** (emenda do analista: é *sumário* por papel/empresa/cargo, e sumário vem depois do que resume). A antiga **F8 "regras e suíte" deixa de ser fase** e vira definição de pronto. **F6, F7 e F8 estão FEITAS** (2026-08-07 a 2026-08-10) — e a execução emendou o próprio ADR em três lugares: (1) a **D3 foi revisada** — o supervisor deixou de criar rota em qualquer par, porque com a lista recortada pela atuação isso criava uma travessia que sumia da própria lista (**criar virou subconjunto de ver**); (2) a **F6.6 abriu uma seção que o ADR não previa** (`USUARIOS`, ADM-only) ao desfazer o nó *usuário é da plataforma, funcionário é da empresa*, e com ela `SECOES_TRANSVERSAIS` ficou vazio; (3) o **Início foi parcialmente antecipado** para a F8.4 — o da empresa é a lista de `ViagemSemana` sob *Viagens Disponíveis*, cumprindo o "cada seção trata do seu próprio início na vez dela"; o da plataforma continua sendo a F10 |
+| [0022](0022-painel-da-empresa-e-fases.md) | O painel da empresa e as fases da F5 em diante | **vigente · direção** (2026-08-07) | registra que **F4 e F5 fecharam** com a v0.0.4 (painel da plataforma completo) e divide o resto: menu = **núcleo compartilhado** (Início, Rotas, Viagens) + **duas exclusivas da empresa** (Passagens, Equipe), pelo critério *entidade com dono → seção da empresa*. **Revisa o ADR-0016 §2** (`VIAGEM` volta ao menu, com o sentido do §7.1). Escrita de rota/viagem = plataforma + `SUPERVISOR`, e **escrever é criar**: editar não existe (imutabilidade do §7.1) e **desativar é da plataforma**; `AGENTE` só lê. Fases **F6 Equipe → F7 Rotas → F8 Viagens → F9 Passagens → F10 Início**, com a Equipe primeiro por ser onde a política vira `(papel, atuação, cargo)` e o **Início por último** (emenda do analista: é *sumário* por papel/empresa/cargo, e sumário vem depois do que resume). A antiga **F8 "regras e suíte" deixa de ser fase** e vira definição de pronto. **F6, F7 e F8 estão FEITAS** (2026-08-07 a 2026-08-10) — e a execução emendou o próprio ADR em três lugares: (1) a **D3 foi revisada** — o supervisor deixou de criar rota em qualquer par, porque com a lista recortada pela atuação isso criava uma travessia que sumia da própria lista (**criar virou subconjunto de ver**); (2) a **F6.6 abriu uma seção que o ADR não previa** (`USUARIOS`, ADM-only) ao desfazer o nó *usuário é da plataforma, funcionário é da empresa*, e com ela `SECOES_TRANSVERSAIS` ficou vazio; (3) o **Início foi parcialmente antecipado** para a F8.4 — o da empresa é a lista de `ViagemSemana` sob *Viagens Disponíveis*, cumprindo o "cada seção trata do seu próprio início na vez dela"; o da plataforma continua sendo a F10; e (4) a **ocupação**, que a tabela de fases punha na F8, **não foi entregue nela** — contar ocupação é contar bilhete, e `PASSAGEM`/`CONTAGEM` seguem fora de `SECOES_REVITALIZADAS`: ela vai com a **F9**, sobre a chave que a F8.4 já deixou pronta (`ViagemSemana`) |
 
 ---
 
@@ -145,20 +145,38 @@ nasceu do incômodo de o `ADM` estar vendo a Equipe, e desfez o nó **usuário �
   `FormPassagemHelper` **podado**, com `// REVITALIZAÇÃO:` nos dois pontos que a F9 retoma: os nomes do
   snapshot (que passam a vir de Viagem → Rota → Portos) e a tarifa (que o §7.2 tornou inferida).
 
-## Pendência de execução — antes de fasear a Passagem (F9)
+## A rede de tela executada — a F8 fecha (2026-08-11)
 
-**Rodar e verificar o `FormViagemScreenTest`**, e com ele a suíte instrumentada inteira. Ele foi escrito
-em `9c2c386` junto da correção da máscara de hora e **nunca foi executado**: o AVD travou na sessão
-(caiu duas vezes no meio da suíte e depois não completou o boot). Ele compila e segue o molde dos testes
-de tela que passam — mas *compila* não é *passa*, e o CI não roda instrumentado, então ninguém descobre
-sozinho.
+A pendência que era pré-requisito da F9 **está cumprida**. O `FormViagemScreenTest` — escrito em `9c2c386`
+e até então nunca executado, porque o AVD travou na sessão — rodou num aparelho físico (SM-A566E) e passou
+nos **quatro** casos, na primeira execução. Com ele, a suíte instrumentada inteira: **85 casos, 0 falhas**,
+e o único `SKIPPED` é declarado — o `FluviAppNavigationTest`, `@Ignore` **com a razão escrita**, que
+atravessa login e viagem e volta reescrito quando essas seções entrarem na revitalização.
 
-**Por que isto vira pré-requisito da F9, e não um item solto:** os dois únicos defeitos que chegaram ao
-tester nesta linha de trabalho passaram por todas as suítes de JVM e morreram só na tela — o dropdown
-vazio do Porto (rc.3 da fase anterior) e o **teclado numérico sem dois-pontos** (rc.3 desta). Nos dois,
-nenhuma camada mentia isoladamente; o defeito estava no encontro delas com o aparelho. A Passagem é a
-seção com mais formulário do app, e entrar nela com a rede de tela furada é escolher descobrir na
-homologação de novo.
+As outras duas redes, medidas no mesmo commit: **516 testes JVM** no escopo (54 classes) e **103 casos de
+emulador** (129 com os 26 que a revitalização deixa fora). E a metade da definição de pronto que suíte
+nenhuma cobre: o job *Deploy das regras* rodou **depois** do último commit de `firestore.rules` — a regra
+de `/viagens` está publicada, e não só versionada. A **D6 do ADR-0022 está satisfeita por inteiro**: regra
+publicada, coberta no emulador, e tela medida no aparelho.
+
+Vale registrar por que este item existiu: os dois únicos defeitos que chegaram ao tester nesta linha
+passaram por todas as suítes de JVM e morreram só na tela — o dropdown vazio do Porto (rc.3 da fase
+anterior) e o **teclado numérico sem dois-pontos** (rc.3 desta). Em nenhum dos dois uma camada mentia
+isoladamente; o defeito estava no encontro delas com o aparelho. A F9 é a seção com mais formulário do
+app, e entra com a rede de tela verificada em vez de suposta.
+
+### Duas armadilhas de *chegar* à suíte
+
+Nenhuma das duas é o código, e as duas custam a mesma hora:
+
+- **Desinstale o `rc` antes de rodar.** A primeira tentativa foi recusada com
+  `INSTALL_FAILED_VERSION_DOWNGRADE`: o build local nasce com `versionCode` **10** fixo — o fallback de
+  quem compila sem a esteira —, e o instalador acusou **243** no aparelho, o número de um `rc` distribuído.
+  Aparelho de homologação e de desenvolvimento são o mesmo, e o número da esteira (o run) é sempre maior
+  que o fallback: o debug **nunca** instala sobre um `rc`.
+- **A tela precisa estar acesa e desbloqueada**, ou a suíte falha em bloco com `No compose hierarchies
+  found in the app` — a Activity não vai a foreground, e o erro não fala disso. `adb shell svc power
+  stayon usb` resolve pelo tempo da sessão.
 
 ## Como escrever o próximo
 
