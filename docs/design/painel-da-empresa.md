@@ -5,6 +5,30 @@
 > `SUPERVISOR` escrevem, `AGENTE` só lê —, e o ADR precisou de um passo a mais que o estudo não tinha:
 > como rota e viagem são imutáveis, **escrever quer dizer criar**, e **desativar ficou com a plataforma**.
 
+> ### ⚠️ Estado e vocabulário — leia isto antes do resto *(atualizado em 2026-08-11)*
+>
+> Este estudo foi escrito **antes** de a construção começar. Desde então **F6, F7 e F8 estão feitas**
+> (2026-08-07 a 2026-08-11) e a execução emendou o plano em oito pontos — quase todos por descobertas que só
+> apareceram quando a tela existiu. O texto abaixo fica como o caminho que levou ao ADR-0022; onde ele
+> divergir, vale o [índice de vigência](../adr/README.md).
+>
+> | Onde o estudo diz… | O que vale | Desde |
+> |---|---|---|
+> | a F8 entrega "a **lista de negadas** na atuação" (§4) | **ela não é construída** — o painel da empresa mostra só o que está na atuação dela, e *ver* virou a mesma pergunta que *vender*. O tipo que carrega isso é `EscopoDoPool` (`Todo` · `Concedido` · `Nenhum`) | decisão do analista, 2026-08-10 — revisa o ADR-0016 §7.1 |
+> | a F8 entrega "**ocupação**" (§4) | **não foi entregue nela** — contar ocupação é contar bilhete, e `PASSAGEM`/`CONTAGEM` seguem fora de `SECOES_REVITALIZADAS`. Vai com a **F9**, sobre a chave que a F8.4 deixou pronta (`ViagemSemana`) | F8, verificado em 2026-08-11 |
+> | "`SECOES_REVITALIZADAS` tem exatamente essas quatro" e "`VIAGEM` ainda é herança do menu antigo" (§1) | são **oito**: as quatro da plataforma mais `EQUIPE`, `USUARIOS`, `ROTA` e `VIAGEM`. E `VIAGEM` deixou de ser herança — é a seção nova, reordenada **depois** de `ROTA`, porque a rota é a ligação e a viagem é a partida que a percorre | F6.2 · F6.6 · F7 · F8.2 |
+> | o menu tem as cinco seções do §2 | tem **seis**: nasceu `USUARIOS`, `ADM`-only, que nenhum ADR previa — ela desfez o nó *usuário é da plataforma, funcionário é da empresa*. Com ela, `SECOES_TRANSVERSAIS` ficou **vazio** | F6.6 |
+> | `Funcionario` ganha vínculos `[{empresaId, atuacao, cargo}]` (§3) | o `Vinculo` tem **dois** campos — `(empresaId, cargo)`. A **atuação é derivada** do cargo (conjuntos disjuntos): o campo ao lado não seria redundante, seria contraditório | ADR-0016 §6.1 |
+> | plataforma e `SUPERVISOR` **escrevem** rota e viagem (§6.1) | vale, com um limite que só a construção mostrou: **criar é subconjunto de ver**. Criar fora da concessão produzia uma rota que sumia da própria lista | F8.3 — revisa a própria D3 do ADR-0022 |
+> | "**o que o Início mostra** em cada painel" é pergunta aberta (§6.2) | **respondida para a empresa**: a lista de `ViagemSemana` sob *Viagens Disponíveis*, janela **deslizante** de 7 dias, e *disponível* é sobre o instante — a saída das 06:00 não está disponível às 18:00. Para a plataforma continua aberta (F10) | F8.4 |
+> | "a **F10** reescreve ou adapta a Passagem" (§6.3) | é a **F9** — a tabela do §4 já diz isso, e o §6 ficou com a numeração antiga | ADR-0022 |
+>
+> Duas coisas o estudo acertou e valem lidas como estão: o **critério** da divisão (*entidade com dono →
+> seção da empresa*) e a **definição de pronto** do §4. A F8 fechou essa definição com uma **terceira rede
+> medida** — a tela em aparelho físico, 85 casos verdes —, registrada no índice. Ainda **não** feito do §5:
+> `INICIO` não é valor de `SecaoMenu`; o Início vive na tela inicial, e é a F10 que decide se ele entra no
+> menu.
+
 ## 1. O que fechou: o painel da plataforma está completo
 
 A **v0.0.4** (produção, `versionCode` 219) entregou as quatro seções que a plataforma administra, cada uma
