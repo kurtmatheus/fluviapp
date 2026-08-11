@@ -8,6 +8,23 @@ volta ao código **e** registra a rodada de decisões do analista sobre o agrega
 [ADR-0018](../adr/0018-agregado-passagem-participantes-modo-e-lancamentos.md)**. Este documento fica como o
 **registro do caminho até elas**: quando ele e o ADR-0018 discordarem, o ADR vence.
 
+> ### ⚠️ Reformulado em 2026-08-11 — a raiz do agregado mudou
+>
+> O **[ADR-0023](../adr/0023-passagem-por-categoria-e-referencia.md)** (planejamento de domínio, decisões do
+> analista) reformou o agregado **na raiz**, e não nas bordas. Duas mudanças atravessam todo este documento:
+>
+> 1. **A categoria é o eixo raiz.** A Passagem não é uma coisa com blocos opcionais: é um **tipo fechado** —
+>    `PassagemDePassageiro` | `PassagemDeVeiculo`, com **`PassagemDeCarga` previsto**. Onde o texto abaixo
+>    disser *"modo"* (`ModoPassagem`, quatro valores com veículo dentro), leia **dois níveis**: `Categoria` ×
+>    `Acomodacao` (Rede | Suíte | Camarote). **Veículo não é acomodação — é sub-domínio.**
+> 2. **Nada é congelado no domínio.** Onde o texto disser *snapshot por valor*, *valor para lembrar* ou *par
+>    id + valor*, hoje há **só a referência**. Congelar virou decisão da **camada de dados**, adiante e apenas
+>    se tiver relevância demonstrada. O que paga isso: Rota e Viagem são **imutáveis** desde a F7/F8 — o
+>    rename de que o snapshot protegia praticamente não existe mais no modelo.
+>
+> Os **§1, §2 e §5 foram reescritos** para essa forma. O §11 e seguintes ficam como estavam: são o **registro
+> das rodadas de decisão**, e reescrevê-los apagaria o caminho — ao lê-los, aplique as duas traduções acima.
+
 > Complementa o [estudo transversal de domínio](dominio-relacionamentos-e-camadas.md) e o
 > [catálogo do domínio da plataforma](dominio-da-plataforma.md) (§3.11 resume o que aqui está por extenso).
 > Decisões-fonte: [ADR-0003](../adr/0003-modelo-de-memoria-do-dado.md) (camadas do dado, hoje superado em
@@ -33,54 +50,84 @@ O texto anterior fotografava `2026-07`, logo após o ADR-0012. Desde então trê
 | não citava tarifa | `tarifaBase` e `cilindrada` entraram com o **ADR-0013** (congelam a célula da tabela) |
 | "Passagem é o único agregado, o resto é master data" | continua verdade **hoje**, mas o ADR-0016 multiplica o master data (Localidade, Rota, Ativo, Atuação) e §11 quer **quebrar essa exclusividade** |
 
-O que **não** mudou e segue valendo: a FSM do status, o QR como ponteiro, a dualidade id × snapshot e a
-leitura de que passageiro e veículo são **participantes de mesmo nível**.
+O que **não** mudou e segue valendo: a FSM do status e o QR como ponteiro. A **dualidade id × snapshot caiu**
+(ADR-0023 D8: no domínio, só referência), e a leitura de que passageiro e veículo são *participantes de mesmo
+nível* foi **superada por cima**: eles não são dois participantes de um agregado — são **dois sub-domínios**
+dele (ADR-0023 D1).
 
 ## 1. O que a Passagem é no domínio
 
-A **Passagem** é o bilhete emitido — o registro **transacional / de evento** do negócio. Hoje é o único
-agregado do app: as demais entidades são *master data*; a Passagem é o fato que as consome e congela.
+A **Passagem** é o bilhete emitido — o registro **transacional / de evento** do negócio, e o único agregado
+do app: as demais entidades são dados de referência; a Passagem é o fato que as consome.
 
-**Quem viaja são os participantes do agregado — e eles são de mesmo nível.** O **sujeito** da passagem é o
-**titular**, e quem é o titular depende do **modo** (§11.3): nos três modos de pessoa é o **passageiro 1**
-(obrigatório), com os passageiros 2 e 3 como acompanhantes opcionais (`temPassageiro2`/`temPassageiro3`); no
-modo veículo é o **próprio veículo**. O **veículo é participante de mesmo nível do passageiro — não um value
-object descritivo** (derivado `ehVeiculo`) precisamente porque pode ser sujeito do seu próprio bilhete.
+**A raiz do agregado é a categoria** (ADR-0023 D1). *"Que tipo de passagem é esta"* deixa de ser uma dedução
+sobre a presença de um campo e passa a ser o **tipo**:
 
-O **responsável pela retirada** — cujos campos moram no estado do veículo (`FormVeiculoUiState`), não num
-estado de passageiro — é **opcional por regra de negócio, não por descuido** (§11.3): ele nem sempre é
-informado e costuma ser definido na hora, informalmente, entre despachante, transportadora e quem retira.
-Bilhete de veículo **sem nenhuma pessoa nomeada é a forma normal do modo**, não uma inconsistência tolerada.
+```
+Passagem (o comum: ocorrência · lançamento · observação · metadados)
+├── PassagemDePassageiro   → acomodação × tipo tarifário × clientes 1..3
+├── PassagemDeVeiculo      → veículo (tipo governa) × responsável pela retirada (opcional)
+└── PassagemDeCarga        → [futuro] — cabe sem reforma, e é isso que o D1 garante
+```
 
-> Isto **revisa** o rótulo "value object" que o [estudo transversal](dominio-relacionamentos-e-camadas.md)
-> deu a passageiros/veículo. E é exatamente a tensão que a §11 resolve: no plano do domínio eles são
-> participantes; no plano da persistência ainda são campos achatados **sem identidade própria**.
+**O critério da divisão** (D2): é **comum** o que descreve *a travessia vendida* — para onde vai (a
+**ocorrência**, não a viagem: `(viagemId, data)`), quanto entrou (o **lançamento**), a observação e os
+metadados. É **específico** o que ocupa o espaço. É por isso que a carga já tem lugar: ela muda o que ocupa,
+não o resto.
 
-`Passagem.kt` ainda acumula três papéis num só arquivo — `@Entity` do Room, modelo de domínio e fonte dos
-snapshots. **O ADR-0017 tira o primeiro:** sem Room, a anotação sai e o agregado deixa de conhecer o banco
-(hoje `temPassageiro2` — regra de negócio — carrega um `@Ignore`).
+**Os participantes são referências.** O passageiro titular é o **primeiro de uma lista ordenada de
+`clienteId`** (1..3), e não `nomePassageiro1` + três campos ao lado. O **`Cliente` é entidade com cadastro
+próprio** (D5) — e ganhou **telefone**, o primeiro dado dele que existe para *contato* e não para identificar
+quem viaja.
 
-`app/src/main/java/dev/matheus/fluviapp/domain/passagem/Passagem.kt:9`
+O **responsável pela retirada** é **opcional por regra de negócio, não por descuido**: ele nem sempre é
+informado, e costuma ser definido na hora, informalmente, entre despachante, transportadora e quem retira.
+Bilhete de veículo **sem ninguém nomeado é a forma normal**, não uma inconsistência tolerada. Quando existe,
+é um `Cliente` referenciado — a mesma entidade do passageiro.
 
-## 2. Anatomia da entidade
+> Isto **revisa duas vezes** o rótulo "value object" que o
+> [estudo transversal](dominio-relacionamentos-e-camadas.md) deu a passageiros/veículo: primeiro para
+> *participantes* (§11), agora para **sub-domínios** — e o participante-pessoa virou **entidade referenciada**.
 
-| Grupo | Campos | Natureza |
+**O que o código ainda é** (`domain/passagem/Passagem.kt:9`): `@Entity` do Room, modelo de domínio e fonte
+dos snapshots, os três num arquivo, com 49 campos planos. O ADR-0017 F5 tira o primeiro papel e o ADR-0023
+tira o terceiro; o segundo é o que sobra, e é o que este documento descreve.
+
+## 2. Anatomia do agregado
+
+**[alvo]** — a forma decidida no ADR-0023. O `[hoje]` está logo abaixo, e a distância entre os dois é o
+tamanho da F9.
+
+| Onde | O que carrega | Natureza |
 |---|---|---|
-| Identidade | `id` (PK), `numero` | surrogate + número do bilhete (do `ContadorBilhete`) |
-| **Ponteiros por id** (ADR-0008) | `viagemId`, `navioId`, `empresaId`, `funcionarioId` | link vivo p/ relacionar/agregar |
-| **Snapshot por valor** | `codigoViagem`, `empresa`, `navio`, `origem`, `destino`, `dataViagem`, `horaViagem`, `agencia`, `funcionarioResponsavel` | histórico imutável do bilhete |
-| Dinheiro (ADR-0013) | `valorPix/Dinheiro/Debito/Credito`, `tarifaBase` | `Double?` na fronteira; `tarifaBase` = célula congelada |
-| Categoria tarifária | `tipoPassagem`, `gratuidade`, `acomodacao` | Strings de tipos fechados |
-| Passageiros ×3 | `nome/documento/numeroDocumento/dataNascimento` (×3) | participantes; **passageiro 1 = titular** |
-| Veículo (+ responsável) | `tipoVeiculo`, `modeloVeiculo`, `placaVeiculo`, `corVeiculo`, `cilindrada` + `*ResponsavelRetirada` (×3) | participante de **mesmo nível** |
-| **Ciclo de vida** (ADR-0012) | `status`, `embarcadaPorId`, `embarcadaPor`, `embarcadaEm` | FSM + carimbo do check-in |
-| Derivados `@Ignore` | `temPassageiro2`, `temPassageiro3`, `ehVeiculo` | calculados, não persistidos |
+| **comum** — identidade | `id` · `numero` | surrogate + número do bilhete (por ocorrência, ADR-0018 D10) |
+| **comum** — ocorrência | `viagemId` + `data` | a travessia concreta (`ViagemSemana`, F8.4). **Referência, sem cópia** |
+| **comum** — dinheiro | `lancamento` (formas × valores) | o **valor praticado**, que *entra* — ninguém o calcula (preço é I/O) |
+| **comum** — observação | `observacao` | texto livre |
+| **comum** — metadados | `status` · `funcionarioId` · `agenciaId` · `criadoEm` · `alteradoEm` · `embarcadaPorId` · `embarcadaEm` | anotação do sistema. `funcionarioId` e `agenciaId` são **inferidos** do vínculo ativo; **só o `status` aparece em tela** (D7) |
+| **passageiro** | `acomodacao` (Rede\|Suíte\|Camarote) · `tipo` (Inteira\|Meia\|Gratuidade) · `clientes: List<clienteId>` (1..3) | a ocupação de suíte/camarote **é** o tamanho da lista, não um campo ao lado (D3) |
+| **veículo** | `veiculo` (tipo · modelo · placa · cor · cilindrada) · `responsavelRetirada: clienteId?` | o **tipo governa** o que se exige (D4) |
 
-Todos os campos aditivos nasceram com default `""`/`null` — portfólio regenera via seed, não faz backfill.
-As migrações Room que os acompanharam **deixam de existir como categoria** com o ADR-0017 (§9 do ADR-0015 já
-colapsou as 19 migrações num DDL único).
+**[hoje]** — 49 campos planos, e a diferença não é só de arrumação:
 
-`Passagem.kt:11-87` · `agencia` documentada em `:28-34` (por que o `agente` morreu).
+| Grupo de hoje | Campos | O que o ADR-0023 faz com ele |
+|---|---|---|
+| Identidade | `id` (PK), `numero` | fica |
+| Ponteiros por id | `viagemId`, `embarcacaoId`, `empresaId`, `funcionarioId`, `agenciaId` | ficam os que são do bilhete; `embarcacaoId`/`empresaId` deixam de ser cópia da viagem e passam a sair dela |
+| **Snapshot por valor** | `codigoViagem`, `empresa`, `embarcacao`, `origem`, `destino`, `dataViagem`, `horaViagem`, `agencia`, `funcionarioResponsavel`, `embarcadaPor` | **saem** (D8) — 10 campos |
+| Dinheiro | `valorPix/Dinheiro/Debito/Credito`, `tarifaBase` | viram **lançamento**; `tarifaBase` **perde o portador** (preço é I/O) |
+| Categoria tarifária | `tipoPassagem`, `gratuidade`, `acomodacao` | `acomodacao` sobe para o sub-domínio; o tipo passa a ser **limitado pela acomodação** |
+| Passageiros ×3 | `nome/documento/numeroDocumento/dataNascimento` ×3 | viram **lista de `clienteId`** — 12 campos por 1 |
+| Veículo + responsável | `tipoVeiculo`, `modeloVeiculo`, `placaVeiculo`, `corVeiculo`, `cilindrada` + `*ResponsavelRetirada` ×3 | o veículo é o sub-domínio; o responsável vira `clienteId?` |
+| Ciclo de vida | `status`, `embarcadaPorId`, `embarcadaPor`, `embarcadaEm` | fica, **sem** `embarcadaPor` (nome) |
+| Derivados `@Ignore` | `temPassageiro2`, `temPassageiro3`, `ehVeiculo` | **somem por construção**: eram perguntas que o tipo agora responde |
+
+Uma assimetria que só aparece lendo o arquivo, e que a lista resolve: os passageiros 1 e 2 usam
+`documentoPassageiroN` e o 3 usa `tipoDocumentoPassageiro3` (`Passagem.kt:62, 66, 70`) — **o mesmo fato com
+dois nomes**, numa serialização que mapeia por nome de campo.
+
+`Passagem.kt:11-91` · `agencia` documentada em `:28-34` (por que o `agente` morreu) · `agenciaId` em `:35-48`
+(plantado na F7 antes de ter leitor, para o recorte da F9 encontrar id nos bilhetes antigos).
 
 ## 3. Ciclo de vida — `StatusPassagem` como tipo + FSM
 
@@ -117,17 +164,33 @@ legal carimba `status=EMBARCADA` + autoria + timestamp. O resultado é um `seale
 A leitura ao vivo é a razão de a Passagem **nunca ter sido espelhada por listener** — e por isso o ADR-0017
 a trata como a fase mais barata: as consultas pesadas já vão direto ao Firestore.
 
-## 5. Relações por identidade e snapshots (ADR-0008)
+## 5. Relações por identidade — e por que o snapshot saiu (ADR-0008 → ADR-0023 D8)
 
-A Passagem é o caso onde **id-para-relacionar e valor-para-lembrar coexistem legitimamente**:
+Durante quase toda a vida deste agregado, a Passagem foi **o exemplo** da segunda metade da régua do
+ADR-0008: *id para relacionar, **valor para lembrar***. Ela guardava as duas coisas — `viagemId` e
+`origem`/`destino`; `funcionarioId` e `funcionarioResponsavel` — e a justificativa era boa: *bilhete emitido
+é um fato, e fato não muda quando alguém renomeia a viagem*.
 
-- **Ponteiros por id, congelados na emissão** (`viagemId`, `navioId`, `empresaId`, `funcionarioId`):
-  sobrevivem a rename do master data. O balanço agrega por `navioId` frozen.
-- **Snapshot por valor** (`empresa`, `navio`, `origem`, `destino`, `codigoViagem`, `agencia`,
-  `funcionarioResponsavel`): registro imutável do que o bilhete dizia. Bilhete impresso não muda depois.
+**Isso caiu em 2026-08-11** (decisão do analista, ADR-0023 D8). No domínio, **tudo é referência**; congelar
+passou a ser assunto da **camada de dados**, a decidir adiante e **somente se tiver relevância demonstrada**.
 
-Este é o padrão que a §11 estende aos **participantes** — hoje eles são o único bloco do agregado que tem
-valor sem chave.
+Três razões que sustentam a inversão, e a primeira é a que mudou de verdade:
+
+1. **o que o snapshot protegia deixou de existir.** Ele protegia contra *rename do master data* — e Rota e
+   Viagem, hoje, **não têm editar**: são imutáveis por desenho, só nascem e desativam (ADR-0022 D3, F7/F8).
+   Localidade e Porto têm delete **lógico**. Blindar-se contra uma mutação que o modelo não permite custava 10
+   campos duplicados;
+2. **o par podia discordar de si mesmo.** `agencia` (nome) × `agenciaId`, `funcionarioResponsavel` × 
+   `funcionarioId`: duas colunas para o mesmo fato são duas chances de a tela mostrar uma e a consulta usar a
+   outra. O terreno da F9 encontrou exatamente isso — a listagem recorta por **nome** de agência tendo o id
+   gravado ao lado;
+3. **congelar é decisão de armazenamento, não de negócio.** O domínio diz *de quem é este bilhete*; se a
+   leitura precisa ser estável no tempo, isso é uma propriedade da forma como se grava e se lê — e é lá que a
+   decisão fica, com o caso concreto na mão.
+
+**O que se paga, e está aceito:** um bilhete por referência é uma **leitura**. Se algum dia um porto for
+renomeado, o bilhete antigo mostra o nome novo. E ocupação e balanço deixam de agregar por campo congelado —
+passam a exigir junção, cujo custo é pago no eixo do **DTO por caso de uso** (ADR-0019), não com cópia.
 
 ## 6. Formas do dado e mappers
 

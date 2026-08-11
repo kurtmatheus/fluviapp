@@ -132,12 +132,20 @@ problema real do modelo: **duplicata viva a manter em N lugares**.
 |---|---|---|
 | **Embutir** | é *value object* ou rótulo: pequeno, estável, sempre lido junto, sem vida própria | os dois `Catalogo` dentro de `Localidade` (§3.4) |
 | **Referenciar por id** | é agregado com ciclo de vida próprio | o `Porto` visto pela `Rota`; a `Empresa` vista pelo `Navio` |
-| **Congelar (duplicar de propósito)** | a cópia é **imutável por desenho** | o snapshot da `Passagem` (ADR-0008) |
+| **Congelar (duplicar de propósito)** | a cópia é **imutável por desenho** *e a imutabilidade não vem do modelo* | **nenhum, no domínio** — era o snapshot da `Passagem` (ADR-0008), e ele saiu (ADR-0023 D8) |
 
-O terceiro caso é o único em que denormalizar **não tem custo de manutenção** — porque a cópia *não deve*
-ser atualizada. É o que a `Passagem` já faz: congela empresa, navio, origem e destino porque um bilhete
-emitido é fato histórico. O modelo já distinguia os três regimes na prática; o que faltava era o critério
-escrito.
+O terceiro caso é o único em que denormalizar **não tem custo de manutenção** — porque a cópia *não deve* ser
+atualizada. Era o que a `Passagem` fazia: congelava empresa, embarcação, origem e destino porque um bilhete
+emitido é fato histórico.
+
+**Ele deixou de ter exemplo no domínio em 2026-08-11** (ADR-0023 D8), e a razão instrui o critério: o
+congelamento protegia contra *rename do dado de referência*, e Rota e Viagem **não têm editar** desde a
+F7/F8 — são imutáveis por desenho, e Localidade e Porto têm delete lógico. Quando a **fonte** já é imutável,
+a cópia não protege de nada e ainda cria o par que pode discordar de si mesmo.
+
+Então o terceiro regime continua válido como **regra**, e passa a ter uma condição explícita: **congela-se
+quando a fonte pode mudar e a leitura não pode** — e essa avaliação é da **camada de dados**, com o caso
+concreto, não do domínio.
 
 ## 2. Mapa do domínio
 
@@ -436,7 +444,8 @@ formulário**.
 **Sem dono, universalmente acessíveis, e imutáveis.** Quem cria assina; ninguém exclui. Se a saída muda de
 horário, **desativa-se e cria-se outra** — versionamento por substituição. É a imutabilidade que torna
 seguro compartilhar sem dono: nenhuma agência quebra o que a outra vende. Passagem antiga apontando viagem
-desativada é o comportamento correto, mesma natureza do snapshot.
+desativada é o comportamento correto — e **é essa imutabilidade que, em 2026-08-11, pagou o fim do snapshot**
+(ADR-0023 D8): quando a fonte não muda, a cópia não protege de nada.
 
 **A partida física ganha identidade — e o conflito da capacidade some.** Duas agências que vendem o mesmo
 navio na mesma saída têm **a mesma viagem**. Ocupação = `count(passagens where viagemId = X and data = D)`,
@@ -635,14 +644,14 @@ estado **válido**, não erro: ali quem decide é o papel.
 
 `domain/passagem/Passagem.kt` **[hoje]** · `passagens/{id}` · detalhado em [dominio-passagem.md](dominio-passagem.md)
 
-É o **único agregado** do app — o fato transacional que consome e **congela** o master data. As demais
-entidades são dados de referência; a Passagem é o evento. ~50 campos planos, agrupados por natureza:
+É o **único agregado** do app — o fato transacional que consome os dados de referência. As demais entidades
+são referência; a Passagem é o evento. Hoje são **49 campos planos**, agrupados por natureza:
 
 | Grupo | Campos | Natureza |
 |---|---|---|
 | Identidade | `id`, `numero` | o `numero` vem do `ContadorBilhete` |
 | Referências vivas | `viagemId`, `navioId`, `empresaId`, `funcionarioId` | ids estáveis (ADR-0008) |
-| **Snapshot** | `codigoViagem`, `empresa`, `navio`, `origem`, `destino`, `dataViagem`, `horaViagem`, `agencia`, `funcionarioResponsavel` | **congelados na emissão** — histórico imutável |
+| **Snapshot** | `codigoViagem`, `empresa`, `embarcacao`, `origem`, `destino`, `dataViagem`, `horaViagem`, `agencia`, `funcionarioResponsavel`, `embarcadaPor` | congelados na emissão — **saem inteiros** no `[alvo]` (ADR-0023 D8) |
 | Dinheiro | `valorPix`, `valorDinheiro`, `valorDebito`, `valorCredito`, `tarifaBase` | `Double?` na fronteira |
 | Categoria tarifária | `tipoPassagem`, `gratuidade`, `acomodacao` | Strings de tipos fechados |
 | Participantes | `nome/documento/numeroDocumento/dataNascimento` × **3 passageiros** | passageiro 1 = titular |
@@ -650,19 +659,30 @@ entidades são dados de referência; a Passagem é o evento. ~50 campos planos, 
 | Ciclo de vida | `status`, `embarcadaPorId`, `embarcadaPor`, `embarcadaEm` | FSM do ADR-0012 |
 | Derivados | `temPassageiro2`, `temPassageiro3`, `ehVeiculo` | calculados, não persistidos |
 
-**A dualidade id × snapshot é decisão, não descuido** (ADR-0008): o id serve para agregar e navegar; o
-snapshot serve para o bilhete **não mudar** quando a viagem for renomeada. Um bilhete emitido é um fato
-histórico.
+**[alvo]** *(planejamento de domínio de 2026-08-11 —
+[ADR-0023](../adr/0023-passagem-por-categoria-e-referencia.md))* A forma acima é reformada **na raiz**:
 
-**Passageiro e veículo são participantes de mesmo nível** — não value objects descritivos. O veículo viaja
-sob um responsável pela retirada que é **opcional**: o modelo **tolera** veículo sem responsável, e essa
-inconsistência é aceita, não barrada.
+- **a categoria é o eixo**, e os sub-domínios são um **tipo fechado**: `PassagemDePassageiro` |
+  `PassagemDeVeiculo`, com **`PassagemDeCarga` previsto** — a estrutura tem de estar pronta para recebê-la, e
+  a prontidão é o formato, não um campo reservado. `ehVeiculo` some por construção;
+- **o comum é a travessia vendida**: a **ocorrência** `(viagemId, data)`, o **lançamento** (formas × valores),
+  a observação e os **metadados** (`status` · `funcionarioId` · `agenciaId` · `criadoEm` · `alteradoEm` ·
+  `embarcadaPorId` · `embarcadaEm`) — os dois ids **inferidos** do vínculo ativo, e **só o `status` aparece em
+  tela**;
+- **nada é congelado** (D8): onde havia par *id + valor*, fica só o id — 10 campos de snapshot saem. Congelar
+  virou decisão da camada de dados, e só se tiver relevância demonstrada;
+- **participantes por referência**: os três passageiros viram **uma lista ordenada de `clienteId`** (titular =
+  primeiro), e o responsável pela retirada, um `clienteId?`. O **`Cliente`** é entidade com cadastro próprio e
+  ganha **telefone**;
+- **a regra sobe para o tipo**: a acomodação (Rede | Suíte | Camarote) declara que **tipos tarifários** admite
+  — suíte e camarote são sempre inteira, meia e gratuidade só na rede —, e a ocupação de suíte/camarote **é** o
+  tamanho da lista de clientes. No veículo, o **tipo governa**: carreta e caminhão não pedem modelo (o tipo já
+  é o modelo), moto exige cilindrada;
+- **`ModoPassagem` se dissolve**: era um eixo de quatro valores com o veículo dentro; viram dois níveis,
+  categoria × acomodação.
 
-**[alvo]** *(decisão de 2026-08-01)* Os participantes deixam de ser campos achatados e passam a ser gravados
-como **chave + valores**: `clienteId` para referenciar e os campos congelados para o bilhete. Nasce o
-**`Cliente`** — a mesma entidade para passageiro e para responsável pela retirada —, salvável por um botão
-no meio da emissão. Detalhado em [dominio-passagem.md §11](dominio-passagem.md), incluindo o que falta
-decidir (identidade, tenancy do cliente e o eixo dos quatro modos rede/suíte/camarote/veículo).
+Detalhado em [dominio-passagem.md](dominio-passagem.md) (§1, §2 e §5 reescritos; §11 fica como registro do
+caminho).
 
 ### 3.12 Entidades de suporte
 

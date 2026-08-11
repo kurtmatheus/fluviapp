@@ -2,8 +2,14 @@
 
 > **Status:** **aberto** — mapeamento do código como ele está em `6b11f34` (2026-08-11), com o faseamento
 > proposto no §7 e as perguntas no §8. A **pergunta 1 está respondida** (*preço é I/O* — fim do §5); as
-> outras duas ficaram para o próximo **planejamento de domínio**, e por isso o §7 é **proposta medida, não
-> plano aprovado**.
+> outras duas ficaram para o **planejamento de domínio**, e por isso o §7 é **proposta medida, não plano
+> aprovado**.
+>
+> **O planejamento de domínio aconteceu no mesmo dia** e virou o
+> [**ADR-0023**](../adr/0023-passagem-por-categoria-e-referencia.md): a **categoria** passou a ser a raiz do
+> agregado (passageiro | veículo, com **carga** previsto) e **nada é congelado no domínio**. Duas
+> consequências para este documento: onde ele descreve o alvo pelo ADR-0018, o **ADR-0023 vence na raiz**; e a
+> F9.3 (*a forma do documento*) deixou de ser "achatar menos" e passou a ser **trocar o eixo do agregado**.
 >
 > Conversa com o [ADR-0018](../adr/0018-agregado-passagem-participantes-modo-e-lancamentos.md) (o agregado
 > novo e o plano de migração dele), o [ADR-0022](../adr/0022-painel-da-empresa-e-fases.md) (a F9 como fase),
