@@ -251,7 +251,12 @@ porque **o pool de clientes é um cadastro, e cadastro tem fase**. Colocá-lo de
 longa do roadmap ficar mais longa ainda, e o critério que vem funcionando desde a revitalização é *uma
 entidade viva por vez*.
 
-## 7. Faseamento proposto
+## 7. Faseamento proposto — **superado pelo [ADR-0027](../adr/0027-faseamento-da-f9.md)**
+
+> **Esta seção é história.** O plano aprovado tem **seis fatias**, não oito: duas destas se dissolveram nas
+> decisões que vieram depois (o preço, porque *preço é I/O*; a forma do documento, porque ela vem do tipo selado),
+> e o corte foi respondido pelo domínio — os pools `Cliente`/`Veiculo` entraram como **pré-requisito**, não como
+> fase própria, porque o agregado os referencia por id. Ler abaixo só para ver o caminho.
 
 Oito fatias, na ordem em que cada uma destrava a seguinte. A restrição de ordem do ADR-0018 é respeitada:
 **enquanto a `Passagem` estiver no Room, cada campo novo é DDL** — por isso a saída do Room (F9.1) vem

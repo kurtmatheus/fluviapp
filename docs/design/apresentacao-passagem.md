@@ -166,7 +166,12 @@ o componente a usa.
 apresentação vem por último porque consome as três: ela só sabe o que exibir depois do DTO tipado, e só sabe a
 que reagir depois do evento one-shot.
 
-## 6. O snapshot volta a ser entidade — e é a maior consequência desta rodada
+## 6. *Nota lateral* — o snapshot volta a ser entidade
+
+> **Isto é nota lateral, por decisão do analista (2026-08-11): fica registrado e NÃO entra na linha da F9.** A
+> decisão vale (e as revogações do §6.2 estão em vigor); o que fica para depois é **construí-la**. Ela é a
+> primeira coisa nesta linha de trabalho que **acrescenta função** em vez de revitalizar, e por isso não disputa
+> lugar com o que a F9 tem de recuperar.
 
 > *"snapshot volta a ter sua relevância para resgatar últimos preenchimentos com garantia do Room; ou seja, um
 > snapshot é uma passagem incompleta e pode ter vários para o mesmo agente, então terá uma tela de recuperação
@@ -220,9 +225,12 @@ Três pontos que precisam de resposta antes de virar ADR — e o primeiro é o m
    ao cancelar explicitamente — e por tempo? Uma passagem incompleta de três semanas atrás aponta para uma
    ocorrência que já partiu.
 
-### 6.4 Onde isto entra na ordem
+### 6.4 Onde isto entra na ordem — **fora da F9**
 
-A tela de recuperação é **apresentação**, mas o tipo e a persistência dela são **domínio e dados** — então ela
-não é a última fatia: ela **entra na sequência inteira**, e é bom que isto esteja dito antes de a F9 ser faseada.
-Ela também é a primeira coisa nesta linha de trabalho que **acrescenta** função ao app, em vez de revitalizar o
-que existe.
+A tela de recuperação é **apresentação**, mas o tipo e a persistência dela são **domínio e dados**: construí-la
+atravessaria a sequência inteira. Como ela **acrescenta função** — e a F9 existe para *recuperar* o que já
+existia —, ela sai do faseamento e fica como **trabalho próprio**, a fasear quando for a vez.
+
+O que a F9 precisa respeitar, mesmo sem construí-la, é uma coisa só: **não apagar o caminho**. A porta
+`RascunhoStore` fica, o Room fica com o rascunho, e a `Passagem` continua sendo um tipo que **não admite
+incompleto** — que é justamente o que obriga o incompleto a nascer como outro tipo quando chegar a hora.
