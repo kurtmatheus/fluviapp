@@ -1,10 +1,10 @@
 package dev.matheus.fluviapp.services.repository.firebase.documents
 
-import dev.matheus.fluviapp.domain.passagem.Passagem
+import dev.matheus.fluviapp.database.PassagemEntity
 
 data class PassagemDocumento(
     val numero: String = "",
-    // FK da Passagem -> Viagem por id (ADR-0008). Fica top-level (é ponteiro que a passagem possui),
+    // FK da PassagemEntity -> Viagem por id (ADR-0008). Fica top-level (é ponteiro que a passagem possui),
     // separado do `viagem` embutido, que é o snapshot por valor. Default "" cobre docs antigos.
     val viagemId: String = "",
     val viagem: ViagemCongeladaDocumento? = null,
@@ -37,8 +37,8 @@ data class PassagemDocumento(
     val embarcadaEm: String = ""
 )
 
-fun PassagemDocumento.toPassagem(id: String): Passagem {
-    return Passagem(
+fun PassagemDocumento.toPassagem(id: String): PassagemEntity {
+    return PassagemEntity(
         id = id,
         numero = numero,
         viagemId = viagemId,

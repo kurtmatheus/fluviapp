@@ -8,7 +8,7 @@ import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.GRATU
 import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.INTEIRA
 import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.MEIA
 import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.MOTO
-import dev.matheus.fluviapp.domain.passagem.Passagem
+import dev.matheus.fluviapp.database.PassagemEntity
 import dev.matheus.fluviapp.domain.screendata.DadosContagemPassagem
 import dev.matheus.fluviapp.domain.viagem.Embarcacao
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.EmbarcacaoRepository
@@ -19,10 +19,10 @@ import javax.inject.Singleton
 @Singleton
 class ContagemPassagensMapper @Inject constructor(
     private val embarcacaoRepository: EmbarcacaoRepository
-) : Mapper<List<Passagem>, List<DadosContagemPassagem>> {
+) : Mapper<List<PassagemEntity>, List<DadosContagemPassagem>> {
 
-    override suspend fun map(entry: List<Passagem>): List<DadosContagemPassagem> {
-        // Agrega pelo embarcacaoId CONGELADO na Passagem (ADR-0008 Fase 2): sem ida à Viagem viva, então
+    override suspend fun map(entry: List<PassagemEntity>): List<DadosContagemPassagem> {
+        // Agrega pelo embarcacaoId CONGELADO na PassagemEntity (ADR-0008 Fase 2): sem ida à Viagem viva, então
         // rename/reatribuição posterior não altera balanços históricos. obterTodos uma vez (não N+1);
         // associateBy dá lookup O(1) por id (era firstOrNull O(embarcacoes) por grupo).
         val embarcacoesPorId = embarcacaoRepository.obterTodos().associateBy { it.id }
@@ -47,7 +47,7 @@ class ContagemPassagensMapper @Inject constructor(
  */
 internal fun contarOcupacaoEmbarcacao(
     embarcacao: Embarcacao,
-    listaPassagem: List<Passagem>,
+    listaPassagem: List<PassagemEntity>,
 ): DadosContagemPassagem {
     var preenchidasRede = 0
     var preenchidasInteiras = 0

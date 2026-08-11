@@ -1,12 +1,12 @@
 package dev.matheus.fluviapp.extensions
 
-import dev.matheus.fluviapp.domain.passagem.Passagem
+import dev.matheus.fluviapp.database.PassagemEntity
 import dev.matheus.fluviapp.services.repository.firebase.documents.PassageiroDocumento
 import dev.matheus.fluviapp.services.repository.firebase.documents.PassagemDocumento
 import dev.matheus.fluviapp.services.repository.firebase.documents.VeiculoDocumento
 import dev.matheus.fluviapp.services.repository.firebase.documents.ViagemCongeladaDocumento
 
-fun Passagem.toPassagemDocumento(): PassagemDocumento {
+fun PassagemEntity.toPassagemDocumento(): PassagemDocumento {
     return PassagemDocumento(
         numero = numero,
         viagemId = viagemId,

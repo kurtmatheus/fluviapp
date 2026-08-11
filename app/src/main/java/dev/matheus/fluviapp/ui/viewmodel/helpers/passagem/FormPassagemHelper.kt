@@ -4,7 +4,7 @@ import dev.matheus.fluviapp.R
 import dev.matheus.fluviapp.extensions.isTextoNaoNulo
 import dev.matheus.fluviapp.extensions.preencherCampo
 import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.MOTO
-import dev.matheus.fluviapp.domain.passagem.Passagem
+import dev.matheus.fluviapp.database.PassagemEntity
 import dev.matheus.fluviapp.domain.passagem.ResultadoEmissao
 import dev.matheus.fluviapp.domain.passagem.StatusPassagem
 import dev.matheus.fluviapp.domain.passagem.tarifaMotoBase
@@ -372,7 +372,7 @@ class FormPassagemHelper(
         funcionarioId: String,
         agenciaEmissora: String,
         agenciaIdEmissora: String,
-    ): Passagem {
+    ): PassagemEntity {
         val statePassagem = uiStatePassagem.value
         val statePassageiro = uiStatePassageiro.value
         val stateVeiculo = uiStateVeiculo.value
@@ -380,7 +380,7 @@ class FormPassagemHelper(
         // Status canônico (ADR-0012): grava o .name do tipo de domínio; formatação fica na exibição.
         val situacaoPassagem = StatusPassagem.A_EMITIR.name
 
-        var passagemExistente: Passagem? = null
+        var passagemExistente: PassagemEntity? = null
 
         if (idPassagem.isTextoNaoNulo()) {
             passagemExistente = passagemRepository.obterPorId(idPassagem)
@@ -394,7 +394,7 @@ class FormPassagemHelper(
         val tarifaBase = passagemExistente?.tarifaBase
             ?: resolverTarifaBase(statePassagem, statePassageiro, stateVeiculo)
 
-        return Passagem(
+        return PassagemEntity(
             id = passagemExistente?.id.orEmpty(),
             numero = passagemExistente?.numero ?: numeroBilhete.toString(),
             viagemId = statePassagem.viagemId,
@@ -480,7 +480,7 @@ class FormPassagemHelper(
     }
 
     fun preencherDadosPassagem(
-        passagem: Passagem,
+        passagem: PassagemEntity,
     ) {
         uiStatePassagem.update { state ->
             state.copy(

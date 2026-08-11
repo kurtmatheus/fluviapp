@@ -7,7 +7,7 @@ import androidx.lifecycle.viewModelScope
 import dev.matheus.fluviapp.R
 import dev.matheus.fluviapp.extensions.isTextoNaoNulo
 import dev.matheus.fluviapp.extensions.toastMessage
-import dev.matheus.fluviapp.domain.passagem.Passagem
+import dev.matheus.fluviapp.database.PassagemEntity
 import dev.matheus.fluviapp.domain.passagem.ResultadoEmissao
 import dev.matheus.fluviapp.domain.rascunho.aplicarEm
 import dev.matheus.fluviapp.domain.rascunho.montarRascunho
@@ -175,7 +175,7 @@ class FormPassagemViewModel @Inject constructor(
         }
     }
 
-    private fun preencherVeiculo(passagem: Passagem) {
+    private fun preencherVeiculo(passagem: PassagemEntity) {
         formPassagemHelper.checkVeiculo()
         formVeiculoHelper.preencherDadosVeiculo(passagem)
     }

@@ -6,7 +6,7 @@ import dev.matheus.fluviapp.extensions.formataParaMoedaBrasileira
 import dev.matheus.fluviapp.extensions.getValorFormatadoOrEmpty
 import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.PASSAGEIRO
 import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.VEICULO
-import dev.matheus.fluviapp.domain.passagem.Passagem
+import dev.matheus.fluviapp.database.PassagemEntity
 import dev.matheus.fluviapp.domain.passagem.StatusPassagem
 import dev.matheus.fluviapp.domain.passagem.TipoPassagem
 import dev.matheus.fluviapp.domain.passagem.descontoDerivado
@@ -22,14 +22,14 @@ import javax.inject.Singleton
 class PassagemDadosPassagemMapper @Inject constructor(
     private val empresaRepository: EmpresaRepository,
     private val embarcacaoRepository: EmbarcacaoRepository,
-) : Mapper<Passagem, DadosPassagem> {
-    override suspend fun map(entry: Passagem): DadosPassagem {
+) : Mapper<PassagemEntity, DadosPassagem> {
+    override suspend fun map(entry: PassagemEntity): DadosPassagem {
         // Empresa resolvida por id (ADR-0008): rename-safe e órfão detectável (obterPorId → null),
         // onde obterPorNome estourava. cnpj/endereço/telefones seguem vivos (nunca foram snapshot).
-        // Sem ida à Viagem: idViagem usa o viagemId congelado na Passagem (dropou ViagemRepository).
+        // Sem ida à Viagem: idViagem usa o viagemId congelado na PassagemEntity (dropou ViagemRepository).
         val empresa = empresaRepository.obterPorId(entry.empresaId)
 
-        // Embarcação resolvida por id (ADR-0008), espelhando a empresa: usa o embarcacaoId congelado na Passagem,
+        // Embarcação resolvida por id (ADR-0008), espelhando a empresa: usa o embarcacaoId congelado na PassagemEntity,
         // rename-safe e órfão detectável (obterPorId → null → nome vazio). Fecha a dívida do §9 do doc de
         // domínio (o nome vinha do snapshot entry.embarcacao, que renomear a frota não atualizava).
         val embarcacao = embarcacaoRepository.obterPorId(entry.embarcacaoId)

@@ -34,7 +34,7 @@ import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
 import dev.matheus.fluviapp.R
-import dev.matheus.fluviapp.domain.passagem.Passagem
+import dev.matheus.fluviapp.database.PassagemEntity
 import dev.matheus.fluviapp.domain.passagem.ResultadoEmbarque
 import dev.matheus.fluviapp.domain.passagem.StatusPassagem
 import dev.matheus.fluviapp.ui.components.RequestPermission
@@ -131,7 +131,7 @@ private fun LeitorView(onQrLido: (String) -> Unit) {
 /** Fase 2 — dados resolvidos ao vivo; operador confere o passageiro antes de confirmar. */
 @Composable
 private fun ConferenciaView(
-    passagem: Passagem,
+    passagem: PassagemEntity,
     onConfirmar: () -> Unit,
     onCancelar: () -> Unit,
 ) {

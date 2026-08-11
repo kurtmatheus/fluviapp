@@ -3,7 +3,7 @@ package dev.matheus.fluviapp.ui.viewmodel.helpers.passagem
 import dev.matheus.fluviapp.extensions.extrairLetrasOuNumeros
 import dev.matheus.fluviapp.extensions.extrairNumeros
 import dev.matheus.fluviapp.domain.passagem.ModoPassagem
-import dev.matheus.fluviapp.domain.passagem.Passagem
+import dev.matheus.fluviapp.database.PassagemEntity
 import dev.matheus.fluviapp.services.repository.firebase.PassagemFirestoreRepository
 import dev.matheus.fluviapp.ui.states.passagem.FormPassageiroUiState
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -233,7 +233,7 @@ class FormPassageiroHelper(
         onAtualizarDocumento: (FormPassageiroUiState, String) -> FormPassageiroUiState,
     ): FormPassageiroUiState = limitarDocumento(documento, tipoDocumento, uiState, onAtualizarDocumento)
 
-    fun preencherDadosPassageiros(passagem: Passagem) {
+    fun preencherDadosPassageiros(passagem: PassagemEntity) {
         val temPassageiro2 = passagem.temPassageiro2
         val temPassageiro3 = passagem.temPassageiro3
 

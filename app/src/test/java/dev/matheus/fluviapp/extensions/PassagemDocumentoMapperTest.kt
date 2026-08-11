@@ -2,21 +2,21 @@ package dev.matheus.fluviapp.extensions
 
 import dev.matheus.fluviapp.revitalizacao.ForaDoEscopo
 import org.junit.experimental.categories.Category
-import dev.matheus.fluviapp.domain.passagem.Passagem
+import dev.matheus.fluviapp.database.PassagemEntity
 import dev.matheus.fluviapp.services.repository.firebase.documents.toPassagem
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
 /**
  * Rede de regressão do mapper flatten (Room) ↔ nested (Firestore). Trava a estrutura ANTES do
- * flip do snapshot (ADR-0004), que mexe justamente na forma da Passagem. Inclui o lock da
+ * flip do snapshot (ADR-0004), que mexe justamente na forma da PassagemEntity. Inclui o lock da
  * assimetria conhecida do passageiro 3 (usa `tipoDocumentoPassageiro3` onde p1/p2 usam
  * `documentoPassageiroN`) — comportamento intencional, não bug.
  */
 @Category(ForaDoEscopo::class)
 class PassagemDocumentoMapperTest {
 
-    private fun passagemModelo() = Passagem(
+    private fun passagemModelo() = PassagemEntity(
         id = "id-1",
         numero = "2444",
         viagemId = "viagem-abc",

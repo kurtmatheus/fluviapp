@@ -2,7 +2,7 @@ package dev.matheus.fluviapp.ui.viewmodel.helpers.passagem
 
 import dev.matheus.fluviapp.extensions.extrairLetrasOuNumeros
 import dev.matheus.fluviapp.extensions.extrairNumeros
-import dev.matheus.fluviapp.domain.passagem.Passagem
+import dev.matheus.fluviapp.database.PassagemEntity
 import dev.matheus.fluviapp.services.repository.firebase.PassagemFirestoreRepository
 import dev.matheus.fluviapp.ui.states.passagem.FormVeiculoUiState
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -122,7 +122,7 @@ class FormVeiculoHelper(
         }
     }
 
-    fun preencherDadosVeiculo(passagem: Passagem) {
+    fun preencherDadosVeiculo(passagem: PassagemEntity) {
         val temResponsavelRetirada = !passagem.nomeResponsavelRetirada.isNullOrEmpty() &&
                 !passagem.documentoResponsavelRetirada.isNullOrEmpty() &&
                 !passagem.numeroDocumentoResponsavelRetirada.isNullOrEmpty()

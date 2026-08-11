@@ -1,6 +1,6 @@
 package dev.matheus.fluviapp.ui.states.passagem
 
-import dev.matheus.fluviapp.domain.passagem.Passagem
+import dev.matheus.fluviapp.database.PassagemEntity
 import dev.matheus.fluviapp.domain.passagem.ResultadoEmbarque
 
 /**
@@ -11,7 +11,7 @@ import dev.matheus.fluviapp.domain.passagem.ResultadoEmbarque
  */
 data class EmbarqueUiState(
     val processando: Boolean = false,
-    val passagem: Passagem? = null,
+    val passagem: PassagemEntity? = null,
     val resultado: ResultadoEmbarque? = null,
 ) {
     val escaneando: Boolean get() = passagem == null && resultado == null && !processando

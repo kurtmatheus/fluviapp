@@ -8,7 +8,7 @@ import dev.matheus.fluviapp.extensions.isTextoNaoNulo
 import dev.matheus.fluviapp.extensions.toPassagemDocumento
 import dev.matheus.fluviapp.domain.ContadorBilhete
 import dev.matheus.fluviapp.domain.operacoes.Usuario
-import dev.matheus.fluviapp.domain.passagem.Passagem
+import dev.matheus.fluviapp.database.PassagemEntity
 import dev.matheus.fluviapp.domain.passagem.ResultadoEmbarque
 import dev.matheus.fluviapp.domain.passagem.StatusPassagem
 import dev.matheus.fluviapp.services.repository.firebase.documents.PassagemDocumento
@@ -79,7 +79,7 @@ class PassagemFirestoreRepository @Inject constructor(
             .launchIn(syncScope)
     }
 
-    suspend fun salvar(id: String, passagem: Passagem): String {
+    suspend fun salvar(id: String, passagem: PassagemEntity): String {
         val documento = retornaDocumentReference(id)
         val passagemComIdNumeroBilhete = passagem.copy(id = documento.id)
         val numero = passagemComIdNumeroBilhete.numero
@@ -139,7 +139,7 @@ class PassagemFirestoreRepository @Inject constructor(
     }
 
     /**
-     * Consulta da **Contagem de Passagem** (ocupação). Sem recorte por agência, e isso é decisão, não
+     * Consulta da **Contagem de PassagemEntity** (ocupação). Sem recorte por agência, e isso é decisão, não
      * esquecimento (ADR-0015 §6): a lotação da embarcação é um recurso finito e COMPARTILHADO — fatiar por
      * agência daria a cada uma uma visão parcial do mesmo barco. Não acrescente filtro de agência aqui.
      */
@@ -184,7 +184,7 @@ class PassagemFirestoreRepository @Inject constructor(
         status: String,
         nomeFuncionario: String,
         agencia: String = "",
-    ): List<Passagem> {
+    ): List<PassagemEntity> {
         // Canoniza o filtro (ADR-0012): o dropdown traz o rótulo ("A EMITIR"), mas o status é gravado
         // pelo .name do tipo ("A_EMITIR"). Sem isso a query não casaria com o armazenamento canônico.
         val statusCanonico = StatusPassagem.de(status)?.name ?: status
@@ -232,7 +232,7 @@ class PassagemFirestoreRepository @Inject constructor(
      * contra o servidor (fonte de verdade), não contra o espelho Room — que pode não ter o bilhete
      * emitido em outro device. `null` se o doc não existir.
      */
-    suspend fun obterDoServidorPorId(id: String): Passagem? {
+    suspend fun obterDoServidorPorId(id: String): PassagemEntity? {
         val snapshot = firestore.collection(COLLECTION_PASSAGENS).document(id).get().await()
         return snapshot.toObject<PassagemDocumento>()?.toPassagem(snapshot.id)
     }

@@ -5,7 +5,7 @@ import org.junit.experimental.categories.Category
 import dev.matheus.fluviapp.extensions.formataParaMoedaBrasileira
 import dev.matheus.fluviapp.fakes.FakeEmpresaRepository
 import dev.matheus.fluviapp.fakes.FakeEmbarcacaoRepository
-import dev.matheus.fluviapp.domain.passagem.Passagem
+import dev.matheus.fluviapp.database.PassagemEntity
 import dev.matheus.fluviapp.domain.passagem.TipoPassagem
 import dev.matheus.fluviapp.domain.viagem.Empresa
 import dev.matheus.fluviapp.domain.viagem.Embarcacao
@@ -17,7 +17,7 @@ import org.junit.Test
 import java.math.BigDecimal
 
 /**
- * Trava a relação Passagem→Empresa por id (ADR-0008): a DadosPassagem resolve a empresa pelo
+ * Trava a relação PassagemEntity→Empresa por id (ADR-0008): a DadosPassagem resolve a empresa pelo
  * `empresaId` congelado, não pelo nome do snapshot. Consequências: rename-safe (empresa renomeada
  * ainda casa) e órfão detectável (empresa removida → campos vazios, sem estourar como `obterPorNome`
  * fazia). `idViagem` vem do `viagemId` congelado — sem ida à Viagem viva.
@@ -47,7 +47,7 @@ class PassagemDadosPassagemMapperTest {
         empresaId = "empresa-1",
     )
 
-    private fun passagem() = Passagem(
+    private fun passagem() = PassagemEntity(
         id = "passagem-1",
         numero = "2444",
         viagemId = "viagem-abc",

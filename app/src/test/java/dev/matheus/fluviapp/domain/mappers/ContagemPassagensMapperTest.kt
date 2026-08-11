@@ -5,7 +5,7 @@ import org.junit.experimental.categories.Category
 import dev.matheus.fluviapp.fakes.FakeEmbarcacaoRepository
 import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.INTEIRA
 import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.REDE
-import dev.matheus.fluviapp.domain.passagem.Passagem
+import dev.matheus.fluviapp.database.PassagemEntity
 import dev.matheus.fluviapp.domain.viagem.Embarcacao
 import dev.matheus.fluviapp.domain.viagem.TipoEmbarcacao
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -16,7 +16,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * Trava o balanço na Fase 2 do ADR-0008: agrega pelo `embarcacaoId` CONGELADO na Passagem, não pela
+ * Trava o balanço na Fase 2 do ADR-0008: agrega pelo `embarcacaoId` CONGELADO na PassagemEntity, não pela
  * Viagem viva nem pelo nome da embarcação. Consequências verificadas: rename-safe (nome atual da embarcação
  * vem do repo por id, não do snapshot) e órfão detectável (embarcacaoId sem embarcacao → grupo descartado).
  */
@@ -41,7 +41,7 @@ class ContagemPassagensMapperTest {
         embarcacaoSnapshot: String,
         acomodacao: String? = REDE.name,
         tipoPassagem: String? = INTEIRA.name,
-    ) = Passagem(
+    ) = PassagemEntity(
         id = id,
         numero = id,
         embarcacaoId = embarcacaoId,

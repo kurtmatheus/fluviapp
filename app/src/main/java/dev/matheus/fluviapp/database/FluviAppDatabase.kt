@@ -11,14 +11,14 @@ import dev.matheus.fluviapp.database.dao.passagem.RascunhoPassagemDao
 import dev.matheus.fluviapp.domain.ContadorBilhete
 import dev.matheus.fluviapp.domain.cadastro.constantes.Constante
 import dev.matheus.fluviapp.domain.operacoes.Usuario
-import dev.matheus.fluviapp.domain.passagem.Passagem
+import dev.matheus.fluviapp.database.PassagemEntity
 import dev.matheus.fluviapp.domain.passagem.PassagemDigital
 
 @Database(
     entities = [
         Usuario::class,
         Constante::class,
-        Passagem::class,
+        PassagemEntity::class,
         ContadorBilhete::class,
         PassagemDigital::class,
         RascunhoPassagemEntity::class
@@ -28,10 +28,10 @@ import dev.matheus.fluviapp.domain.passagem.PassagemDigital
     // Firestore e o resíduo local (rascunho, bilhete digital) — nenhum deles é fonte da verdade.
     // v5: o Funcionário sai (F6.2), e a saída dele é a que destrava a forma nova — `vinculos` é lista, e
     // lista em tabela pediria TypeConverter e migração para um formato que muda na fatia seguinte.
-    // v6: `Passagem.agenciaId` (F7).
+    // v6: `PassagemEntity.agenciaId` (F7).
     // v7: a `Viagem` do trecho disfarçado e a `TarifaViagem` caem (F8.0) — as ÚLTIMAS tabelas que eram
     // espelho de coleção. O que resta aqui ou é resíduo local (rascunho, bilhete digital) ou espera a
-    // vez dele (Usuario, Constante, Passagem, contador).
+    // vez dele (Usuario, Constante, PassagemEntity, contador).
     version = 7,
     exportSchema = true
 )

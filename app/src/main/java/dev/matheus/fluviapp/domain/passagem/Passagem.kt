@@ -1,104 +1,137 @@
 package dev.matheus.fluviapp.domain.passagem
 
-import androidx.room.Entity
-import androidx.room.Ignore
-import androidx.room.Index
-import androidx.room.PrimaryKey
+import dev.matheus.fluviapp.domain.viagem.OcorrenciaViagem
 
-@Entity(indices = [Index("id")])
-data class Passagem(
-    @PrimaryKey
-    val id: String,
-    val numero: String,
-    // Ponteiro estável para a Viagem (ADR-0008): id p/ relacionar/agregar. codigoViagem e
-    // empresa/embarcacao/origem/destino seguem como snapshot por valor (histórico imutável do bilhete).
-    val viagemId: String = "",
-    // Ids da embarcação/empresa congelados no momento da emissão (snapshot). O balanço agrega por embarcacaoId
-    // (frozen) — rename/reatribuição posterior na Viagem não altera bilhetes históricos. empresaId
-    // fica dormente até a relação Passagem→Empresa por id.
-    val embarcacaoId: String = "",
-    val empresaId: String = "",
-    val codigoViagem: String,
-    val empresa: String,
-    val embarcacao: String,
-    val origem: String,
-    val destino: String,
-    val dataViagem: String,
-    val horaViagem: String,
-    /**
-     * Agência emissora, congelada na emissão (ADR-0015 §3). **Derivada**, não digitada: é a agência do
-     * funcionário que emitiu. O campo `agente` que ficava aqui morreu em P2.3 — ele guardava o nome do
-     * emissor, que é exatamente o que [funcionarioResponsavel] já guarda; duas colunas para o mesmo
-     * fato só criam a chance de discordarem.
-     */
-    val agencia: String = "",
-    /**
-     * **A agência emissora por id** — o `empresaId` do vínculo ativo de quem emitiu, congelado como o
-     * resto do snapshot (F7).
-     *
-     * Ele nasce antes de ter leitor porque o campo ao lado não serve para recortar: [agencia] é um
-     * **nome**, e nome muda, repete e não relaciona. Enquanto ele for a única coordenada, "as passagens
-     * da minha empresa" é uma comparação de texto — e o recorte por empresa da F9 precisa de um id que
-     * já esteja gravado nos bilhetes de antes dela.
-     *
-     * Não confundir com [empresaId], que é a empresa **da viagem** (quem transporta). Aqui é quem
-     * **vendeu**: numa mesma saída, as duas costumam ser diferentes, e é justamente por isso que a
-     * ocupação atravessa empresas e o faturamento não.
-     */
-    val agenciaId: String = "",
-    val valorPix: Double? = null,
-    val valorDinheiro: Double? = null,
-    val valorDebito: Double? = null,
-    val valorCredito: Double? = null,
-    // Tarifa da inteira congelada na emissão (ADR-0013): a célula da tabela da Viagem para a acomodação
-    // escolhida. É a base de que a tarifa devida (meia = metade, gratuidade = 0) e o desconto derivam.
-    // Aditivo; null cobre bilhetes anteriores e o veículo (tarifa por classe é Fase 3).
-    val tarifaBase: Double? = null,
-    val observacao: String? = null,
-    val tipoPassagem: String? = null,
-    val gratuidade: String? = null,
-    val acomodacao: String? = null,
-    val nomePassageiro1: String? = null,
-    val documentoPassageiro1: String? = null,
-    val numeroDocumentoPassageiro1: String? = null,
-    val dataNascimentoPassageiro1: String? = null,
-    val nomePassageiro2: String? = null,
-    val documentoPassageiro2: String? = null,
-    val numeroDocumentoPassageiro2: String? = null,
-    val dataNascimentoPassageiro2: String? = null,
-    val nomePassageiro3: String? = null,
-    val tipoDocumentoPassageiro3: String? = null,
-    val numeroDocumentoPassageiro3: String? = null,
-    val dataNascimentoPassageiro3: String? = null,
-    val nomeResponsavelRetirada: String? = null,
-    val documentoResponsavelRetirada: String? = null,
-    val numeroDocumentoResponsavelRetirada: String? = null,
-    val tipoVeiculo: String? = null,
-    val modeloVeiculo: String? = null,
-    val placaVeiculo: String? = null,
-    val corVeiculo: String? = null,
-    // Cilindrada da moto (ADR-0013): o cc que justificou a tarifaBase; registro do bilhete. Aditivo.
-    val cilindrada: String? = null,
-    val funcionarioResponsavel: String,
-    // Dono estável da passagem = uid do criador (ADR-0010 Fase 2). Congelado na emissão; o nome
-    // (funcionarioResponsavel) segue como snapshot de exibição. Default "" cobre bilhetes anteriores.
-    val funcionarioId: String = "",
-    val status: String,
-    // Registro do embarque (ADR-0012): quem validou o QR (uid, chave estável ADR-0008), o nome como
-    // snapshot de exibição, e quando. Aditivos; default "" cobre bilhetes não embarcados/anteriores.
-    val embarcadaPorId: String = "",
-    val embarcadaPor: String = "",
-    val embarcadaEm: String = "",
-) {
-    @Ignore
-    val temPassageiro2 = !nomePassageiro2.isNullOrEmpty()
+/**
+ * **A passagem — um tipo fechado por categoria** ([ADR-0023] D1).
+ *
+ * Antes disso ela era *uma* coisa com blocos opcionais: 49 campos planos onde o veículo "existia" quando a placa
+ * não estava vazia (`ehVeiculo`). Essa forma custava três coisas — estados ilegais representáveis (placa **e**
+ * três passageiros de suíte), regra espalhada por tela, e, a mais cara, uma **categoria nova entrando em
+ * silêncio**: a carga chegaria como mais um punhado de campos nulos e nenhuma tela saberia que existe.
+ *
+ * Com um tipo fechado, o **compilador vira a lista de tarefas**: acrescentar `PassagemDeCarga` faz cada `when`
+ * exaustivo apontar exatamente os lugares que precisam decidir algo sobre ela. É o oposto do nullable, onde
+ * acrescentar é grátis e descobrir é caro. *A estrutura precisa estar pronta para receber a carga, e isso começa
+ * no domínio* — a prontidão não é um campo reservado, é o formato.
+ *
+ * ### O que é comum, e é ele que recebe a carga (D2)
+ *
+ * Comum é o que descreve **a travessia vendida**: a [ocorrencia] (para onde e quando), os [lancamentos] (quanto
+ * entrou), a [observacao] e os [metadados]. Específico é **o que ocupa o espaço**. É esse corte que faz o
+ * terceiro sub-domínio caber sem reforma: a carga muda o que ocupa, não o resto.
+ *
+ * ### Nada aqui é cópia (D8)
+ *
+ * Não há nome de empresa, de embarcação, de porto, de cliente nem do emissor: **só ids**. Congelar virou decisão
+ * da camada de dados, a tomar adiante e apenas se tiver relevância demonstrada — e o que pagou essa inversão foi
+ * a imutabilidade que a F7/F8 conquistou: Rota e Viagem **não têm editar**, então o *rename* de que o snapshot
+ * protegia praticamente não existe mais no modelo.
+ *
+ * ### O que este tipo torna impossível
+ *
+ * Passagem de veículo com três passageiros de suíte; suíte para três com dois clientes; meia numa suíte; carreta
+ * exigindo modelo; carimbo de embarque meio-preenchido. Nenhum desses se escreve — e é por isso que a
+ * **passagem incompleta** (o atendimento em curso, nota lateral do [ADR-0026]) terá de ser **outro tipo**:
+ * admitir nulos aqui para servir ao incompleto desfaria este D1 por dentro.
+ */
+sealed interface Passagem {
+    val id: String
 
-    @Ignore
-    val temPassageiro3 = !nomePassageiro3.isNullOrEmpty()
+    /** A identidade **exibida**, por ocorrência ([ADR-0018] D10). Distinta do [id], que é o que o QR carrega. */
+    val numero: String
 
-    @Ignore
-    val ehVeiculo = !placaVeiculo.isNullOrEmpty()
+    /** `(viagemId, data)` — a travessia concreta, não a viagem semanal (D2). */
+    val ocorrencia: OcorrenciaViagem
+
+    /** O que **entrou**, por forma. O total é inferido daqui ([ADR-0024] D4) — não há campo de total. */
+    val lancamentos: List<Lancamento>
+
+    val observacao: String?
+
+    val metadados: MetadadosPassagem
+
+    /** A categoria como **valor**, para a fronteira gravar e a tela agrupar (ADR-0024 D1). */
+    val categoria: CategoriaPassagem
 }
 
+/**
+ * A passagem de **pessoa**: um espaço vendido a um ou mais clientes.
+ *
+ * A [acomodacao] declara o **limite** de ocupação e quais tipos tarifários admite; a lista de [clientes] declara
+ * o **fato**. O titular é a **posição 0** — decisão de fronteira que voltou atrás de um campo próprio, porque o
+ * array único responde *"em que passagens esta pessoa viajou"* numa consulta só (ADR-0024 D3), e o significado da
+ * ordem é deste domínio.
+ */
+data class PassagemDePassageiro(
+    override val id: String = "",
+    override val numero: String,
+    override val ocorrencia: OcorrenciaViagem,
+    override val lancamentos: List<Lancamento>,
+    override val observacao: String? = null,
+    override val metadados: MetadadosPassagem,
+    val acomodacao: Acomodacao,
+    val tipo: TipoPassagem,
+    /** Ids do pool de clientes, **ordenados**: o primeiro é o titular. */
+    val clientes: List<String>,
+) : Passagem {
+    override val categoria: CategoriaPassagem get() = CategoriaPassagem.PASSAGEIRO
 
+    val titularId: String? get() = clientes.firstOrNull()
 
+    val acompanhantesIds: List<String> get() = clientes.drop(1)
+
+    /**
+     * O que **impede** esta passagem de ser coerente. Vazio = coerente.
+     *
+     * Devolve o que falta em vez de um `Boolean` pela mesma razão de `Veiculo.pendencias()`: quem chama precisa
+     * saber **qual** regra falhou para apontar o campo, e um booleano obrigaria a repetir a regra para descobrir.
+     */
+    fun pendencias(): Set<Pendencia> = buildSet {
+        if (clientes.isEmpty()) add(Pendencia.SEM_TITULAR)
+        if (clientes.size > acomodacao.ocupacaoMaxima) add(Pendencia.EXCEDE_OCUPACAO)
+        if (clientes.distinct().size != clientes.size) add(Pendencia.CLIENTE_REPETIDO)
+        if (!acomodacao.admite(tipo)) add(Pendencia.TIPO_NAO_ADMITIDO)
+    }
+
+    val coerente: Boolean get() = pendencias().isEmpty()
+
+    enum class Pendencia { SEM_TITULAR, EXCEDE_OCUPACAO, CLIENTE_REPETIDO, TIPO_NAO_ADMITIDO }
+}
+
+/**
+ * A passagem de **veículo**: o veículo é o sujeito do próprio bilhete.
+ *
+ * O [responsavelRetirada] é **opcional por regra de negócio, não por descuido**: ele nem sempre é informado, e
+ * costuma ser definido na hora, informalmente, entre despachante, transportadora e quem retira. Bilhete de veículo
+ * **sem ninguém nomeado é a forma normal**.
+ *
+ * Não há tipo tarifário aqui: *meia* e *gratuidade* são categorias de **pessoa**, e o veículo não tem idade nem
+ * condição que as justifique.
+ */
+data class PassagemDeVeiculo(
+    override val id: String = "",
+    override val numero: String,
+    override val ocorrencia: OcorrenciaViagem,
+    override val lancamentos: List<Lancamento>,
+    override val observacao: String? = null,
+    override val metadados: MetadadosPassagem,
+    /** Id no pool de veículos, cuja chave natural é a placa ([ADR-0018] D5). */
+    val veiculoId: String,
+    /** Id no pool de clientes — pode não haver. */
+    val responsavelRetirada: String? = null,
+) : Passagem {
+    override val categoria: CategoriaPassagem get() = CategoriaPassagem.VEICULO
+
+    fun pendencias(): Set<Pendencia> = buildSet {
+        if (veiculoId.isBlank()) add(Pendencia.SEM_VEICULO)
+    }
+
+    val coerente: Boolean get() = pendencias().isEmpty()
+
+    enum class Pendencia { SEM_VEICULO }
+}
+
+// A `PassagemDeCarga` entra aqui quando a carga for planejada (ADR-0023 D9). O que ela vai exigir — unidade
+// (peso? volume?), remetente, destinatário — é matéria do ADR dela; o que já está garantido é que **cabe sem
+// reforma**: ela declara o que ocupa o espaço e herda os cinco campos comuns.
