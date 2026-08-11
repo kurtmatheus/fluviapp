@@ -173,18 +173,18 @@ class PassagemDadosPassagemMapper @Inject constructor(
 }
 ```
 
-Quatro consequências, e a terceira é a que mais dói:
+Três propriedades desta forma — todas verificáveis **no código que existe**, sem supor nada sobre telas
+futuras:
 
 1. **testar exige fake.** Para exercitar uma tradução — *"este bilhete vira esta linha de tela"* — é preciso
    montar dois repositórios falsos. O teste existe (`PassagemDadosPassagemMapperTest`, entre as 22 classes
    congeladas), e boa parte dele é andaime;
 2. **contamina com `suspend`.** A interface `Mapper` é `suspend fun map`, então tudo que chama uma tradução
    passa a precisar de corrotina — inclusive código que só quer formatar;
-3. **o N+1 fica escondido dentro do `map()`.** Numa consulta que devolve 30 passagens, o `map` roda 30 vezes e
-   faz **60** `obterPorId`. E `obterPorId`, no regime novo, é `obterTodos().firstOrNull { … }`
-   (`ColecaoFirestore.kt:117`) — ou seja, **60 varreduras da coleção inteira**. Hoje isso não custa rede
-   (o `StateFlow` já está carregado), mas custa trabalho quadrático, e ninguém que lê `passagens.map { mapper.map(it) }`
-   suspeita disso;
+3. **o número de buscas é invisível no ponto de chamada.** Quem lê `passagens.map { mapper.map(it) }` não vê
+   que cada volta do laço faz duas buscas, porque a busca mora dentro da tradução. Isto é uma propriedade da
+   **forma** — a chamada não revela o que ela custa —, e não uma medida de custo: quanto isso pesa depende de
+   consumidores que ainda não têm domínio planejado, e dimensioná-los agora seria inventar requisito;
 4. **inverte a direção da dependência.** O arquivo vive em `domain/mappers/` e importa
    `services.repository.cadastro.viagem.EmpresaRepository` — **o domínio importando a camada de dados**. É
    exatamente um dos itens que o estudo do domínio da plataforma já registrava como dívida.
@@ -213,9 +213,13 @@ O que se ganha, ponto a ponto contra a lista acima:
 
 1. **o teste vira aritmética**: entram objetos, sai objeto, compara-se;
 2. **nada de `suspend`** — a tradução é síncrona porque traduzir não é buscar;
-3. **o N+1 deixa de ser possível por construção**: a função **não tem como** buscar, então o carregamento
-   aparece no chamador, uma vez, visível. O `associateBy` troca as 60 varreduras por um índice O(1);
+3. **o carregamento fica visível**: a função **não tem como** buscar, então quem carrega, carrega no claro. Não
+   é que fique mais rápido — é que fica **legível**, e o que for lento passa a ser lento à vista;
 4. **a dependência volta a apontar para dentro**: `domain/` deixa de importar `services/`.
+
+Note que nenhum dos quatro é argumento de desempenho. Isso é deliberado: **desempenho aqui só se mede quando os
+consumidores existirem** — e os que fariam a conta pesar (ocupação, balanço, análise) não têm domínio planejado.
+Os quatro são argumentos de **forma**, e valem hoje.
 
 #### O custo, que é real e tem nome
 
@@ -242,9 +246,9 @@ esteja escrito antes de alguém descobrir na tela:
 | empresa, embarcação, rota, porto, localidade, viagem | **lookup em memória** sobre o `StateFlow` da sessão | coleção pequena, útil inteira |
 | **cliente, veículo** | **leitura por ids**, em lote | pool que cresce sem limite; carregar inteiro é o erro que a Passagem já não comete |
 
-A leitura em lote tem um limite que vale registrar agora: o `whereIn` do Firestore aceita **30 valores por
-consulta**, então `obterPorIds` particiona a lista em blocos de 30. Não é problema para uma tela de consulta
-(30 passagens × até 3 clientes = 90 ids = 3 consultas), e é a diferença entre 3 consultas e 90.
+A leitura em lote tem um limite de plataforma que vale registrar como mecanismo: o `whereIn` do Firestore aceita
+**30 valores por consulta**, então `obterPorIds` particiona a lista em blocos de 30. **Não dimensiono o que isso
+pesa em cada tela** — depende de consumidores que ainda não têm domínio planejado.
 
 #### E o `Mapper<E, O>`
 
@@ -262,10 +266,15 @@ O ADR-0024 D8 decidiu **tipo, não texto**. O que isso faz com o que existe:
 tempo (bilhete, detalhes, consulta, impressão), e é por isso que tem 58 campos: é a união de quatro
 necessidades.
 
-Com DTO por caso de uso, ele se divide em quatro projeções pequenas, e cada uma carrega tipo:
-`BilhetePassagem`, `LinhaDeConsulta`, `OcupacaoDaOcorrencia`, `LinhaDeBalanco`. A formatação
-(`formataParaMoedaBrasileira`, `extrairDocumentoFormatado`, `rotulo()`) sai do mapper e vai para a camada de
-apresentação.
+Com DTO por caso de uso ele se divide em projeções pequenas, cada uma carregando tipo, e a formatação
+(`formataParaMoedaBrasileira`, `extrairDocumentoFormatado`, `rotulo()`) sai do mapper e vai para a apresentação.
+
+**Quantas projeções, e quais, não se decide aqui.** A versão anterior deste estudo listava quatro nomes —
+incluindo uma de ocupação e uma de balanço — e isso era erro de método: **ocupação, balanço e análise não têm
+domínio planejado**, e nomear a projeção de um consumidor é decidir de que campos ele precisa antes de saber o
+que ele é. Cada projeção nasce **quando o seu consumidor for planejado**, que é a ordem que este próprio
+trabalho seguiu (domínio → fronteira → camada). O que fica decidido é o **critério**: uma projeção por
+consumidor, e cada campo existe porque a pergunta daquele consumidor o exige.
 
 > **Decidido pelo analista (2026-08-11): o corte é por consumidor.**
 >
@@ -324,7 +333,7 @@ e depois da F9 há um só.
 | `PassagemDao`, `ContadorDao`, `PassagemDigitalDao`, `RascunhoPassagemDao` | o Room sai (ADR-0017 F5) |
 | `RascunhoPassagemStoreRoom` | trocado por impl DataStore — **a porta fica** |
 | `PassagemDIgitalRepository` | o índice local do bilhete não tem substituto (ADR-0017 D5) |
-| `PassagemDadosPassagemMapper` + `DadosPassagem` | divididos em quatro projeções tipadas (§3.4) |
+| `PassagemDadosPassagemMapper` + `DadosPassagem` | divididos em projeções tipadas por consumidor, uma a cada consumidor planejado (§3.4) |
 | `Mapper<E, O>` (para este uso) | junção pura tem várias entradas e não suspende (§3.3) |
 | `getListaNome()` | substituído pela consulta recortada do pool `Cliente` |
 | o listener do contador no `LoginViewModel` | o contador vira por ocorrência (§2.2) |
@@ -336,7 +345,7 @@ e depois da F9 há um só.
 |---|---|---|
 | 1 | consulta: métodos nomeados × **objeto de critério** × lambda com `Query` (§3.2) | **objeto de critério** |
 | 2 | a junção vira função pura com as listas por parâmetro? (§3.3) | *"não entendi, aprofunde"* → o §3.3 foi reescrito com os dois estilos em código real. E o aprofundamento **corrigiu o ADR-0024**: *lookup em memória* vale para as referências, **não** para os pools `cliente`/`veiculo`, que exigem leitura por ids em lote |
-| 3 | quatro projeções tipadas no lugar do `DadosPassagem` (§3.4) | **corte por consumidor** — o que rejeita explicitamente o corte por entidade, que é o que produziu os 58 campos |
+| 3 | projeções tipadas no lugar do `DadosPassagem` (§3.4) | **corte por consumidor** — o que rejeita explicitamente o corte por entidade, que produziu os 58 campos. **Quais** projeções não se decide aqui: cada uma nasce com o seu consumidor planejado |
 | 4 | telemetria com dois desfechos × três renomeados (§3.6) | **três renomeados** — e a decisão está mais certa que a minha recomendação: o desfecho local mede *o que o operador pode afirmar*, não qual banco gravou |
 | 5 | a porta do §3.1 está completa? (§3.1) | **sim** |
 

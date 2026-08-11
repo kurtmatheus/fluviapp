@@ -251,8 +251,9 @@ retira). O que este ADR fixa é que **a Passagem não o compõe** — e, como el
   > pools `clientes` e `veiculos`**, que crescem sem limite e, pela razão do D9, não podem ser `observarTodos`.
   > A junção tem portanto **dois regimes**: *lookup em memória* para a referência e **leitura por ids em lote**
   > para os pools — com o `whereIn` do Firestore aceitando **30 valores por consulta**, o que faz `obterPorIds`
-  > particionar. Numa tela de consulta (30 passagens × até 3 clientes) é a diferença entre **3** consultas e
-  > **90**.
+  > particionar. O que isso pesa em cada tela **não se dimensiona aqui**: os consumidores que fariam a conta
+  > pesar (ocupação, balanço, análise) ainda não têm domínio planejado, e estimá-los seria somar o código de
+  > hoje ao agregado de amanhã como se fosse requisito.
 
 **O que se paga**
 
