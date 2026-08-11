@@ -22,6 +22,20 @@ import java.text.Normalizer
  *
  * > [VEICULO] existe aqui porque o eixo é este, mas o form ainda escolhe veículo por checkbox. Enquanto
  * > isso durar, o seletor de acomodação usa [acomodacoes] — a unificação do eixo é a rework do agregado.
+ *
+ * ---
+ *
+ * **REVITALIZAÇÃO (F9.1): este tipo está condenado — o eixo se dividiu em dois.**
+ *
+ * O [ADR-0023] D1 fez a **categoria** a raiz do agregado, e com ela o veículo deixou de ser uma acomodação para
+ * ser um **sub-domínio**. Onde este enum tinha quatro valores, hoje há dois níveis:
+ * [CategoriaPassagem] × [Acomodacao]. A leitura acima — *"a unidade vendida é o espaço"* — continua certa, e é
+ * exatamente por isso que ele não podia carregar o veículo junto.
+ *
+ * **Por que ele ainda existe.** Seu único consumidor vivo é o `ContagemPassagensMapper`, e o
+ * [ADR-0027] D2 decidiu que **`Contagem` e `Balanço` ficam marcados, não corrigidos**: o domínio deles não foi
+ * planejado, e consertar código que nenhuma tela alcança é gastar hoje o que se reescreve depois. Ele sai quando
+ * a ocupação for planejada — não numa fatia da F9.
  */
 enum class ModoPassagem(
     val rotulo: String,
