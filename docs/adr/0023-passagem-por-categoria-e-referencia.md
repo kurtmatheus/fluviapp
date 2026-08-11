@@ -37,25 +37,63 @@ hoje **Passageiro** e **Veículo**; amanhã **Carga**.
 ```kotlin
 sealed interface Passagem {
     val id: String
-    val ocorrencia: OcorrenciaViagem      // para onde vai (D2)
-    val lancamento: Lancamento            // quanto entrou (D6)
+    val numero: String                     // identidade exibida, por ocorrência (ADR-0018 D10)
+    val ocorrencia: OcorrenciaViagem       // (viagemId, data) — para onde vai (D2)
+    val lancamento: Lancamento             // formas × valores: o que ENTROU (D6)
     val observacao: String?
-    val metadados: MetadadosPassagem      // quem, quando, em que estado (D7)
+    val metadados: MetadadosPassagem       // quem, quando, em que estado (D7)
 }
 
 data class PassagemDePassageiro(
     …,
-    val acomodacao: Acomodacao,           // Rede | Suíte | Camarote
-    val tipo: TipoTarifario,              // Inteira | Meia | Gratuidade
-    val clientes: List<String>,           // 1..3 ids; o titular é o primeiro
+    val acomodacao: Acomodacao,            // REDE | SUITE | CAMAROTE
+    val tipo: TipoTarifario,               // INTEIRA | MEIA | GRATUIDADE — limitado pela acomodação (D3)
+    val clientes: List<String>,            // 1..3 clienteId; o titular é o primeiro
 ) : Passagem
 
 data class PassagemDeVeiculo(
     …,
-    val veiculo: Veiculo,                 // tipo, modelo, placa, cor, cilindrada
-    val responsavelRetirada: String?,     // clienteId — pode não haver (D4)
+    val veiculoId: String,                 // o veículo é entidade de pool (D4)
+    val responsavelRetirada: String?,      // clienteId — pode não haver (D4)
 ) : Passagem
+
+// futuro: data class PassagemDeCarga(…) : Passagem — herda os cinco campos comuns (D9)
 ```
+
+**As duas entidades referenciadas** — nenhuma delas guarda cópia no bilhete (D8); o bilhete guarda o id:
+
+```kotlin
+/** Pool de pessoas (ADR-0018 D2/D3). Chave natural: o documento apresentado. */
+data class Cliente(
+    val id: String,
+    val nome: String,                      // obrigatório
+    val tipoDocumento: TipoDocumento,      // obrigatório (ADR-0018 D4)
+    val numeroDocumento: String,           // obrigatório e válido para o tipo (ADR-0020 D2)
+    val dataNascimento: LocalDate,         // obrigatória — é o que decide gratuidade-criança
+    val telefone: String?,                 // NOVO (D5) — para contato, não para identificar
+    val agenciaIds: List<String>,          // assinatura de quem já atendeu (ADR-0018 D3)
+)
+
+/** Pool de veículos (ADR-0018 D5). Chave natural: a placa. */
+data class Veiculo(
+    val id: String,
+    val placa: String,                     // chave natural; máscara na entrada (ADR-0018 D15)
+    val tipo: ClasseVeiculo,               // governa o que se exige abaixo (D4)
+    val modelo: String?,                   // null quando o tipo JÁ É o modelo (carreta, caminhão)
+    val cor: String,
+    val cilindrada: Int?,                  // só moto — a faixa de 100 cm³ da tarifa
+    val agenciaIds: List<String>,
+)
+```
+
+Três notas de forma que o código de hoje contradiz, e que entram aqui como decisão:
+
+- **`dataNascimento` é `LocalDate`, não `String`** — hoje é texto `dd/MM/yyyy` que a validação reparseia para
+  aplicar a regra de idade (`ValidacaoPassageiro.kt:96-101`). O precedente é a F8.1: `DayOfWeek` e minutos do
+  dia no domínio, formatação **só na fronteira**;
+- **`cilindrada` é `Int`, não `String`** — sobre ela se faz conta (`floor(cc/100)*100`);
+- **`agenciaIds` é metadado do pool, não do bilhete**: existência é global, visibilidade é local
+  (ADR-0018 D3).
 
 **Por que tipo fechado, e não campos opcionais.** A forma de hoje é a segunda: um registro onde o veículo
 "existe" quando a placa não está vazia. Ela custa três coisas — estados ilegais representáveis (passagem com
@@ -113,6 +151,38 @@ Isso **corrige no domínio** a primeira divergência do ADR-0018 D19: hoje `mode
 (`ValidacaoVeiculo.kt:50`), de modo que carreta e caminhão não passam sem modelo. A validação deixa de ter
 regra própria e passa a **perguntar ao tipo** — quem sabe se exige modelo é o tipo, não o validador.
 
+**O tipo já existe em código, e cresce em dois pontos.** `ClasseVeiculo` (ADR-0018 D7, implementado em
+`5580b48`) tem `CARRO`, `MOTO`, `CAMINHAO`, `CARRETA` e já carrega `exigeCilindrada` — mais o `ehPesado`, que
+é o recorte de que o `TipoEmbarcacao` depende (só a balsa leva pesado, ADR-0016 §8). O que entra:
+
+```kotlin
+enum class ClasseVeiculo(
+    val rotulo: String,
+    val exigeCilindrada: Boolean,          // já existe: só a moto
+    val exigeModelo: Boolean,              // NOVO: carreta e caminhão não pedem
+) {
+    CARRO   ("Carro",    exigeCilindrada = false, exigeModelo = true),
+    MOTO    ("Moto",     exigeCilindrada = true,  exigeModelo = true),
+    VAN     ("Van",      exigeCilindrada = false, exigeModelo = true),   // NOVO
+    SUV     ("SUV",      exigeCilindrada = false, exigeModelo = true),   // NOVO
+    CAMINHAO("Caminhão", exigeCilindrada = false, exigeModelo = false),
+    CARRETA ("Carreta",  exigeCilindrada = false, exigeModelo = false);
+
+    val ehPesado: Boolean get() = this == CAMINHAO || this == CARRETA
+}
+```
+
+**Vocabulário, para não haver dois nomes:** o **campo** se chama `tipo` (é a palavra do negócio); o **tipo
+dele** continua sendo `ClasseVeiculo`, e não se renomeia — é essa a classe que o `TipoEmbarcacao` admite, e
+trocar o nome custaria mais do que rende.
+
+**O veículo é entidade referenciada**, com a **placa como chave natural** — o mesmo regime do `Cliente`.
+Isto não é decisão nova: é o **ADR-0018 D5**, do qual o D8 deste ADR remove apenas a metade dos *valores
+congelados no bilhete*. A placa é chave melhor que documento de pessoa (única por construção, sem o par
+CPF × RG), então este pool **não polui**: duplicata só nasce de digitação errada — e é contra isso que existe
+a máscara na entrada (D15). O **responsável pela retirada não mora no veículo**: é pessoa, é `Cliente`, e o
+vínculo é da **passagem** — quem retira muda a cada travessia.
+
 **O responsável pela retirada é opcional**, e isso é do negócio, não tolerância: existe veículo embarcado sem
 ninguém nomeado para retirá-lo. Quando existe, é um **`Cliente` referenciado** — a mesma entidade do D5.
 
@@ -122,8 +192,24 @@ O `Cliente` é **entidade completa, com cadastro próprio**, referenciada pela p
 sub-domínios (passageiros 1..3; responsável pela retirada). Ele confirma o pool que o ADR-0018 D2/D3 desenhou
 e acrescenta um campo novo: **telefone**.
 
-O telefone não é decorativo: é o primeiro dado do cliente que existe **para contato**, e não para identificar
-quem viaja — o que o coloca junto do documento na conversa de LGPD (ADR-0020 D2) quando a coleção nascer.
+| Campo | Tipo | Obrigatório | De onde vem a exigência |
+|---|---|---|---|
+| `id` | `String` | sim | surrogate; é ele que o bilhete referencia |
+| `nome` | `String` | sim | já é hoje (`ValidacaoPassageiro.kt:73`) |
+| `tipoDocumento` | `TipoDocumento` | **sim** | ADR-0018 D4 — *"não existe criança sem documento nesse negócio"*. Hoje o número só é cobrado **se** um tipo foi escolhido, e por isso se emite bilhete sem credencial |
+| `numeroDocumento` | `String` | **sim**, e **válido para o tipo** | ADR-0020 D2 (CPF e CNPJ com dígito verificador). É a **chave natural** do pool (ADR-0018 D2) |
+| `dataNascimento` | `LocalDate` | sim | é o dado que **decide** gratuidade-criança (`CRIANCA_ATE_5`: nascido há menos de 6 anos na data da viagem) |
+| `telefone` | `String?` | **a confirmar** | novo, decisão de hoje |
+| `agenciaIds` | `List<String>` | metadado | assinatura de quem já atendeu (ADR-0018 D3) — *existência é global, visibilidade é local* |
+
+O telefone não é decorativo, e é o único campo do cliente com essa natureza: todos os outros existem para
+**identificar quem viaja**, e ele existe para **alcançar a pessoa**. Duas consequências: ele entra na conversa
+de LGPD junto do documento (ADR-0020 D2) quando a coleção nascer, e **não participa da chave natural** — dois
+telefones diferentes não fazem duas pessoas, um documento diferente faz.
+
+Um efeito de ordem que vale antecipar: o **`getListaNome()` que hoje devolve `emptyList()`**
+(`PassagemFirestoreRepository.kt:168`) é a cova deste cadastro. Enquanto ele não existir, o autocomplete é uma
+promessa vazia — e é por isso que o ADR-0018 D19 lista aquele retorno como divergência, não como pendência.
 
 ### D6 — O lançamento do pagamento: formas e valores
 
@@ -216,16 +302,20 @@ fica garantido que **cabe sem reforma**.
 - **O método da inferência tarifária** — segue no módulo faturamento; o que se decidiu hoje foi o **lugar**
   (análise sobre o agregado), não o método.
 
-### Quatro pontos que assumi para o agregado fechar, e que preciso confirmar
+### Os pontos que assumi para o agregado fechar, e que preciso confirmar
 
-Estão marcados porque **não foram decididos** — são leituras minhas, e cada uma muda código:
+Estão marcados porque **não foram decididos** — são leituras minhas, e cada uma muda código. O nº 2 nasceu
+aqui e já saiu: um ADR anterior o respondia.
 
 1. **O ponteiro é a ocorrência, não a viagem.** O modelo dado diz `viagemId`; a `Viagem` é semanal, então sem
    a **data** dois bilhetes de terças diferentes ficam indistinguíveis, e numeração, ocupação e balanço perdem
    o eixo. Assumi `(viagemId, data)` — a `ViagemSemana` da F8.4.
-2. **O veículo é objeto do agregado, não entidade referenciada.** O `Cliente` foi declarado entidade com
-   cadastro; o veículo foi descrito por atributos. Assumi que ele vive **dentro** da passagem, com a **placa
-   como chave natural** — o que o deixa promovível a pool (ADR-0018 D5) quando o reaproveitamento justificar.
+2. ~~**O veículo é objeto do agregado, não entidade referenciada.**~~ **Resolvido**, e não por mim: o
+   **ADR-0018 D5** já decidiu que o veículo é o **segundo pool**, com a placa como chave natural — e o D8
+   deste ADR remove dele só a metade dos *valores congelados no bilhete*. O `PassagemDeVeiculo` carrega
+   `veiculoId`. Fica dito o contrário para quem quiser reabrir: **embutir o veículo na passagem exigiria
+   revogar o D5**, porque é ele que dá ao veículo ciclo de vida próprio.
+
 3. **O número do bilhete continua existindo.** Ele não aparece na lista de metadados. Assumi que segue como
    identidade **exibida** (e por ocorrência, ADR-0018 D10), distinta do `id` do documento — que é o que o QR
    carrega.
@@ -233,6 +323,9 @@ Estão marcados porque **não foram decididos** — são leituras minhas, e cada
    todo; assumi que o intervalo é de **suíte e camarote**, e que rede é um por bilhete — que é o que a
    contagem de ocupação faz hoje. Se a rede admitir três, um bilhete passa a ocupar três redes, e a contagem
    muda.
+5. **O telefone do cliente é obrigatório?** Ele foi declarado como campo novo do cadastro, sem qualificar a
+   exigência. Assumi **opcional** (`String?`), pelo argumento de que ele não identifica ninguém — se o cadastro
+   é *completo* no sentido de exigir contato, é uma linha de mudança.
 
 ## Referências
 
