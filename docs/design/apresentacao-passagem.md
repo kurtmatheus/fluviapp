@@ -143,14 +143,86 @@ Nem tudo é correção, e dizer o que não muda evita retrabalho:
 - **os `@Preview`** — o app tem 60, e eles são a razão pela qual as telas são testáveis sem Hilt. Cada tela
   refeita mantém os seus.
 
-## 5. Perguntas ao analista
+## 5. As perguntas, e o que o analista respondeu (2026-08-11)
 
-1. **A emissão por categoria é uma tela com etapas ou telas separadas?** (§3, 1ª linha) — o eixo é do domínio, o
-   desenho é seu: um fluxo em passos com a categoria escolhida no início, ou destinos distintos na navegação
-   para passageiro e veículo?
-2. **Onde a formatação passa a morar** (§2.4): junto do componente que exibe, ou numa camada fina de
-   *formatadores* por tipo (moeda, documento, data) que as telas chamam?
-3. **O botão de salvar cliente** (§3, 4ª linha) fica no meio do preenchimento, como o ADR-0018 D2 previu — ou a
-   emissão salva o cliente **junto** com o bilhete, sem botão?
-4. **A ordem de correção**: a apresentação entra na mesma fatia da orquestração (as duas se cruzam no evento
-   one-shot e no `UiState`) ou depois dela?
+| # | Pergunta | Resposta |
+|---|---|---|
+| 1 | emissão por categoria: **etapas** × telas separadas | **etapas** |
+| 2 | onde a formatação mora (§2.4) | **camada fina** de formatadores por tipo |
+| 3 | o botão de salvar cliente (§3) | **salvar e avançar, com recuperação imediata** — e a resposta abre muito mais que a pergunta: ver o §6 |
+| 4 | ordem da correção | **depois da orquestração** |
+
+**Sobre as etapas (1):** o eixo já existe no domínio (categoria como raiz, ADR-0023 D1) e agora ele tem forma de
+tela — é a *emissão por etapas* que o ADR-0018 F7 previa, e que o estudo transversal chamou de *a primeira tela
+desenhada a partir de um eixo de domínio*. Vale registrar o que isso resolve de imediato: as **47 entradas**
+(§2.2) deixam de existir de uma vez, porque nenhuma etapa recebe os campos das outras.
+
+**Sobre a camada fina (2):** formatadores por tipo — moeda, documento, data, hora — que as telas chamam, em vez
+de formatação espalhada dentro de cada componente. É o que mantém uma regra de exibição num lugar só quando duas
+telas mostram o mesmo valor, e o precedente é a `HoraVisualTransformation` da F8: a transformação vive à parte e
+o componente a usa.
+
+**Sobre a ordem (4):** a sequência da F9 fica **domínio → dados → (camada + orquestração) → apresentação**. A
+apresentação vem por último porque consome as três: ela só sabe o que exibir depois do DTO tipado, e só sabe a
+que reagir depois do evento one-shot.
+
+## 6. O snapshot volta a ser entidade — e é a maior consequência desta rodada
+
+> *"snapshot volta a ter sua relevância para resgatar últimos preenchimentos com garantia do Room; ou seja, um
+> snapshot é uma passagem incompleta e pode ter vários para o mesmo agente, então terá uma tela de recuperação
+> dessas em preenchimento"* — analista, 2026-08-11
+
+Isto não é um detalhe de tela: **é domínio novo**, e ele revoga duas decisões já escritas.
+
+### 6.1 O que muda de natureza
+
+| Antes | Agora |
+|---|---|
+| **rascunho de formulário** — auxílio de digitação (ADR-0004) | **passagem incompleta** — um atendimento que começou e não fechou |
+| **slot único**, com a invariante *existe ⇔ é rascunho* | **vários por agente**, simultâneos |
+| recuperado **implicitamente**, ao reabrir o form | recuperado **explicitamente**, numa **tela de recuperação** |
+| ia para o **DataStore** (ADR-0017 D4) | fica no **Room**, *"com garantia do Room"* |
+
+A razão de "vários" é a rotina do balcão, e ela dispensa defesa: o agente começa um atendimento, o passageiro vai
+buscar um documento, e o **próximo** da fila é atendido enquanto o primeiro não volta. Um slot único obrigaria a
+escolher qual atendimento perder.
+
+*(Nota de vocabulário: **agente** aqui é quem emite — o `Funcionario` com cargo `AGENTE` (ADR-0015). O campo que
+carrega isso é o `funcionarioId`, e é por ele que os incompletos se agrupam.)*
+
+### 6.2 O que isto revoga, e vale dizer com precisão
+
+- **[ADR-0017](../adr/0017-eixo-de-storage-firestore-only.md) D4** — *"o resíduo (rascunho) vai para o
+  DataStore"*: **cai**. O rascunho deixa de ser resíduo, e o Room é o que dá a garantia que a decisão pede;
+- **[ADR-0025](../adr/0025-camada-de-dados-da-passagem.md) D7**, a linha que dizia *"`RascunhoPassagemStoreRoom`
+  trocado por implementação em DataStore — a porta fica"*: **cai a troca**; a porta continua valendo, e é ela que
+  absorve a mudança de forma;
+- **[ADR-0004](../adr/0004-snapshot-e-observabilidade-emissao.md)**, no *slot único* e na invariante *existe ⇔ é
+  rascunho*: **caem os dois**. O resto do ADR-0004 (a porta, a serialização, a telemetria do rascunho) segue;
+- e, por consequência, **o Room não morre inteiro na F9**. O ADR-0017 F6 previa removê-lo; ele passa a ter um
+  habitante com razão de ser — as passagens incompletas —, além de `Usuario` e `Constante`. **Isso é uma decisão
+  de eixo**, não um resíduo esquecido: o Firestore-only vale para o que é **fato compartilhado**; o atendimento
+  em curso é local por natureza, e é justamente por ser local que ele sobrevive a app fechado e rede ausente.
+
+### 6.3 O que a decisão cobra, e ainda não está decidido
+
+Três pontos que precisam de resposta antes de virar ADR — e o primeiro é o mais estrutural:
+
+1. **A passagem incompleta não cabe no tipo fechado.** O ADR-0023 D1 fez a `Passagem` um tipo que **não se
+   constrói** sem ocorrência, lançamento e metadados — foi exatamente isso que tornou o meio-preenchido
+   irrepresentável. Então a passagem incompleta **não é uma `Passagem` com campos nulos**: é **outro tipo**
+   (`PassagemEmPreenchimento`, por categoria), que se **promove** a `Passagem` quando fecha. Um agregado que
+   admitisse nulos para servir ao incompleto desfaria o D1 pelo lado de dentro;
+2. **O que a tela de recuperação lista.** Ela mostra atendimentos, e um atendimento incompleto pode não ter nem
+   nome de passageiro. O que identifica cada linha — a ocorrência escolhida, o que já foi digitado, quando
+   começou? E o que se pode fazer nela: retomar, descartar, e mais nada?
+3. **Quando o incompleto morre.** Ele é local e pode acumular. Descarta-se ao emitir (é o que a porta já faz),
+   ao cancelar explicitamente — e por tempo? Uma passagem incompleta de três semanas atrás aponta para uma
+   ocorrência que já partiu.
+
+### 6.4 Onde isto entra na ordem
+
+A tela de recuperação é **apresentação**, mas o tipo e a persistência dela são **domínio e dados** — então ela
+não é a última fatia: ela **entra na sequência inteira**, e é bom que isto esteja dito antes de a F9 ser faseada.
+Ela também é a primeira coisa nesta linha de trabalho que **acrescenta** função ao app, em vez de revitalizar o
+que existe.

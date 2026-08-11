@@ -167,7 +167,7 @@ lista vazia** — a cova que o ADR-0018 D2/D3 preenche.
 | Peça | Por quê |
 |---|---|
 | `PassagemDao`, `ContadorDao`, `PassagemDigitalDao`, `RascunhoPassagemDao` | o Room sai (ADR-0017 F5) |
-| `RascunhoPassagemStoreRoom` | trocado por implementação em DataStore — **a porta `RascunhoStore` fica** |
+| ~~`RascunhoPassagemStoreRoom`~~ | **revisto no mesmo dia — não é trocado.** Ver a nota abaixo |
 | `PassagemDIgitalRepository` | o índice local do bilhete **não tem substituto**: o arquivo vai para a galeria com nome derivado do `idPassagem` (ADR-0017 D5) |
 | `PassagemDadosPassagemMapper` + `DadosPassagem` | projeções por consumidor (D4) |
 | `Mapper<E, O>` neste uso | junção pura tem várias entradas e não suspende (D3) |
@@ -176,8 +176,24 @@ lista vazia** — a cova que o ADR-0018 D2/D3 preenche.
 | `obterTodasPorData` devolvendo `Task<QuerySnapshot>` | a porta devolve domínio, não tipo do Firebase |
 
 O **rascunho é o dividendo visível de ter isolado o mecanismo**: a porta nasceu no ADR-0004, vinte decisões
-antes de haver motivo para trocá-la, e agora trocar Room por DataStore é escrever uma implementação — nada
-mais.
+antes de haver motivo para mexer nela — e é ela que absorve a mudança que veio horas depois.
+
+> **Revisão do mesmo dia (2026-08-11), por decisão do analista.** O rascunho **não vai para o DataStore**, e
+> isso derruba tanto a linha acima quanto o **D4 do [ADR-0017](0017-eixo-de-storage-firestore-only.md)**. A razão
+> é que ele **deixou de ser resíduo**: um snapshot passa a ser uma **passagem incompleta**, com **vários por
+> agente** e uma **tela de recuperação** — *"com garantia do Room"*. Cai também o **slot único** do
+> [ADR-0004](0004-snapshot-e-observabilidade-emissao.md).
+>
+> Consequência de eixo, e ela é maior que a linha: **o Room não morre inteiro na F9**. O Firestore-only vale para
+> o que é **fato compartilhado**; o atendimento em curso é local por natureza — e é por ser local que ele
+> sobrevive a app fechado e rede ausente. O ADR-0017 F6 (remover o Room) passa a ter um habitante com razão de
+> ser, além de `Usuario` e `Constante`.
+>
+> **A passagem incompleta não é uma `Passagem` com campos nulos**: o ADR-0023 D1 fez o agregado não se construir
+> sem ocorrência, lançamento e metadados, e admitir nulos para servir ao incompleto desfaria o D1 por dentro. É
+> **outro tipo**, que se **promove** a `Passagem` quando fecha. O desenho está em
+> [`docs/design/apresentacao-passagem.md`](../design/apresentacao-passagem.md) §6, com três pontos ainda a
+> decidir.
 
 ## Consequências
 

@@ -186,13 +186,34 @@ Com isso caem também o `Context` no VM e o `internal lateinit var` exposto.
   que carrega repositório; vira função pura que recebe estado e devolve o tipo fechado;
 - **menos superfície**: três `UiState` → um; 43 delegações → mutadores diretos; quatro papéis → dois.
 
-## 6. Perguntas ao analista
+## 6. As perguntas, e o que o analista respondeu (2026-08-11)
 
-1. **Os mutadores viram extensões puras do `UiState`** (§4.1), com o VM como único escritor — ou você prefere
-   manter classes auxiliares, desde que **sem** o handle mutável e **sem** repositório?
-2. **Um `UiState` por categoria, ou um só com a categoria tipada dentro?** (§4.2) — o primeiro espelha o domínio
-   com mais fidelidade; o segundo evita duplicar os campos comuns (ocorrência, lançamento, observação).
-3. **O evento one-shot da emissão** (§4.3): os casos `Emitida` / `Bloqueada` / `Falhou` bastam, ou a emissão
-   precisa de outros desfechos nomeados?
-4. **A ordem da correção**: a orquestração se refaz **junto** com a camada (mesma fatia, porque as duas mexem no
-   mesmo arquivo) ou **depois** dela, com o VM ainda falando com a classe concreta por uma fatia?
+| # | Pergunta | Resposta |
+|---|---|---|
+| 1 | mutadores como extensões puras × **classes auxiliares** (§4.1) | **classes auxiliares** — mantidas, **sem** o handle mutável e **sem** repositório |
+| 2 | um `UiState` por categoria × um só com a categoria dentro (§4.2) | **um `UiState` por categoria** |
+| 3 | os eventos `Emitida` / `Bloqueada` / `Falhou` bastam? (§4.3) | **bastam, por hora** |
+| 4 | orquestração junto da camada × depois (§4) | **junto com a camada**, e as duas **depois de domínio e dados prontos** |
+
+### O que as respostas 1 e 2 fixam juntas
+
+**A classe auxiliar sobrevive; o que morre é o acoplamento dela.** Ela deixa de receber o `MutableStateFlow` e o
+repositório, e passa a ser peça de **transformação**: recebe estado e devolve estado
+(`aplicarValorPix(state, valor): FormPassagemUiState`), ou recebe estado e devolve o agregado. O VM continua o
+**único que escreve** — chama a auxiliar e guarda o resultado.
+
+Isso preserva o que o helper resolvia de verdade — não deixar 43 mutadores dentro de um ViewModel — e remove o
+que ele cobrava: posse difusa do estado e I/O escondido. Cada auxiliar passa a ser testável como função: entra
+estado, sai estado.
+
+**Com um `UiState` por categoria**, a auxiliar de veículo opera sobre o estado de veículo e a de passageiro sobre
+o de passageiro, sem um terceiro estado carregando o booleano que dizia qual dos dois vale. Os campos comuns
+(ocorrência, lançamento, observação) ficam repetidos nos dois — e **esse é o preço aceito**: a alternativa, um
+estado único com a categoria dentro, preservaria o risco de meio-preenchido que o ADR-0023 D1 existe para tirar.
+
+### O que a resposta 4 fixa sobre a ordem
+
+A F9 ganha uma **sequência declarada**: domínio → dados → **(camada + orquestração juntas)** → apresentação. As
+duas do meio andam na mesma fatia porque mexem nos mesmos arquivos — a porta entra no VM no mesmo movimento em
+que a auxiliar perde o repositório. Fazer a orquestração antes dos dados seria reescrever o VM contra a classe
+concreta e reescrevê-lo de novo em seguida.
