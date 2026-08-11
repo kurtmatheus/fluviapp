@@ -32,18 +32,29 @@ enum class TipoEmbarcacao(
     /** Classes de veículo que esta embarcação transporta. Vazio = só passageiro. */
     val classesAdmitidas: Set<ClasseVeiculo>,
 ) {
+    // `VAN` e `SUV` entraram na F9.1 (ADR-0023 D4) e vão **onde o carro vai**: são de porte de automóvel, e
+    // deixá-las fora de todos os conjuntos as faria nascer **invendáveis** — o mesmo defeito que a F7 corrigiu
+    // quando toda embarcação nascia sem concessão. É leitura minha sobre o que cada casco carrega, não decisão
+    // registrada: se estiver errada, o conserto é uma linha por tipo.
     FERRY_BOAT(
         rotulo = "Ferry Boat",
         classesAdmitidas = setOf(
             ClasseVeiculo.CARRO,
             ClasseVeiculo.MOTO,
+            ClasseVeiculo.VAN,
+            ClasseVeiculo.SUV,
             ClasseVeiculo.CAMINHAO,
             ClasseVeiculo.CARRETA,
         ),
     ),
     NAVIO(
         rotulo = "Navio",
-        classesAdmitidas = setOf(ClasseVeiculo.CARRO, ClasseVeiculo.MOTO),
+        classesAdmitidas = setOf(
+            ClasseVeiculo.CARRO,
+            ClasseVeiculo.MOTO,
+            ClasseVeiculo.VAN,
+            ClasseVeiculo.SUV,
+        ),
     ),
     LANCHA(
         rotulo = "Lancha",

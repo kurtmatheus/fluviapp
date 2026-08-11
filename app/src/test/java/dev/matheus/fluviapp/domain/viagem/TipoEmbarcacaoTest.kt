@@ -81,6 +81,20 @@ class TipoEmbarcacaoTest {
         assertFalse(TipoEmbarcacao.NAVIO.admite(ClasseVeiculo.CARRETA))
     }
 
+    /**
+     * **Van e SUV vão onde o carro vai** (F9.1, ADR-0023 D4). Deixá-las fora de todos os conjuntos as faria
+     * nascer **invendáveis** — o mesmo defeito que a F7 corrigiu quando toda embarcação nascia sem concessão.
+     * É leitura de quem escreveu, não decisão registrada: se estiver errada, o conserto é uma linha por tipo.
+     */
+    @Test
+    fun `van e suv acompanham o carro`() {
+        listOf(ClasseVeiculo.VAN, ClasseVeiculo.SUV).forEach { classe ->
+            assertTrue(TipoEmbarcacao.FERRY_BOAT.admite(classe))
+            assertTrue(TipoEmbarcacao.NAVIO.admite(classe))
+            assertFalse(TipoEmbarcacao.LANCHA.admite(classe))
+        }
+    }
+
     @Test
     fun `nao se vende veiculo para uma lancha`() {
         ClasseVeiculo.entries.forEach { assertFalse(TipoEmbarcacao.LANCHA.admite(it)) }

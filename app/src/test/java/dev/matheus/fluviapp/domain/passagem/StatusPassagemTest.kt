@@ -11,7 +11,12 @@ import org.junit.Test
 /**
  * Ciclo de vida da passagem como tipo de domínio (ADR-0012). Máquina de estados pura, JVM-testável.
  *
- * Ciclo: A_EMITIR → EMITIDA → EMBARCADA (terminal, embarque irreversível).
+ * Ciclo: A_EMITIR → EMITIDA → EMBARCADA (terminal, embarque irreversível), com **CANCELADA** como o **segundo
+ * terminal** (ADR-0018 D17, ADR-0024 D11) — alcançável de A_EMITIR e de EMITIDA, e **nunca de EMBARCADA**.
+ *
+ * **Um caso deste arquivo inverteu de sinal na F9.1**: ele afirmava que `de("CANCELADA")` devolvia `null`, o que
+ * era verdade quando cancelar era *delete* físico. Está anotado abaixo, porque teste que defende o comportamento
+ * antigo é pior do que teste nenhum.
  */
 @Category(ForaDoEscopo::class)
 class StatusPassagemTest {
@@ -19,10 +24,11 @@ class StatusPassagemTest {
     // --- de(): fronteira String -> enum, tolerante à grafia legada ---
 
     @Test
-    fun `de converte o name canonico dos tres estados`() {
+    fun `de converte o name canonico dos quatro estados`() {
         assertEquals(StatusPassagem.A_EMITIR, StatusPassagem.de("A_EMITIR"))
         assertEquals(StatusPassagem.EMITIDA, StatusPassagem.de("EMITIDA"))
         assertEquals(StatusPassagem.EMBARCADA, StatusPassagem.de("EMBARCADA"))
+        assertEquals(StatusPassagem.CANCELADA, StatusPassagem.de("CANCELADA"))
     }
 
     @Test
@@ -33,11 +39,17 @@ class StatusPassagemTest {
         assertEquals(StatusPassagem.EMITIDA, StatusPassagem.de(" emitida "))
     }
 
+    /**
+     * **Caso invertido na F9.1.** Ele listava `"CANCELADA"` como desconhecido, e estava certo enquanto cancelar
+     * era remoção física (ADR-0012: *"cancelar não é estado"*). Desde que o histórico virou prioridade
+     * (ADR-0018 D17), quem não existe é `EXPIRADA` — o estado que segue no futuro, porque expirar é **regra
+     * temporal**, não ação de operador.
+     */
     @Test
     fun `de retorna null para desconhecido ou nulo (fail-closed)`() {
         assertNull(StatusPassagem.de(null))
         assertNull(StatusPassagem.de(""))
-        assertNull(StatusPassagem.de("CANCELADA"))
+        assertNull(StatusPassagem.de("EXPIRADA"))
     }
 
     // --- Máquina de estados ---
@@ -83,5 +95,41 @@ class StatusPassagemTest {
         assertEquals("A EMITIR", StatusPassagem.A_EMITIR.rotulo())
         assertEquals("EMITIDA", StatusPassagem.EMITIDA.rotulo())
         assertEquals("EMBARCADA", StatusPassagem.EMBARCADA.rotulo())
+        assertEquals("CANCELADA", StatusPassagem.CANCELADA.rotulo())
+    }
+
+    // --- CANCELADA: o segundo terminal (ADR-0018 D17, ADR-0024 D11) ---
+
+    @Test
+    fun `cancela de A_EMITIR e de EMITIDA`() {
+        assertTrue(StatusPassagem.A_EMITIR.podeTransicionarPara(StatusPassagem.CANCELADA))
+        assertTrue(StatusPassagem.EMITIDA.podeTransicionarPara(StatusPassagem.CANCELADA))
+    }
+
+    /**
+     * **Quem já embarcou não cancela a travessia.** O que existe depois do embarque é acerto financeiro, e acerto
+     * é do módulo de faturamento — não um retrocesso de estado.
+     */
+    @Test
+    fun `EMBARCADA nao cancela`() {
+        assertFalse(StatusPassagem.EMBARCADA.podeTransicionarPara(StatusPassagem.CANCELADA))
+    }
+
+    @Test
+    fun `CANCELADA e terminal - nao volta nem avanca`() {
+        assertTrue(StatusPassagem.CANCELADA.ehTerminal())
+        StatusPassagem.entries.forEach { destino ->
+            assertFalse(
+                "CANCELADA não deveria transicionar para $destino",
+                StatusPassagem.CANCELADA.podeTransicionarPara(destino),
+            )
+        }
+    }
+
+    /** Cancelar não é desembarcar nem desemitir: os dois terminais são becos, e são becos diferentes. */
+    @Test
+    fun `os dois terminais nao se alcancam`() {
+        assertFalse(StatusPassagem.CANCELADA.podeTransicionarPara(StatusPassagem.EMBARCADA))
+        assertFalse(StatusPassagem.EMBARCADA.podeTransicionarPara(StatusPassagem.CANCELADA))
     }
 }

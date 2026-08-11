@@ -9,18 +9,33 @@ package dev.matheus.fluviapp.domain.passagem
  * Máquina de estados fail-closed: `A_EMITIR → EMITIDA → EMBARCADA`. `EMBARCADA` é **terminal**
  * (embarque irreversível). Transição ilegal é recusada — é o que dá semântica à confirmação por QR
  * (não embarca bilhete não emitido; não reembarca o já usado).
+ *
+ * ### `CANCELADA` — o estado que substituiu o *delete* ([ADR-0018] D17, [ADR-0024] D11)
+ *
+ * Cancelar **era remoção física**, e deixou de ser porque **manter histórico é prioridade**: um bilhete apagado
+ * leva consigo o fato de que existiu, quem o emitiu, quanto se cobrou e por que deixou de valer. Ela é
+ * **terminal**, alcançável de `A_EMITIR` e de `EMITIDA` e **nunca de `EMBARCADA`** — quem já embarcou não cancela
+ * a travessia; o que existe depois disso é acerto financeiro, e acerto é do módulo de faturamento.
+ *
+ * Estado, e não um segundo campo `ativa`, pelo mesmo motivo que o lançamento não ganhou um eixo "a receber":
+ * **uma máquina de estados, não duas**.
+ *
+ * O que ela implica fora daqui (D18): cancelada **não ocupa** estoque, **não entra** na receita e **fica com o
+ * número** — sequência com buraco é o normal de uma numeração que registra fatos.
  */
 enum class StatusPassagem {
     A_EMITIR,
     EMITIDA,
-    EMBARCADA;
+    EMBARCADA,
+    CANCELADA;
 
     /** Estados alcançáveis a partir deste. Vazio = terminal. */
     private val proximos: Set<StatusPassagem>
         get() = when (this) {
-            A_EMITIR -> setOf(EMITIDA)
-            EMITIDA -> setOf(EMBARCADA)
+            A_EMITIR -> setOf(EMITIDA, CANCELADA)
+            EMITIDA -> setOf(EMBARCADA, CANCELADA)
             EMBARCADA -> emptySet()
+            CANCELADA -> emptySet()
         }
 
     fun podeTransicionarPara(destino: StatusPassagem): Boolean = destino in proximos

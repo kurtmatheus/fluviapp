@@ -17,6 +17,7 @@ import dev.matheus.fluviapp.ui.theme.AbyssNavy
 import dev.matheus.fluviapp.ui.theme.AquaAccent
 import dev.matheus.fluviapp.ui.theme.Brown
 import dev.matheus.fluviapp.ui.theme.MistGray
+import dev.matheus.fluviapp.ui.theme.Orange
 import dev.matheus.fluviapp.ui.theme.SteelTeal
 import dev.matheus.fluviapp.ui.theme.Yellow
 
@@ -26,7 +27,10 @@ import dev.matheus.fluviapp.ui.theme.Yellow
  * ciclo com tokens da própria paleta (nada fora do `Color.kt`):
  *  - **A EMITIR** (amarelo/marrom) → atenção: falta emitir;
  *  - **EMITIDA** (aqua/navy) → pronta, o estado acionável (é a que o QR embarca);
- *  - **EMBARCADA** (steel/mist) → consumida, estado terminal assentado.
+ *  - **EMBARCADA** (steel/mist) → consumida, estado terminal assentado;
+ *  - **CANCELADA** (laranja/navy) → o outro terminal, e o único que **não é desfecho normal** do ciclo. Usa o
+ *    `Orange`, o único token de alerta da paleta: ela precisa se distinguir de relance da embarcada, porque as
+ *    duas encerram o bilhete e só uma delas significa que a travessia aconteceu.
  *
  * A pílula é preenchida (cor + cor-de-texto próprias), então lê bem tanto sobre o card navy da lista
  * quanto sobre a superfície clara dos Detalhes. Recebe a `situacao` já rotulada (`DadosPassagem`) e a
@@ -44,6 +48,7 @@ fun StatusPassagemBadge(
         StatusPassagem.A_EMITIR -> Yellow to Brown
         StatusPassagem.EMITIDA -> AquaAccent to AbyssNavy
         StatusPassagem.EMBARCADA -> SteelTeal to MistGray
+        StatusPassagem.CANCELADA -> Orange to AbyssNavy
         null -> MistGray to AbyssNavy
     }
     val rotulo = status?.rotulo() ?: situacao
@@ -72,5 +77,6 @@ private fun StatusPassagemBadgePreview() {
         StatusPassagemBadge(situacao = "A EMITIR")
         StatusPassagemBadge(situacao = "EMITIDA")
         StatusPassagemBadge(situacao = "EMBARCADA")
+        StatusPassagemBadge(situacao = "CANCELADA")
     }
 }
