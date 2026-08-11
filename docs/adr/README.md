@@ -133,9 +133,14 @@ nasceu do incômodo de o `ADM` estar vendo a Equipe, e desfez o nó **usuário �
 ## O que está esperando decisão
 
 - **O método da inferência tarifária** — janela, mínimo de bilhetes, viagem sem histórico, cálculo na
-  leitura × materializado. Situado no **módulo faturamento** (ADR-0018, *o que não decide*).
+  leitura × materializado. Situado no **módulo faturamento** (ADR-0018, *o que não decide*). **O lugar dela
+  ficou decidido em 2026-08-11** (decisão do analista): **preço é I/O** — a emissão **não calcula** valor, o
+  operador informa o praticado, e a inferência é **eixo de análise sobre o agregado de passagens, por viagem
+  ou por período**. Com isso morrem `ResultadoEmissao.SemTarifa`, `tarifaBase` e `tarifasViagem`, e a
+  *esperada* do balanço (ADR-0014) passa a nascer do agregado. O que segue aberto é só o **método**.
 - **Se o DTO carrega tipo ou `String` formatada** (ADR-0019, *o que não decide*) — hoje o mapper formata
-  tudo, e a inferência tarifária vai pedir número.
+  tudo, e a **análise sobre o agregado** (o consumidor que a decisão de 2026-08-11 criou) é o primeiro caso
+  de uso que pede número.
 - **O módulo faturamento** — conciliação, taxa e prazo, conta corrente do pagador, estorno, fechamento de
   caixa.
 - **O que o Início da *plataforma* mostra** (F10). O da empresa foi resolvido na F8.4 — *Viagens

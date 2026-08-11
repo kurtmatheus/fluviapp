@@ -1,7 +1,9 @@
 # F9 — Passagens: o terreno, antes do plano
 
 > **Status:** **aberto** — mapeamento do código como ele está em `6b11f34` (2026-08-11), com o faseamento
-> proposto no §7 e as perguntas de decisão no §8. Nada aqui foi decidido.
+> proposto no §7 e as perguntas no §8. A **pergunta 1 está respondida** (*preço é I/O* — fim do §5); as
+> outras duas ficaram para o próximo **planejamento de domínio**, e por isso o §7 é **proposta medida, não
+> plano aprovado**.
 >
 > Conversa com o [ADR-0018](../adr/0018-agregado-passagem-participantes-modo-e-lancamentos.md) (o agregado
 > novo e o plano de migração dele), o [ADR-0022](../adr/0022-painel-da-empresa-e-fases.md) (a F9 como fase),
@@ -194,6 +196,35 @@ inferência virando **relatório**, não fonte.
 Não há como fasear a emissão sem esta resposta: ela decide se a F9 tem uma fatia de preço pequena (a),
 média (b) ou uma fatia de cadastro inteira (c).
 
+### Resposta do analista (2026-08-11)
+
+> *"Preço é I/O. Análises tarifárias, de valores, serão inferidas a partir do agregado de passagens por
+> viagens ou período de tempo."*
+
+**O valor não é calculado pela emissão**: ele **entra** (o operador informa o que foi cobrado) e **sai** (o
+bilhete e as listas o exibem). O que se infere são as **análises**, e elas se fazem sobre o **agregado de
+passagens** — por viagem ou por período. É a forma **(a)**, com a inferência reposicionada de propósito: ela
+não é fonte da emissão, é **eixo de análise**.
+
+O que essa resposta resolve, item a item:
+
+- **`ResultadoEmissao.SemTarifa` morre.** Não há preço a faltar quando o preço é entrada. Era o último
+  resíduo em código da tabela do ADR-0013, e o ADR-0016 §7.2 já o condenava;
+- **`tarifaBase` e `tarifasViagem` perdem o portador.** O que o bilhete registra é o **valor praticado**, e
+  não uma *tarifa devida* congelada de uma tabela que não existe mais;
+- **meia e gratuidade continuam categorias** — o ADR-0013 segue vigente nos tipos e nas funções puras. O que
+  deixa de existir é a **derivação automática do valor** a partir delas no momento da emissão;
+- **o desconto deixa de ser resíduo calculável na emissão** e vira leitura analítica: comparar o praticado
+  com o que o agregado mostra como praticado normalmente;
+- **o balanço** (ADR-0014) muda de régua na mesma direção: a *esperada* nasce do agregado, não de tabela — o
+  que o §7.2 dizia como direção passa a ter forma;
+- **a F9.2 encolhe.** Deixa de ser "escolher a fonte do preço" e passa a ser "o valor é campo de entrada,
+  validado, e a maquinaria da tarifa sai do caminho". Não sustenta fatia própria: cabe junto da forma do
+  documento;
+- **nasce um consumidor que não é da F9**: a análise sobre o agregado (por ocorrência e por período). Ela é
+  do eixo de faturamento/relatório — e é o primeiro caso de uso que pede DTO com **número**, não `String`
+  formatada, que é a pergunta que o ADR-0019 deixou aberta.
+
 ## 6. O outro corte: revitalizar × trocar o agregado
 
 O ADR-0022 D5 registrou como aberta a pergunta *"a Passagem da F9 é reescrita no molde ou adaptada"*. O
@@ -224,7 +255,7 @@ antes de toda mudança de forma.
 |---|---|---|
 | **F9.0** | **O reencontro com a viagem** (só leitura): o snapshot do bilhete nasce de Viagem → Rota → Portos → Localidades + Embarcação, num DTO por caso de uso (ADR-0019); a tela passa a selecionar a **`ViagemSemana`**, não a viagem | é a dívida explícita que a F8.0 deixou marcada no código, não muda persistência e é inteiramente JVM-testável |
 | **F9.1** | **A Passagem sai do Room** (ADR-0017 F5): codec + coleção, fronteira em `Map`, morrem o `PassagemDao` e o espelho, sai o `runBlocking`, sai o `deletar` **e o `allow delete` da regra**. Rascunho → DataStore e bilhete digital → galeria (ADR-0017 D4) | destrava tudo o que vem depois: a partir daqui campo novo é campo, não migração. E tira o delete físico antes de a seção acender |
-| **F9.2** | **O preço** — a resposta do §5, mais o fim do `ResultadoEmissao.SemTarifa` como estado normal | é o que faz a emissão **fechar**; sem ela as fatias seguintes refinam um fluxo que não conclui |
+| **F9.2** | **O valor como entrada** (resposta do §5): o campo de valor praticado validado, e a maquinaria da tarifa sai — `tarifaBase`, `tarifasViagem` e `ResultadoEmissao.SemTarifa` | é o que faz a emissão **fechar**. Encolheu com a resposta e **pode entrar junto da F9.3**; fica listada à parte porque é o que destrava o fluxo |
 | **F9.3** | **A forma do documento** (D1/D13/D14): participantes com chave + snapshot, agência por **id** na consulta, carimbo de embarque como sub-objeto — com a regra `hasOnly` e o emulador no mesmo incremento | os 49 campos planos caem aqui, já sem custo de DDL |
 | **F9.4** | **Lançamentos** (D11): as quatro colunas de pagamento viram lista, mais `criadoEm`/`alteradoEm` | mesma natureza da F9.3 e depende dela; separado porque muda o balanço |
 | **F9.5** | **Ocorrência, numeração e capacidade** (D8/D9/D10), juntas: a chave `(viagemId, data)`, o contador **por ocorrência** (morrem o `passagens/contador` global e a tabela `ContadorBilhete`) e o estoque que **barra** a emissão. É aqui que entra a **ocupação herdada da F8** | o ADR-0018 já pede as três juntas: contador e estoque são o mesmo problema de corrida |
@@ -241,9 +272,19 @@ distância, e é a primeira vez que isso é verdade.
 
 ## 8. Perguntas ao analista
 
-1. **De onde vem o preço** (§5) — (a) digitado, (b) inferência mínima na F9, (c) tarifa cadastrada da
-   agência? É a que trava o faseamento: ela dimensiona a F9.2 e decide se o balanço mantém a régua.
-2. **Onde cortar a fase** (§6) — a F9 fica na revitalização (as oito fatias) e os pools `Cliente`/`Veiculo`
-   + abas viram fase própria depois? Ou algum deles entra dentro da F9?
-3. **A ordem proposta no §7 serve?** O ponto em que ela é discutível é a F9.6 (cancelamento) tão tarde: o
-   ADR-0018 a queria cedo, e o argumento para adiá-la é que a seção escura torna o dano hipotético.
+1. ~~**De onde vem o preço**~~ — **respondida** em 2026-08-11: **preço é I/O**, e a inferência é eixo de
+   análise sobre o agregado. Ver a resposta no fim do §5, com as sete consequências.
+2. **Onde cortar a fase** (§6) — a F9 fica na revitalização e os pools `Cliente`/`Veiculo` + abas viram fase
+   própria depois? Ou algum deles entra dentro da F9?
+3. **A ordem proposta no §7 serve?** O ponto discutível é a F9.6 (cancelamento) tão tarde: o ADR-0018 a
+   queria cedo, e o argumento para adiá-la é que a seção escura torna o dano hipotético.
+
+> **2 e 3 ficam adiadas por decisão do analista (2026-08-11):** elas serão definidas no **próximo
+> planejamento de domínio**, e depois dele na **fronteira com os dados** e na **camada de dados** — a ordem
+> de trabalho que o ADR-0019 fixou (*domínio → fronteiras → camadas*).
+>
+> A consequência para este documento: o **§7 é proposta medida, não plano aprovado**. O que ele estabelece e
+> que o domínio não vai desfazer são as **dependências técnicas** — a saída do Room antes de qualquer mudança
+> de forma (enquanto a `Passagem` for tabela, campo novo é DDL), e ocorrência + numeração + capacidade
+> juntas, porque contador e estoque são o mesmo problema de corrida. **O corte por seção sai do domínio**, e
+> é ele que dirá quantas fatias existem.
