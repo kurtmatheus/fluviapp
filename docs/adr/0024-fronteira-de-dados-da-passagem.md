@@ -246,6 +246,14 @@ retira). O que este ADR fixa é que **a Passagem não o compõe** — e, como el
   `StateFlow` na sessão, então resolver *"que porto é este id"* é **lookup em memória**, não leitura extra. O
   custo do ADR-0023 D8 é de **montagem** — o trabalho que o ADR-0019 põe no mapper de cada caso de uso.
 
+  > **Correção do mesmo dia (2026-08-11), vinda do estudo da camada:** a frase acima vale para **empresa,
+  > embarcação, localidade, porto, rota e viagem** — coleções pequenas, carregadas inteiras. **Não vale para os
+  > pools `clientes` e `veiculos`**, que crescem sem limite e, pela razão do D9, não podem ser `observarTodos`.
+  > A junção tem portanto **dois regimes**: *lookup em memória* para a referência e **leitura por ids em lote**
+  > para os pools — com o `whereIn` do Firestore aceitando **30 valores por consulta**, o que faz `obterPorIds`
+  > particionar. Numa tela de consulta (30 passagens × até 3 clientes) é a diferença entre **3** consultas e
+  > **90**.
+
 **O que se paga**
 
 - **a consistência do dinheiro sai do servidor** (D4) e fica na validação e na revisão;

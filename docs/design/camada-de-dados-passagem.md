@@ -1,7 +1,9 @@
 # A camada de dados da Passagem — o padrão das sete, e os cinco desvios dela
 
-> **Status:** **aberto** — mede a camada como ela existe em `1bbcd1d` (2026-08-11) e expõe as decisões que
-> faltam. As perguntas estão no §5.
+> **Status:** **aberto · pronto para virar ADR** — mede a camada como ela existe em `1bbcd1d` (2026-08-11) e
+> expõe as decisões que faltavam. **As cinco foram respondidas no mesmo dia** (§5); a segunda virou o
+> aprofundamento do §3.3, que **corrigiu uma afirmação do ADR-0024** — a junção tem dois regimes, e o *lookup em
+> memória* não cobre os pools.
 >
 > É o **terceiro passo** da ordem que o analista fixou: **domínio** ([ADR-0023](../adr/0023-passagem-por-categoria-e-referencia.md))
 > → **fronteira** ([ADR-0024](../adr/0024-fronteira-de-dados-da-passagem.md)) → **camada**. A fronteira decidiu
@@ -137,20 +139,119 @@ Três formas possíveis, e a diferença é de manutenção:
 critério → consulta é uma função pura testável em JVM, e a porta não vaza Firebase. O terceiro caminho é o que
 parece mais flexível e é o único que quebra a testabilidade que o `DocumentoBruto` foi criado para garantir.
 
-### 3.3 Onde a junção mora — e o que acontece com o `Mapper`
+> **Decidido pelo analista (2026-08-11): objeto de critério.**
+>
+> Uma consequência que vale antecipar: o critério é **dado**, então ele pode ser **validado** e **explicado**.
+> A consulta de hoje aceita `agencia = ""` como *"sem recorte"* — uma string vazia carregando a semântica mais
+> perigosa que existe naquele método (ver tudo). Com um tipo, *"sem recorte"* deixa de ser um vazio e passa a
+> ser um valor com nome — o mesmo movimento que o `EscopoDoPool` fez na F8, e pela mesma razão.
 
-Com o ADR-0023 D8 (nada congelado), montar qualquer DTO exige juntar. Duas formas:
+### 3.3 Onde a junção mora — aprofundado *(a pedido do analista, 2026-08-11)*
 
-- **como hoje**: o mapper injeta repositórios e busca o que falta. Simples de chamar, impossível de testar sem
-  fake, e esconde N leituras dentro de um `map()`;
-- **como a F8**: uma **função pura** recebe a passagem e as listas de referência já carregadas, e devolve o
-  DTO. Quem carrega é o ViewModel (ou um coletor no repositório), e as listas **já estão em memória** — as
-  entidades de referência vivem em `StateFlow` (ADR-0024, consequências).
+#### O problema, em uma frase
 
-**Recomendo o segundo**, e com ele uma consequência de forma: a interface `Mapper<E, O>` (`util/Mapper.kt`)
-**não serve** — ela é `suspend` e 1→1, e uma junção pura tem várias entradas e nenhuma suspensão. Ela não
-precisa ser substituída por outra abstração: uma função de topo com nome bom (`paraBilhete(...)`,
-`paraLinhaDeConsulta(...)`) é o que a F8 usou, e é mais legível do que uma interface genérica.
+Depois do ADR-0023 D8, **a passagem guarda só ids**. Para mostrar um bilhete são necessários o nome da
+empresa, o da embarcação, os portos de origem e destino e o nome dos clientes — e **nada disso está no
+documento**. Em banco relacional isso seria um `JOIN`; **o Firestore não faz `JOIN`**, então alguém, em Kotlin,
+tem de casar o bilhete com as entidades de referência. A pergunta é **quem**: a peça que traduz, ou quem a
+chama.
+
+#### Forma A — o mapper busca o que falta (é o que existe hoje)
+
+```kotlin
+// domain/mappers/PassagemDadosPassagemMapper.kt — código real, resumido
+@Singleton
+class PassagemDadosPassagemMapper @Inject constructor(
+    private val empresaRepository: EmpresaRepository,        // ← a peça de tradução
+    private val embarcacaoRepository: EmbarcacaoRepository,  //   depende da camada de dados
+) : Mapper<Passagem, DadosPassagem> {
+    override suspend fun map(entry: Passagem): DadosPassagem {
+        val empresa = empresaRepository.obterPorId(entry.empresaId)      // busca aqui dentro
+        val embarcacao = embarcacaoRepository.obterPorId(entry.embarcacaoId)
+        …
+    }
+}
+```
+
+Quatro consequências, e a terceira é a que mais dói:
+
+1. **testar exige fake.** Para exercitar uma tradução — *"este bilhete vira esta linha de tela"* — é preciso
+   montar dois repositórios falsos. O teste existe (`PassagemDadosPassagemMapperTest`, entre as 22 classes
+   congeladas), e boa parte dele é andaime;
+2. **contamina com `suspend`.** A interface `Mapper` é `suspend fun map`, então tudo que chama uma tradução
+   passa a precisar de corrotina — inclusive código que só quer formatar;
+3. **o N+1 fica escondido dentro do `map()`.** Numa consulta que devolve 30 passagens, o `map` roda 30 vezes e
+   faz **60** `obterPorId`. E `obterPorId`, no regime novo, é `obterTodos().firstOrNull { … }`
+   (`ColecaoFirestore.kt:117`) — ou seja, **60 varreduras da coleção inteira**. Hoje isso não custa rede
+   (o `StateFlow` já está carregado), mas custa trabalho quadrático, e ninguém que lê `passagens.map { mapper.map(it) }`
+   suspeita disso;
+4. **inverte a direção da dependência.** O arquivo vive em `domain/mappers/` e importa
+   `services.repository.cadastro.viagem.EmpresaRepository` — **o domínio importando a camada de dados**. É
+   exatamente um dos itens que o estudo do domínio da plataforma já registrava como dívida.
+
+#### Forma B — a função recebe pronto (é o que a F8 fez, e o que recomendo)
+
+```kotlin
+// A tradução não busca nada: recebe o que precisa e devolve o DTO.
+fun paraLinhaDeConsulta(
+    passagem: Passagem,
+    embarcacoes: Map<String, Embarcacao>,   // já carregadas, indexadas por id
+    clientes: Map<String, Cliente>,
+): LinhaDeConsulta = …
+
+// Quem chama carrega UMA vez, antes do laço:
+val embarcacoes = embarcacaoRepository.obterTodos().associateBy { it.id }
+val clientes = clienteRepository.obterPorIds(passagens.flatMap { it.clientes })
+val linhas = passagens.map { paraLinhaDeConsulta(it, embarcacoes, clientes) }
+```
+
+É o estilo que a F8 usou em `disponiveisAPartirDe(agora, dias)`, `contarOcupacaoEmbarcacao(embarcacao, passagens)`
+e `inicioDoPainel(…)` — e é por isso que aquela fase fechou com 516 testes verdes: **testa-se montando objetos
+e chamando a função**, sem fake, sem corrotina, sem Hilt.
+
+O que se ganha, ponto a ponto contra a lista acima:
+
+1. **o teste vira aritmética**: entram objetos, sai objeto, compara-se;
+2. **nada de `suspend`** — a tradução é síncrona porque traduzir não é buscar;
+3. **o N+1 deixa de ser possível por construção**: a função **não tem como** buscar, então o carregamento
+   aparece no chamador, uma vez, visível. O `associateBy` troca as 60 varreduras por um índice O(1);
+4. **a dependência volta a apontar para dentro**: `domain/` deixa de importar `services/`.
+
+#### O custo, que é real e tem nome
+
+**Quem chama fica com mais trabalho.** As duas linhas de carregamento acima existiam antes escondidas no
+mapper, e agora estão no ViewModel. Isso é bom (ficaram visíveis) e é ruim (o ViewModel engorda). A mitigação
+que a casa já tem: **um coletor na camada de dados** — um método de caso de uso que carrega o pacote de
+referências e devolve os DTOs prontos, mantendo a **tradução** pura por dentro. É o desenho do
+`ContagemPassagensMapper`, que já é hoje uma classe com repositório envolvendo a função pura
+`contarOcupacaoEmbarcacao`: o híbrido não é um meio-termo tímido, é a divisão certa — **coletar é da camada de
+dados, traduzir é do domínio.**
+
+#### Uma correção ao que eu afirmei no ADR-0024
+
+Escrevi lá que *"as entidades de referência inteiras já vivem em `StateFlow`, então a junção é lookup em
+memória, não leitura extra"*. Isso vale para **empresa, embarcação, localidade, porto, rota e viagem** —
+coleções pequenas, que a sessão carrega inteiras.
+
+**Não vale para os pools.** `clientes` e `veiculos` crescem sem limite, exatamente como as passagens, e pela
+mesma razão **não podem** ser `observarTodos` (ADR-0024 D9). Logo a junção tem dois regimes, e é bom que isso
+esteja escrito antes de alguém descobrir na tela:
+
+| O que se junta | Como | Por quê |
+|---|---|---|
+| empresa, embarcação, rota, porto, localidade, viagem | **lookup em memória** sobre o `StateFlow` da sessão | coleção pequena, útil inteira |
+| **cliente, veículo** | **leitura por ids**, em lote | pool que cresce sem limite; carregar inteiro é o erro que a Passagem já não comete |
+
+A leitura em lote tem um limite que vale registrar agora: o `whereIn` do Firestore aceita **30 valores por
+consulta**, então `obterPorIds` particiona a lista em blocos de 30. Não é problema para uma tela de consulta
+(30 passagens × até 3 clientes = 90 ids = 3 consultas), e é a diferença entre 3 consultas e 90.
+
+#### E o `Mapper<E, O>`
+
+A interface (`util/Mapper.kt`, três linhas) **não serve** para a Forma B: ela é `suspend` e 1→1, e uma junção
+pura tem **várias** entradas e nenhuma suspensão. Ela não precisa ser trocada por outra abstração — uma
+**função de topo com nome bom** (`paraBilhete`, `paraLinhaDeConsulta`, `paraOcupacao`) é o que a F8 usou, e é
+mais legível que uma interface genérica cujo único método se chama `map`.
 
 ### 3.4 Os DTOs, agora com tipo
 
@@ -165,6 +266,19 @@ Com DTO por caso de uso, ele se divide em quatro projeções pequenas, e cada um
 `BilhetePassagem`, `LinhaDeConsulta`, `OcupacaoDaOcorrencia`, `LinhaDeBalanco`. A formatação
 (`formataParaMoedaBrasileira`, `extrairDocumentoFormatado`, `rotulo()`) sai do mapper e vai para a camada de
 apresentação.
+
+> **Decidido pelo analista (2026-08-11): o corte é por consumidor.**
+>
+> Vale dizer o que o corte por consumidor **rejeita**, porque é a alternativa que sempre reaparece: cortar por
+> *entidade* (uma `PassagemDto` só, com tudo). É ela que produz o `DadosPassagem` de hoje — 58 campos que são a
+> **união** de quatro necessidades, com o bilhete carregando campos de consulta e a consulta carregando dados
+> de impressão. O sintoma clássico está no arquivo: `idPassageiro1 = ""` e `idVeiculo = ""`, campos que existem
+> e são preenchidos com vazio porque *algum* consumidor talvez os queira.
+>
+> Com o corte por consumidor, **cada projeção responde a uma pergunta**: o bilhete pergunta *"o que se imprime"*,
+> a consulta pergunta *"o que se lista"*, a ocupação *"quantos couberam"*, o balanço *"quanto entrou"*. Um campo
+> só existe se a pergunta o exige — e o campo vazio de conveniência deixa de ter onde nascer. É o *passo 2* do
+> ADR-0003 que o ADR-0019 formalizou, aplicado à entidade que mais o precisava.
 
 ### 3.5 O contador, os pools, o rascunho e o bilhete
 
@@ -193,6 +307,16 @@ apresentação.
 Recomendo o primeiro, porque o terceiro estado só existia para distinguir *dois* mecanismos de persistência —
 e depois da F9 há um só.
 
+> **Decidido pelo analista (2026-08-11): três desfechos, renomeados.** E a decisão está mais certa que a minha
+> recomendação: o que o desfecho local mede **não** é "qual banco gravou" — é **o que o operador pode afirmar ao
+> passageiro** antes de a rede confirmar. O cache do SDK dá essa garantia igual ao Room dava; o que muda é só
+> o nome do lugar. Suprimir o estado apagaria a distinção que **mais** importa numa bilheteria de beira de rio:
+> *aceito aqui* × *confirmado no servidor*.
+>
+> Fica: **`aplicadaLocalmente`** (o `set` entrou no cache e o bilhete já vale), **`sincronizou`** (ack do
+> servidor) e **`pendenteDeSync`** (o servidor recusou ou está fora — degradado, não fatal), mais `falhou`.
+> Os KDocs que dizem *"durável no Room"* passam a dizer *"aplicada no cache do SDK, e o SDK reconcilia"*.
+
 ## 4. O que morre na camada
 
 | Peça | Por quê |
@@ -206,14 +330,23 @@ e depois da F9 há um só.
 | o listener do contador no `LoginViewModel` | o contador vira por ocorrência (§2.2) |
 | `obterTodasPorData` devolvendo `Task<QuerySnapshot>` | a porta devolve domínio, não tipo do Firebase |
 
-## 5. Perguntas ao analista
+## 5. As perguntas, e o que o analista respondeu (2026-08-11)
 
-1. **A consulta recortada é objeto de critério?** (§3.2) — é a decisão mais estrutural desta rodada: ela define
-   a porta e o que é testável em JVM.
-2. **A junção vira função pura com as listas por parâmetro** (§3.3), com o ViewModel carregando? É o estilo da
-   F8, e leva embora a interface `Mapper`.
-3. **Quatro projeções tipadas no lugar do `DadosPassagem`** (§3.4) — os nomes e o recorte servem, ou você
-   prefere outro corte de consumidores?
-4. **A telemetria fica com dois desfechos ou com três renomeados?** (§3.6)
-5. **A porta `PassagemRepository` do §3.1 está completa?** Em especial: falta algo para o **cancelamento** além
-   de `transicionar`, já que ele exige política de quem pode (ADR-0018 D17)?
+| # | Pergunta | Resposta |
+|---|---|---|
+| 1 | consulta: métodos nomeados × **objeto de critério** × lambda com `Query` (§3.2) | **objeto de critério** |
+| 2 | a junção vira função pura com as listas por parâmetro? (§3.3) | *"não entendi, aprofunde"* → o §3.3 foi reescrito com os dois estilos em código real. E o aprofundamento **corrigiu o ADR-0024**: *lookup em memória* vale para as referências, **não** para os pools `cliente`/`veiculo`, que exigem leitura por ids em lote |
+| 3 | quatro projeções tipadas no lugar do `DadosPassagem` (§3.4) | **corte por consumidor** — o que rejeita explicitamente o corte por entidade, que é o que produziu os 58 campos |
+| 4 | telemetria com dois desfechos × três renomeados (§3.6) | **três renomeados** — e a decisão está mais certa que a minha recomendação: o desfecho local mede *o que o operador pode afirmar*, não qual banco gravou |
+| 5 | a porta do §3.1 está completa? (§3.1) | **sim** |
+
+Sobre a **5**, uma nota que a resposta deixa implícita e vale escrita: o cancelamento **não** ganha método
+próprio porque ele é uma **transição** (`transicionar(id, CANCELADA)`), e *quem pode cancelar* não é assunto da
+porta — é da política (`PermissoesUsuario`, ADR-0010), consultada **antes** da chamada, como em toda ação de
+seção. Uma porta que perguntasse "posso?" teria duas fontes de autorização, e o ADR-0010 existe para haver uma.
+
+### O que falta para virar ADR
+
+Nada de estrutural. Os cinco pontos estão decididos, e o §3.3 fechou com uma correção de escopo que o ADR da
+camada precisa carregar: **a junção tem dois regimes** (memória para referência, leitura em lote por ids para
+os pools, com o `whereIn` particionando em blocos de 30).
