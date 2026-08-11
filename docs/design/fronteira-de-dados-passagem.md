@@ -1,7 +1,9 @@
 # A fronteira de dados da Passagem — o que o contrato de hoje resolve, e onde ela é a primeira a não caber
 
-> **Status:** **aberto** — mapeia a fronteira como ela existe em `f1cae5f` (2026-08-11) e expõe as decisões
-> que a Passagem cobra dela. As perguntas estão no §6.
+> **Status:** **aberto · quase fechado** — mapeia a fronteira como ela existe em `f1cae5f` (2026-08-11) e
+> expõe as decisões que a Passagem cobra dela. **Quatro das cinco perguntas foram respondidas no mesmo dia**
+> (§6) e a quinta virou o aprofundamento do §4.4; sobraram dois pontos pequenos. Cada decisão está anotada na
+> seção a que pertence.
 >
 > Vem depois do [planejamento de domínio](../adr/0023-passagem-por-categoria-e-referencia.md) e antes da
 > camada de dados — a ordem que o analista fixou: **domínio → fronteira → camada**. Decisões-fonte:
@@ -79,16 +81,23 @@ forma: o ADR-0018 D10 quer numeração **por ocorrência**, então deixa de exis
 
 Um esboço para reagir — `passagens/{id}`, com o discriminador em `categoria`:
 
+*(atualizado em 2026-08-11 com as decisões dos §4.1 a §4.5)*
+
 ```jsonc
-// PASSAGEIRO
+// passagens/{id} — PASSAGEIRO
 {
-  "categoria": "PASSAGEIRO",          // discriminador (§2.2)
+  "categoria": "PASSAGEIRO",                   // discriminador (§4.1)
   "numero": "001234",
   "viagemId": "v_abc", "data": "2026-08-18",   // a ocorrência (§4.2)
   "acomodacao": "SUITE",
   "tipo": "INTEIRA",
-  "clientes": ["cli_1", "cli_7"],     // ordenado: o titular é o primeiro
-  "lancamento": { … },                 // §4.4 — forma ainda em aberto
+  "titularId": "cli_1",                        // quem responde pelo bilhete (§4.3)
+  "acompanhantesIds": ["cli_7"],
+  "clienteIds": ["cli_1", "cli_7"],            // DERIVADO, só para consulta
+  "lancamentos": [                             // lista imutável (§4.4)
+    { "id": "l_7f3a", "forma": "PIX", "valor": 50.0 }
+  ],
+  "valorTotal": 50.0,                          // DERIVADO (§4.4) — sugestão
   "observacao": null,
   "status": "EMITIDA",
   "funcionarioId": "uid_9", "agenciaId": "emp_3",
@@ -96,13 +105,16 @@ Um esboço para reagir — `passagens/{id}`, com o discriminador em `categoria`:
   "embarcadaPorId": null, "embarcadaEm": null
 }
 
-// VEICULO — os cinco comuns idênticos, e o específico troca
+// passagens/{id} — VEICULO: o comum é idêntico, e o específico troca
 {
   "categoria": "VEICULO",
   "veiculoId": "vei_44",
-  "responsavelRetirada": "cli_7",      // ou ausente
+  "responsavelRetirada": "cli_7",              // ou ausente (é opcional por negócio)
   …
 }
+
+// viagens/{viagemId}/ocorrencias/{data} — o contador, e só ele (§4.5)
+{ "ultimoNumero": 1234 }
 ```
 
 O que salta ao comparar com o documento de hoje (`PassagemDocumento.kt`): **o documento já tem estrutura** —
@@ -127,6 +139,8 @@ perde as cópias.
 O que se paga: documentos heterogêneos na mesma coleção, e um índice de consulta que quase sempre inclui
 `categoria`. É barato, e é exatamente o que o discriminador existe para resolver.
 
+> **Decidido pelo analista (2026-08-11): uma coleção com discriminador.**
+
 ### 4.2 A ocorrência: dois campos, e a data como texto ISO
 
 `viagemId` (`String`) + `data`. Para a data, **`"yyyy-MM-dd"` como texto**, não `Timestamp`:
@@ -140,46 +154,127 @@ O que se paga: documentos heterogêneos na mesma coleção, e um índice de cons
 Duas consequências boas: `(viagemId, data)` é uma chave composta legível, e o par serve de **id de ocorrência**
 onde ele for preciso.
 
-### 4.3 Os clientes: array de ids, com a ordem carregando o titular
+### 4.3 Os clientes: o titular em campo próprio, e o array chato ao lado
 
-`clientes: ["cli_1", "cli_7"]` — array **de strings**, não de objetos. E isso resolve de graça uma consulta
-que o pool vai querer: *"as passagens deste cliente"* é `array-contains`, que funciona em array de valores
-simples. Foi justamente por não funcionar dentro de objetos que o `Funcionario` precisou do `empresaIds`
-denormalizado ao lado.
+> **Decidido pelo analista (2026-08-11): campo próprio — "melhor para destacar".**
 
-**O titular é a posição 0**, e o Firestore preserva a ordem do array. A alternativa seria `titularId` +
-`acompanhantesIds[]`, que torna o titular explícito ao custo de dois campos e de duas consultas para responder
-"esta pessoa viajou nesta saída". Minha leitura é que a ordem basta, porque o domínio já a definiu como
-significado (ADR-0023 D3) — mas é uma escolha de fronteira, e fica registrada como pergunta.
+O titular deixa de ser *a posição 0 de um array* e passa a ser **`titularId`**, com os acompanhantes em
+`acompanhantesIds[]`. O ganho é o que a decisão diz: o titular é quem responde pelo bilhete, e um campo com
+nome próprio **diz isso**, enquanto uma convenção de ordem só o insinua — e convenção de ordem é do tipo que
+sobrevive no código e morre na primeira consulta que reordena.
 
-### 4.4 O lançamento: mapa `forma → valor`, ou array de lançamentos?
+O custo aparece numa pergunta só, e ela é do pool: *"em que passagens esta pessoa viajou?"*. Com um array
+único, era um `array-contains`; com o par de campos, viram **duas consultas** (uma por `titularId`, outra por
+`array-contains` em `acompanhantesIds`) — e o Firestore não faz `OR` entre campos diferentes numa consulta só.
 
-Aqui a restrição do Firestore decide mais do que a estética, e ela **corta para os dois lados**:
+E aqui a casa já tem a resposta pronta, no molde exato: **grava-se `clienteIds[]` derivado**, chato, na mesma
+escrita — `titularId` + acompanhantes. É o `Funcionario.empresaIds` outra vez, e pela **mesma** razão que o
+fez nascer: *o Firestore não consulta campo de dentro de elemento de array, então a consulta pede o array
+chato ao lado*. Mesma escrita, mesmo documento, sem sincronia entre coleções; nunca recebido de fora, sempre
+calculado.
 
-| Forma | Consultável? | Quando é a certa |
-|---|---|---|
-| **mapa** `{"PIX": 50.0, "DINHEIRO": 10.0}` | **sim** — caminho pontilhado (`lancamento.PIX`) funciona em `map` | se o lançamento é só *forma → valor*, e o faturamento vai perguntar "quanto em PIX no dia" |
-| **array de objetos** `[{forma, valor, …}]` | **não** por campo interno — `array-contains` casa o elemento inteiro | se o lançamento precisa de mais que forma e valor: quando, por quem, estorno |
-| **subcoleção** `passagens/{id}/lancamentos` | sim, e sem limite de tamanho | se lançamento vira **evento** com vida própria (conciliação, estorno) |
+Fica então: **`titularId` para destacar, `acompanhantesIds[]` para completar, `clienteIds[]` para consultar** —
+os dois primeiros são o fato, o terceiro é derivado e existe para o índice.
 
-O `mapaDeDoubles` do `DocumentoBruto` **já existe** (nasceu para a tabela de tarifas, que morreu) e serve o
-primeiro caso sem uma linha nova de fronteira. Mas a escolha é de domínio, não de mecanismo: **ela depende de
-o lançamento ser um par ou um evento** — e isso é o módulo de faturamento, que ainda não foi desenhado.
-Enquanto ele não existir, o mapa é a forma que não bloqueia nada e não promete nada.
+### 4.4 O lançamento — aprofundado *(a pedido do analista, 2026-08-11)*
+
+**A pergunta "par ou evento" já tinha resposta, e é do próprio analista.** A decisão de **2026-08-01**
+(`dominio-passagem.md` §11.9b) é: **lista de lançamentos, embutida, com identidade própria**, item
+`{id, forma, valor}` — e *nada* de NSU, txid, taxa ou recebedor, que seria over-engineering. O `id` existe
+para que promover a lista a coleção seja **mover, não redesenhar**. Duas lacunas se resolveram fora do
+lançamento: *quando se pagou* virou `criadoEm` (porque **a emissão é pós-pagamento**, §11.9b′) e *quem
+recebeu* é o emissor, que já está no documento.
+
+Então o que este estudo tem a aprofundar não é a forma do domínio — é **o que essa forma custa e ganha na
+fronteira**. Cinco pontos, e o terceiro é o único que muda uma linha do que estava escrito.
+
+**(a) A consulta por forma não é a consulta que existe.** Eu havia apresentado "consultável por caminho
+pontilhado" como vantagem do mapa. Revendo o que os consumidores realmente pedem, ela **não paga nada**:
+ninguém precisa de *"passagens em que houve PIX"*. O que o faturamento vai pedir é *"quanto entrou em cada
+forma no período"* — e isso é **varredura por período + agregação**, não filtro por documento. É como o
+balanço já funciona hoje: lê as passagens e agrega em Kotlin (ADR-0014 §1), e o ADR-0017 tirou o SQL de
+qualquer forma. **O array não cobra nada onde eu supunha que cobrava.**
+
+**(b) Onde o array de objetos cobra de verdade: na escrita concorrente, e ela não existe aqui.**
+`arrayUnion`/`arrayRemove` casam o **elemento inteiro**, então *acrescentar* um lançamento é atômico; o que
+exige reescrever o array todo é **editar** um item — e aí dois processos simultâneos se sobrescrevem. Com
+emissão pós-pagamento e lançamento **imutável** (nasce com a venda), esse caminho não existe. Se estorno
+existisse dentro do bilhete, existiria — e é exatamente ele que o §11.9b′ empurrou para o faturamento. A
+decisão de domínio, sem falar de Firestore, **eliminou o único custo real do array**.
+
+**(c) O que o servidor não consegue verificar — e isto é limite novo, não sabido.** As regras do Firestore
+não iteram lista: dá para exigir que o campo exista, seja lista e tenha tamanho tal, mas **não** para exigir
+que *cada item* tenha uma forma conhecida e valor positivo, nem que a soma feche com nada. Com as quatro
+colunas de hoje, uma regra podia ao menos falar sobre `valorPix` ser número. **Com a lista, a consistência do
+dinheiro passa a ser inteiramente do cliente.**
+
+Não é bloqueio — é um limite a declarar, e a casa já tem o precedente de como se declara: a unicidade de rota
+e viagem também não é imposta pelo servidor, e vive documentada em **casos de emulador que passam de
+propósito** (ADR-0011). O mesmo tratamento serve aqui, e por uma razão que vale escrever: um lançamento
+inválido é **dado ruim de quem já está autenticado e autorizado a vender**, não escalonamento de privilégio.
+Regra de servidor protege contra o segundo; contra o primeiro, protege validação e revisão.
+
+**(d) A recusa do codec se inverte em relação ao vínculo — porque é dinheiro.** O precedente do
+`FuncionarioDocumento` é explícito: vínculo ilegível **some da lista** sem levar a pessoa junto, porque
+*"perder o nome de quem existe seria pior do que perder um vínculo que ninguém consegue interpretar"*.
+
+Com lançamento, a assimetria **se inverte**: descartar um item ilegível faz o bilhete valer menos do que
+valeu — R$ 40 onde entraram R$ 50 —, silenciosamente, e esse número vai para o balanço. Aqui o certo é
+**recusar a passagem inteira** (`deDocumento` → `null`), que é o mecanismo que a Embarcação sem tipo já usa:
+some da lista, aparece na telemetria como recusa, e alguém conserta. Um bilhete que não aparece é um problema
+visível; um bilhete com o valor errado é um problema invisível.
+
+**(e) O tamanho não é questão, e a rota de fuga já está desenhada.** Documento do Firestore vai a 1 MiB e uma
+venda tem no máximo um punhado de lançamentos — subcoleção aqui seria estrutura para um problema que não
+existe. E se um dia existir (o faturamento com conciliação e estorno), o `id` do item é o que faz a migração
+ser **mover**: cada item já nasce com identidade própria.
+
+**Nenhuma peça nova de fronteira.** `listaDeMapas` já existe no `DocumentoBruto` — nasceu para os `vinculos`
+do funcionário. A forma no documento:
+
+```jsonc
+"lancamentos": [
+  { "id": "l_7f3a", "forma": "PIX",      "valor": 50.0 },
+  { "id": "l_9b21", "forma": "DINHEIRO", "valor": 10.0 }
+]
+```
+
+`forma` grava o `name` do enum (convenção da casa) e `valor` é `Double` na fronteira (ADR-0013). O `id` é
+**gerado no cliente e opaco** — não o índice na lista, que muda se a lista for reescrita e faria a identidade
+mentir justamente no caso em que ela precisaria valer.
+
+**Uma sugestão, que é decisão sua:** gravar `valorTotal` derivado ao lado da lista, na mesma escrita. É o
+molde do `Funcionario.empresaIds` — *"o caso mais barato de dado derivado que existe: mesma escrita, mesmo
+documento, sem sincronia entre coleções"* — e ele compra duas coisas que a lista não dá: `orderBy`/faixa por
+valor **no servidor** (*"vendas acima de X"*, que hoje é impossível) e listagem sem somar N arrays no cliente.
+O risco do derivado — divergir da origem — é o mesmo que lá, e se elimina do mesmo jeito: **nunca recebido de
+fora, sempre calculado na escrita**.
 
 ### 4.5 A numeração por ocorrência: onde o contador vive, e como não retrocede
 
 Três pontos, e o terceiro é o que costuma ser esquecido:
 
-- **onde**: fora de `passagens/` (§2.3). `contadores/{viagemId}_{data}` é a forma mais simples e casa com a
-  chave composta do §4.2; a alternativa é a subcoleção `viagens/{id}/ocorrencias/{data}`, que agrupa melhor e
-  cobra um nível a mais na regra;
+- **onde**: fora de `passagens/` (§2.3). **Decidido pelo analista (2026-08-11): subcoleção** —
+  `viagens/{viagemId}/ocorrencias/{data}`, e não a coleção chata `contadores/{viagemId}_{data}`. O que a
+  escolha compra: a chave composta deixa de ser **texto concatenado** (que ninguém consegue consultar por
+  metade) e volta a ser **caminho**, então *"as ocorrências desta viagem"* é a subcoleção inteira, e a regra
+  do servidor pode falar da viagem-pai. Custa um nível a mais na regra e uma leitura em dois passos;
 - **como**: `FieldValue.increment(1)` é atômico no servidor e resolve a corrida entre dois caixas — o que
   **hoje não acontece**: o número é lido do cache local e gravado depois, com um `runBlocking` no meio
   (`PassagemFirestoreRepository.kt:116`);
 - **a regra tem de mudar junto.** O endurecimento atual protege *um* contador por `id == 'contador'` e proíbe
-  retrocesso. Com a chave nova, a regra passa a valer para uma coleção de contadores — e é **na mesma fatia**,
-  pelo dever de paridade (ADR-0011).
+  retrocesso. Com a chave nova, a regra passa a valer para uma **subcoleção** — e é **na mesma fatia**, pelo
+  dever de paridade (ADR-0011). Um detalhe que a subcoleção facilita e a coleção chata dificultaria: como o
+  caminho carrega o `viagemId`, a regra consegue exigir que a **viagem-pai exista** antes de deixar nascer um
+  contador para ela.
+
+**Uma ressalva que a subcoleção obriga a escrever, senão ela contradiz a F8.4:** a `ViagemSemana` é
+**calculada, não persistida** — não existe coleção de ocorrências, e é por isso que a viagem pode ser
+imutável. O documento em `ocorrencias/{data}` **não a persiste**: ele não é a fonte de que a ocorrência
+existe, é onde mora o **contador** dela. Duas consequências que mantêm as duas decisões coerentes: ele nasce
+**na primeira venda** (não há criação prévia de ocorrências, senão alguém teria de materializar o calendário),
+e **a ausência dele não significa que a saída não existe** — significa que ninguém vendeu ainda. Quem responde
+*"esta saída existe?"* continua sendo o cálculo sobre `(diaSemana, hora)` da viagem.
 
 ### 4.6 As duas coleções novas, e o que elas cobram
 
@@ -218,6 +313,27 @@ A pergunta de fronteira que sobra daqui é a que o ADR-0019 já deixou registrad
 `String` formatada?** Hoje o mapper formata tudo — e a análise sobre o agregado (a decisão de preço de hoje)
 é o primeiro consumidor que pede **número**.
 
+> **Decidido pelo analista (2026-08-11): o DTO carrega tipo.** Isto **fecha a pergunta que o ADR-0019 deixou
+> aberta**, e não só para a Passagem: é o regime da camada.
+
+O que a decisão implica, e vale medir antes de implementar:
+
+- **a formatação sobe para a apresentação.** Hoje o mapper devolve texto pronto — `DadosPassagem` tem ~58
+  campos, quase todos `String` já formatada, para uma lista que usa dez (é o caso que o estudo
+  [dto-por-entidade-ou-caso-de-uso.md](dto-por-entidade-ou-caso-de-uso.md) usa como exemplo do preço a pagar).
+  Com tipo no DTO, quem formata é a camada que sabe **para quem** está formatando: `Locale`, moeda, `HH:mm`;
+- **o dinheiro para de virar texto no meio do caminho** — e isso é o que a análise sobre o agregado precisa:
+  somar `String` formatada é impossível, e refazer o parse do texto que o próprio app formatou é a espécie de
+  ida-e-volta que produz erro de centavo;
+- **datas e horas viram `LocalDate`/minutos** dentro do app, com `dd/MM/yyyy` e `HH:mm` só na borda. É a régua
+  que a F8.1 já aplicou à Viagem e o ADR-0023 acabou de aplicar ao `Cliente.dataNascimento`;
+- **o teste muda de natureza, para melhor**: comparar `1830` ou `BigDecimal`/`Double` é comparar valor;
+  comparar `"18:30"` é comparar apresentação, e o teste passa a falhar quando alguém troca o formato — que é
+  ruído, não defeito.
+
+O custo é real e é de trabalho: cada tela que hoje recebe texto pronto passa a formatar. Não é risco, é
+volume — e é volume que aparece na F9, porque é a fase em que esses mappers são reescritos de qualquer forma.
+
 ### 4.8 O que morre nesta travessia
 
 | Peça | Destino |
@@ -244,14 +360,24 @@ Resumo do que o contrato de hoje **não** tem e a Passagem exige:
 
 Os cinco são aditivos: nenhum deles muda o que as sete entidades já usam.
 
-## 6. Perguntas ao analista
+## 6. As perguntas, e o que o analista respondeu (2026-08-11)
 
-1. **Uma coleção com discriminador** (§4.1) — confirma? É a decisão que mais amarra as outras: numeração,
-   ocupação e regra dependem dela.
-2. **O lançamento é par ou evento?** (§4.4) — mapa `forma → valor` agora, ou já array/subcoleção porque
-   estorno e conciliação vêm? A resposta pode ser *"mapa agora, e o faturamento decide depois"*, e nesse caso
-   o custo da mudança é uma migração de forma dentro do documento.
-3. **O titular é a posição 0 do array, ou campo próprio?** (§4.3)
-4. **O contador fica em `contadores/{viagemId}_{data}` ou em subcoleção da viagem?** (§4.5)
-5. **O DTO carrega tipo ou texto formatado?** (§4.7) — a pergunta aberta do ADR-0019, que a análise sobre o
-   agregado agora cobra.
+| # | Pergunta | Resposta |
+|---|---|---|
+| 1 | uma coleção com discriminador × uma por categoria (§4.1) | **uma coleção com discriminador** |
+| 2 | o lançamento é par ou evento? (§4.4) | *"aprofunde"* → o §4.4 foi reescrito. **A resposta já existia**: a decisão de 2026-08-01 é **lista embutida de `{id, forma, valor}`**. O aprofundamento mostrou que o custo que eu atribuía ao array **não existe** aqui, e trouxe **um limite novo** (o servidor não verifica lista) e **uma inversão** (item ilegível recusa a passagem, porque é dinheiro) |
+| 3 | titular na posição 0 × campo próprio (§4.3) | **campo próprio** — *"melhor para destacar"*; e o array chato `clienteIds[]` entra derivado, para a consulta |
+| 4 | contador em coleção chata × subcoleção (§4.5) | **subcoleção** `viagens/{viagemId}/ocorrencias/{data}` |
+| 5 | DTO com tipo × texto formatado (§4.7) | **tipo** — e isto **fecha a pergunta aberta do ADR-0019** para a camada inteira |
+
+### O que sobrou em aberto
+
+**Duas coisas, e as duas são pequenas** — as decisões estruturais estão todas tomadas:
+
+1. **o `valorTotal` derivado** entra ou não (§4.4, fim). É a única sugestão minha que não foi respondida,
+   porque nasceu no aprofundamento;
+2. **a data como texto ISO** (§4.2) não foi contestada, então segue como proposta aceita por omissão — mas é
+   bom dizer em voz alta, porque ela decide a forma de toda consulta por período.
+
+Com isso, a fronteira está pronta para virar **ADR** — falta só a confirmação desses dois pontos e a resposta
+sobre o aprofundamento do §4.4.
