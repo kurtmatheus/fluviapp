@@ -1,9 +1,15 @@
 # A fronteira de dados da Passagem — o que o contrato de hoje resolve, e onde ela é a primeira a não caber
 
-> **Status:** **aberto · quase fechado** — mapeia a fronteira como ela existe em `f1cae5f` (2026-08-11) e
-> expõe as decisões que a Passagem cobra dela. **Quatro das cinco perguntas foram respondidas no mesmo dia**
-> (§6) e a quinta virou o aprofundamento do §4.4; sobraram dois pontos pequenos. Cada decisão está anotada na
-> seção a que pertence.
+> **Status:** **fechado** → [**ADR-0024**](../adr/0024-fronteira-de-dados-da-passagem.md) (2026-08-11). Este
+> documento fica como o **registro do caminho**: mede a fronteira como ela existia em `f1cae5f`, expõe as
+> opções com o custo de cada uma e guarda o aprofundamento do lançamento (§4.4). Quando ele e o ADR
+> discordarem, **o ADR vence** — e discordam em três pontos, todos por decisão da última rodada:
+>
+> | O estudo diz | O ADR-0024 decidiu |
+> |---|---|
+> | titular em **campo próprio** + `clienteIds[]` derivado (§4.3) | **volta ao array com o titular na posição 0** (D3) — uma consulta em vez de duas, e o `clienteIds` derivado deixa de existir |
+> | gravar **`valorTotal`** derivado (§4.4, fim) | **não entra** — o total é **inferido** da lista (D4) |
+> | data em texto ISO *"por convenção da casa"* (§4.2) | **texto ISO por eficiência de consulta** (D2), com o argumento completo — e **todo instante do agregado** passa a ISO, o que corrige o `embarcadaEm` que hoje **não ordena** |
 >
 > Vem depois do [planejamento de domínio](../adr/0023-passagem-por-categoria-e-referencia.md) e antes da
 > camada de dados — a ordem que o analista fixou: **domínio → fronteira → camada**. Decisões-fonte:
