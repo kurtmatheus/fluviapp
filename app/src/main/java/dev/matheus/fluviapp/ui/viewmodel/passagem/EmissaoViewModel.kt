@@ -26,7 +26,7 @@ import dev.matheus.fluviapp.ui.states.passagem.ClienteEmEdicao
 import dev.matheus.fluviapp.ui.states.passagem.EmissaoUiState
 import dev.matheus.fluviapp.ui.states.passagem.PagamentoEmEdicao
 import dev.matheus.fluviapp.ui.states.passagem.ParticipanteEmEdicao
-import dev.matheus.fluviapp.ui.states.passagem.PassoEmissao
+import dev.matheus.fluviapp.ui.states.passagem.PassoDaEmissao
 import dev.matheus.fluviapp.ui.viewmodel.helpers.passagem.validarPasso
 import dev.matheus.fluviapp.util.Relogio
 import kotlinx.coroutines.channels.Channel
@@ -151,6 +151,33 @@ class EmissaoViewModel @Inject constructor(
         _uiState.update { it.copy(bilhete = it.bilhete.copy(gratuidade = gratuidade), erros = emptySet()) }
     }
 
+    /**
+     * Passo 3.2 — quantas pessoas vão na suíte ou no camarote. **É esta resposta que desenha os formulários
+     * do passo 4**: escolher três acrescenta dois passos ao roteiro.
+     *
+     * Reduzir descarta as linhas que sobram, e descartar é melhor do que carregar em silêncio uma pessoa que
+     * o bilhete não admite.
+     */
+    fun escolherQuantidadeDePessoas(quantidade: Int) {
+        _uiState.update { estado ->
+            val limite = quantidade.coerceIn(1, estado.bilhete.ocupacaoMaxima)
+            val atual = estado.participante as? ParticipanteEmEdicao.DePassageiro ?: return@update estado
+            val pessoas = List(limite) { indice -> atual.pessoas.getOrElse(indice) { ClienteEmEdicao() } }
+            estado.copy(participante = atual.copy(pessoas = pessoas), erros = emptySet())
+        }
+    }
+
+    /** Passo 2 do fluxo de veículo — e é a classe que decide o que o formulário seguinte pergunta. */
+    fun escolherClasseDeVeiculo(classe: dev.matheus.fluviapp.domain.passagem.ClasseVeiculo) {
+        _uiState.update { estado ->
+            val atual = estado.participante as? ParticipanteEmEdicao.DeVeiculo ?: return@update estado
+            estado.copy(
+                participante = atual.copy(veiculo = atual.veiculo.copy(classe = classe)),
+                erros = emptySet(),
+            )
+        }
+    }
+
     // --- Passo 2: quem viaja ---
 
     fun preencherPessoa(indice: Int, pessoa: ClienteEmEdicao) {
@@ -202,9 +229,17 @@ class EmissaoViewModel @Inject constructor(
         _uiState.update { it.copy(pagamento = pagamento, erros = emptySet()) }
     }
 
-    // --- Navegação entre passos ---
+    // --- Navegação pelo roteiro ---
 
-    /** Avança **se o passo corrente fecha**; no último, emite. */
+    /**
+     * Avança **se o passo corrente fecha**. Três passos têm efeito além de mudar de tela:
+     *
+     * - **cliente**: registra a pessoa no pool ali mesmo ([ADR-0029] D4), para que a operação que exige rede
+     *   falhe **uma pessoa por vez**, no passo em que o operador está — e não no fim, depois de três
+     *   formulários, sem dizer qual não subiu;
+     * - **pagamento**: dispara a emissão, e o roteiro só anda se ela se resolver;
+     * - **desfecho**: não avança para lugar nenhum — a saída dali é da navegação.
+     */
     fun avancar() {
         val estado = _uiState.value
         val erros = validarPasso(estado.passo, estado.bilhete, estado.participante, estado.pagamento)
@@ -212,16 +247,80 @@ class EmissaoViewModel @Inject constructor(
             _uiState.update { it.copy(erros = erros) }
             return
         }
-        if (estado.ehUltimoPasso) {
-            emitir()
-            return
+
+        when (val passo = estado.passo) {
+            is PassoDaEmissao.DadosDoCliente -> viewModelScope.launch { registrarERastrear(passo) }
+            PassoDaEmissao.Pagamento -> emitir()
+            PassoDaEmissao.Desfecho -> Unit
+            else -> seguir()
         }
-        _uiState.update { it.copy(passo = it.passo.proximo() ?: it.passo, erros = emptySet()) }
     }
 
     /** Voltar **não valida**: quem volta está corrigindo, e cobrar o passo na saída seria prendê-lo nele. */
     fun voltar() {
-        _uiState.update { it.copy(passo = it.passo.anterior() ?: it.passo, erros = emptySet()) }
+        _uiState.update {
+            if (!it.podeVoltar) it else it.copy(indiceDoPasso = it.indiceDoPasso - 1, erros = emptySet())
+        }
+    }
+
+    /** O "pular" do responsável pela retirada — só existe onde o passo é opcional. */
+    fun pular() {
+        val passo = _uiState.value.passo
+        if (passo !is PassoDaEmissao.DadosDoCliente || !passo.opcional) return
+        preencherResponsavel(null)
+        seguir()
+    }
+
+    private fun seguir() {
+        _uiState.update {
+            val proximo = (it.indiceDoPasso + 1).coerceAtMost(it.roteiro.lastIndex)
+            it.copy(indiceDoPasso = proximo, erros = emptySet())
+        }
+    }
+
+    /**
+     * Registra a pessoa deste passo no pool e **guarda o id no próprio formulário**.
+     *
+     * Guardar o id ali tem duas consequências boas: voltar ao passo e avançar de novo **assina** em vez de
+     * criar (idempotente, ADR-0018 D3), e a emissão do fim já encontra tudo resolvido — ela deixa de ter I/O
+     * de pool.
+     */
+    private suspend fun registrarERastrear(passo: PassoDaEmissao.DadosDoCliente) {
+        val estado = _uiState.value
+        val agenciaId = sessaoUsuario.atual()?.vinculoAtivo?.empresaId
+        if (agenciaId.isNullOrBlank()) {
+            _eventos.send(EventoDeEmissao.Falhou(MotivoDeFalha.SEM_VINCULO))
+            return
+        }
+
+        val emEdicao = when (val participante = estado.participante) {
+            is ParticipanteEmEdicao.DePassageiro -> participante.pessoas.getOrNull(passo.indice)
+            is ParticipanteEmEdicao.DeVeiculo -> participante.responsavel
+        } ?: return
+
+        val cliente = emEdicao.paraCliente() ?: return
+        _uiState.update { it.copy(emitindo = true) }
+
+        val id = runCatching { clienteRepository.criarOuAssinar(cliente, agenciaId) }.getOrNull()
+        _uiState.update { it.copy(emitindo = false) }
+
+        if (id == null) {
+            _eventos.send(EventoDeEmissao.Falhou(MotivoDeFalha.POOL_INDISPONIVEL))
+            return
+        }
+
+        _uiState.update { atual ->
+            val comId = emEdicao.copy(idExistente = id)
+            val participante = when (val p = atual.participante) {
+                is ParticipanteEmEdicao.DePassageiro -> p.copy(
+                    pessoas = p.pessoas.mapIndexed { i, pessoa -> if (i == passo.indice) comId else pessoa },
+                )
+
+                is ParticipanteEmEdicao.DeVeiculo -> p.copy(responsavel = comId)
+            }
+            atual.copy(participante = participante)
+        }
+        seguir()
     }
 
     // --- A emissão ---
@@ -245,7 +344,9 @@ class EmissaoViewModel @Inject constructor(
             }
 
             val estado = _uiState.value
-            // 1. O pool primeiro, porque é ele que exige rede — falhar aqui não pode ter gasto um número.
+            // 1. O que falta registrar no pool: as **pessoas já foram**, cada uma no passo dela ([ADR-0029]
+            // D4), então aqui sobra o veículo. Continua vindo antes do número pela mesma razão: falhar não
+            // pode ter gasto um número da sequência.
             val referencias = runCatching { registrarParticipantes(estado, agenciaId) }.getOrNull()
             if (referencias == null) {
                 concluir(EventoDeEmissao.Falhou(MotivoDeFalha.POOL_INDISPONIVEL))
@@ -279,34 +380,33 @@ class EmissaoViewModel @Inject constructor(
                 concluir(EventoDeEmissao.Falhou(MotivoDeFalha.SEM_REDE))
                 return@launch
             }
+            // Resolvida: o roteiro anda para o **desfecho**, que é onde o bilhete se entrega ([ADR-0029] D5).
+            _uiState.update { it.copy(idEmitida = id) }
+            seguir()
             concluir(EventoDeEmissao.Emitida(id))
         }
     }
 
     /**
-     * Registra no pool quem o bilhete vai referenciar, e devolve os ids.
+     * O que ainda falta registrar quando a emissão chega — e o que falta é **o veículo**.
      *
-     * **Passageiro exige portador; veículo não** ([ADR-0028] D3): sem cliente salvo o agregado é
-     * inescrevível, então a falha aqui aborta a emissão — com o atendimento intacto.
+     * As pessoas já entraram no pool no passo de cada uma ([ADR-0029] D4), e é daí que vem o `idExistente`
+     * lido aqui. Uma pessoa sem id neste ponto seria um passo que não completou, e a emissão não a inventa:
+     * **passageiro exige portador** ([ADR-0028] D3), então o agregado sai incoerente e a guarda o barra.
      */
     private suspend fun registrarParticipantes(
         estado: EmissaoUiState,
         agenciaId: String,
     ): ParticipantesRegistrados = when (val participante = estado.participante) {
         is ParticipanteEmEdicao.DePassageiro -> ParticipantesRegistrados(
-            clienteIds = participante.pessoas
-                .mapNotNull { it.paraCliente() }
-                .map { clienteRepository.criarOuAssinar(it, agenciaId) },
+            clienteIds = participante.pessoas.mapNotNull { it.idExistente },
         )
 
         is ParticipanteEmEdicao.DeVeiculo -> {
             val veiculo = participante.veiculo.paraVeiculo() ?: error("veículo incompleto")
             ParticipantesRegistrados(
                 veiculoId = veiculoRepository.criarOuAssinar(veiculo, agenciaId),
-                clienteIds = listOfNotNull(
-                    participante.responsavel?.paraCliente()
-                        ?.let { clienteRepository.criarOuAssinar(it, agenciaId) },
-                ),
+                clienteIds = listOfNotNull(participante.responsavel?.idExistente),
             )
         }
     }

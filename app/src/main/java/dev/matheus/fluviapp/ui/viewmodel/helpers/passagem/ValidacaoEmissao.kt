@@ -7,7 +7,7 @@ import dev.matheus.fluviapp.ui.states.passagem.ClienteEmEdicao
 import dev.matheus.fluviapp.ui.states.passagem.ErroDeEmissao
 import dev.matheus.fluviapp.ui.states.passagem.PagamentoEmEdicao
 import dev.matheus.fluviapp.ui.states.passagem.ParticipanteEmEdicao
-import dev.matheus.fluviapp.ui.states.passagem.PassoEmissao
+import dev.matheus.fluviapp.ui.states.passagem.PassoDaEmissao
 import dev.matheus.fluviapp.ui.states.passagem.VeiculoEmEdicao
 
 /**
@@ -22,14 +22,58 @@ import dev.matheus.fluviapp.ui.states.passagem.VeiculoEmEdicao
  *    mora no [dev.matheus.fluviapp.domain.passagem.Acomodacao].
  */
 fun validarPasso(
-    passo: PassoEmissao,
+    passo: PassoDaEmissao,
     bilhete: BilheteEmEdicao,
     participante: ParticipanteEmEdicao,
     pagamento: PagamentoEmEdicao,
 ): Set<ErroDeEmissao> = when (passo) {
-    PassoEmissao.BILHETE -> validarBilhete(bilhete)
-    PassoEmissao.PARTICIPANTE -> validarParticipante(bilhete, participante)
-    PassoEmissao.PAGAMENTO -> validarPagamento(bilhete, pagamento)
+    // Os passos de **escolha** não validam: a resposta é um toque, e o toque já é a resposta ([ADR-0029]
+    // D1). O que existia de validação neles — "acomodação não escolhida" — deixou de ser alcançável quando
+    // deixou de haver como avançar sem escolher.
+    PassoDaEmissao.Categoria,
+    PassoDaEmissao.EscolhaDeAcomodacao,
+    PassoDaEmissao.EscolhaDeTipo,
+    PassoDaEmissao.EscolhaDeGratuidade,
+    PassoDaEmissao.QuantidadeDePessoas,
+    PassoDaEmissao.ClasseDoVeiculo,
+    PassoDaEmissao.Desfecho,
+    -> emptySet()
+
+    is PassoDaEmissao.DadosDoCliente -> validarCliente(passo, participante)
+
+    PassoDaEmissao.DadosDoVeiculo -> validarVeiculo(
+        (participante as? ParticipanteEmEdicao.DeVeiculo)?.veiculo ?: VeiculoEmEdicao(),
+    )
+
+    PassoDaEmissao.Pagamento -> validarPagamento(bilhete, pagamento)
+}
+
+/**
+ * Um formulário de pessoa por vez — é o passo 4, que é o mesmo nos dois fluxos ([ADR-0029] D2).
+ *
+ * **O opcional pula quando está vazio**: o responsável pela retirada de um veículo não é exigido, e um
+ * formulário em branco ali é a resposta *"não há"*, não um erro. Preenchido pela metade, sim: meia pessoa no
+ * bilhete vira um passageiro que ninguém consegue identificar.
+ */
+fun validarCliente(
+    passo: PassoDaEmissao.DadosDoCliente,
+    participante: ParticipanteEmEdicao,
+): Set<ErroDeEmissao> {
+    val pessoa = when (participante) {
+        is ParticipanteEmEdicao.DePassageiro -> participante.pessoas.getOrNull(passo.indice)
+        is ParticipanteEmEdicao.DeVeiculo -> participante.responsavel
+    }
+
+    if (passo.opcional && (pessoa == null || pessoa.vazio)) return emptySet()
+    if (pessoa != null && pessoa.paraCliente() != null) return emptySet()
+
+    return setOf(
+        when {
+            passo.opcional -> ErroDeEmissao.RESPONSAVEL_INCOMPLETO
+            passo.indice == 0 -> ErroDeEmissao.TITULAR_INCOMPLETO
+            else -> ErroDeEmissao.ACOMPANHANTE_INCOMPLETO
+        },
+    )
 }
 
 /**
@@ -79,7 +123,7 @@ fun validarParticipante(
 }
 
 /** O que falta ao veículo é o **tipo** quem diz: carreta não tem modelo a informar, e só moto tem cilindrada. */
-private fun validarVeiculo(veiculo: VeiculoEmEdicao): Set<ErroDeEmissao> = buildSet {
+fun validarVeiculo(veiculo: VeiculoEmEdicao): Set<ErroDeEmissao> = buildSet {
     if (veiculo.placa.isBlank()) add(ErroDeEmissao.VEICULO_SEM_PLACA)
     val classe = veiculo.classe
     if (classe == null) {

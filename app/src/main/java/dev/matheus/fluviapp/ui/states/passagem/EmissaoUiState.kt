@@ -22,30 +22,32 @@ import java.time.format.DateTimeFormatter
  * sub-domínio deixa de existir em vez de deixar de importar.
  */
 data class EmissaoUiState(
-    val passo: PassoEmissao = PassoEmissao.BILHETE,
+    /** Onde se está **no roteiro** — que é derivado, não fixo ([ADR-0029] D3). */
+    val indiceDoPasso: Int = 0,
     val cabecalho: CabecalhoDaViagem = CabecalhoDaViagem(),
     val bilhete: BilheteEmEdicao = BilheteEmEdicao(),
     val participante: ParticipanteEmEdicao = ParticipanteEmEdicao.DePassageiro(),
     val pagamento: PagamentoEmEdicao = PagamentoEmEdicao(),
-    /** Erros do passo corrente, calculados na tentativa de avançar/emitir — nunca a cada tecla. */
+    /** Erros do passo corrente, calculados na tentativa de avançar — nunca a cada tecla. */
     val erros: Set<ErroDeEmissao> = emptySet(),
     val emitindo: Boolean = false,
+    /** O id do bilhete, depois que a emissão se resolveu — é o que o passo do desfecho usa. */
+    val idEmitida: String? = null,
 ) {
-    val podeVoltar: Boolean get() = passo != PassoEmissao.BILHETE
+    /**
+     * O caminho que as escolhas desenharam. É **calculado**, e não guardado, porque guardá-lo criaria uma
+     * segunda verdade a sincronizar a cada toque — que é como roteiro e estado passam a discordar.
+     */
+    val roteiro: List<PassoDaEmissao> get() = roteiroDe(bilhete, participante)
 
-    /** No último passo o botão **emite**; nos outros, avança. */
-    val ehUltimoPasso: Boolean get() = passo == PassoEmissao.PAGAMENTO
-}
+    val passo: PassoDaEmissao get() = roteiro.getOrElse(indiceDoPasso) { PassoDaEmissao.Categoria }
 
-/** Os três passos, na ordem que o domínio impõe ([ADR-0028] D4). */
-enum class PassoEmissao(val numero: Int, val rotulo: String) {
-    BILHETE(1, "Bilhete"),
-    PARTICIPANTE(2, "Quem viaja"),
-    PAGAMENTO(3, "Pagamento");
+    /** "3 de 6" — os dois lados saem do roteiro, então ficam certos em qualquer fluxo. */
+    val numeroDoPasso: Int get() = indiceDoPasso + 1
 
-    fun proximo(): PassoEmissao? = entries.firstOrNull { it.numero == numero + 1 }
+    val totalDePassos: Int get() = roteiro.size
 
-    fun anterior(): PassoEmissao? = entries.firstOrNull { it.numero == numero - 1 }
+    val podeVoltar: Boolean get() = indiceDoPasso > 0 && passo != PassoDaEmissao.Desfecho
 }
 
 /**

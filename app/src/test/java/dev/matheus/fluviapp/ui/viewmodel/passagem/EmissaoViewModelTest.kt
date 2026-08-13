@@ -25,12 +25,12 @@ import dev.matheus.fluviapp.ui.states.passagem.ErroDeEmissao
 import dev.matheus.fluviapp.ui.states.passagem.LancamentoEmEdicao
 import dev.matheus.fluviapp.ui.states.passagem.PagamentoEmEdicao
 import dev.matheus.fluviapp.ui.states.passagem.ParticipanteEmEdicao
-import dev.matheus.fluviapp.ui.states.passagem.PassoEmissao
+import dev.matheus.fluviapp.ui.states.passagem.PassoDaEmissao
 import dev.matheus.fluviapp.ui.states.passagem.VeiculoEmEdicao
 import dev.matheus.fluviapp.util.MainDispatcherRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -44,12 +44,12 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 
 /**
- * **A emissão, ponta a ponta em JVM** ([ADR-0028], [ADR-0026] D1/D3).
+ * **A emissão como totem** ([ADR-0029]): passos pequenos, orientados a evento, e um roteiro que as escolhas
+ * desenham.
  *
- * O que estes casos cobrem é a sequência que o ViewModel passou a orquestrar — validar, registrar no pool,
- * avaliar as guardas, reservar o número, emitir — e, principalmente, **onde ela para**: cada falha tem de
- * deixar o atendimento intacto na tela, porque digitar tudo de novo por causa de rede é o que a decisão de
- * *tolerar falha* proíbe.
+ * O que estes casos cobrem é a sequência que o ViewModel orquestra e, principalmente, **onde ela para**:
+ * cada falha tem de deixar o atendimento intacto no passo em que está — digitar tudo de novo por causa de
+ * rede é o que a tolerância a falha do [ADR-0028] D3 proíbe.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 @Category(ForaDoEscopo::class)
@@ -87,40 +87,46 @@ class EmissaoViewModelTest {
         relogio = FakeRelogio(LocalDateTime.of(2026, 8, 13, 9, 30)),
     ).also { it.iniciar(ocorrencia, CabecalhoDaViagem(travessia = "A → B", partida = "Terça, 18/08 · 18:00")) }
 
-    /** Leva o ViewModel até o passo de pagamento com uma rede para a Ana. */
-    private fun EmissaoViewModel.atePagamentoEmRede() {
-        escolherCategoria(CategoriaPassagem.PASSAGEIRO)
-        escolherAcomodacao(Acomodacao.REDE)
-        avancar()
-        preencherPessoa(0, ana)
-        avancar()
+    /**
+     * No totem, um toque **escolhe e avança** — a tela chama os dois. Aqui isso fica explícito para que o
+     * teste exercite a mesma sequência que o dedo do operador produz.
+     */
+    private fun TestScope.ateOPagamentoEmRede(viewModel: EmissaoViewModel, pessoa: ClienteEmEdicao = ana) {
+        viewModel.escolherCategoria(CategoriaPassagem.PASSAGEIRO)
+        viewModel.avancar()
+        viewModel.escolherAcomodacao(Acomodacao.REDE)
+        viewModel.avancar()
+        viewModel.escolherTipo(TipoPassagem.INTEIRA)
+        viewModel.avancar()
+        viewModel.preencherPessoa(0, pessoa)
+        viewModel.avancar()
+        advanceUntilIdle()
     }
 
     private fun pagamentoEmDinheiro(valor: String = "150,00") =
         PagamentoEmEdicao(lancamentos = listOf(LancamentoEmEdicao(FormaPagamento.DINHEIRO, valor)))
 
-    // --- Os passos ---
+    // --- O roteiro em movimento ---
 
     @Test
-    fun `sem escolher acomodacao, o passo 1 nao avanca`() = runTest {
+    fun `sem escolher acomodacao, o roteiro nao passa do passo dela`() = runTest {
         val viewModel = vm()
 
         viewModel.escolherCategoria(CategoriaPassagem.PASSAGEIRO)
         viewModel.avancar()
+        viewModel.avancar()
 
-        assertEquals(PassoEmissao.BILHETE, viewModel.uiState.value.passo)
-        assertEquals(setOf(ErroDeEmissao.ACOMODACAO_NAO_ESCOLHIDA), viewModel.uiState.value.erros)
+        assertEquals(PassoDaEmissao.EscolhaDeAcomodacao, viewModel.uiState.value.passo)
     }
 
-    /** O veículo não ocupa acomodação de pessoa — cobrar uma dele seria cobrar um campo que não existe. */
     @Test
-    fun `bilhete de veiculo avanca sem acomodacao`() = runTest {
+    fun `o veiculo vai direto para a classe, sem acomodacao`() = runTest {
         val viewModel = vm()
 
         viewModel.escolherCategoria(CategoriaPassagem.VEICULO)
         viewModel.avancar()
 
-        assertEquals(PassoEmissao.PARTICIPANTE, viewModel.uiState.value.passo)
+        assertEquals(PassoDaEmissao.ClasseDoVeiculo, viewModel.uiState.value.passo)
     }
 
     /** Trocar a categoria **troca o objeto**: é o que apaga a limpeza reativa do formulário antigo. */
@@ -137,7 +143,7 @@ class EmissaoViewModelTest {
         assertNull(viewModel.uiState.value.bilhete.acomodacao)
     }
 
-    /** Fora da rede não há meia nem gratuidade: manter a escolha anterior seria guardar estado ilegal. */
+    /** Fora da rede só existe inteira: manter "meia" escolhida antes seria guardar estado ilegal. */
     @Test
     fun `trocar para suite devolve o tipo para inteira`() = runTest {
         val viewModel = vm()
@@ -152,57 +158,50 @@ class EmissaoViewModelTest {
         assertNull(viewModel.uiState.value.bilhete.gratuidade)
     }
 
-    /** A acomodação **redimensiona** o passo 2: o que não cabe mais é descartado, não carregado em silêncio. */
+    /** A quantidade do passo 3.2 **desenha o passo 4**: três pessoas são três formulários. */
     @Test
-    fun `trocar de suite para rede descarta os acompanhantes`() = runTest {
+    fun `escolher tres pessoas acrescenta dois formularios ao roteiro`() = runTest {
+        val viewModel = vm()
+
+        viewModel.escolherCategoria(CategoriaPassagem.PASSAGEIRO)
+        viewModel.escolherAcomodacao(Acomodacao.CAMAROTE)
+        viewModel.escolherQuantidadeDePessoas(3)
+
+        val formularios = viewModel.uiState.value.roteiro.filterIsInstance<PassoDaEmissao.DadosDoCliente>()
+        assertEquals(3, formularios.size)
+        assertEquals(6 + 2, viewModel.uiState.value.totalDePassos)
+    }
+
+    /** Reduzir descarta o que não cabe — melhor do que carregar em silêncio quem o bilhete não admite. */
+    @Test
+    fun `reduzir a quantidade descarta as pessoas que sobram`() = runTest {
         val viewModel = vm()
 
         viewModel.escolherCategoria(CategoriaPassagem.PASSAGEIRO)
         viewModel.escolherAcomodacao(Acomodacao.SUITE)
-        viewModel.acrescentarAcompanhante()
+        viewModel.escolherQuantidadeDePessoas(2)
         viewModel.preencherPessoa(0, ana)
         viewModel.preencherPessoa(1, bruno)
-        viewModel.escolherAcomodacao(Acomodacao.REDE)
+        viewModel.escolherQuantidadeDePessoas(1)
 
         val pessoas = (viewModel.uiState.value.participante as ParticipanteEmEdicao.DePassageiro).pessoas
-        assertEquals(1, pessoas.size)
-        assertEquals("Ana Ribeiro", pessoas.single().nome)
+        assertEquals(listOf("Ana Ribeiro"), pessoas.map { it.nome })
     }
 
     @Test
-    fun `a rede nao aceita acompanhante`() = runTest {
+    fun `sem titular completo, o passo do cliente nao avanca`() = runTest {
         val viewModel = vm()
 
         viewModel.escolherCategoria(CategoriaPassagem.PASSAGEIRO)
-        viewModel.escolherAcomodacao(Acomodacao.REDE)
-        viewModel.acrescentarAcompanhante()
-
-        val pessoas = (viewModel.uiState.value.participante as ParticipanteEmEdicao.DePassageiro).pessoas
-        assertEquals(1, pessoas.size)
-    }
-
-    @Test
-    fun `gratuidade sem subtipo nao avanca`() = runTest {
-        val viewModel = vm()
-
-        viewModel.escolherCategoria(CategoriaPassagem.PASSAGEIRO)
-        viewModel.escolherAcomodacao(Acomodacao.REDE)
-        viewModel.escolherTipo(TipoPassagem.GRATUIDADE)
         viewModel.avancar()
-
-        assertEquals(setOf(ErroDeEmissao.GRATUIDADE_NAO_ESCOLHIDA), viewModel.uiState.value.erros)
-    }
-
-    @Test
-    fun `sem titular, o passo 2 nao avanca`() = runTest {
-        val viewModel = vm()
-
-        viewModel.escolherCategoria(CategoriaPassagem.PASSAGEIRO)
         viewModel.escolherAcomodacao(Acomodacao.REDE)
         viewModel.avancar()
+        viewModel.escolherTipo(TipoPassagem.INTEIRA)
         viewModel.avancar()
+        viewModel.avancar()
+        advanceUntilIdle()
 
-        assertEquals(PassoEmissao.PARTICIPANTE, viewModel.uiState.value.passo)
+        assertEquals(PassoDaEmissao.DadosDoCliente(0), viewModel.uiState.value.passo)
         assertEquals(setOf(ErroDeEmissao.TITULAR_INCOMPLETO), viewModel.uiState.value.erros)
     }
 
@@ -212,25 +211,64 @@ class EmissaoViewModelTest {
         val viewModel = vm()
 
         viewModel.escolherCategoria(CategoriaPassagem.PASSAGEIRO)
+        viewModel.avancar()
         viewModel.escolherAcomodacao(Acomodacao.REDE)
         viewModel.avancar()
         viewModel.voltar()
 
-        assertEquals(PassoEmissao.BILHETE, viewModel.uiState.value.passo)
+        assertEquals(PassoDaEmissao.EscolhaDeAcomodacao, viewModel.uiState.value.passo)
         assertTrue(viewModel.uiState.value.erros.isEmpty())
+    }
+
+    // --- O cliente é salvo no passo dele (ADR-0029 D4) ---
+
+    @Test
+    fun `cada pessoa entra no pool no passo dela`() = runTest {
+        val clientes = FakeClienteRepository()
+        val viewModel = vm(clientes = clientes)
+
+        ateOPagamentoEmRede(viewModel)
+
+        assertEquals(1, clientes.criados.size)
+        assertEquals(PassoDaEmissao.Pagamento, viewModel.uiState.value.passo)
+        val pessoas = (viewModel.uiState.value.participante as ParticipanteEmEdicao.DePassageiro).pessoas
+        // O id volta para o formulário: reentrar no passo assina em vez de criar (idempotente).
+        assertEquals("CPF:52998224725", pessoas.single().idExistente)
+    }
+
+    /**
+     * A falha da operação que exige rede acontece **no passo da pessoa**, e não no fim: o operador vê qual
+     * não subiu, com o que acabou de digitar na tela.
+     */
+    @Test
+    fun `falha do pool interrompe no passo do cliente, com o formulario intacto`() = runTest {
+        val clientes = FakeClienteRepository().apply { falharAoCriar = true }
+        val passagens = FakePassagemRepository().apply { proximoNumero = 7 }
+        val viewModel = vm(passagens, clientes)
+        val eventos = mutableListOf<EventoDeEmissao>()
+        val coleta = launch { viewModel.eventos.collect { eventos += it } }
+
+        ateOPagamentoEmRede(viewModel)
+
+        assertEquals(EventoDeEmissao.Falhou(MotivoDeFalha.POOL_INDISPONIVEL), eventos.single())
+        assertEquals(PassoDaEmissao.DadosDoCliente(0), viewModel.uiState.value.passo)
+        val pessoas = (viewModel.uiState.value.participante as ParticipanteEmEdicao.DePassageiro).pessoas
+        assertEquals("Ana Ribeiro", pessoas.single().nome)
+        // Nada além do pool aconteceu: o número da saída continua intocado.
+        assertEquals(7, passagens.proximoNumero)
+        coleta.cancel()
     }
 
     // --- A emissão ---
 
     @Test
-    fun `emitir registra a pessoa no pool, reserva o numero e cria a passagem`() = runTest {
+    fun `emitir reserva o numero, cria a passagem e leva ao desfecho`() = runTest {
         val passagens = FakePassagemRepository().apply { proximoNumero = 41 }
-        val clientes = FakeClienteRepository()
-        val viewModel = vm(passagens, clientes)
+        val viewModel = vm(passagens)
         val eventos = mutableListOf<EventoDeEmissao>()
         val coleta = launch { viewModel.eventos.collect { eventos += it } }
 
-        viewModel.atePagamentoEmRede()
+        ateOPagamentoEmRede(viewModel)
         viewModel.preencherPagamento(pagamentoEmDinheiro())
         viewModel.avancar()
         advanceUntilIdle()
@@ -240,15 +278,16 @@ class EmissaoViewModelTest {
         assertEquals(StatusPassagem.EMITIDA, emitida.metadados.status)
         assertEquals(ocorrencia, emitida.ocorrencia)
         assertEquals(BigDecimal("150.00"), emitida.lancamentos.single().valor)
-        // O bilhete referencia o cliente por id, e o id é a chave natural do pool.
         assertEquals(listOf("CPF:52998224725"), emitida.clientes)
-        assertEquals(1, clientes.criados.size)
         assertTrue(eventos.single() is EventoDeEmissao.Emitida)
+        // O roteiro anda para o desfecho, que é onde o bilhete se entrega.
+        assertEquals(PassoDaEmissao.Desfecho, viewModel.uiState.value.passo)
+        assertEquals(emitida.id, viewModel.uiState.value.idEmitida)
         coleta.cancel()
     }
 
     @Test
-    fun `emitir veiculo registra o veiculo e dispensa responsavel`() = runTest {
+    fun `veiculo emite com o responsavel pulado`() = runTest {
         val passagens = FakePassagemRepository()
         val veiculos = FakeVeiculoRepository()
         val clientes = FakeClienteRepository()
@@ -256,10 +295,14 @@ class EmissaoViewModelTest {
 
         viewModel.escolherCategoria(CategoriaPassagem.VEICULO)
         viewModel.avancar()
+        viewModel.escolherClasseDeVeiculo(ClasseVeiculo.MOTO)
+        viewModel.avancar()
         viewModel.preencherVeiculo(
             VeiculoEmEdicao(placa = "ABC1D23", classe = ClasseVeiculo.MOTO, modelo = "Fan", cilindrada = "150"),
         )
         viewModel.avancar()
+        // O passo 4 é o responsável, e ele é opcional: bilhete de veículo sem ninguém nomeado é o normal.
+        viewModel.pular()
         viewModel.preencherPagamento(pagamentoEmDinheiro("80,00"))
         viewModel.avancar()
         advanceUntilIdle()
@@ -271,19 +314,23 @@ class EmissaoViewModelTest {
         assertTrue(clientes.criados.isEmpty())
     }
 
-    /** Gratuidade é tarifa zero por lei, não pagamento de zero: o passo 3 não cobra dinheiro dela. */
+    /** Gratuidade é tarifa zero por lei, não pagamento de zero: o passo 5 não cobra dinheiro dela. */
     @Test
     fun `gratuidade emite sem lancamento nenhum`() = runTest {
         val passagens = FakePassagemRepository()
         val viewModel = vm(passagens)
 
         viewModel.escolherCategoria(CategoriaPassagem.PASSAGEIRO)
+        viewModel.avancar()
         viewModel.escolherAcomodacao(Acomodacao.REDE)
+        viewModel.avancar()
         viewModel.escolherTipo(TipoPassagem.GRATUIDADE)
+        viewModel.avancar()
         viewModel.escolherGratuidade(TipoGratuidade.IDOSO)
         viewModel.avancar()
         viewModel.preencherPessoa(0, ana)
         viewModel.avancar()
+        advanceUntilIdle()
         viewModel.avancar()
         advanceUntilIdle()
 
@@ -291,6 +338,8 @@ class EmissaoViewModelTest {
         assertTrue(emitida.lancamentos.isEmpty())
         assertEquals(TipoGratuidade.IDOSO, emitida.gratuidade)
     }
+
+    // --- As guardas ---
 
     /** A cota do ADR-0013 §8, contada **por ocorrência** e atravessando agências. */
     @Test
@@ -305,19 +354,13 @@ class EmissaoViewModelTest {
         val eventos = mutableListOf<EventoDeEmissao>()
         val coleta = launch { viewModel.eventos.collect { eventos += it } }
 
-        viewModel.escolherCategoria(CategoriaPassagem.PASSAGEIRO)
-        viewModel.escolherAcomodacao(Acomodacao.REDE)
-        viewModel.escolherTipo(TipoPassagem.GRATUIDADE)
-        viewModel.escolherGratuidade(TipoGratuidade.IDOSO)
-        viewModel.avancar()
-        viewModel.preencherPessoa(0, ana)
-        viewModel.avancar()
-        viewModel.avancar()
-        advanceUntilIdle()
+        emitirGratuidade(viewModel, TipoGratuidade.IDOSO)
 
         val bloqueio = eventos.single() as EventoDeEmissao.Bloqueada
         assertEquals(ResultadoEmissao.CotaGratuidadeAtingida(TipoGratuidade.IDOSO), bloqueio.motivo)
         assertTrue(passagens.emitidas.isEmpty())
+        // Bloqueado não é emitido: o roteiro não anda para o desfecho.
+        assertEquals(PassoDaEmissao.Pagamento, viewModel.uiState.value.passo)
         coleta.cancel()
     }
 
@@ -332,20 +375,11 @@ class EmissaoViewModelTest {
         }
         val viewModel = vm(passagens)
 
-        viewModel.escolherCategoria(CategoriaPassagem.PASSAGEIRO)
-        viewModel.escolherAcomodacao(Acomodacao.REDE)
-        viewModel.escolherTipo(TipoPassagem.GRATUIDADE)
-        viewModel.escolherGratuidade(TipoGratuidade.IDOSO)
-        viewModel.avancar()
-        viewModel.preencherPessoa(0, ana)
-        viewModel.avancar()
-        viewModel.avancar()
-        advanceUntilIdle()
+        emitirGratuidade(viewModel, TipoGratuidade.IDOSO)
 
         assertEquals(1, passagens.emitidas.size)
     }
 
-    /** Outra categoria de gratuidade tem cota própria. */
     @Test
     fun `cota e por categoria de gratuidade`() = runTest {
         val passagens = FakePassagemRepository().apply {
@@ -356,22 +390,13 @@ class EmissaoViewModelTest {
         }
         val viewModel = vm(passagens)
 
-        viewModel.escolherCategoria(CategoriaPassagem.PASSAGEIRO)
-        viewModel.escolherAcomodacao(Acomodacao.REDE)
-        viewModel.escolherTipo(TipoPassagem.GRATUIDADE)
-        viewModel.escolherGratuidade(TipoGratuidade.PCD)
-        viewModel.avancar()
-        viewModel.preencherPessoa(0, ana)
-        viewModel.avancar()
-        viewModel.avancar()
-        advanceUntilIdle()
+        emitirGratuidade(viewModel, TipoGratuidade.PCD)
 
         assertEquals(1, passagens.emitidas.size)
     }
 
     // --- Tolerância a falha ---
 
-    /** Sem vínculo não há agência a assinar nem dono a carimbar — e quem emite é da operação. */
     @Test
     fun `sem vinculo, a emissao falha e o atendimento fica intacto`() = runTest {
         val passagens = FakePassagemRepository()
@@ -379,42 +404,31 @@ class EmissaoViewModelTest {
         val eventos = mutableListOf<EventoDeEmissao>()
         val coleta = launch { viewModel.eventos.collect { eventos += it } }
 
-        viewModel.atePagamentoEmRede()
-        viewModel.preencherPagamento(pagamentoEmDinheiro())
-        viewModel.avancar()
-        advanceUntilIdle()
+        ateOPagamentoEmRede(viewModel)
 
+        // Falha já no passo do cliente, porque é lá que o vínculo passou a ser exigido.
         assertEquals(EventoDeEmissao.Falhou(MotivoDeFalha.SEM_VINCULO), eventos.single())
         assertTrue(passagens.emitidas.isEmpty())
-        // O atendimento inteiro permanece: é o que "tolerar falha" significa (ADR-0028 D3).
         val pessoas = (viewModel.uiState.value.participante as ParticipanteEmEdicao.DePassageiro).pessoas
         assertEquals("Ana Ribeiro", pessoas.single().nome)
-        assertEquals(PassoEmissao.PAGAMENTO, viewModel.uiState.value.passo)
         assertTrue(!viewModel.uiState.value.emitindo)
         coleta.cancel()
     }
 
-    /**
-     * O pool vem **antes** do número de propósito: falhar ao registrar o participante não pode ter consumido
-     * um número da sequência daquela saída.
-     */
-    @Test
-    fun `falha no pool nao consome numero`() = runTest {
-        val passagens = FakePassagemRepository().apply { proximoNumero = 7 }
-        val clientes = FakeClienteRepository().apply { falharAoCriar = true }
-        val viewModel = vm(passagens, clientes)
-        val eventos = mutableListOf<EventoDeEmissao>()
-        val coleta = launch { viewModel.eventos.collect { eventos += it } }
-
-        viewModel.atePagamentoEmRede()
-        viewModel.preencherPagamento(pagamentoEmDinheiro())
+    private fun TestScope.emitirGratuidade(viewModel: EmissaoViewModel, gratuidade: TipoGratuidade) {
+        viewModel.escolherCategoria(CategoriaPassagem.PASSAGEIRO)
+        viewModel.avancar()
+        viewModel.escolherAcomodacao(Acomodacao.REDE)
+        viewModel.avancar()
+        viewModel.escolherTipo(TipoPassagem.GRATUIDADE)
+        viewModel.avancar()
+        viewModel.escolherGratuidade(gratuidade)
+        viewModel.avancar()
+        viewModel.preencherPessoa(0, ana)
         viewModel.avancar()
         advanceUntilIdle()
-
-        assertEquals(EventoDeEmissao.Falhou(MotivoDeFalha.POOL_INDISPONIVEL), eventos.single())
-        assertEquals(7, passagens.proximoNumero)
-        assertTrue(passagens.emitidas.isEmpty())
-        coleta.cancel()
+        viewModel.avancar()
+        advanceUntilIdle()
     }
 
     private fun gratuidadeJaEmitida(
