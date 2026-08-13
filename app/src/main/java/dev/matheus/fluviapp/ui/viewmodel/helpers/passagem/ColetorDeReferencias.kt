@@ -44,13 +44,13 @@ class ColetorDeReferencias @Inject constructor(
 ) {
 
     /**
-     * Carrega **só o que esta passagem aponta**.
+     * **Só a travessia**: viagem, rota e portos. Nenhum dado pessoal é lido.
      *
-     * O `when` sobre a categoria não é economia miúda: uma passagem de veículo não tem cliente a buscar, e
-     * ir ao pool de pessoas para não achar nada seria uma leitura paga por bilhete — do tipo que fica
-     * invisível justamente porque ninguém a lê no código.
+     * É o que a conferência de embarque pede, e o método existe separado justamente para que *não ler PII*
+     * seja uma escolha visível na chamada — e não um efeito de qual campo alguém deixou de usar depois.
+     * *"O embarque confere bilhete e não pessoa"* (analista, 2026-08-13).
      */
-    suspend fun de(passagem: Passagem): ReferenciasDaPassagem {
+    suspend fun daTravessia(passagem: Passagem): ReferenciasDaPassagem {
         val viagem = viagemRepository.obterPorId(passagem.ocorrencia.viagemId)
         val rota = viagem?.rotaId?.let { rotaRepository.obterPorId(it) }
 
@@ -63,22 +63,32 @@ class ColetorDeReferencias @Inject constructor(
                 .associate { it.id to it.rotuloCom(localidades) }
         }
 
-        return ReferenciasDaPassagem(
-            clientesPorId = when (passagem) {
-                is PassagemDePassageiro -> clienteRepository.obterPorIds(passagem.clientes).associateBy { it.id }
-                is PassagemDeVeiculo -> passagem.responsavelRetirada
-                    ?.let { clienteRepository.obterPorIds(listOf(it)).associateBy { cliente -> cliente.id } }
-                    .orEmpty()
-            },
-            veiculosPorId = when (passagem) {
-                is PassagemDeVeiculo -> veiculoRepository.obterPorIds(listOf(passagem.veiculoId))
-                    .associateBy { it.id }
-
-                is PassagemDePassageiro -> emptyMap()
-            },
-            viagem = viagem,
-            rota = rota,
-            portosPorId = portosPorId,
-        )
+        return ReferenciasDaPassagem(viagem = viagem, rota = rota, portosPorId = portosPorId)
     }
+
+    /**
+     * A travessia **mais os participantes** — para quem legitimamente precisa deles: o bilhete digital, que é
+     * entregue a quem comprou, e a listagem da própria agência.
+     *
+     * O `when` sobre a categoria não é economia miúda: uma passagem de veículo não tem cliente a buscar, e ir
+     * ao pool de pessoas para não achar nada seria uma leitura de dado pessoal paga por bilhete — do tipo que
+     * fica invisível justamente porque ninguém a lê no código.
+     *
+     * Lembrete de quem chamar isto: o pool é recortado pela assinatura, então o que **esta** agência não
+     * atendeu simplesmente não volta. Não é falha de carregamento; é a regra (ADR-0018 D3).
+     */
+    suspend fun completas(passagem: Passagem): ReferenciasDaPassagem = daTravessia(passagem).copy(
+        clientesPorId = when (passagem) {
+            is PassagemDePassageiro -> clienteRepository.obterPorIds(passagem.clientes).associateBy { it.id }
+            is PassagemDeVeiculo -> passagem.responsavelRetirada
+                ?.let { clienteRepository.obterPorIds(listOf(it)).associateBy { cliente -> cliente.id } }
+                .orEmpty()
+        },
+        veiculosPorId = when (passagem) {
+            is PassagemDeVeiculo -> veiculoRepository.obterPorIds(listOf(passagem.veiculoId))
+                .associateBy { it.id }
+
+            is PassagemDePassageiro -> emptyMap()
+        },
+    )
 }

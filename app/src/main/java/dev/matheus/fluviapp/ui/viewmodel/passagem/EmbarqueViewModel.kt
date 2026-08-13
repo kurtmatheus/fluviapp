@@ -56,10 +56,14 @@ class EmbarqueViewModel @Inject constructor(
                 return@launch
             }
 
-            // Coletar e traduzir, nesta ordem e à vista. Falha de referência **não derruba a conferência**:
-            // sem cliente, viagem ou rota, o bilhete continua conferível pelo que ele carrega em si — e
-            // recusar o embarque porque um lookup falhou seria deixar gente na doca por causa de rede.
-            val referencias = runCatching { coletorDeReferencias.de(passagem) }
+            // Coletar e traduzir, nesta ordem e à vista. **Só a travessia**: o embarque confere bilhete e
+            // não pessoa, então este fluxo não lê os pools — decisão do analista que, além de resolver o
+            // conflito com o recorte da PII, tira uma leitura de dado pessoal de cada embarque.
+            //
+            // Falha de referência **não derruba a conferência**: sem viagem ou rota, o bilhete continua
+            // conferível pelo que carrega em si — recusar embarque porque um lookup falhou seria deixar
+            // gente na doca por causa de rede.
+            val referencias = runCatching { coletorDeReferencias.daTravessia(passagem) }
                 .getOrDefault(ReferenciasDaPassagem())
 
             _uiState.update {

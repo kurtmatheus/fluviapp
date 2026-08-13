@@ -8,6 +8,7 @@ import dev.matheus.fluviapp.domain.veiculo.Veiculo
 import dev.matheus.fluviapp.domain.viagem.OcorrenciaViagem
 import dev.matheus.fluviapp.revitalizacao.ForaDoEscopo
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.experimental.categories.Category
 import java.time.LocalDate
@@ -49,35 +50,28 @@ class ConferenciaDeEmbarqueMapperTest {
         cilindrada = 150,
     )
 
-    /** No bilhete de veículo, quem embarca **é o veículo**: a placa é a identificação. */
+    /** O bilhete de veículo se anuncia pela categoria: o que embarca é um veículo, e é isso que a doca vê. */
     @Test
-    fun `passagem de veiculo se identifica pela placa`() {
+    fun `passagem de veiculo se anuncia pela categoria`() {
+        val conferencia = bilhete.paraConferencia(ReferenciasDaPassagem())
+
+        assertEquals("#13", conferencia.numero)
+        assertEquals("Veículo", conferencia.bilhete)
+    }
+
+    /**
+     * **A placa não entra na conferência**, mesmo quando o veículo está carregado: *o embarque confere
+     * bilhete e não pessoa*, e placa é dado pessoal indireto. Passar a referência não muda o resultado — é
+     * o que garante que a decisão vive no mapper, e não na sorte de quem chamou.
+     */
+    @Test
+    fun `a placa nao entra na conferencia nem quando o veiculo esta carregado`() {
         val conferencia = bilhete.paraConferencia(
             ReferenciasDaPassagem(veiculosPorId = mapOf(moto.id to moto)),
         )
 
-        assertEquals("#13", conferencia.numero)
-        assertEquals("ABC1D23", conferencia.identificacao)
-    }
-
-    /**
-     * Bilhete de veículo **sem responsável nomeado é a forma normal** (ADR-0023): a ausência não pode virar
-     * "indisponível", que significa outra coisa — que existe e não se pode ver.
-     */
-    @Test
-    fun `veiculo sem responsavel continua identificado pela placa`() {
-        val conferencia = bilhete.paraConferencia(
-            ReferenciasDaPassagem(veiculosPorId = mapOf(moto.id to moto), clientesPorId = emptyMap()),
-        )
-
-        assertEquals("ABC1D23", conferencia.identificacao)
-    }
-
-    @Test
-    fun `veiculo que o pool nao entregou fica indisponivel`() {
-        val conferencia = bilhete.paraConferencia(ReferenciasDaPassagem())
-
-        assertEquals(IDENTIFICACAO_INDISPONIVEL, conferencia.identificacao)
+        assertEquals("Veículo", conferencia.bilhete)
+        assertTrue(moto.placa !in conferencia.toString())
     }
 
     /** Sem nenhuma referência, o bilhete ainda diz o que ele é — e é isso que o mantém conferível. */

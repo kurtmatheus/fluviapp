@@ -130,12 +130,12 @@ private fun LeitorView(onQrLido: (String) -> Unit) {
 /**
  * Fase 2 — dados resolvidos ao vivo; operador confere o bilhete antes de confirmar.
  *
- * A tela recebe a **projeção pronta** ([ConferenciaDeEmbarque]) e não o agregado: nome, travessia e partida
- * são ids no bilhete (ADR-0023 D8), e resolvê-los é da junção — que roda no ViewModel, com o carregamento à
- * vista. Aqui não há um `Map` a consultar nem um id a traduzir; há texto a mostrar.
+ * A tela recebe a **projeção pronta** ([ConferenciaDeEmbarque]) e não o agregado: travessia e partida são ids
+ * no bilhete (ADR-0023 D8), e resolvê-los é da junção — que roda no ViewModel, com o carregamento à vista.
+ * Aqui não há um `Map` a consultar nem um id a traduzir; há texto a mostrar.
  *
- * A identificação pode vir vazia sem que nada tenha falhado: o pool é PII e a leitura dele é recortada pela
- * assinatura, então quem embarca um bilhete vendido por **outra agência** legitimamente não vê o nome.
+ * **Não há nome de passageiro nesta tela, e é decisão**: *o embarque confere bilhete e não pessoa*. O que se
+ * exibe é o que decide na doca — que bilhete é, para onde vai, quando sai e se ainda vale.
  */
 @Composable
 private fun ConferenciaView(
@@ -148,7 +148,7 @@ private fun ConferenciaView(
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         TextTitleBrownRegular(text = conferencia.numero)
-        TextSubTitleBrownBold(text = conferencia.identificacao)
+        TextSubTitleBrownBold(text = conferencia.bilhete)
         if (conferencia.travessia.isNotBlank()) TextRegularBrown(text = conferencia.travessia)
         TextRegularBrown(text = conferencia.partida)
         TextRegularBrownItalic(text = conferencia.status)

@@ -24,7 +24,6 @@ import dev.matheus.fluviapp.fakes.FakeVeiculoRepository
 import dev.matheus.fluviapp.fakes.FakeViagemRepository
 import dev.matheus.fluviapp.revitalizacao.ForaDoEscopo
 import dev.matheus.fluviapp.ui.viewmodel.helpers.passagem.ColetorDeReferencias
-import dev.matheus.fluviapp.ui.viewmodel.helpers.passagem.IDENTIFICACAO_INDISPONIVEL
 import dev.matheus.fluviapp.util.MainDispatcherRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -139,7 +138,7 @@ class EmbarqueViewModelTest {
     // --- Ler o QR: coletar e traduzir ---
 
     @Test
-    fun `ao ler o QR, a conferencia chega com as referencias resolvidas`() = runTest {
+    fun `ao ler o QR, a conferencia chega com a travessia resolvida`() = runTest {
         val repo = FakePassagemRepository().apply { passagens = listOf(passagem()) }
         val viewModel = vm(repo)
 
@@ -148,33 +147,43 @@ class EmbarqueViewModelTest {
 
         val conferencia = viewModel.uiState.value.conferencia!!
         assertEquals("#12", conferencia.numero)
-        assertEquals("Ana Ribeiro", conferencia.identificacao)
+        assertEquals("Suíte", conferencia.bilhete)
         assertEquals("Porto de Val-de-Cães · Belém/PA → Porto de Parintins · Parintins/AM", conferencia.travessia)
         assertEquals("Terça-feira, 18/08 · 18:00", conferencia.partida)
         assertEquals("EMITIDA", conferencia.status)
     }
 
     /**
-     * O caso que a PII cria: quem embarca um bilhete vendido por **outra agência** não lê o cliente. Não é
-     * erro de carregamento — é a regra do servidor chegando à tela, e a conferência segue possível pelo que
-     * não é dado pessoal.
+     * **O embarque confere bilhete e não pessoa** (analista, 2026-08-13), e este caso é o que trava a
+     * decisão: o fluxo não pode nem *tentar* ler o pool. Se um dia alguém trocar `daTravessia` por
+     * `completas`, este teste cai — e é o que se quer, porque a mudança devolveria ao embarque uma leitura
+     * de dado pessoal que ele não precisa fazer.
      */
     @Test
-    fun `bilhete de outra agencia chega sem identificacao, mas com travessia e partida`() = runTest {
-        val poolRecortado = FakeClienteRepository().apply {
-            clientes = listOf(ana)
-            agenciaQueLe = "empresa-2"
-        }
+    fun `o embarque nao le o pool de clientes`() = runTest {
+        val pool = FakeClienteRepository().apply { clientes = listOf(ana) }
         val repo = FakePassagemRepository().apply { passagens = listOf(passagem()) }
-        val viewModel = vm(repo, coletor(clientes = poolRecortado))
+        val viewModel = vm(repo, coletor(clientes = pool))
 
         viewModel.aoLerQr("pas-1")
         advanceUntilIdle()
 
-        val conferencia = viewModel.uiState.value.conferencia!!
-        assertEquals(IDENTIFICACAO_INDISPONIVEL, conferencia.identificacao)
-        assertTrue(conferencia.travessia.isNotBlank())
-        assertEquals("Terça-feira, 18/08 · 18:00", conferencia.partida)
+        assertEquals(0, pool.leiturasPorIds)
+        assertEquals("Suíte", viewModel.uiState.value.conferencia?.bilhete)
+    }
+
+    /** Meia e gratuidade aparecem porque é o que se confere; "Inteira" seria ruído em todo bilhete. */
+    @Test
+    fun `o tipo tarifario so aparece quando nao e inteira`() = runTest {
+        val repo = FakePassagemRepository().apply {
+            passagens = listOf(passagem().copy(acomodacao = Acomodacao.REDE, tipo = TipoPassagem.MEIA))
+        }
+        val viewModel = vm(repo)
+
+        viewModel.aoLerQr("pas-1")
+        advanceUntilIdle()
+
+        assertEquals("Rede · Meia", viewModel.uiState.value.conferencia?.bilhete)
     }
 
     /** Viagem inativada continua tendo bilhete apontando para ela: degradação, não erro. */
@@ -189,7 +198,7 @@ class EmbarqueViewModelTest {
         val conferencia = viewModel.uiState.value.conferencia!!
         assertEquals("Terça-feira, 18/08", conferencia.partida)
         assertEquals("", conferencia.travessia)
-        assertEquals("Ana Ribeiro", conferencia.identificacao)
+        assertEquals("Suíte", conferencia.bilhete)
     }
 
     @Test
@@ -227,7 +236,7 @@ class EmbarqueViewModelTest {
         viewModel.aoLerQr("pas-1")
         advanceUntilIdle()
 
-        assertEquals("Ana Ribeiro", viewModel.uiState.value.conferencia?.identificacao)
+        assertEquals("Suíte", viewModel.uiState.value.conferencia?.bilhete)
     }
 
     // --- Confirmar: a FSM e o carimbo ---

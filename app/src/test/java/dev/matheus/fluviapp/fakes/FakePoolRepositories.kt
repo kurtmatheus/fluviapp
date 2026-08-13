@@ -24,6 +24,16 @@ class FakeClienteRepository : ClienteRepository {
 
     val criados = mutableListOf<Pair<Cliente, String>>()
 
+    /**
+     * Quantas vezes o pool foi lido em lote.
+     *
+     * Existe para um teste afirmar o **negativo**: o embarque confere bilhete e não pessoa, então aquele
+     * fluxo não pode sequer tentar ler dado pessoal. Contar a chamada é a única forma de provar que ela não
+     * aconteceu — comparar o resultado não distinguiria *"não leu"* de *"leu e não usou"*.
+     */
+    var leiturasPorIds = 0
+        private set
+
     override suspend fun criarOuAssinar(cliente: Cliente, agenciaId: String): String {
         criados += cliente to agenciaId
         val existente = clientes.find { it.chaveNatural == cliente.chaveNatural }
@@ -34,7 +44,10 @@ class FakeClienteRepository : ClienteRepository {
 
     override suspend fun obterPorId(id: String): Cliente? = visiveis().find { it.id == id }
 
-    override suspend fun obterPorIds(ids: List<String>): List<Cliente> = visiveis().filter { it.id in ids }
+    override suspend fun obterPorIds(ids: List<String>): List<Cliente> {
+        leiturasPorIds++
+        return visiveis().filter { it.id in ids }
+    }
 
     override suspend fun consultarDaAgencia(agenciaId: String): List<Cliente> =
         clientes.filter { it.assinadoPor(agenciaId) }.sortedBy { it.nome }

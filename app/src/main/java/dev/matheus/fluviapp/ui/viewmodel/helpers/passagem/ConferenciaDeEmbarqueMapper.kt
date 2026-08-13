@@ -1,9 +1,11 @@
 package dev.matheus.fluviapp.ui.viewmodel.helpers.passagem
 
 import dev.matheus.fluviapp.domain.cliente.Cliente
+import dev.matheus.fluviapp.domain.passagem.CategoriaPassagem
 import dev.matheus.fluviapp.domain.passagem.Passagem
 import dev.matheus.fluviapp.domain.passagem.PassagemDePassageiro
 import dev.matheus.fluviapp.domain.passagem.PassagemDeVeiculo
+import dev.matheus.fluviapp.domain.passagem.TipoPassagem
 import dev.matheus.fluviapp.domain.rota.Rota
 import dev.matheus.fluviapp.domain.veiculo.Veiculo
 import dev.matheus.fluviapp.domain.viagem.Viagem
@@ -49,42 +51,41 @@ data class ReferenciasDaPassagem(
  * Quem carrega é quem chama. O precedente é o `ContagemPassagensMapper`, que já era uma classe com
  * repositório **envolvendo** uma função pura — o híbrido que agora é regra.
  *
- * ### A identificação pode faltar, e isso é uma decisão do servidor chegando à tela
+ * ### Esta junção não toca em dado pessoal, e isso é decisão, não limitação
  *
- * O pool é PII, e a leitura dele é **recortada pela assinatura** (ADR-0018 D3): quem embarca só lê a pessoa
- * se a própria agência já a tiver atendido. Como validar embarque é um eixo aberto a *qualquer papel
- * conhecido* — quem está na doca valida, mesmo sem ter vendido —, existe um caso legítimo em que o operador
- * **não pode** ver o nome de quem vendeu outra agência.
+ * *"O embarque confere bilhete e não pessoa"* (analista, 2026-08-13). Então aqui não entram nome nem placa —
+ * e, com eles, **não entram os pools**. As referências que esta projeção usa são as da **travessia**: viagem,
+ * rota e portos, todas coleções pequenas que a sessão já tem em memória.
  *
- * A junção não contorna isso: devolve [IDENTIFICACAO_INDISPONIVEL], que é diferente de *"não carregou ainda"*
- * e diferente de *"não tem nome"*. O bilhete continua conferível pelo que não é PII — número, travessia,
- * partida e status —, e **se a conferência por nome deve ou não atravessar agências é decisão de negócio**,
- * não coisa que um mapper resolva afrouxando a regra.
+ * A alternativa que isso rejeita tinha um defeito de fundo: como a leitura do pool é recortada pela
+ * assinatura e validar embarque é aberto a qualquer papel conhecido, mostrar o nome exigiria **afrouxar a
+ * proteção da PII** ou aceitar uma conferência que funciona só para bilhete da própria agência. A decisão
+ * corta o nó — e economiza uma leitura de dado pessoal por embarque.
  */
 fun Passagem.paraConferencia(referencias: ReferenciasDaPassagem): ConferenciaDeEmbarque =
     ConferenciaDeEmbarque(
         numero = "#$numero",
-        identificacao = identificacaoCom(referencias),
+        bilhete = descricaoDoBilhete(),
         travessia = referencias.rota?.rotuloCom(referencias.portosPorId).orEmpty(),
         partida = partidaCom(referencias.viagem),
         status = metadados.status.rotulo(),
     )
 
 /**
- * Quem embarca, por categoria — e o `when` exaustivo é de propósito: quando a **carga** existir, ela vai
- * aparecer aqui como erro de compilação, e não como um bilhete que se identifica sozinho por omissão.
+ * **O que foi vendido**, por categoria — e o `when` exaustivo é de propósito: quando a **carga** existir, ela
+ * vai aparecer aqui como erro de compilação, e não como um bilhete que se descreve sozinho por omissão.
+ *
+ * Na doca, o que decide é o espaço: "Suíte" e "Rede" não embarcam no mesmo lugar. O tipo tarifário entra
+ * **só quando não é inteira**, porque meia e gratuidade são o que alguém eventualmente confere contra um
+ * documento — e repetir "Inteira" em todo bilhete seria ruído.
  */
-private fun Passagem.identificacaoCom(referencias: ReferenciasDaPassagem): String = when (this) {
-    is PassagemDePassageiro -> titularId
-        ?.let { referencias.clientesPorId[it]?.nome }
-        ?.takeIf { it.isNotBlank() }
-        ?: IDENTIFICACAO_INDISPONIVEL
+private fun Passagem.descricaoDoBilhete(): String = when (this) {
+    is PassagemDePassageiro -> listOfNotNull(
+        acomodacao.rotulo,
+        tipo.rotulo().takeIf { tipo != TipoPassagem.INTEIRA },
+    ).joinToString(" · ")
 
-    // A placa **é** a identificação: ela está no documento do veículo, e o responsável pela retirada é
-    // opcional por regra de negócio — bilhete de veículo sem ninguém nomeado é a forma normal.
-    is PassagemDeVeiculo -> referencias.veiculosPorId[veiculoId]?.placa
-        ?.takeIf { it.isNotBlank() }
-        ?: IDENTIFICACAO_INDISPONIVEL
+    is PassagemDeVeiculo -> CategoriaPassagem.VEICULO.rotulo
 }
 
 /**
@@ -101,8 +102,5 @@ private fun Passagem.partidaCom(viagem: Viagem?): String {
 
     return listOfNotNull("$diaSemana, $data", hora).joinToString(" · ")
 }
-
-/** Não é "sem nome" nem "ainda carregando": é *não posso ver* — ver o KDoc da junção. */
-const val IDENTIFICACAO_INDISPONIVEL = "—"
 
 private val DIA_E_MES: DateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM")
