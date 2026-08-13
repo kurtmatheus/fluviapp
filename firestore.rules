@@ -425,6 +425,66 @@ service cloud.firestore {
       }
     }
 
+    // --- Os dois pools: clientes e veículos (F9.3, ADR-0018 D2/D3/D5) ---
+    //
+    // **A escrita da agência tem exatamente dois direitos**: criar a entrada que não existe e **assinar** a
+    // que existe. Corrigir conteúdo é **curadoria da plataforma** — e essa separação é o coração do pool:
+    // uma pessoa é **um** documento, não um por tenant, então o nome que uma agência cadastrou não pode ser
+    // reescrito por outra que atendeu a mesma pessoa depois.
+    //
+    // É esta regra que faz o *criar-ou-assinar* do app funcionar por **tentativa e queda**: quem emite não
+    // consegue ler o que ainda não assinou, então tenta a escrita completa e, se o documento já existe, o
+    // servidor recusa — e essa recusa **é a resposta**: já existe, então assine.
+    //
+    // A assinatura é verificada campo a campo porque a linguagem de regras **não itera**: não dá para
+    // percorrer o array e provar que ele só cresceu. O que dá é exigir que (a) só `agenciaIds` mude e (b) o
+    // conjunto novo **contenha** o antigo mais a agência de quem escreve — o que é a definição de
+    // `arrayUnion` sem precisar iterar.
+    //
+    // **PII**: nome, documento, nascimento e telefone; e placa é dado pessoal indireto. Por isso a leitura
+    // NÃO é `if autenticado()` como nos cadastros: é recortada pela assinatura, e é essa mesma condição que
+    // o índice composto (`firestore.indexes.json`) atende. *"Assim a agência não pega o listaNome de todo
+    // mundo."*
+    // As empresas em que o autor atua — o campo derivado que a Equipe já grava ao lado dos vínculos.
+    function empresasDoAutor() {
+      return funcionarioIdDoAutor() != ''
+          && exists(/databases/$(database)/documents/funcionarios/$(funcionarioIdDoAutor()))
+        ? get(/databases/$(database)/documents/funcionarios/$(funcionarioIdDoAutor())).data.get('empresaIds', [])
+        : [];
+    }
+    // A assinatura, provada sem iterar: (a) só `agenciaIds` muda, (b) o conjunto novo **contém** o antigo —
+    // ninguém apaga a assinatura de outra agência — e (c) o que ele acrescenta sai **das empresas do autor**,
+    // e não de qualquer id que o cliente queira escrever. Juntas, as três dizem `arrayUnion(minha empresa)`.
+    function ehAssinaturaDoAutor() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['agenciaIds'])
+          && request.resource.data.agenciaIds.hasAll(resource.data.get('agenciaIds', []))
+          && request.resource.data.agenciaIds
+               .hasOnly(resource.data.get('agenciaIds', []).concat(empresasDoAutor()));
+    }
+    // Leitura recortada: só quem já atendeu. A consulta do app traz o mesmo filtro, então ela passa; uma
+    // consulta sem o filtro é negada inteira — que é o comportamento que se quer para PII.
+    function ehAssinante() {
+      return resource.data.get('agenciaIds', []).hasAny(empresasDoAutor());
+    }
+
+    match /clientes/{chave} {
+      allow read: if autenticado() && (ehPapelPlataforma() || ehAssinante());
+      allow create: if autenticado() && papelConhecido() && funcionarioIdDoAutor() != ''
+                    && request.resource.data.get('agenciaIds', []).hasOnly(empresasDoAutor());
+      allow update: if autenticado()
+                    && (ehPapelPlataforma() || (papelConhecido() && ehAssinaturaDoAutor()));
+      allow delete: if false;
+    }
+
+    match /veiculos/{placa} {
+      allow read: if autenticado() && (ehPapelPlataforma() || ehAssinante());
+      allow create: if autenticado() && papelConhecido() && funcionarioIdDoAutor() != ''
+                    && request.resource.data.get('agenciaIds', []).hasOnly(empresasDoAutor());
+      allow update: if autenticado()
+                    && (ehPapelPlataforma() || (papelConhecido() && ehAssinaturaDoAutor()));
+      allow delete: if false;
+    }
+
     // --- Passagens: create sem forjar dono; update por posse ou editar-qualquer; **delete não existe** ---
     //
     // Duas exceções saíram deste bloco na F9.2, e vale dizer o que cada uma era:

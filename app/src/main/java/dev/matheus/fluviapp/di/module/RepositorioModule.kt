@@ -14,6 +14,10 @@ import dev.matheus.fluviapp.services.repository.cadastro.viagem.ViagemFirestoreR
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.ViagemRepository
 import dev.matheus.fluviapp.services.repository.passagem.PassagemFirestoreRepository
 import dev.matheus.fluviapp.services.repository.passagem.PassagemRepository
+import dev.matheus.fluviapp.services.repository.pool.ClienteFirestoreRepository
+import dev.matheus.fluviapp.services.repository.pool.ClienteRepository
+import dev.matheus.fluviapp.services.repository.pool.VeiculoFirestoreRepository
+import dev.matheus.fluviapp.services.repository.pool.VeiculoRepository
 import dev.matheus.fluviapp.services.repository.operacoes.ConviteFirestoreRepository
 import dev.matheus.fluviapp.services.repository.operacoes.ConviteRepository
 import dev.matheus.fluviapp.services.repository.operacoes.FuncionarioFirestoreRepository
@@ -85,6 +89,19 @@ abstract class RepositorioModule {
     @Binds
     @Singleton
     abstract fun bindPassagemRepository(impl: PassagemFirestoreRepository): PassagemRepository
+
+    /**
+     * Os **dois pools** (F9.3): quem viaja e o que embarca. São as primeiras coleções que **não** se
+     * observam inteiras nem se corrigem pela agência — existência é global, visibilidade é local
+     * ([ADR-0018] D3).
+     */
+    @Binds
+    @Singleton
+    abstract fun bindClienteRepository(impl: ClienteFirestoreRepository): ClienteRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindVeiculoRepository(impl: VeiculoFirestoreRepository): VeiculoRepository
 
     /** Quem pode entrar, e com que papel (F6.6) — a coleção que o `ADM` escreve. */
     @Binds

@@ -34,6 +34,9 @@ const {
 // porque a regra lê o papel via get(users/$(request.auth.uid)).
 const AGENTE_A = 'agente-a';
 const AGENTE_B = 'agente-b';
+// A persona que faltava para provar o **pool**: quem atua noutra empresa. É ela que mostra a diferença
+// entre assinar (permitido) e corrigir (curadoria), porque as duas só se distinguem quando há duas agências.
+const AGENTE_OUTRA = 'agente-outra';
 const SUPERVISOR = 'supervisor';
 const ADM = 'adm';
 // Papel puro de plataforma: existe no sistema, NÃO existe na operação (sem funcionário) — ADR-0015 §8.1.
@@ -89,6 +92,7 @@ beforeEach(async () => {
     await setDoc(doc(db, 'users', SUPERVISOR), { username: 'c', email: 'c@x.com', papel: 'OPERADOR', funcionarioId: F_SUPERVISOR });
     await setDoc(doc(db, 'users', ADM), { username: 'adm', email: 'adm@x.com', papel: 'ADM', funcionarioId: F_ADM });
     await setDoc(doc(db, 'users', GESTOR), { username: 'g', email: 'g@x.com', papel: 'GESTOR' });
+    await setDoc(doc(db, 'users', AGENTE_OUTRA), { username: 'o', email: 'o@x.com', papel: 'OPERADOR', funcionarioId: F_OUTRA_AGENCIA });
     // Contexto NEGÓCIO: funcionarios/{id}. A autoridade é o VÍNCULO desde a F6.3 (ADR-0016 §6);
     // `agencia` e `cargo` seguem gravados como legado derivado, e nenhuma regra os consulta mais.
     await setDoc(doc(db, 'funcionarios', F_A), { nome: 'Agente A', agencia: 'MATRIZ', cargo: 'AGENTE', vinculos: [AGENTE_NA_MATRIZ], empresaIds: [E_MATRIZ] });
@@ -126,6 +130,23 @@ beforeEach(async () => {
     });
     await setDoc(doc(db, 'convites', 'convidado-adm@x.com'), {
       nome: 'Convidado Adm', papel: 'ADM', empresaId: '', cargo: '', usado: false,
+    });
+    // Os dois pools (F9.3). O id do documento **é** a chave natural — é isso que faz o "tentar criar e cair
+    // na assinatura" apontar para o documento certo sem poder lê-lo antes.
+    await setDoc(doc(db, 'clientes', 'CPF:52998224725'), {
+      nome: 'Ana', tipoDocumento: 'CPF', numeroDocumento: '52998224725',
+      dataNascimento: '1996-01-30', agenciaIds: [E_MATRIZ],
+    });
+    // Quem só a OUTRA empresa atendeu: é este documento que prova o recorte de leitura da PII.
+    await setDoc(doc(db, 'clientes', 'CPF:11144477735'), {
+      nome: 'De Outra', tipoDocumento: 'CPF', numeroDocumento: '11144477735',
+      dataNascimento: '1980-05-10', agenciaIds: [E_MARE],
+    });
+    await setDoc(doc(db, 'veiculos', 'XYZ9A88'), {
+      placa: 'XYZ9A88', tipo: 'CARRETA', cor: 'Branco', agenciaIds: [E_MATRIZ],
+    });
+    await setDoc(doc(db, 'veiculos', 'MAR2E22'), {
+      placa: 'MAR2E22', tipo: 'CARRO', modelo: 'Gol', cor: 'Preto', agenciaIds: [E_MARE],
     });
     // O contador, agora POR OCORRÊNCIA e em subcoleção da viagem (F9.2, ADR-0024 D6). O documento
     // `passagens/contador` — que nunca foi uma passagem — deixou de existir.
@@ -171,6 +192,7 @@ const foraDoEscopo = process.env.SUITE_COMPLETA ? describe : describe.skip;
 // Atalhos para os bancos autenticados por persona.
 const asAgenteA = () => testEnv.authenticatedContext(AGENTE_A).firestore();
 const asAgenteB = () => testEnv.authenticatedContext(AGENTE_B).firestore();
+const asAgenteOutra = () => testEnv.authenticatedContext(AGENTE_OUTRA).firestore();
 const asSupervisor = () => testEnv.authenticatedContext(SUPERVISOR).firestore();
 const asAdm = () => testEnv.authenticatedContext(ADM).firestore();
 const asGestor = () => testEnv.authenticatedContext(GESTOR).firestore();
@@ -717,6 +739,136 @@ describe('portos — escrita só de plataforma, e delete físico impossível', (
         ativo: true,
       }),
     );
+  });
+});
+
+/**
+ * **Os dois pools** (F9.3, ADR-0018 D2/D3/D5) — e aqui a suíte vale mais do que em qualquer outra coleção,
+ * porque estas duas guardam **PII**: nome, documento, nascimento, telefone, placa.
+ *
+ * O que se prova é a divisão de direitos que sustenta a ideia de pool: a agência **cria e assina**, e
+ * **não corrige**. Sem isso, "uma pessoa é um documento" viraria "uma pessoa é um documento que a última
+ * agência reescreveu".
+ */
+foraDoEscopo('clientes — criar, assinar, e a curadoria que não é da agência', () => {
+  test('agente cria pessoa que não existe, assinando a PRÓPRIA empresa → OK', async () => {
+    await assertSucceeds(
+      setDoc(doc(asAgenteA(), 'clientes', 'CPF:52998224725'), {
+        nome: 'Ana', tipoDocumento: 'CPF', numeroDocumento: '52998224725',
+        dataNascimento: '1996-01-30', agenciaIds: [E_MATRIZ],
+      }),
+    );
+  });
+
+  test('agente cria pessoa assinando OUTRA empresa → NEGADO (assinatura não se forja)', async () => {
+    await assertFails(
+      setDoc(doc(asAgenteA(), 'clientes', 'CPF:52998224725'), {
+        nome: 'Ana', tipoDocumento: 'CPF', numeroDocumento: '52998224725',
+        dataNascimento: '1996-01-30', agenciaIds: [E_MARE],
+      }),
+    );
+  });
+
+  /** O id tem de ser **inédito**: num que já existe, a mesma escrita seria *update*, e aí é curadoria. */
+  test('plataforma SEM funcionário cria pessoa → NEGADO (quem atende é da operação)', async () => {
+    await assertFails(
+      setDoc(doc(asGestor(), 'clientes', 'CPF:39053344705'), {
+        nome: 'Novo', tipoDocumento: 'CPF', numeroDocumento: '39053344705',
+        dataNascimento: '1990-01-01', agenciaIds: [],
+      }),
+    );
+  });
+
+  /** A queda do "tentar e cair": a entrada existe, então o que resta é assinar. */
+  test('agente de OUTRA empresa assina pessoa que já existe → OK', async () => {
+    await assertSucceeds(
+      updateDoc(doc(asAgenteOutra(), 'clientes', 'CPF:52998224725'), {
+        agenciaIds: [E_MATRIZ, E_MARE],
+      }),
+    );
+  });
+
+  test('assinar apagando a assinatura de outra agência → NEGADO (o conjunto só cresce)', async () => {
+    await assertFails(
+      updateDoc(doc(asAgenteOutra(), 'clientes', 'CPF:52998224725'), { agenciaIds: [E_MARE] }),
+    );
+  });
+
+  test('assinar em nome de uma empresa em que não atuo → NEGADO', async () => {
+    await assertFails(
+      updateDoc(doc(asAgenteA(), 'clientes', 'CPF:52998224725'), { agenciaIds: [E_MATRIZ, E_MARE] }),
+    );
+  });
+
+  /** **O coração do pool**: corrigir conteúdo é curadoria da plataforma, não direito de quem atendeu. */
+  test('agente corrige o NOME de quem ele mesmo assinou → NEGADO', async () => {
+    await assertFails(updateDoc(doc(asAgenteA(), 'clientes', 'CPF:52998224725'), { nome: 'Ana Maria' }));
+  });
+
+  test('agente contrabandeia correção junto da assinatura → NEGADO', async () => {
+    await assertFails(
+      updateDoc(doc(asAgenteOutra(), 'clientes', 'CPF:52998224725'), {
+        agenciaIds: [E_MATRIZ, E_MARE], nome: 'Outro Nome',
+      }),
+    );
+  });
+
+  test('plataforma (ADM) corrige o cadastro → OK (é ela a curadoria)', async () => {
+    await assertSucceeds(updateDoc(doc(asAdm(), 'clientes', 'CPF:52998224725'), { nome: 'Ana Maria' }));
+  });
+
+  test('deletar pessoa do pool → NEGADO (ela é referenciada por bilhete emitido)', async () => {
+    await assertFails(deleteDoc(doc(asAdm(), 'clientes', 'CPF:52998224725')));
+  });
+});
+
+foraDoEscopo('clientes — leitura recortada pela assinatura (é PII)', () => {
+  test('agente lê quem a PRÓPRIA empresa atendeu → OK', async () => {
+    await assertSucceeds(getDoc(doc(asAgenteA(), 'clientes', 'CPF:52998224725')));
+  });
+
+  /**
+   * A diferença em relação aos cadastros, onde a leitura é `if autenticado()`: aqui ela é recortada, e é
+   * por isso que *criar-ou-assinar* **não pode** começar com uma busca — quem não assinou não enxerga.
+   */
+  test('agente lê pessoa que só OUTRA empresa atendeu → NEGADO', async () => {
+    await assertFails(getDoc(doc(asAgenteA(), 'clientes', 'CPF:11144477735')));
+  });
+
+  test('plataforma lê qualquer pessoa → OK (é a curadoria)', async () => {
+    await assertSucceeds(getDoc(doc(asAdm(), 'clientes', 'CPF:11144477735')));
+  });
+
+  test('anônimo lê o pool → NEGADO', async () => {
+    await assertFails(getDoc(doc(asAnon(), 'clientes', 'CPF:52998224725')));
+  });
+});
+
+foraDoEscopo('veiculos — mesmo regime, com a chave que não polui', () => {
+  test('agente cria veículo assinando a própria empresa → OK', async () => {
+    await assertSucceeds(
+      setDoc(doc(asAgenteA(), 'veiculos', 'ABC1D23'), {
+        placa: 'ABC1D23', tipo: 'MOTO', cilindrada: 150, agenciaIds: [E_MATRIZ],
+      }),
+    );
+  });
+
+  test('agente de outra empresa assina o mesmo veículo → OK', async () => {
+    await assertSucceeds(
+      updateDoc(doc(asAgenteOutra(), 'veiculos', 'XYZ9A88'), { agenciaIds: [E_MATRIZ, E_MARE] }),
+    );
+  });
+
+  test('agente corrige a cor de veículo que assinou → NEGADO (curadoria é da plataforma)', async () => {
+    await assertFails(updateDoc(doc(asAgenteA(), 'veiculos', 'XYZ9A88'), { cor: 'Azul' }));
+  });
+
+  test('deletar veículo → NEGADO', async () => {
+    await assertFails(deleteDoc(doc(asAdm(), 'veiculos', 'XYZ9A88')));
+  });
+
+  test('agente lê veículo que só outra empresa embarcou → NEGADO (placa é dado pessoal indireto)', async () => {
+    await assertFails(getDoc(doc(asAgenteA(), 'veiculos', 'MAR2E22')));
   });
 });
 

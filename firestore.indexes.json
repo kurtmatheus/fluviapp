@@ -1,0 +1,24 @@
+{
+  "//": "Índices compostos do FluviApp (F9.3). Versionados e publicados pela mesma esteira das regras — índice é infraestrutura de consulta, e consulta sem índice falha só quando alguém abre a tela. As consultas de igualdade múltipla (a passagem por agência+data+status) NÃO entram aqui: o Firestore as resolve combinando os índices de campo único que ele já mantém. O que exige composto é array-contains ou faixa COM ordenação — que é exatamente o recorte dos dois pools por assinatura.",
+  "indexes": [
+    {
+      "//": "Quem esta agência já atendeu, em ordem de nome (ADR-0018 D3). É a consulta que substituiu o getListaNome() vazio, e o filtro por assinatura é também o que protege PII: sem ele, a listagem traria o pool inteiro.",
+      "collectionGroup": "clientes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "agenciaIds", "arrayConfig": "CONTAINS" },
+        { "fieldPath": "nome", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "//": "O mesmo para o pool de veículos, ordenado pela chave natural.",
+      "collectionGroup": "veiculos",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "agenciaIds", "arrayConfig": "CONTAINS" },
+        { "fieldPath": "placa", "order": "ASCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}
