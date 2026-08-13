@@ -78,7 +78,10 @@ fun String.mascararPassaporte(): String {
     return replaceRange(4..6, "###")
 }
 
-fun String?.isTextoNaoNulo(): Boolean = this != null && this != "null"
+// `isTextoNaoNulo()` saiu na F9.2, com os dois chamadores que tinha. Ela existia para um defeito, não para
+// uma necessidade: a rota de navegação passava o texto **"null"** como argumento ausente, e o repositório
+// da passagem usava a mesma função para decidir entre criar e atualizar. Os dois sumiram — a porta nova não
+// tem "salvar por cima" —, e o argumento opcional de rota é decisão do ADR-0026 D6, na F9.5.
 
 /**
  * Exibição do documento, delegando ao [TipoDocumento] (ADR-0020 F2).

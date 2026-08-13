@@ -228,33 +228,10 @@ object PermissoesUsuario {
      */
     fun atuacaoEmVigor(vinculo: Vinculo?): Atuacao? = vinculo?.atuacao
 
-    // --- O eixo antigo, por String de agência (morre na F6.3) ---
-
-    /**
-     * O **escopo de agência** de uma listagem (ADR-0015 §4.1/§6). Existe como tipo, e não como String
-     * vazia significando "sem filtro", porque os três casos são diferentes e o terceiro é o perigoso:
-     * "não filtra nada" e "não tem agência nenhuma" pareceriam iguais e abririam a listagem inteira
-     * para quem não deveria ver nada.
-     *
-     * **Substituído por [EscopoEmpresa]**, e ainda de pé porque quem o consome — a consulta de passagem —
-     * é código não revitalizado (F9). Sai quando a Equipe terminar de trocar agência por empresa.
-     */
-    sealed interface EscopoAgencia {
-        /** Papel de plataforma: atravessa agências. */
-        data object Todas : EscopoAgencia
-
-        /** Cargo de agência: só a dele. */
-        data class Apenas(val agencia: String) : EscopoAgencia
-
-        /** Sem papel de plataforma e sem vínculo: não há agência a mostrar (fail-closed). */
-        data object Nenhuma : EscopoAgencia
-    }
-
-    fun escopoDeAgencia(papel: String?, agencia: String?): EscopoAgencia = when {
-        podeVerTodasAgencias(papel) -> EscopoAgencia.Todas
-        !agencia.isNullOrBlank() -> EscopoAgencia.Apenas(agencia)
-        else -> EscopoAgencia.Nenhuma
-    }
+    // O eixo antigo — `EscopoAgencia` e `escopoDeAgencia`, por String de agência — **saiu na F9.2**. Ele
+    // seguia de pé com uma data marcada no próprio KDoc: *"sai quando a Equipe terminar de trocar agência
+    // por empresa"*. Quem o consumia era a consulta de passagem, e ela deixou de existir; o critério novo
+    // recorta por [EscopoEmpresa], que é id e não nome. Nome muda, repete e não relaciona.
 
     // --- Eixo ação sobre a Passagem (com posse) ---
 
