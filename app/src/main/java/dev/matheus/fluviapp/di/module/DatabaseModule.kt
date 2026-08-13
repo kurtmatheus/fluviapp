@@ -6,11 +6,8 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.google.gson.Gson
 import dev.matheus.fluviapp.database.FluviAppDatabase
-import dev.matheus.fluviapp.database.dao.ContadorDao
 import dev.matheus.fluviapp.database.dao.cadastro.ConstanteDao
 import dev.matheus.fluviapp.database.dao.operacoes.UsuarioDao
-import dev.matheus.fluviapp.database.dao.passagem.PassagemDao
-import dev.matheus.fluviapp.database.dao.passagem.PassagemDigitalDao
 import dev.matheus.fluviapp.database.dao.passagem.RascunhoPassagemDao
 import dev.matheus.fluviapp.services.repository.rascunho.RascunhoPassagemStoreRoom
 import dev.matheus.fluviapp.services.repository.rascunho.RascunhoStore
@@ -99,6 +96,33 @@ val MIGRATION_6_7 = object : Migration(6, 7) {
     }
 }
 
+/**
+ * **v7 → v8: a Passagem sai do Room** (F9.2, ADR-0017 F5), e com ela o contador e o índice do bilhete digital.
+ *
+ * Três `DROP TABLE` que são a mesma decisão em três formas: o **fato compartilhado** vive no Firestore; o
+ * **contador** virou por ocorrência, em `viagens/{id}/ocorrencias/{data}` com incremento atômico
+ * ([ADR-0024] D6) — e um contador global no aparelho era justamente o que fazia dois caixas receberem o mesmo
+ * número; e o **índice do bilhete digital** perde a função quando o arquivo vai para a galeria com nome
+ * derivado do id.
+ *
+ * Migração escrita, e não `fallbackToDestructiveMigration`, pela razão da 6→7: há aparelho com a v0.0.4
+ * instalada, e cair no destrutivo levaria **o rascunho de alguém** junto com tabelas que ninguém mais lê.
+ *
+ * O que sobra é o Room com três habitantes e uma razão declarada para cada: `Usuario`, `Constante` e o
+ * rascunho. A coleção `passagens/` no Firestore **não é tocada** — o que a F9 escreve é uma forma nova no
+ * mesmo nome de coleção, e os documentos da forma antiga o codec recusa por não declararem `categoria`.
+ */
+val MIGRATION_7_8 = object : Migration(7, 8) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("DROP INDEX IF EXISTS `index_Passagem_id`")
+        db.execSQL("DROP TABLE IF EXISTS `Passagem`")
+        db.execSQL("DROP INDEX IF EXISTS `index_ContadorBilhete_id`")
+        db.execSQL("DROP TABLE IF EXISTS `ContadorBilhete`")
+        db.execSQL("DROP INDEX IF EXISTS `index_PassagemDigital_id`")
+        db.execSQL("DROP TABLE IF EXISTS `PassagemDigital`")
+    }
+}
+
 /** DDL da v2 — cópia fiel do `createSql` exportado pelo Room (uma linha por tabela/índice). */
 private val DDL_V2 = listOf(
     "CREATE TABLE IF NOT EXISTS `Usuario` (`id` TEXT NOT NULL, `email` TEXT NOT NULL, `username` TEXT NOT NULL, `papel` TEXT NOT NULL, `funcionarioId` TEXT NOT NULL, `ultimoUsuarioLogado` INTEGER NOT NULL, PRIMARY KEY(`id`))",
@@ -139,6 +163,7 @@ class DatabaseModule {
             MIGRATION_4_5,
             MIGRATION_5_6,
             MIGRATION_6_7,
+            MIGRATION_7_8,
         )
             // Sem distribuição, não há base instalada cujo dado se possa perder: a v3 recria em vez de
             // migrar (decisão do analista). Este argumento VENCE na P3.5 — a partir da primeira entrega
@@ -161,21 +186,6 @@ class DatabaseModule {
         return db.constanteDao()
     }
 
-
-    @Provides
-    fun providePassagemDao(db: FluviAppDatabase): PassagemDao {
-        return db.passagemDao()
-    }
-
-    @Provides
-    fun provideContadorDao(db: FluviAppDatabase): ContadorDao {
-        return db.contadorDao()
-    }
-
-    @Provides
-    fun providePassagemDigitalDao(db: FluviAppDatabase): PassagemDigitalDao {
-        return db.passagemDigitalDao()
-    }
 
     @Provides
     fun provideRascunhoPassagemDao(db: FluviAppDatabase): RascunhoPassagemDao {

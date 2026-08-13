@@ -17,9 +17,7 @@ import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.DINHE
 import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.PIX
 import dev.matheus.fluviapp.domain.operacoes.Funcionario
 import dev.matheus.fluviapp.domain.operacoes.Usuario
-import dev.matheus.fluviapp.domain.screendata.DadosContagemPassagem
 import dev.matheus.fluviapp.domain.screendata.DadosImpressora
-import dev.matheus.fluviapp.domain.screendata.DadosPassagem
 import dev.matheus.fluviapp.domain.viagem.Empresa
 import dev.matheus.fluviapp.domain.viagem.Embarcacao
 import dev.matheus.fluviapp.domain.viagem.TipoEmbarcacao
@@ -101,62 +99,6 @@ val listaTipoVeiculoSample = listOf(
     Constante("4", "CARRETA", VEICULO.name)
 )
 
-val dadosPassagemSample = DadosPassagem(
-    // Sem idPassagem o bilhete não desenha o QR de embarque (é o ponteiro do ADR-0012) — e o preview
-    // ficaria mostrando um bilhete que não embarca.
-    idPassagem = "passagem-modelo-1",
-    numero = "2444",
-    empresaNome = "NAVEGACAO MODELO",
-    embarcacao = "F/B Modelo",
-    dataViagem = "31/12/2023",
-    horaViagem = "12:00",
-    origem = "PORTO NORTE",
-    destino = "ILHA CENTRAL",
-    agencia = "MATRIZ",
-    valorAPagar = BigDecimal("1000").formataParaMoedaBrasileira(),
-    observacao = "TESTE DE OBSERVACAO",
-    tipoPassagem = "INTEIRA",
-    situacao = "PENDENTE",
-    funcionario = "ADMINISTRADOR",
-    nomePassageiro1 = "JOAO DA SILVA",
-    // CPFs de mock com dígito verificador válido (ADR-0020 D2): desde que a validação entrou, o
-    // "000.000.000-00" de antes seria recusado no form — mock inválido vira demo quebrada.
-    documentoPassageiro1 = "529.982.247-25",
-    dataNascimento1 = "30/01/1996",
-    nomePassageiro2 = "MARIA OLIVEIRA",
-    documentoPassageiro2 = "123.456.789-09",
-    dataNascimento2 = "10/01/1975",
-    acomodacao = "SUITE"
-)
-
-val dadosPassagemVeiculoSample = DadosPassagem(
-    idPassagem = "passagem-modelo-2",
-    numero = "2444",
-    empresaNome = "NAVEGACAO MODELO",
-    embarcacao = "F/B Modelo",
-    dataViagem = "31/12/2023",
-    horaViagem = "12:00",
-    origem = "Porto Norte",
-    destino = "Ilha Central",
-    agencia = "Matriz",
-    valorTotal = BigDecimal("180").formataParaMoedaBrasileira(),
-    valorPix = BigDecimal("100").formataParaMoedaBrasileira(),
-    valorCredito = BigDecimal("50").formataParaMoedaBrasileira(),
-    desconto = BigDecimal("30").formataParaMoedaBrasileira(),
-    valorAPagar = BigDecimal("150").formataParaMoedaBrasileira(),
-    observacao = "TESTE DE OBSERVACAO",
-    tipoPassagem = "INTEIRA",
-    situacao = "PENDENTE",
-    funcionario = "ADMINISTRADOR",
-    nomeResponsavelRetirada = "JOAO DA SILVA",
-    numeroDocumentoResponsavelRetirada = "111.444.777-35",
-    idVeiculo = "2",
-    tipoVeiculo = "MOTO",
-    modeloVeiculo = "MOTO 150CC MODELO",
-    placaVeiculo = "ABC1D23",
-    corVeiculo = "VERMELHO"
-)
-
 // Papel puro de plataforma: sem funcionarioId, porque ADM/GESTOR não têm registro na operação
 // (ADR-0015 §8.1) — e, por consequência, não emitem passagem (§8.4).
 val userAdminSample = Usuario(
@@ -207,15 +149,6 @@ val listaUserSample = listOf(
     userAdminSample,
     userGestorSample,
     userOperadorSample
-)
-
-val listaDadosContagemPassagems = listOf(
-    DadosContagemPassagem(
-        embarcacao = "F/B Modelo"
-    ),
-    DadosContagemPassagem(
-        embarcacao = "F/B Modelo II"
-    )
 )
 
 val listaDadosImpressoraSample = listOf(

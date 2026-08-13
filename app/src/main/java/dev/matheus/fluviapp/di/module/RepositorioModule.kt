@@ -12,6 +12,8 @@ import dev.matheus.fluviapp.services.repository.cadastro.rota.RotaFirestoreRepos
 import dev.matheus.fluviapp.services.repository.cadastro.rota.RotaRepository
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.ViagemFirestoreRepository
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.ViagemRepository
+import dev.matheus.fluviapp.services.repository.passagem.PassagemFirestoreRepository
+import dev.matheus.fluviapp.services.repository.passagem.PassagemRepository
 import dev.matheus.fluviapp.services.repository.operacoes.ConviteFirestoreRepository
 import dev.matheus.fluviapp.services.repository.operacoes.ConviteRepository
 import dev.matheus.fluviapp.services.repository.operacoes.FuncionarioFirestoreRepository
@@ -74,6 +76,15 @@ abstract class RepositorioModule {
     @Binds
     @Singleton
     abstract fun bindViagemRepository(impl: ViagemFirestoreRepository): ViagemRepository
+
+    /**
+     * A **passagem** (F9.2) — a primeira porta que se define pelas ausências: sem editar, sem deletar, sem
+     * observar a coleção inteira ([ADR-0025] D1). Com ela, a entidade que era injetada como classe concreta em
+     * dez lugares passa a ter fake, e o ViewModel da emissão fica testável pela primeira vez.
+     */
+    @Binds
+    @Singleton
+    abstract fun bindPassagemRepository(impl: PassagemFirestoreRepository): PassagemRepository
 
     /** Quem pode entrar, e com que papel (F6.6) — a coleção que o `ADM` escreve. */
     @Binds

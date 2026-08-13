@@ -25,10 +25,7 @@ import kotlinx.coroutines.launch
 @RequiresApi(Build.VERSION_CODES.S)
 fun NavGraphBuilder.mainScreenNavComposable(
     onNavegaParaLogin: () -> Unit,
-    onNavegaParaFormularioNovaPassagemComViagem: (String) -> Unit,
-    onNavegaParaFormularioPesquisaPassagem: () -> Unit,
     onNavegaParaEmbarque: () -> Unit,
-    onNavegaParaContagemPassagem: () -> Unit,
     onNavegaParaFormularioNovoFuncionario: () -> Unit,
     onNavegaParaFormularioPesquisaFuncionario: () -> Unit,
     onNavegaParaFormularioNovaEmpresa: () -> Unit,
@@ -76,8 +73,13 @@ fun NavGraphBuilder.mainScreenNavComposable(
         // `acoesDe(secao)`, o que tornava a estrutura do menu impossível de testar sem um NavGraphBuilder.
         // O `when` é exaustivo sobre o enum: ação nova sem destino não compila.
         fun navegar(acao: AcaoMenu) = when (acao) {
-            AcaoMenu.PASSAGEM_PESQUISAR -> onNavegaParaFormularioPesquisaPassagem()
-            AcaoMenu.PASSAGEM_CONTAGEM -> onNavegaParaContagemPassagem()
+            // REVITALIZAÇÃO (F9.2): as telas de pesquisa e contagem de passagem **não existem** — saíram com a
+            // camada de dados que as alimentava. As ações continuam no [AcaoMenu] porque elas são domínio do
+            // menu (o que cada seção oferece), e `PASSAGEM` não está em `SECOES_REVITALIZADAS`: nenhuma delas é
+            // alcançável. A pesquisa volta na F9.5; a contagem, quando a **ocupação** tiver domínio planejado
+            // (ADR-0027 D2 a deixa fora da F9 por não ter).
+            AcaoMenu.PASSAGEM_PESQUISAR -> Unit
+            AcaoMenu.PASSAGEM_CONTAGEM -> Unit
             AcaoMenu.EQUIPE_NOVO -> onNavegaParaFormularioNovoFuncionario()
             AcaoMenu.EQUIPE_PESQUISAR -> onNavegaParaFormularioPesquisaFuncionario()
             AcaoMenu.EMPRESA_NOVA -> onNavegaParaFormularioNovaEmpresa()
@@ -112,7 +114,6 @@ fun NavGraphBuilder.mainScreenNavComposable(
             // REVITALIZAÇÃO: embarque, nova passagem e pull-to-refresh saíram do painel com os domínios
             // que os alimentam (ADR-0020). Os destinos continuam no grafo, sem entrada pela Main Screen.
             // onClickEmbarque = onNavegaParaEmbarque,
-            // onClickAdicionarPassagem = onNavegaParaFormularioNovaPassagemComViagem,
             // onRefresh = { viewModel.refresh() },
         )
     }

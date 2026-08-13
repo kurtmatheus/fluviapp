@@ -17,7 +17,6 @@ import dev.matheus.fluviapp.preferences.PreferencesKey.USUARIO_ATUAL
 import dev.matheus.fluviapp.services.repository.operacoes.FuncionarioRepository
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.EmpresaRepository
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.EmbarcacaoRepository
-import dev.matheus.fluviapp.services.repository.firebase.PassagemFirestoreRepository
 import dev.matheus.fluviapp.services.repository.firebase.autenticacao.AutenticacaoRepository
 import dev.matheus.fluviapp.services.repository.firebase.autenticacao.PerfilAutenticado
 import dev.matheus.fluviapp.services.repository.firebase.autenticacao.ResultadoAutenticacao
@@ -43,7 +42,6 @@ class LoginViewModel @Inject constructor(
     private val empresaRepository: EmpresaRepository,
     private val embarcacaoRepository: EmbarcacaoRepository,
     private val funcionarioRepository: FuncionarioRepository,
-    private val passagemRepository: PassagemFirestoreRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(LoginUiState())
@@ -182,13 +180,18 @@ class LoginViewModel @Inject constructor(
      * A `localidades` **não entra**: quem a observa é o ViewModel da própria seção, que liga o listener ao
      * abrir a busca. Sincronizar tudo no login é o hábito antigo, de quando o Room precisava estar cheio
      * antes de alguém olhar — com o cache do SDK, cada tela liga o que usa (ADR-0017 D1).
+     *
+     * A **passagem saiu na F9.2**, e o modo como ela saiu vale registrar: o login a injetava por um motivo
+     * só — anexar o listener do contador global de bilhetes —, e esse contador deixou de existir quando a
+     * numeração passou a ser **por ocorrência**, em subcoleção da viagem ([ADR-0024] D6). O acoplamento não
+     * foi combatido: **deixou de ter motivo** ([ADR-0025] D1). É o que costuma acontecer quando a dependência
+     * errada é sintoma de um dado no lugar errado.
      */
     fun sincronizar(context: Context) {
         try {
             funcionarioRepository.sincronizar()
             empresaRepository.sincronizar()
             embarcacaoRepository.sincronizar()
-            passagemRepository.sincronizarNumeroBilheteEmTempoReal()
             onNavegaParaMainScreen()
         } catch (e: Exception) {
             e.printStackTrace()

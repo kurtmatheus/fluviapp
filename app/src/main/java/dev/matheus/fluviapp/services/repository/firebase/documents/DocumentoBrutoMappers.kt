@@ -40,6 +40,3 @@ fun DocumentoBruto.toConstanteDocumento() = ConstanteDocumento(
     categoria = texto("categoria"),
 )
 
-fun DocumentoBruto.toContadorDocumento() = ContadorDocumento(
-    numeroBilhete = inteiro("numeroBilhete"),
-)

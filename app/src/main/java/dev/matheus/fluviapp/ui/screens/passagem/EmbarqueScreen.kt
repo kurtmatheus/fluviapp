@@ -34,7 +34,7 @@ import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
 import dev.matheus.fluviapp.R
-import dev.matheus.fluviapp.database.PassagemEntity
+import dev.matheus.fluviapp.domain.passagem.Passagem
 import dev.matheus.fluviapp.domain.passagem.ResultadoEmbarque
 import dev.matheus.fluviapp.domain.passagem.StatusPassagem
 import dev.matheus.fluviapp.ui.components.RequestPermission
@@ -128,27 +128,29 @@ private fun LeitorView(onQrLido: (String) -> Unit) {
     }
 }
 
-/** Fase 2 — dados resolvidos ao vivo; operador confere o passageiro antes de confirmar. */
+/**
+ * Fase 2 — dados resolvidos ao vivo; operador confere o bilhete antes de confirmar.
+ *
+ * **O que esta tela deixou de mostrar na F9.2, e por quê**: nome do passageiro, placa, origem e destino eram
+ * campos **congelados** no bilhete, e deixaram de existir no agregado — o participante virou entidade de pool e
+ * a travessia virou referência ([ADR-0023] D5/D8). Resolvê-los é a **junção** da F9.4, que carrega cliente,
+ * veículo e viagem por id. Enquanto ela não existe, a conferência mostra o que o agregado **tem**: número,
+ * categoria, data da ocorrência e status — que é, aliás, o suficiente para a decisão de deixar embarcar.
+ */
 @Composable
 private fun ConferenciaView(
-    passagem: PassagemEntity,
+    passagem: Passagem,
     onConfirmar: () -> Unit,
     onCancelar: () -> Unit,
 ) {
-    val statusRotulo = StatusPassagem.de(passagem.status)?.rotulo() ?: passagem.status
-    val identificacao = passagem.nomePassageiro1?.takeIf { it.isNotBlank() }
-        ?: passagem.placaVeiculo?.takeIf { it.isNotBlank() }
-        ?: "-"
-
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         TextTitleBrownRegular(text = "#${passagem.numero}")
-        TextSubTitleBrownBold(text = identificacao)
-        TextRegularBrown(text = "${passagem.origem}/${passagem.destino}")
-        TextRegularBrown(text = "${passagem.dataViagem} - ${passagem.horaViagem}")
-        TextRegularBrownItalic(text = statusRotulo)
+        TextSubTitleBrownBold(text = passagem.categoria.rotulo)
+        TextRegularBrown(text = passagem.ocorrencia.dataIso)
+        TextRegularBrownItalic(text = passagem.metadados.status.rotulo())
     }
     CommonIconButton(
         modifier = Modifier,
@@ -185,11 +187,11 @@ private fun ResultadoView(
         when (resultado) {
             is ResultadoEmbarque.Confirmada -> {
                 TextSubTitleBrownBold(text = "#${resultado.passagem.numero}")
-                TextRegularBrown(text = resultado.passagem.embarcadaEm)
+                TextRegularBrown(text = resultado.passagem.metadados.embarque?.em.orEmpty())
             }
-            is ResultadoEmbarque.JaEmbarcada -> TextRegularBrown(
-                text = "${resultado.por} — ${resultado.em}"
-            )
+            // Só o instante: quem carimbou é um **uid**, e uid não se mostra a ninguém. O nome de quem
+            // validou se resolve por referência, na junção da F9.4 (ADR-0023 D8).
+            is ResultadoEmbarque.JaEmbarcada -> TextRegularBrown(text = resultado.carimbo.em)
             else -> {}
         }
     }

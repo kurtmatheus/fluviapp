@@ -21,8 +21,8 @@ class RegistroEmissaoTest {
     }
 
     @Test
-    fun `salvaLocal emite sucesso local com numero e fase, e deixa breadcrumb`() {
-        registro.salvaLocal("2444")
+    fun `aplicadaLocalmente emite sucesso local com numero e fase, e deixa breadcrumb`() {
+        registro.aplicadaLocalmente("2444")
 
         val evento = telemetry.eventos.single()
         assertEquals(RegistroEmissao.EVENTO_SALVA, evento.nome)

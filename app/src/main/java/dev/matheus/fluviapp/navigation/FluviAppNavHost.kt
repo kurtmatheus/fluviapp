@@ -5,20 +5,15 @@ import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
-import dev.matheus.fluviapp.extensions.navegaParaContagemPassagem
 import dev.matheus.fluviapp.extensions.navegaParaEmbarque
-import dev.matheus.fluviapp.extensions.navegaParaDetalhesPassagem
 import dev.matheus.fluviapp.extensions.navegaParaFormularioFuncionario
 import dev.matheus.fluviapp.extensions.navegaParaLoginGraph
 import dev.matheus.fluviapp.extensions.navegaParaMainScreenGraph
-import dev.matheus.fluviapp.extensions.navegaParaPesquisarPassagemGraph
 import dev.matheus.fluviapp.extensions.navegaParaPrimeiroAcesso
 import dev.matheus.fluviapp.extensions.navegaParaRecuperarSenha
 import dev.matheus.fluviapp.extensions.navegaParaFormularioEmpresa
 import dev.matheus.fluviapp.extensions.navegaParaFormularioEmbarcacao
 import dev.matheus.fluviapp.extensions.navegaParaResultPesquisarFuncionario
-import dev.matheus.fluviapp.extensions.navegaParaResultadosPesquisarPassagem
-import dev.matheus.fluviapp.extensions.navegarParaFormularioPassagemComViagem
 import dev.matheus.fluviapp.navigation.destinations.ARG_EMAIL_PREFILL
 import dev.matheus.fluviapp.navigation.destinations.FluviAppGraphDestinations
 import dev.matheus.fluviapp.navigation.graphs.loginGraph
@@ -50,13 +45,10 @@ import dev.matheus.fluviapp.navigation.navcomposables.viagem.formViagemNavCompos
 import dev.matheus.fluviapp.navigation.navcomposables.viagem.resultSearchViagemNavComposable
 import dev.matheus.fluviapp.extensions.navegaParaFormularioViagem
 import dev.matheus.fluviapp.extensions.navegaParaResultPesquisarViagem
-import dev.matheus.fluviapp.navigation.graphs.pesquisarPassagemGraph
 import dev.matheus.fluviapp.navigation.graphs.selecaoVinculoGraph
 import dev.matheus.fluviapp.navigation.graphs.splashGraph
-import dev.matheus.fluviapp.navigation.navcomposables.contagem.contagemPassagemNavComposable
 import dev.matheus.fluviapp.navigation.navcomposables.funcionario.formFuncionarioNavComposable
 import dev.matheus.fluviapp.navigation.navcomposables.funcionario.resultSearchFuncionarioNavComposable
-import dev.matheus.fluviapp.navigation.navcomposables.passagem.formPassagemNavComposable
 import dev.matheus.fluviapp.navigation.navcomposables.passagem.embarqueNavComposable
 
 @RequiresApi(Build.VERSION_CODES.S)
@@ -112,17 +104,8 @@ fun FluviAppNavHost(
             onNavegaParaLogin = {
                 navController.navegaParaLoginGraph()
             },
-            onNavegaParaFormularioNovaPassagemComViagem = { idViagem ->
-                navController.navegarParaFormularioPassagemComViagem(idViagem)
-            },
-            onNavegaParaFormularioPesquisaPassagem = {
-                navController.navegaParaPesquisarPassagemGraph()
-            },
             onNavegaParaEmbarque = {
                 navController.navegaParaEmbarque()
-            },
-            onNavegaParaContagemPassagem = {
-                navController.navegaParaContagemPassagem()
             },
             onNavegaParaFormularioNovoFuncionario = {
                 navController.navegaParaFormularioFuncionario()
@@ -174,44 +157,10 @@ fun FluviAppNavHost(
             }
         )
 
-        formPassagemNavComposable(
-            onCLickVoltar = {
-                navController.navigateUp()
-            },
-            onNavegaParaDetalhesPassagem = {
-                navController.navegaParaDetalhesPassagem(it)
-            }
-        )
-
-        pesquisarPassagemGraph(
-            navController = navController,
-            onClickVoltar = {
-                navController.navigateUp()
-            },
-            onNavegaParaMainScreen = {
-                navController.navegaParaMainScreenGraph()
-            },
-            onNavegaParaResultadosPesquisa = {
-                navController.navegaParaResultadosPesquisarPassagem()
-            },
-            onNavegaParaDetalhesPassagem = {
-                navController.navegaParaDetalhesPassagem(it)
-            },
-            onNavegaParaFormularioNovaPassagem = {
-                navController.navegarParaFormularioPassagemComViagem(it)
-            },
-            onNavegaParaFormularioEditarPassagem = { idViagem, idPassagem ->
-                navController.navegarParaFormularioPassagemComViagem(idViagem, idPassagem)
-            }
-        )
-
-        contagemPassagemNavComposable(
-            navController = navController,
-            onClickVoltar = {
-                navController.navigateUp()
-            }
-        )
-
+        // A emissão, a pesquisa e a contagem **saíram do grafo na F9.2**, junto com a camada de dados que as
+        // alimentava. Não é uma tela escondida: é código que deixou de existir, e volta na F9.5 construído
+        // sobre a `Passagem` selada. O **embarque fica** — ele é o único fluxo de passagem que já falava a
+        // linguagem da porta nova, e o scanner é o que o ADR-0026 D7 declarou que não muda.
         embarqueNavComposable(
             onClickVoltar = {
                 navController.navigateUp()
