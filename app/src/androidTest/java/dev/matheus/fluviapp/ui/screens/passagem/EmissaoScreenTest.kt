@@ -300,7 +300,9 @@ class EmissaoScreenTest {
 
         composeTestRule.onNodeWithText("Conferência").assertIsDisplayed()
         composeTestRule.onNodeWithText("Ana Ribeiro").assertIsDisplayed()
-        composeTestRule.onNodeWithText("CPF 529.982.247-25").assertIsDisplayed()
+        // **Mascarado**: o detalhamento fica aberto de frente para a fila, e documento inteiro numa tela
+        // parada é o que se decora de relance ou sai numa foto (LGPD).
+        composeTestRule.onNodeWithText("CPF ###.###.247-25").assertIsDisplayed()
         // Duas ocorrências e as duas são certas: o lançamento e o total. Somar R$ 150,00 uma vez só daria
         // o mesmo número, e é justamente essa coincidência que o caso não deve tratar como ambiguidade.
         composeTestRule.onAllNodesWithText("R$ 150,00").assertCountEquals(2)
@@ -343,7 +345,8 @@ class EmissaoScreenTest {
             PessoaConferida(
                 papel = "Passageiro",
                 nome = "Ana Ribeiro",
-                documento = "${TipoDocumento.CPF.rotulo} 529.982.247-25",
+                // O documento chega **mascarado** ao DTO — quem o oculta é o mapper, não a tela.
+                documento = "${TipoDocumento.CPF.rotulo} ${TipoDocumento.CPF.mascarar("52998224725")}",
                 nascimento = "30/01/1996",
             ),
         ),

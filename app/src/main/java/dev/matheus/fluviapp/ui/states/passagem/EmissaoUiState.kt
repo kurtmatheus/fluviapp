@@ -52,10 +52,31 @@ data class EmissaoUiState(
     /** "3 de 6" — os dois lados saem do roteiro, então ficam certos em qualquer fluxo. */
     val numeroDoPasso: Int get() = indiceDoPasso + 1
 
-    val totalDePassos: Int get() = roteiro.size
+    /**
+     * O total exibido **nunca é menor que o caminho mais curto** ([PASSOS_DE_UM_FLUXO_COMPLETO]).
+     *
+     * O roteiro derivado para de crescer enquanto falta uma resposta — é o que mantém *"o que virá"* honesto
+     * —, e no primeiro passo ele tem só dois itens. Mostrar "1 de 2" e depois "3 de 6" seria pior do que
+     * impreciso: **é uma promessa que muda**, e quem opera lê a trilha para saber quanto falta.
+     *
+     * Seis é o piso real dos **dois** fluxos: categoria, duas perguntas do bilhete, o cliente, o pagamento e
+     * o desfecho. Ele só **cresce** — gratuidade acrescenta um passo, cada acompanhante acrescenta outro —, e
+     * um total que cresce é o que corresponde ao que aconteceu: o operador escolheu mais coisa.
+     */
+    val totalDePassos: Int get() = maxOf(roteiro.size, PASSOS_DE_UM_FLUXO_COMPLETO)
 
     val podeVoltar: Boolean get() = indiceDoPasso > 0 && passo != PassoDaEmissao.Desfecho
 }
+
+/**
+ * O menor roteiro que existe, e ele é **o mesmo nos dois fluxos** (ADR-0029 D2): categoria → duas perguntas
+ * do bilhete → cliente → pagamento → desfecho.
+ *
+ * Rede: categoria, acomodação, tipo, cliente, pagamento, desfecho. Veículo: categoria, classe, dados do
+ * veículo, cliente, pagamento, desfecho. Seis dos dois lados — coincidência que o desenho procurou, e que é
+ * o que permite prometer "de 6" antes de saber qual caminho será.
+ */
+const val PASSOS_DE_UM_FLUXO_COMPLETO = 6
 
 /**
  * O **cabeçalho de guia** ([ADR-0028] D5): a saída escolhida, visível nos três passos.

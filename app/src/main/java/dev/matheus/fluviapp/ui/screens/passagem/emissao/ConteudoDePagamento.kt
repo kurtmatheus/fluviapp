@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.dp
 import dev.matheus.fluviapp.R
 import dev.matheus.fluviapp.domain.passagem.FormaPagamento
 import dev.matheus.fluviapp.extensions.formataParaMoedaBrasileira
+import dev.matheus.fluviapp.ui.components.forms.fields.CampoDeObservacao
 import dev.matheus.fluviapp.ui.components.forms.fields.FormTextFieldBrownNoIcon
 import dev.matheus.fluviapp.ui.components.texts.TextRegularBrownItalic
 import dev.matheus.fluviapp.ui.components.texts.TextSubTitleBrownBold
@@ -87,16 +88,14 @@ fun ConteudoDePagamento(
             TextRegularBrownItalic(text = "Informe ao menos uma forma de pagamento")
         }
 
-        // O **total não mora aqui** — mora na barra fixa, ao lado do botão de emitir. O teste em aparelho
-        // mostrou por quê: com uma forma marcada e a observação abaixo, ele já saía da dobra num A56, e o
-        // total é justamente o número que o operador confere contra o dinheiro na mão. Valor que se confere
-        // não pode depender de rolagem.
+        // O **total não mora aqui** — fica logo acima do botão de emitir, no fim do passo. É o número que o
+        // operador confere contra o dinheiro na mão, e o lugar dele é ao lado do gesto que o cobra.
 
-        FormTextFieldBrownNoIcon(
-            modifier = Modifier.fillMaxWidth(),
-            value = pagamento.observacao,
-            label = R.string.label_observacao,
-            onValueChange = { aoMudar(pagamento.copy(observacao = it)) },
+        // Campo alto e com microfone: é o único texto livre da emissão, e quem atende com fila na frente
+        // digita mal e devagar (ver [CampoDeObservacao]).
+        CampoDeObservacao(
+            valor = pagamento.observacao,
+            aoMudar = { aoMudar(pagamento.copy(observacao = it)) },
         )
     }
 }

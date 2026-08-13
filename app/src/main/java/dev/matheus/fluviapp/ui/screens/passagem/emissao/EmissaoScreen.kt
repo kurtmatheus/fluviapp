@@ -168,27 +168,36 @@ fun EmissaoScreen(
                         onNovaEmissao = onNovaEmissao,
                     )
                 }
-            }
 
-            BarraDePassos(
-                state = state,
-                onAvancar = onAvancar,
-                onVoltar = onVoltar,
-                onPular = onPular,
-            )
+                // **Os botões moram com o formulário**, dentro da rolagem — e não numa barra fixa.
+                //
+                // Nos passos de escolha não há botão nenhum (o toque já responde), então uma barra fixa só
+                // existiria para o formulário: ela ocupava altura em toda tela para servir a três delas, e
+                // amarrava o arranjo dos botões ao rodapé. Aqui eles acompanham o campo que os habilita,
+                // e o passo escolhe livremente como dispô-los.
+                BotoesDoPasso(
+                    state = state,
+                    onAvancar = onAvancar,
+                    onVoltar = onVoltar,
+                    onPular = onPular,
+                )
+            }
         }
     }
 }
 
 /**
- * **A barra de ação**, e o que ela mostra depende do passo — não do fluxo.
+ * **Os botões do passo**, logo abaixo do formulário que eles fecham.
  *
- * Os passos de escolha **não têm "avançar"**: o toque na opção já é a resposta e já anda ([ADR-0029] D1). Ter
- * um botão de avançar ali criaria dois gestos para a mesma decisão, e o segundo só existiria para confirmar
- * o primeiro.
+ * Os passos de escolha **não têm botão nenhum**: o toque na opção já é a resposta e já anda ([ADR-0029] D1).
+ * É por isso que eles não moram numa barra fixa — ela reservaria altura em toda tela para servir às três que
+ * têm formulário, e amarraria o arranjo ao rodapé.
+ *
+ * O **total** vem junto, imediatamente acima do "Emitir": é o número que o operador confere contra o dinheiro
+ * na mão, e o lugar dele é ao lado do gesto que cobra.
  */
 @Composable
-private fun BarraDePassos(
+private fun BotoesDoPasso(
     state: EmissaoUiState,
     onAvancar: () -> Unit,
     onVoltar: () -> Unit,
@@ -209,8 +218,6 @@ private fun BarraDePassos(
         return
     }
 
-    // O total acompanha o botão de emitir, e não a lista de lançamentos: é o número que se confere contra o
-    // dinheiro na mão, e o aparelho mostrou que dentro da rolagem ele sai da dobra.
     if (passo == PassoDaEmissao.Pagamento) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),

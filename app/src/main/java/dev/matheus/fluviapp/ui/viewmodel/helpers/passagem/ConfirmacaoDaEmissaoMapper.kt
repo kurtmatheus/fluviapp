@@ -103,7 +103,12 @@ private fun pessoasDe(participante: ParticipanteEmEdicao): List<PessoaConferida>
 private fun ClienteEmEdicao.conferida(papel: String) = PessoaConferida(
     papel = papel,
     nome = nome,
-    // Formatado pelo tipo: é assim que a pessoa lê o documento que tem na mão.
-    documento = tipoDocumento?.let { "${it.rotulo} ${it.formatar(numeroDocumento)}" }.orEmpty(),
+    // **Mascarado**, e não formatado por inteiro — é tratamento de dado pessoal, não estética (LGPD).
+    //
+    // O detalhamento fica aberto no balcão, de frente para a fila, e é a tela que mais tempo passa parada:
+    // um documento inteiro ali é o que se decora de relance ou sai numa foto de tela. A máscara é a mesma
+    // política que o `TipoDocumento` já aplica no resto do app (ADR-0020 D2) — e ela preserva o que a
+    // conferência precisa: os dígitos finais bastam para casar com o cartão na mão de quem está na frente.
+    documento = tipoDocumento?.let { "${it.rotulo} ${it.exibir(numeroDocumento, ocultar = true)}" }.orEmpty(),
     nascimento = dataNascimento,
 )

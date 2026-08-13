@@ -69,14 +69,20 @@ fun DetalhamentoDaEmissao(
 
                 HorizontalDivider(thickness = 1.dp, color = MaterialTheme.colorScheme.onBackground)
 
-                Linha("Travessia", confirmacao.cabecalho.travessia)
+                // A travessia **não leva rótulo**: ela é o assunto do documento, não um campo dele. Escrever
+                // "Travessia:" ao lado seria explicar o que a própria frase já diz — e roubar destaque do que
+                // o operador lê primeiro para saber que bilhete é este.
+                TextSubTitleBrownBold(text = confirmacao.cabecalho.travessia)
+
                 Linha("Partida", confirmacao.cabecalho.partida)
                 confirmacao.cabecalho.embarcacao.takeIf { it.isNotBlank() }?.let { Linha("Embarcação", it) }
                 Linha("Bilhete", confirmacao.bilhete)
 
                 confirmacao.pessoas.forEach { pessoa ->
                     HorizontalDivider(thickness = 1.dp, color = MaterialTheme.colorScheme.outlineVariant)
-                    TextRegularBrownItalic(text = pessoa.papel)
+                    // O papel é **título de seção** — "Titular", "Responsável pela retirada" —, então tem o
+                    // peso de título: é ele que diz de quem são as três linhas seguintes.
+                    TextSubTitleBrownBold(text = pessoa.papel)
                     Linha("Nome", pessoa.nome)
                     Linha("Documento", pessoa.documento)
                     Linha("Nascimento", pessoa.nascimento)
@@ -160,6 +166,13 @@ private fun AssinaturaDaAgencia(agencia: String) {
     }
 }
 
+/**
+ * Uma linha de conferência: **rótulo em negrito, valor em regular**.
+ *
+ * A hierarquia é essa e não a inversa porque o operador **procura pelo rótulo** e **lê o valor**: quando ele
+ * confere em voz alta, os olhos saltam de negrito em negrito até achar "Documento", e é o que está ao lado
+ * que ele pronuncia.
+ */
 @Composable
 private fun Linha(rotulo: String, valor: String, destaque: Boolean = false) {
     Row(
@@ -167,7 +180,7 @@ private fun Linha(rotulo: String, valor: String, destaque: Boolean = false) {
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        TextRegularBrownItalic(text = rotulo)
+        TextSubTitleBrownBold(text = rotulo)
         if (destaque) TextSubTitleBrownBold(text = valor) else TextRegularBrown(text = valor)
     }
 }

@@ -318,8 +318,10 @@ class EmissaoViewModelTest {
         val confirmacao = viewModel.uiState.value.confirmacao!!
         assertEquals("Rede", confirmacao.bilhete)
         assertEquals("Ana Ribeiro", confirmacao.pessoas.single().nome)
-        // O documento sai **formatado pelo tipo**: é assim que a pessoa o lê no cartão que tem na mão.
-        assertEquals("CPF 529.982.247-25", confirmacao.pessoas.single().documento)
+        // O documento sai **mascarado** (LGPD): o detalhamento fica aberto de frente para a fila, e é a tela
+        // que mais tempo passa parada. Os dígitos finais bastam para casar com o cartão na mão de quem está
+        // na frente — e é o que a `TipoDocumento.mascarar` preserva.
+        assertEquals("CPF ###.###.247-25", confirmacao.pessoas.single().documento)
         assertEquals("Dinheiro", confirmacao.lancamentos.single().forma)
         assertTrue(confirmacao.total.contains("150"))
     }
