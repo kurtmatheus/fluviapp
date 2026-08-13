@@ -39,6 +39,7 @@ class PassagemTest {
     private fun passageiro(
         acomodacao: Acomodacao = Acomodacao.REDE,
         tipo: TipoPassagem = TipoPassagem.INTEIRA,
+        gratuidade: TipoGratuidade? = null,
         clientes: List<String> = listOf("cli_1"),
     ) = PassagemDePassageiro(
         numero = "001234",
@@ -47,6 +48,7 @@ class PassagemTest {
         metadados = metadados,
         acomodacao = acomodacao,
         tipo = tipo,
+        gratuidade = gratuidade,
         clientes = clientes,
     )
 
@@ -179,7 +181,34 @@ class PassagemTest {
 
     @Test
     fun `gratuidade na rede e admitida`() {
-        assertTrue(passageiro(Acomodacao.REDE, tipo = TipoPassagem.GRATUIDADE).coerente)
+        val gratuita = passageiro(Acomodacao.REDE, TipoPassagem.GRATUIDADE, TipoGratuidade.IDOSO)
+
+        assertTrue(gratuita.coerente)
+    }
+
+    /**
+     * **A lacuna que a F9.1 deixou e o [ADR-0028] D2 fechou**: gravar "gratuidade" sem dizer qual produzia um
+     * rótulo que não serve à fiscalização e sobre o qual a cota do ADR-0013 §8 não tem o que contar.
+     */
+    @Test
+    fun `gratuidade sem subtipo e incoerente`() {
+        val semSubtipo = passageiro(Acomodacao.REDE, tipo = TipoPassagem.GRATUIDADE)
+
+        assertEquals(
+            setOf(PassagemDePassageiro.Pendencia.GRATUIDADE_SEM_SUBTIPO),
+            semSubtipo.pendencias(),
+        )
+    }
+
+    /** E o inverso, que é a outra metade do par: subtipo pendurado em bilhete que não é gratuito. */
+    @Test
+    fun `subtipo em passagem inteira e incoerente`() {
+        val inteiraComSubtipo = passageiro(Acomodacao.REDE, TipoPassagem.INTEIRA, TipoGratuidade.PCD)
+
+        assertEquals(
+            setOf(PassagemDePassageiro.Pendencia.SUBTIPO_SEM_GRATUIDADE),
+            inteiraComSubtipo.pendencias(),
+        )
     }
 
     // --- Veículo ---

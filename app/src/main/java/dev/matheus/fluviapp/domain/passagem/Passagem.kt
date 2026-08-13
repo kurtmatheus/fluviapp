@@ -62,6 +62,18 @@ sealed interface Passagem {
  * o **fato**. O titular é a **posição 0** — decisão de fronteira que voltou atrás de um campo próprio, porque o
  * array único responde *"em que passagens esta pessoa viajou"* numa consulta só (ADR-0024 D3), e o significado da
  * ordem é deste domínio.
+ *
+ * ### O par tipo + gratuidade ([ADR-0028] D2)
+ *
+ * O [tipo] diz *qual redução*; a [gratuidade] diz *por quê*. A F9.1 tinha ficado só com o primeiro, e isso fazia
+ * o app gravar **"gratuidade" sem dizer qual** — um rótulo que não serve à fiscalização, e sobre o qual a **cota
+ * do ADR-0013 §8** (máximo 2 por categoria) não tem o que contar.
+ *
+ * Os dois andam juntos: gratuidade sem subtipo e subtipo sem gratuidade são **as duas incoerências**, e as duas
+ * aparecem em [pendencias]. Elas não viraram um tipo selado (`Gratuidade(subtipo)`) por uma razão de alcance: o
+ * [TipoPassagem] é o eixo que a [Acomodacao] usa para declarar o que admite, e transformá-lo em soma com dado
+ * dentro obrigaria a reescrever essa regra — e o codec, e a tabela do ADR-0013 — para ganhar o que a pendência
+ * já garante em quatro linhas.
  */
 data class PassagemDePassageiro(
     override val id: String = "",
@@ -72,6 +84,8 @@ data class PassagemDePassageiro(
     override val metadados: MetadadosPassagem,
     val acomodacao: Acomodacao,
     val tipo: TipoPassagem,
+    /** **Só** quando o [tipo] é `GRATUIDADE` — é ela que a cota conta e a fiscalização confere. */
+    val gratuidade: TipoGratuidade? = null,
     /** Ids do pool de clientes, **ordenados**: o primeiro é o titular. */
     val clientes: List<String>,
 ) : Passagem {
@@ -92,11 +106,20 @@ data class PassagemDePassageiro(
         if (clientes.size > acomodacao.ocupacaoMaxima) add(Pendencia.EXCEDE_OCUPACAO)
         if (clientes.distinct().size != clientes.size) add(Pendencia.CLIENTE_REPETIDO)
         if (!acomodacao.admite(tipo)) add(Pendencia.TIPO_NAO_ADMITIDO)
+        if (tipo == TipoPassagem.GRATUIDADE && gratuidade == null) add(Pendencia.GRATUIDADE_SEM_SUBTIPO)
+        if (tipo != TipoPassagem.GRATUIDADE && gratuidade != null) add(Pendencia.SUBTIPO_SEM_GRATUIDADE)
     }
 
     val coerente: Boolean get() = pendencias().isEmpty()
 
-    enum class Pendencia { SEM_TITULAR, EXCEDE_OCUPACAO, CLIENTE_REPETIDO, TIPO_NAO_ADMITIDO }
+    enum class Pendencia {
+        SEM_TITULAR,
+        EXCEDE_OCUPACAO,
+        CLIENTE_REPETIDO,
+        TIPO_NAO_ADMITIDO,
+        GRATUIDADE_SEM_SUBTIPO,
+        SUBTIPO_SEM_GRATUIDADE,
+    }
 }
 
 /**

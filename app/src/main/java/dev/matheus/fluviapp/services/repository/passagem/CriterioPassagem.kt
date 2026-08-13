@@ -3,6 +3,7 @@ package dev.matheus.fluviapp.services.repository.passagem
 import dev.matheus.fluviapp.domain.operacoes.PermissoesUsuario.EscopoEmpresa
 import dev.matheus.fluviapp.domain.passagem.CategoriaPassagem
 import dev.matheus.fluviapp.domain.passagem.StatusPassagem
+import dev.matheus.fluviapp.domain.passagem.TipoGratuidade
 import dev.matheus.fluviapp.domain.viagem.OcorrenciaViagem
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -33,6 +34,15 @@ data class CriterioPassagem(
     val escopo: EscopoEmpresa = EscopoEmpresa.Nenhuma,
     val status: StatusPassagem? = null,
     val categoria: CategoriaPassagem? = null,
+    /**
+     * O subtipo de gratuidade — o eixo que a **cota** ([ADR-0013] §8) pergunta: *"quantas de idoso já saíram
+     * nesta saída?"*.
+     *
+     * Ele entra no critério, e não numa contagem feita em memória sobre tudo da ocorrência, porque a cota é
+     * por **categoria de gratuidade**: filtrar no servidor traz duas ou três linhas em vez da lotação inteira
+     * de uma balsa para descartar quase todas no cliente.
+     */
+    val gratuidade: TipoGratuidade? = null,
     /** Quem emitiu. */
     val funcionarioId: String? = null,
     /** Em que passagens esta pessoa viajou — responde com **uma** consulta porque o titular está no array (D3). */
@@ -126,6 +136,7 @@ fun CriterioPassagem.traduzir(): PlanoDeConsulta {
 
         status?.let { add(FiltroPassagem.Igual(CAMPO_STATUS, it.name)) }
         categoria?.let { add(FiltroPassagem.Igual(CAMPO_CATEGORIA, it.name)) }
+        gratuidade?.let { add(FiltroPassagem.Igual(CAMPO_GRATUIDADE, it.name)) }
         funcionarioId?.takeIf { it.isNotBlank() }?.let { add(FiltroPassagem.Igual(CAMPO_FUNCIONARIO, it)) }
         clienteId?.takeIf { it.isNotBlank() }?.let { add(FiltroPassagem.ContemNoArray(CAMPO_CLIENTES, it)) }
     }
@@ -140,5 +151,6 @@ const val CAMPO_VIAGEM = "viagemId"
 const val CAMPO_DATA = "data"
 const val CAMPO_STATUS = "status"
 const val CAMPO_CATEGORIA = "categoria"
+const val CAMPO_GRATUIDADE = "gratuidade"
 const val CAMPO_FUNCIONARIO = "funcionarioId"
 const val CAMPO_CLIENTES = "clientes"

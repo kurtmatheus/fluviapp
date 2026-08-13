@@ -25,6 +25,12 @@ class FakeClienteRepository : ClienteRepository {
     val criados = mutableListOf<Pair<Cliente, String>>()
 
     /**
+     * Simula a indisponibilidade que **só este pool tem**: `criarOuAssinar` é a única operação do app que
+     * exige rede, porque a decisão entre criar e assinar é do servidor (ADR-0025 D6).
+     */
+    var falharAoCriar = false
+
+    /**
      * Quantas vezes o pool foi lido em lote.
      *
      * Existe para um teste afirmar o **negativo**: o embarque confere bilhete e não pessoa, então aquele
@@ -35,6 +41,7 @@ class FakeClienteRepository : ClienteRepository {
         private set
 
     override suspend fun criarOuAssinar(cliente: Cliente, agenciaId: String): String {
+        if (falharAoCriar) throw RuntimeException("pool indisponível")
         criados += cliente to agenciaId
         val existente = clientes.find { it.chaveNatural == cliente.chaveNatural }
         val salvo = (existente ?: cliente).let { it.copy(id = it.chaveNatural, agenciaIds = it.agenciaIds + agenciaId) }

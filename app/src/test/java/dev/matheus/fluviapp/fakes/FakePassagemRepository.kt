@@ -7,8 +7,10 @@ import dev.matheus.fluviapp.domain.passagem.PassagemDeVeiculo
 import dev.matheus.fluviapp.domain.passagem.ResultadoEmbarque
 import dev.matheus.fluviapp.domain.passagem.StatusPassagem
 import dev.matheus.fluviapp.domain.viagem.OcorrenciaViagem
+import dev.matheus.fluviapp.domain.operacoes.PermissoesUsuario.EscopoEmpresa
 import dev.matheus.fluviapp.services.repository.passagem.CriterioPassagem
 import dev.matheus.fluviapp.services.repository.passagem.PassagemRepository
+import dev.matheus.fluviapp.services.repository.passagem.RecorteTemporal
 
 /**
  * Fake da porta [PassagemRepository] — **o fake que não existia**.
@@ -49,7 +51,32 @@ class FakePassagemRepository : PassagemRepository {
         return obterPorId(id)
     }
 
-    override suspend fun consultar(criterio: CriterioPassagem): List<Passagem> = passagens
+    /**
+     * Aplica o critério de verdade, e não devolve tudo.
+     *
+     * Um fake que ignorasse os filtros faria o caso da **cota** passar por acidente: ele contaria as
+     * gratuidades certas por não haver outras no cenário, e continuaria verde no dia em que o ViewModel
+     * esquecesse de filtrar por categoria de gratuidade. O fake tem de errar onde a produção erraria.
+     */
+    override suspend fun consultar(criterio: CriterioPassagem): List<Passagem> {
+        if (criterio.escopo is EscopoEmpresa.Nenhuma) return emptyList()
+
+        return passagens.filter { passagem ->
+            val recorte = criterio.recorte
+            val naOcorrencia = recorte !is RecorteTemporal.Ocorrencia || passagem.ocorrencia == recorte.ocorrencia
+            val doDia = recorte !is RecorteTemporal.Dia || passagem.ocorrencia.data == recorte.data
+            val daEmpresa = when (val escopo = criterio.escopo) {
+                is EscopoEmpresa.Apenas -> passagem.metadados.agenciaId == escopo.empresaId
+                else -> true
+            }
+            val doStatus = criterio.status == null || passagem.metadados.status == criterio.status
+            val daCategoria = criterio.categoria == null || passagem.categoria == criterio.categoria
+            val daGratuidade = criterio.gratuidade == null ||
+                (passagem as? PassagemDePassageiro)?.gratuidade == criterio.gratuidade
+
+            naOcorrencia && doDia && daEmpresa && doStatus && daCategoria && daGratuidade
+        }
+    }
 
     override suspend fun transicionar(id: String, novo: StatusPassagem) {
         val passagem = obterPorId(id) ?: return

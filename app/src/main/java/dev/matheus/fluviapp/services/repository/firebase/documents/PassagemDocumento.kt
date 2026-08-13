@@ -10,6 +10,7 @@ import dev.matheus.fluviapp.domain.passagem.Passagem
 import dev.matheus.fluviapp.domain.passagem.PassagemDePassageiro
 import dev.matheus.fluviapp.domain.passagem.PassagemDeVeiculo
 import dev.matheus.fluviapp.domain.passagem.StatusPassagem
+import dev.matheus.fluviapp.domain.passagem.TipoGratuidade
 import dev.matheus.fluviapp.domain.passagem.TipoPassagem
 import dev.matheus.fluviapp.domain.viagem.OcorrenciaViagem
 import dev.matheus.fluviapp.services.repository.firebase.DocumentoBruto
@@ -64,6 +65,14 @@ data class PassagemDocumento(
     // --- só quando `categoria == PASSAGEIRO` ---
     val acomodacao: String? = null,
     val tipo: String? = null,
+    /**
+     * Subtipo da gratuidade — presente **só** quando `tipo == GRATUIDADE` ([ADR-0028] D2).
+     *
+     * É campo de topo, e não um detalhe do tipo, porque é sobre ele que a **cota** conta: *"quantas
+     * gratuidades de idoso já saíram nesta ocorrência?"* é uma consulta, e consulta não olha dentro de
+     * estrutura aninhada sem custo de índice.
+     */
+    val gratuidade: String? = null,
     /** Ids do pool de clientes, **ordenados**: o primeiro é o titular (D3). */
     val clientes: List<String>? = null,
     // --- só quando `categoria == VEICULO` ---
@@ -136,6 +145,11 @@ fun DocumentoBruto.toPassagem(): Passagem? {
                 metadados = metadados,
                 acomodacao = acomodacao,
                 tipo = tipo,
+                // Subtipo ilegível **não recusa o bilhete**, e a assimetria em relação ao `tipo` é de
+                // consequência: sem tipo não se sabe o que se cobrou; sem subtipo perde-se a razão de uma
+                // gratuidade que continua sendo gratuidade. A incoerência fica visível em `pendencias()`,
+                // que é onde a tela a cobra — recusar aqui sumiria com o bilhete de quem já viajou.
+                gratuidade = TipoGratuidade.de(texto("gratuidade")),
                 clientes = clientes,
             )
         }
@@ -231,6 +245,7 @@ fun Passagem.paraMapa(): Map<String, Any?> = comunsParaMapa() + when (this) {
     is PassagemDePassageiro -> mapOf(
         "acomodacao" to acomodacao.name,
         "tipo" to tipo.name,
+        "gratuidade" to gratuidade?.name,
         "clientes" to clientes,
     )
 

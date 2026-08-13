@@ -8,6 +8,7 @@ import dev.matheus.fluviapp.domain.passagem.MetadadosPassagem
 import dev.matheus.fluviapp.domain.passagem.PassagemDePassageiro
 import dev.matheus.fluviapp.domain.passagem.PassagemDeVeiculo
 import dev.matheus.fluviapp.domain.passagem.StatusPassagem
+import dev.matheus.fluviapp.domain.passagem.TipoGratuidade
 import dev.matheus.fluviapp.domain.passagem.TipoPassagem
 import dev.matheus.fluviapp.domain.passagem.total
 import dev.matheus.fluviapp.domain.viagem.OcorrenciaViagem
@@ -148,6 +149,50 @@ class PassagemDocumentoTest {
     @Test
     fun `acomodacao desconhecida nao vira rede`() {
         assertNull(documento("pas-1", passageiro.paraMapa() + ("acomodacao" to "CABINE")).toPassagem())
+    }
+
+    // --- A gratuidade, que voltou ao agregado (ADR-0028 D2) ---
+
+    @Test
+    fun `gratuidade atravessa e volta com o subtipo`() {
+        val gratuita = passageiro.copy(
+            tipo = TipoPassagem.GRATUIDADE,
+            gratuidade = TipoGratuidade.IDOSO,
+            acomodacao = Acomodacao.REDE,
+            clientes = listOf("cli-7"),
+            lancamentos = emptyList(),
+        )
+
+        assertEquals(gratuita, documentoDe(gratuita).toPassagem())
+        assertEquals("IDOSO", gratuita.paraMapa()["gratuidade"])
+    }
+
+    /** Bilhete que não é gratuito não carrega subtipo — o par ou existe inteiro, ou não existe. */
+    @Test
+    fun `passagem inteira nao grava subtipo de gratuidade`() {
+        assertNull(passageiro.paraMapa()["gratuidade"])
+    }
+
+    /**
+     * Subtipo ilegível **não recusa o bilhete**, ao contrário do `tipo`: sem tipo não se sabe o que se
+     * cobrou; sem subtipo perde-se a razão de uma gratuidade que continua sendo gratuidade. A incoerência
+     * fica visível em `pendencias()`, que é onde a tela a cobra.
+     */
+    @Test
+    fun `subtipo desconhecido nao derruba o bilhete, mas vira pendencia`() {
+        // Rede, e não suíte: gratuidade só existe na rede, e usar suíte aqui somaria uma segunda
+        // pendência (`TIPO_NAO_ADMITIDO`) que não é o que este caso investiga.
+        val gratuita = passageiro.copy(
+            acomodacao = Acomodacao.REDE,
+            clientes = listOf("cli-7"),
+            tipo = TipoPassagem.GRATUIDADE,
+            gratuidade = TipoGratuidade.PCD,
+        )
+        val comLixo = documento("pas-1", gratuita.paraMapa() + ("gratuidade" to "AMIGO_DO_DONO"))
+
+        val lida = comLixo.toPassagem() as PassagemDePassageiro
+        assertNull(lida.gratuidade)
+        assertEquals(setOf(PassagemDePassageiro.Pendencia.GRATUIDADE_SEM_SUBTIPO), lida.pendencias())
     }
 
     /**
