@@ -12,6 +12,7 @@ import dev.matheus.fluviapp.navigation.navcomposables.mainScreenNavComposable
 fun NavGraphBuilder.mainScreenGraph(
     onNavegaParaLogin: () -> Unit,
     onNavegaParaEmbarque: () -> Unit,
+    onNavegaParaEmissao: (String) -> Unit,
     onNavegaParaFormularioNovoFuncionario: () -> Unit,
     onNavegaParaFormularioPesquisaFuncionario: () -> Unit,
     onNavegaParaFormularioNovaEmpresa: () -> Unit,
@@ -37,6 +38,7 @@ fun NavGraphBuilder.mainScreenGraph(
         mainScreenNavComposable(
             onNavegaParaLogin = onNavegaParaLogin,
             onNavegaParaEmbarque = onNavegaParaEmbarque,
+            onNavegaParaEmissao = onNavegaParaEmissao,
             onNavegaParaFormularioNovoFuncionario = onNavegaParaFormularioNovoFuncionario,
             onNavegaParaFormularioPesquisaFuncionario = onNavegaParaFormularioPesquisaFuncionario,
             onNavegaParaFormularioNovaEmpresa = onNavegaParaFormularioNovaEmpresa,

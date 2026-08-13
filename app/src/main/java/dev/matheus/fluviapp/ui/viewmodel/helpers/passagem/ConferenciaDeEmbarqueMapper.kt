@@ -8,9 +8,11 @@ import dev.matheus.fluviapp.domain.passagem.PassagemDeVeiculo
 import dev.matheus.fluviapp.domain.passagem.TipoPassagem
 import dev.matheus.fluviapp.domain.rota.Rota
 import dev.matheus.fluviapp.domain.veiculo.Veiculo
+import dev.matheus.fluviapp.domain.viagem.OcorrenciaViagem
 import dev.matheus.fluviapp.domain.viagem.Viagem
 import dev.matheus.fluviapp.domain.viagem.formatarHora
 import dev.matheus.fluviapp.domain.viagem.rotulo
+import dev.matheus.fluviapp.ui.states.passagem.CabecalhoDaViagem
 import dev.matheus.fluviapp.ui.states.passagem.ConferenciaDeEmbarque
 import dev.matheus.fluviapp.ui.viewmodel.helpers.inicio.rotuloCom
 import java.time.format.DateTimeFormatter
@@ -32,6 +34,8 @@ data class ReferenciasDaPassagem(
     val rota: Rota? = null,
     /** Id do porto → rótulo já pronto ("Porto de Val-de-Cães · Belém/PA"). */
     val portosPorId: Map<String, String> = emptyMap(),
+    /** O nome da embarcação — o cabeçalho da emissão o mostra; a conferência de embarque, não. */
+    val embarcacao: String? = null,
 )
 
 /**
@@ -89,13 +93,27 @@ private fun Passagem.descricaoDoBilhete(): String = when (this) {
 }
 
 /**
- * "Terça-feira, 18/08 · 18:00": o **dia da semana** vem da viagem (é o que ela é — uma saída semanal), a
- * **data** vem da ocorrência (é ela que diz *qual* das terças), e a hora vem da viagem.
+ * O **cabeçalho da emissão** ([ADR-0028] D5) — a mesma junção da conferência, sobre a ocorrência: a emissão
+ * precisa mostrar a saída **antes** de existir bilhete.
  *
- * Sem a viagem carregada sobra a data, que é o que o bilhete carrega por si. É degradação, não erro: uma
- * viagem inativada continua tendo bilhetes emitidos apontando para ela.
+ * Reusa as duas funções que já formatam travessia e partida em vez de repeti-las, porque duas versões do
+ * mesmo texto são duas chances de a tela de venda e a de embarque discordarem sobre a mesma viagem.
  */
-private fun Passagem.partidaCom(viagem: Viagem?): String {
+fun cabecalhoDe(ocorrencia: OcorrenciaViagem, referencias: ReferenciasDaPassagem): CabecalhoDaViagem =
+    CabecalhoDaViagem(
+        travessia = referencias.rota?.rotuloCom(referencias.portosPorId).orEmpty(),
+        partida = partidaDe(ocorrencia, referencias.viagem),
+        embarcacao = referencias.embarcacao.orEmpty(),
+    )
+
+private fun Passagem.partidaCom(viagem: Viagem?): String = partidaDe(ocorrencia, viagem)
+
+/**
+ * "Terça-feira, 18/08 · 18:00": o **dia da semana** e a **data** vêm da ocorrência (é ela que diz *qual* das
+ * terças), e a hora vem da viagem. Sem a viagem carregada sobra a data — degradação, não erro: viagem
+ * inativada continua tendo bilhete emitido apontando para ela.
+ */
+private fun partidaDe(ocorrencia: OcorrenciaViagem, viagem: Viagem?): String {
     val data = ocorrencia.data.format(DIA_E_MES)
     val diaSemana = ocorrencia.data.dayOfWeek.rotulo
     val hora = viagem?.let { formatarHora(it.horaMin) }

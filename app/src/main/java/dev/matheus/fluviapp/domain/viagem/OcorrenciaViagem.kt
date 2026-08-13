@@ -47,5 +47,21 @@ data class OcorrenciaViagem(
             val data = runCatching { LocalDate.parse(dataIso, FORMATO_ISO) }.getOrNull() ?: return null
             return OcorrenciaViagem(viagemId = viagemId, data = data)
         }
+
+        /**
+         * O caminho de volta da [chave] — é ela que atravessa a **navegação** quando o card de saída leva à
+         * emissão (F9.5).
+         *
+         * Existe para que a rota carregue **uma** coordenada em vez de dois argumentos que podem chegar
+         * desemparelhados. Fail-closed como o [de]: chave malformada não vira ocorrência de hoje, não vira
+         * nada — e a emissão que a recebesse não teria para onde vender.
+         */
+        fun deChave(chave: String?): OcorrenciaViagem? {
+            val partes = chave?.split(SEPARADOR) ?: return null
+            if (partes.size != 2) return null
+            return de(partes[0], partes[1])
+        }
+
+        private const val SEPARADOR = "@"
     }
 }

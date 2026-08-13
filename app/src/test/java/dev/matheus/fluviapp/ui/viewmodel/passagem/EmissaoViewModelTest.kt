@@ -14,10 +14,16 @@ import dev.matheus.fluviapp.domain.passagem.TipoGratuidade
 import dev.matheus.fluviapp.domain.passagem.TipoPassagem
 import dev.matheus.fluviapp.domain.viagem.OcorrenciaViagem
 import dev.matheus.fluviapp.fakes.FakeClienteRepository
+import dev.matheus.fluviapp.fakes.FakeEmbarcacaoRepository
+import dev.matheus.fluviapp.fakes.FakeLocalidadeRepository
 import dev.matheus.fluviapp.fakes.FakePassagemRepository
+import dev.matheus.fluviapp.fakes.FakePortoRepository
 import dev.matheus.fluviapp.fakes.FakeRelogio
+import dev.matheus.fluviapp.fakes.FakeRotaRepository
 import dev.matheus.fluviapp.fakes.FakeSessaoUsuario
 import dev.matheus.fluviapp.fakes.FakeVeiculoRepository
+import dev.matheus.fluviapp.fakes.FakeViagemRepository
+import dev.matheus.fluviapp.ui.viewmodel.helpers.passagem.ColetorDeReferencias
 import dev.matheus.fluviapp.revitalizacao.ForaDoEscopo
 import dev.matheus.fluviapp.ui.states.passagem.CabecalhoDaViagem
 import dev.matheus.fluviapp.ui.states.passagem.ClienteEmEdicao
@@ -83,6 +89,17 @@ class EmissaoViewModelTest {
         passagemRepository = passagens,
         clienteRepository = clientes,
         veiculoRepository = veiculos,
+        // O coletor só resolve o **cabeçalho**; com repositórios vazios ele devolve tudo em branco, que é
+        // exatamente o cenário de "vender mesmo sem conseguir resolver a saída" — a fila não para por isso.
+        coletorDeReferencias = ColetorDeReferencias(
+            clienteRepository = clientes,
+            veiculoRepository = veiculos,
+            viagemRepository = FakeViagemRepository(),
+            rotaRepository = FakeRotaRepository(),
+            portoRepository = FakePortoRepository(),
+            localidadeRepository = FakeLocalidadeRepository(),
+            embarcacaoRepository = FakeEmbarcacaoRepository(),
+        ),
         sessaoUsuario = sessao,
         relogio = FakeRelogio(LocalDateTime.of(2026, 8, 13, 9, 30)),
     ).also { it.iniciar(ocorrencia, CabecalhoDaViagem(travessia = "A → B", partida = "Terça, 18/08 · 18:00")) }

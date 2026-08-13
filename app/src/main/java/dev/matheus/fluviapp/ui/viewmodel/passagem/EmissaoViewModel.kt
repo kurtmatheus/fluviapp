@@ -22,11 +22,14 @@ import dev.matheus.fluviapp.services.repository.pool.ClienteRepository
 import dev.matheus.fluviapp.services.repository.pool.VeiculoRepository
 import dev.matheus.fluviapp.domain.operacoes.PermissoesUsuario.EscopoEmpresa
 import dev.matheus.fluviapp.ui.states.passagem.BilheteEmEdicao
+import dev.matheus.fluviapp.ui.states.passagem.CabecalhoDaViagem
 import dev.matheus.fluviapp.ui.states.passagem.ClienteEmEdicao
 import dev.matheus.fluviapp.ui.states.passagem.EmissaoUiState
 import dev.matheus.fluviapp.ui.states.passagem.PagamentoEmEdicao
 import dev.matheus.fluviapp.ui.states.passagem.ParticipanteEmEdicao
 import dev.matheus.fluviapp.ui.states.passagem.PassoDaEmissao
+import dev.matheus.fluviapp.ui.viewmodel.helpers.passagem.ColetorDeReferencias
+import dev.matheus.fluviapp.ui.viewmodel.helpers.passagem.cabecalhoDe
 import dev.matheus.fluviapp.ui.viewmodel.helpers.passagem.validarPasso
 import dev.matheus.fluviapp.util.Relogio
 import kotlinx.coroutines.channels.Channel
@@ -71,6 +74,8 @@ class EmissaoViewModel @Inject constructor(
     private val passagemRepository: PassagemRepository,
     private val clienteRepository: ClienteRepository,
     private val veiculoRepository: VeiculoRepository,
+    /** Resolve o **cabeçalho da saída** — é a mesma junção do embarque, sobre a ocorrência. */
+    private val coletorDeReferencias: ColetorDeReferencias,
     private val sessaoUsuario: SessaoUsuario,
     private val relogio: Relogio,
 ) : ViewModel() {
@@ -90,9 +95,37 @@ class EmissaoViewModel @Inject constructor(
     /** A saída vem **pronta** do card de Início: a emissão não pergunta data nem hora ([ADR-0028] D5). */
     private var ocorrencia: OcorrenciaViagem? = null
 
-    fun iniciar(ocorrencia: OcorrenciaViagem, cabecalho: dev.matheus.fluviapp.ui.states.passagem.CabecalhoDaViagem) {
+    fun iniciar(ocorrencia: OcorrenciaViagem, cabecalho: CabecalhoDaViagem) {
         this.ocorrencia = ocorrencia
         _uiState.update { EmissaoUiState(cabecalho = cabecalho) }
+    }
+
+    /**
+     * A entrada real, pela navegação: recebe a **chave da ocorrência** e resolve o cabeçalho sozinha.
+     *
+     * O cabeçalho é junção (travessia e partida são ids no domínio), então segue o mesmo desenho do embarque:
+     * o coletor busca, uma função pura formata. Falhar em resolver **não impede vender** — o bilhete aponta
+     * para a ocorrência de qualquer forma, e um cabeçalho vazio é menos grave do que uma fila parada.
+     */
+    fun iniciarPelaChave(chaveDaOcorrencia: String?) {
+        val ocorrencia = OcorrenciaViagem.deChave(chaveDaOcorrencia)
+        if (ocorrencia == null) {
+            viewModelScope.launch { _eventos.send(EventoDeEmissao.Falhou(MotivoDeFalha.SEM_OCORRENCIA)) }
+            return
+        }
+        this.ocorrencia = ocorrencia
+        _uiState.update { EmissaoUiState() }
+
+        viewModelScope.launch {
+            val referencias = runCatching { coletorDeReferencias.daOcorrencia(ocorrencia) }.getOrNull()
+                ?: return@launch
+            _uiState.update { it.copy(cabecalho = cabecalhoDe(ocorrencia, referencias)) }
+        }
+    }
+
+    /** Recomeça o atendimento **na mesma saída** — o gesto de "nova passagem" do desfecho. */
+    fun reiniciar() {
+        _uiState.update { EmissaoUiState(cabecalho = it.cabecalho) }
     }
 
     // --- Passo 1: o bilhete ---

@@ -50,9 +50,10 @@ fun MainScreen(
     onClickDeslogar: () -> Unit = {},
     isDarkTheme: Boolean = false,
     onToggleTheme: () -> Unit = {},
+    /** Tocar numa saída do Início abre a **emissão** naquela ocorrência (F9.5). */
+    onClickViagemDisponivel: (String) -> Unit = {},
     // REVITALIZAÇÃO: voltam com as seções Passagem / Viagem.
     // onClickEmbarque: () -> Unit = {},
-    // onClickAdicionarPassagem: (String) -> Unit = {},
     // onRefresh: () -> Unit = {},
 ) {
     val estado = state.mainScreenState
@@ -98,10 +99,12 @@ fun MainScreen(
                     // O Início voltou na F8.4, e **quem decide o que ele mostra é o domínio**: a tela
                     // recebe um `InicioDaTela` já resolvido e desenha a face dele. A divisão entre
                     // plataforma e empresa não mora mais aqui.
+                    // A saída do Início é a **porta da emissão** (F9.5): tocar num card leva a vender
+                    // naquela ocorrência, e é daí que a data e a hora do bilhete vêm — nunca de um campo.
                     is MainScreenState.HOME -> InicioContent(
                         modifier = modifier,
                         inicio = state.inicio,
-                        // onClickViagem levará à emissão sobre a ocorrência — é da F9.
+                        onClickViagem = onClickViagemDisponivel,
                     )
                 }
             }

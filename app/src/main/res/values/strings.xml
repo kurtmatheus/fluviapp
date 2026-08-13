@@ -69,6 +69,11 @@
     <string name="label_email">E-mail</string>
     <string name="label_senha">Senha</string>
     <string name="label_documento">Documento</string>
+    <!-- Emissão em passos (F9.5, ADR-0029): os rótulos dos dois formulários que restaram no fluxo. -->
+    <string name="label_tipo_documento">Tipo de Documento</string>
+    <string name="label_telefone_cliente">Telefone (opcional)</string>
+    <string name="label_valor_recebido">Valor recebido</string>
+    <string name="label_observacao">Observação</string>
     <string name="label_nome_passageiro">Nome do Passageiro</string>
     <string name="label_data_nascimento">Data de Nascimento</string>
     <string name="label_numero_documento">Nº do Documento</string>

@@ -6,6 +6,8 @@ import dev.matheus.fluviapp.domain.passagem.PassagemDeVeiculo
 import dev.matheus.fluviapp.services.repository.cadastro.localidade.LocalidadeRepository
 import dev.matheus.fluviapp.services.repository.cadastro.porto.PortoRepository
 import dev.matheus.fluviapp.services.repository.cadastro.rota.RotaRepository
+import dev.matheus.fluviapp.domain.viagem.OcorrenciaViagem
+import dev.matheus.fluviapp.services.repository.cadastro.viagem.EmbarcacaoRepository
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.ViagemRepository
 import dev.matheus.fluviapp.services.repository.pool.ClienteRepository
 import dev.matheus.fluviapp.services.repository.pool.VeiculoRepository
@@ -41,6 +43,7 @@ class ColetorDeReferencias @Inject constructor(
     private val rotaRepository: RotaRepository,
     private val portoRepository: PortoRepository,
     private val localidadeRepository: LocalidadeRepository,
+    private val embarcacaoRepository: EmbarcacaoRepository,
 ) {
 
     /**
@@ -50,8 +53,14 @@ class ColetorDeReferencias @Inject constructor(
      * seja uma escolha visível na chamada — e não um efeito de qual campo alguém deixou de usar depois.
      * *"O embarque confere bilhete e não pessoa"* (analista, 2026-08-13).
      */
-    suspend fun daTravessia(passagem: Passagem): ReferenciasDaPassagem {
-        val viagem = viagemRepository.obterPorId(passagem.ocorrencia.viagemId)
+    suspend fun daTravessia(passagem: Passagem): ReferenciasDaPassagem = daOcorrencia(passagem.ocorrencia)
+
+    /**
+     * A travessia a partir da **ocorrência**, sem passagem nenhuma — é o que a emissão precisa para montar o
+     * cabeçalho antes de existir bilhete ([ADR-0028] D5).
+     */
+    suspend fun daOcorrencia(ocorrencia: OcorrenciaViagem): ReferenciasDaPassagem {
+        val viagem = viagemRepository.obterPorId(ocorrencia.viagemId)
         val rota = viagem?.rotaId?.let { rotaRepository.obterPorId(it) }
 
         val portosPorId = if (rota == null) {
@@ -63,7 +72,14 @@ class ColetorDeReferencias @Inject constructor(
                 .associate { it.id to it.rotuloCom(localidades) }
         }
 
-        return ReferenciasDaPassagem(viagem = viagem, rota = rota, portosPorId = portosPorId)
+        return ReferenciasDaPassagem(
+            viagem = viagem,
+            rota = rota,
+            portosPorId = portosPorId,
+            embarcacao = viagem?.embarcacaoId?.let { id ->
+                embarcacaoRepository.obterTodos().firstOrNull { it.id == id }?.descricaoNome
+            },
+        )
     }
 
     /**

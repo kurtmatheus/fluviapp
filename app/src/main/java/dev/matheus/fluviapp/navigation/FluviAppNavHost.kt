@@ -6,6 +6,7 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import dev.matheus.fluviapp.extensions.navegaParaEmbarque
+import dev.matheus.fluviapp.extensions.navegaParaEmissao
 import dev.matheus.fluviapp.extensions.navegaParaFormularioFuncionario
 import dev.matheus.fluviapp.extensions.navegaParaLoginGraph
 import dev.matheus.fluviapp.extensions.navegaParaMainScreenGraph
@@ -50,6 +51,7 @@ import dev.matheus.fluviapp.navigation.graphs.splashGraph
 import dev.matheus.fluviapp.navigation.navcomposables.funcionario.formFuncionarioNavComposable
 import dev.matheus.fluviapp.navigation.navcomposables.funcionario.resultSearchFuncionarioNavComposable
 import dev.matheus.fluviapp.navigation.navcomposables.passagem.embarqueNavComposable
+import dev.matheus.fluviapp.navigation.navcomposables.passagem.emissaoNavComposable
 
 @RequiresApi(Build.VERSION_CODES.S)
 @Composable
@@ -107,6 +109,9 @@ fun FluviAppNavHost(
             onNavegaParaEmbarque = {
                 navController.navegaParaEmbarque()
             },
+            onNavegaParaEmissao = { chaveDaOcorrencia ->
+                navController.navegaParaEmissao(chaveDaOcorrencia)
+            },
             onNavegaParaFormularioNovoFuncionario = {
                 navController.navegaParaFormularioFuncionario()
             },
@@ -157,10 +162,17 @@ fun FluviAppNavHost(
             }
         )
 
-        // A emissão, a pesquisa e a contagem **saíram do grafo na F9.2**, junto com a camada de dados que as
-        // alimentava. Não é uma tela escondida: é código que deixou de existir, e volta na F9.5 construído
-        // sobre a `Passagem` selada. O **embarque fica** — ele é o único fluxo de passagem que já falava a
-        // linguagem da porta nova, e o scanner é o que o ADR-0026 D7 declarou que não muda.
+        // A **emissão voltou na F9.5**, e voltou como **um destino só**: os passos não são rotas, porque o
+        // roteiro é derivado do estado (ADR-0029 D3) — se cada passo fosse um destino, a navegação teria de
+        // conhecer essa regra e voltaria a orquestrar a emissão. A pesquisa e a contagem seguem fora.
+        emissaoNavComposable(
+            onClickVoltar = {
+                navController.navigateUp()
+            },
+            // O bilhete digital é o desfecho (ADR-0029 D5), e a tela dele é a próxima fatia.
+            onNavegaParaBilhete = {},
+        )
+
         embarqueNavComposable(
             onClickVoltar = {
                 navController.navigateUp()

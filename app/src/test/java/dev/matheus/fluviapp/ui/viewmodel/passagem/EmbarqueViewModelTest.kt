@@ -15,6 +15,7 @@ import dev.matheus.fluviapp.domain.rota.Rota
 import dev.matheus.fluviapp.domain.viagem.OcorrenciaViagem
 import dev.matheus.fluviapp.domain.viagem.Viagem
 import dev.matheus.fluviapp.fakes.FakeClienteRepository
+import dev.matheus.fluviapp.fakes.FakeEmbarcacaoRepository
 import dev.matheus.fluviapp.fakes.FakeLocalidadeRepository
 import dev.matheus.fluviapp.fakes.FakePassagemRepository
 import dev.matheus.fluviapp.fakes.FakePortoRepository
@@ -127,6 +128,8 @@ class EmbarqueViewModelTest {
                 Localidade(id = "loc-2", municipio = "Parintins", uf = Uf.AM, codigoIbge = "1303205"),
             )
         },
+        // A embarcação só o **cabeçalho da emissão** usa; a conferência de embarque não a mostra.
+        embarcacaoRepository = FakeEmbarcacaoRepository(),
     )
 
     private fun vm(

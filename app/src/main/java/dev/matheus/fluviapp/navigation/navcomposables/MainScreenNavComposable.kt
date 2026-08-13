@@ -26,6 +26,7 @@ import kotlinx.coroutines.launch
 fun NavGraphBuilder.mainScreenNavComposable(
     onNavegaParaLogin: () -> Unit,
     onNavegaParaEmbarque: () -> Unit,
+    onNavegaParaEmissao: (String) -> Unit,
     onNavegaParaFormularioNovoFuncionario: () -> Unit,
     onNavegaParaFormularioPesquisaFuncionario: () -> Unit,
     onNavegaParaFormularioNovaEmpresa: () -> Unit,
@@ -111,6 +112,7 @@ fun NavGraphBuilder.mainScreenNavComposable(
             },
             isDarkTheme = escuro,
             onToggleTheme = { themeViewModel.alternarTema(escuro) },
+            onClickViagemDisponivel = onNavegaParaEmissao,
             // REVITALIZAÇÃO: embarque, nova passagem e pull-to-refresh saíram do painel com os domínios
             // que os alimentam (ADR-0020). Os destinos continuam no grafo, sem entrada pela Main Screen.
             // onClickEmbarque = onNavegaParaEmbarque,

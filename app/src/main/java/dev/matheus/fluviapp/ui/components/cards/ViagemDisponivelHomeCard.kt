@@ -39,7 +39,10 @@ fun ViagemDisponivelHomeCard(
     CommonCard(
         modifier = modifier,
         color = MaterialTheme.colorScheme.primary,
-        onClick = { onClick(viagem.viagemId) },
+        // A **ocorrência**, não a viagem: é a saída datada que se vende, e é dela que a data do bilhete sai
+        // (ADR-0028 D5). Entregar `viagemId` levaria a emissão a perguntar "qual terça?" — que é a pergunta
+        // que o card acabou de responder.
+        onClick = { onClick(viagem.id) },
         alturaCard = 150,
         conteudo = {
             Row(

@@ -67,6 +67,14 @@ fun NavHostController.navegaParaEmbarque() {
     navegaDireto(FluviAppNavComposableDestinations.EmbarqueNavComposable.route)
 }
 
+/**
+ * Abre a emissão **sobre uma saída** (F9.5): a chave da ocorrência vai no caminho, e é o card de saída do
+ * Início que a fornece — a emissão nunca pergunta data nem hora ([ADR-0028] D5).
+ */
+fun NavHostController.navegaParaEmissao(chaveDaOcorrencia: String) {
+    navegaDireto(FluviAppNavComposableDestinations.EmissaoNavComposable.comOcorrencia(chaveDaOcorrencia))
+}
+
 fun NavHostController.navegaParaFormularioFuncionario(idFuncionario: String = "") {
     navegaDireto("${FluviAppNavComposableDestinations.FormFuncionarioNavComposable.route}?idFuncionario=$idFuncionario")
 }
