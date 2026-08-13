@@ -127,20 +127,24 @@ beforeEach(async () => {
     await setDoc(doc(db, 'convites', 'convidado-adm@x.com'), {
       nome: 'Convidado Adm', papel: 'ADM', empresaId: '', cargo: '', usado: false,
     });
-    // Passagem alheia (dono = funcionário B) e o contador.
+    // O contador, agora POR OCORRÊNCIA e em subcoleção da viagem (F9.2, ADR-0024 D6). O documento
+    // `passagens/contador` — que nunca foi uma passagem — deixou de existir.
+    await setDoc(doc(db, 'viagens', 'viagem-1', 'ocorrencias', '2026-08-18'), { ultimoNumero: 100 });
+    // Passagem alheia (dono = funcionário B).
     await setDoc(doc(db, 'passagens', 'alheia'), { funcionarioId: F_B, valor: 10 });
-    await setDoc(doc(db, 'passagens', 'contador'), { numeroBilhete: 100 });
     // Passagens em estados conhecidos do ciclo de vida (ADR-0012), donas do funcionário B (alheias ao A).
     await setDoc(doc(db, 'passagens', 'aemitir-b'), { funcionarioId: F_B, status: 'A_EMITIR' });
     await setDoc(doc(db, 'passagens', 'emitida-b'), { funcionarioId: F_B, status: 'EMITIDA' });
+    await setDoc(doc(db, 'passagens', 'emitida-a'), { funcionarioId: F_A, status: 'EMITIDA' });
+    // O carimbo virou sub-objeto e o instante virou ISO (ADR-0018 D14, ADR-0024 D2): três campos planos
+    // admitiam o meio-preenchido, e `dd/MM/yyyy HH:mm` não ordena.
     await setDoc(doc(db, 'passagens', 'embarcada-b'), {
       funcionarioId: F_B,
       status: 'EMBARCADA',
-      embarcadaPorId: AGENTE_A,
-      embarcadaPor: 'Agente A',
-      embarcadaEm: '01/07/2026 08:00',
+      embarque: { porId: AGENTE_A, em: '2026-07-01T08:00:00' },
     });
     await setDoc(doc(db, 'passagens', 'aemitir-a'), { funcionarioId: F_A, status: 'A_EMITIR' });
+    await setDoc(doc(db, 'passagens', 'cancelavel-a'), { funcionarioId: F_A, status: 'A_EMITIR' });
     // A PARTE e o que ela FAZ (ADR-0016 §4): a subcoleção de atuações, com a concessão pendurada.
     await setDoc(doc(db, "empresas", EMPRESA), { nome: "EMPRESA MODELO", cnpj: "11222333000181" });
     await setDoc(doc(db, "empresas", EMPRESA, "atuacoes", "AGENCIAMENTO"), { embarcacaoIds: ["embarcacao-1"] });
@@ -779,49 +783,142 @@ foraDoEscopo('passagens — editar/deletar por posse', () => {
   test('agente deleta passagem alheia → NEGADO', async () => {
     await assertFails(deleteDoc(doc(asAgenteA(), 'passagens', 'alheia')));
   });
+});
 
-  test('dono deleta a própria passagem → OK', async () => {
-    await assertSucceeds(deleteDoc(doc(asAgenteB(), 'passagens', 'alheia')));
+/**
+ * **O caso que inverteu de sinal na F9.2** (ADR-0024 D11).
+ *
+ * Até aqui existia, neste arquivo, o teste *"dono deleta a própria passagem → OK"*. Ele não voltou como
+ * estava: afirma agora o **oposto**, e a inversão é parte da fatia, não uma limpeza posterior — **um teste
+ * que afirma o contrário da decisão é pior do que teste nenhum, porque defende o comportamento errado**.
+ *
+ * Delete físico deixou de ser uma operação da passagem em qualquer camada: não existe no repositório, não
+ * existe na porta e é negado pelo servidor. O que existe é o cancelamento, que é estado.
+ */
+foraDoEscopo('passagens — delete físico não existe para ninguém', () => {
+  test('dono deleta a PRÓPRIA passagem → NEGADO', async () => {
+    await assertFails(deleteDoc(doc(asAgenteB(), 'passagens', 'alheia')));
+  });
+
+  test('SUPERVISOR deleta passagem da equipe → NEGADO', async () => {
+    await assertFails(deleteDoc(doc(asSupervisor(), 'passagens', 'alheia')));
+  });
+
+  test('plataforma (ADM) deleta passagem → NEGADO (a condição é `false`, não um cargo)', async () => {
+    await assertFails(deleteDoc(doc(asAdm(), 'passagens', 'alheia')));
   });
 });
 
-// --- Contador (passagens/contador): monotônico, sem delete (endurecimento ADR-0011) ---
-foraDoEscopo('passagens/contador — incremento monotônico e indestrutível', () => {
+/** Cancelar é **transição**, e ela obedece à mesma autorização de qualquer outra edição. */
+foraDoEscopo('passagens — cancelamento como estado (o que substituiu o delete)', () => {
+  test('dono cancela a própria passagem A_EMITIR → OK', async () => {
+    await assertSucceeds(updateDoc(doc(asAgenteA(), 'passagens', 'cancelavel-a'), { status: 'CANCELADA' }));
+  });
+
+  test('dono cancela a própria passagem EMITIDA → OK (bilhete errado tem saída)', async () => {
+    await assertSucceeds(updateDoc(doc(asAgenteA(), 'passagens', 'emitida-a'), { status: 'CANCELADA' }));
+  });
+
+  test('SUPERVISOR cancela passagem da equipe → OK (mesmo eixo de editar-qualquer)', async () => {
+    await assertSucceeds(updateDoc(doc(asSupervisor(), 'passagens', 'emitida-b'), { status: 'CANCELADA' }));
+  });
+
+  test('agente cancela passagem ALHEIA → NEGADO (cancelar não é o eixo do embarque)', async () => {
+    await assertFails(updateDoc(doc(asAgenteA(), 'passagens', 'emitida-b'), { status: 'CANCELADA' }));
+  });
+
+  test('cancelar quem JÁ EMBARCOU → NEGADO (a travessia aconteceu; o resto é faturamento)', async () => {
+    await assertFails(updateDoc(doc(asAdm(), 'passagens', 'embarcada-b'), { status: 'CANCELADA' }));
+  });
+
+  test('ressuscitar uma CANCELADA (→ EMITIDA) → NEGADO (terminal)', async () => {
+    await assertSucceeds(updateDoc(doc(asAgenteA(), 'passagens', 'cancelavel-a'), { status: 'CANCELADA' }));
+    await assertFails(updateDoc(doc(asAgenteA(), 'passagens', 'cancelavel-a'), { status: 'EMITIDA' }));
+  });
+});
+
+/**
+ * **O limite que se declara em vez de se esconder** (ADR-0024 D4, precedente do ADR-0011).
+ *
+ * As regras do Firestore não iteram: dá para exigir que `lancamentos` exista e seja lista, **não** que cada
+ * item tenha forma conhecida e valor positivo. Com as quatro colunas de valor de antes, uma regra podia ao
+ * menos falar de `valorPix`; com a lista, a consistência do dinheiro passou a ser **inteiramente do
+ * cliente** — do codec, que recusa a passagem inteira quando um lançamento é ilegível.
+ *
+ * Este caso passa **de propósito**, para que a promoção dessa verificação ao servidor (se um dia houver
+ * back-end próprio) seja uma decisão, e não uma descoberta.
+ */
+foraDoEscopo('passagens — o servidor NÃO verifica o dinheiro (limite declarado)', () => {
+  test('emitir com lançamento de forma inexistente e valor negativo → OK, e isso é o limite', async () => {
+    await assertSucceeds(
+      setDoc(doc(asAgenteA(), 'passagens', 'p-dinheiro-ruim'), {
+        funcionarioId: F_A,
+        categoria: 'PASSAGEIRO',
+        status: 'EMITIDA',
+        lancamentos: [{ id: 'l1', forma: 'BITCOIN', valor: -50 }],
+      }),
+    );
+  });
+});
+
+// --- O contador por ocorrência: viagens/{id}/ocorrencias/{data} (ADR-0024 D6) ---
+foraDoEscopo('ocorrencias — o contador que nasce na primeira venda, monotônico e indestrutível', () => {
   test('papel conhecido incrementa (100 → 101) → OK', async () => {
-    await assertSucceeds(updateDoc(doc(asAgenteA(), 'passagens', 'contador'), { numeroBilhete: 101 }));
+    await assertSucceeds(
+      updateDoc(doc(asAgenteA(), 'viagens', 'viagem-1', 'ocorrencias', '2026-08-18'), { ultimoNumero: 101 }),
+    );
   });
 
-  test('retroceder o contador (100 → 99) → NEGADO', async () => {
-    await assertFails(updateDoc(doc(asAgenteA(), 'passagens', 'contador'), { numeroBilhete: 99 }));
+  test('retroceder o contador (100 → 99) → NEGADO (rewind reimprime número já vendido)', async () => {
+    await assertFails(
+      updateDoc(doc(asAgenteA(), 'viagens', 'viagem-1', 'ocorrencias', '2026-08-18'), { ultimoNumero: 99 }),
+    );
   });
 
-  test('deletar o contador → NEGADO', async () => {
-    await assertFails(deleteDoc(doc(asAdm(), 'passagens', 'contador')));
+  test('primeira venda de outra data cria o contador → OK (a ausência dele é "ninguém vendeu")', async () => {
+    await assertSucceeds(
+      setDoc(doc(asAgenteA(), 'viagens', 'viagem-1', 'ocorrencias', '2026-08-25'), { ultimoNumero: 1 }),
+    );
+  });
+
+  /** O que a chave concatenada na raiz (`contadores/viagemId_data`) não teria como exigir. */
+  test('contador para viagem que NÃO existe → NEGADO', async () => {
+    await assertFails(
+      setDoc(doc(asAgenteA(), 'viagens', 'viagem-fantasma', 'ocorrencias', '2026-08-18'), { ultimoNumero: 1 }),
+    );
+  });
+
+  test('deletar o contador → NEGADO (zerar é reemitir números já impressos)', async () => {
+    await assertFails(deleteDoc(doc(asAdm(), 'viagens', 'viagem-1', 'ocorrencias', '2026-08-18')));
+  });
+
+  test('anônimo lê o contador → NEGADO', async () => {
+    await assertFails(getDoc(doc(asAnon(), 'viagens', 'viagem-1', 'ocorrencias', '2026-08-18')));
   });
 });
 
 // --- Ciclo de vida da passagem (ADR-0012 Fase 4): FSM imposta no servidor ---
-// Carimbo de embarque que o app grava: status + o próprio UID como embarcadaPorId + nome + quando.
-// Aqui continua sendo uid: é auditoria de acesso, e só o uid o servidor confere contra request.auth.
-const carimboEmbarque = (uid, nome) => ({
+// Carimbo de embarque que o app grava: status + o sub-objeto `embarque` com o próprio UID e o instante.
+// O uid continua sendo uid: é auditoria de ACESSO, e só ele o servidor confere contra request.auth. O
+// **nome de quem validou saiu** (F9.2) — no domínio nada é congelado, e ele se resolve por referência.
+const carimboEmbarque = (uid) => ({
   status: 'EMBARCADA',
-  embarcadaPorId: uid,
-  embarcadaPor: nome,
-  embarcadaEm: '02/07/2026 09:30',
+  embarque: { porId: uid, em: '2026-07-02T09:30:00' },
+  alteradoEm: '2026-07-02T09:30:00',
 });
 
 foraDoEscopo('passagens — confirmação de embarque (eixo novo, qualquer papel)', () => {
   test('agente NÃO-dono confirma embarque (EMITIDA→EMBARCADA) carimbando o próprio uid → OK', async () => {
     // AGENTE_A embarca a passagem 'emitida-b' (dono = funcionário B): quem está na doca valida.
-    await assertSucceeds(updateDoc(doc(asAgenteA(), 'passagens', 'emitida-b'), carimboEmbarque(AGENTE_A, 'Agente A')));
+    await assertSucceeds(updateDoc(doc(asAgenteA(), 'passagens', 'emitida-b'), carimboEmbarque(AGENTE_A)));
   });
 
   test('plataforma (ADM) confirma embarque de passagem alheia → OK', async () => {
-    await assertSucceeds(updateDoc(doc(asAdm(), 'passagens', 'emitida-b'), carimboEmbarque(ADM, 'Adm')));
+    await assertSucceeds(updateDoc(doc(asAdm(), 'passagens', 'emitida-b'), carimboEmbarque(ADM)));
   });
 
   test('embarque carimbando OUTRO uid como quem embarcou (forjar autoria) → NEGADO', async () => {
-    await assertFails(updateDoc(doc(asAgenteA(), 'passagens', 'emitida-b'), carimboEmbarque(AGENTE_B, 'Agente B')));
+    await assertFails(updateDoc(doc(asAgenteA(), 'passagens', 'emitida-b'), carimboEmbarque(AGENTE_B)));
   });
 
   test('marcar EMBARCADA sem carimbo (só status) → NEGADO (embarque tem que ser auditado)', async () => {
@@ -830,7 +927,7 @@ foraDoEscopo('passagens — confirmação de embarque (eixo novo, qualquer papel
 
   test('embarque contrabandeando edição de conteúdo (altera valor junto) por não-dono → NEGADO', async () => {
     await assertFails(updateDoc(doc(asAgenteA(), 'passagens', 'emitida-b'), {
-      ...carimboEmbarque(AGENTE_A, 'Agente A'),
+      ...carimboEmbarque(AGENTE_A),
       valor: 999,
     }));
   });
@@ -846,7 +943,7 @@ foraDoEscopo('passagens — arestas legais da FSM (avança, nunca retrocede nem 
   });
 
   test('pulo A_EMITIR→EMBARCADA (sem passar por EMITIDA) → NEGADO', async () => {
-    await assertFails(updateDoc(doc(asAdm(), 'passagens', 'aemitir-b'), carimboEmbarque(ADM, 'Adm')));
+    await assertFails(updateDoc(doc(asAdm(), 'passagens', 'aemitir-b'), carimboEmbarque(ADM)));
   });
 
   test('retrocesso EMBARCADA→EMITIDA (mesmo papel de plataforma) → NEGADO (embarque é irreversível)', async () => {

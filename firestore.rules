@@ -104,26 +104,36 @@ service cloud.firestore {
     }
     // Só as arestas legais da FSM (mesma matriz do Kotlin) ou status inalterado (edição de conteúdo).
     // Bloqueia retrocesso (EMBARCADA→*) e pulo (A_EMITIR→EMBARCADA sem passar por EMITIDA).
+    //
+    // **CANCELADA entra na matriz com o delete saindo do arquivo** (F9.2, ADR-0024 D11), e as duas coisas
+    // são a mesma decisão: cancelar deixou de ser remoção física e virou estado. Ela é alcançável de
+    // A_EMITIR e de EMITIDA, e **nunca de EMBARCADA** — quem já embarcou não cancela a travessia; o que
+    // existe depois disso é acerto financeiro, e acerto é do módulo de faturamento.
     function transicaoStatusLegal() {
       return statusAtual() == statusNovo()
           || (statusAtual() == 'A_EMITIR' && statusNovo() == 'EMITIDA')
-          || (statusAtual() == 'EMITIDA' && statusNovo() == 'EMBARCADA');
+          || (statusAtual() == 'EMITIDA' && statusNovo() == 'EMBARCADA')
+          || (statusAtual() == 'A_EMITIR' && statusNovo() == 'CANCELADA')
+          || (statusAtual() == 'EMITIDA' && statusNovo() == 'CANCELADA');
     }
-    // Confirmação de embarque: a aresta EMITIDA→EMBARCADA que (a) toca SÓ os 4 campos do embarque —
-    // sem contrabandear edição de conteúdo por não-dono — e (b) carimba o PRÓPRIO uid como quem embarcou.
+    // Confirmação de embarque: a aresta EMITIDA→EMBARCADA que (a) toca SÓ os campos do embarque — sem
+    // contrabandear edição de conteúdo por não-dono — e (b) carimba o PRÓPRIO uid como quem embarcou.
     // Aqui é uid mesmo, não funcionário: é auditoria de ACESSO, e só o uid o servidor pode conferir
     // contra request.auth (ADR-0015 §8.4 mudou a posse, não o carimbo).
+    //
+    // O carimbo virou **sub-objeto** `embarque: {porId, em}` (ADR-0018 D14): eram três campos planos com
+    // default vazio, e isso deixava representável o meio-preenchido — autoria sem instante, ou o inverso.
+    // O nome de quem validou **saiu**: no domínio nada é congelado, e ele se resolve por referência.
     function embarqueCarimbado() {
-      return request.resource.data.get('embarcadaPorId', '') == request.auth.uid
-          && request.resource.data.get('embarcadaPor', '') != ''
-          && request.resource.data.get('embarcadaEm', '') != '';
+      return request.resource.data.get('embarque', {}).get('porId', '') == request.auth.uid
+          && request.resource.data.get('embarque', {}).get('em', '') != '';
     }
     function ehConfirmacaoEmbarque() {
       return statusAtual() == 'EMITIDA'
           && statusNovo() == 'EMBARCADA'
           && embarqueCarimbado()
           && request.resource.data.diff(resource.data).affectedKeys()
-               .hasOnly(['status', 'embarcadaPorId', 'embarcadaPor', 'embarcadaEm']);
+               .hasOnly(['status', 'embarque', 'alteradoEm']);
     }
 
     // --- Perfis de usuário: papel e vínculo imutáveis pelo cliente (anti-escalonamento) ---
@@ -374,26 +384,73 @@ service cloud.firestore {
                     && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ativo']);
 
       allow delete: if false;
+
+      // --- O contador de bilhete, agora POR OCORRÊNCIA (F9.2, ADR-0024 D6) ---
+      //
+      // Era `passagens/contador`: um documento único, global, que nunca foi uma passagem e vivia dentro da
+      // coleção de passagens com uma exceção por `id == 'contador'` em cada linha de regra. Agora é
+      // `viagens/{viagemId}/ocorrencias/{data}`, guardando o último número daquela saída e **nada mais**.
+      //
+      // Três coisas que só a subcoleção dá, e a terceira é esta regra:
+      //
+      //  1. a chave composta deixa de ser texto concatenado (`viagemId_data`, que ninguém consulta por
+      //     metade) e volta a ser **caminho** — "as ocorrências desta viagem" é a subcoleção inteira;
+      //  2. a numeração deixa de ser global: dois bilhetes de saídas diferentes param de disputar o
+      //     mesmo número;
+      //  3. **a viagem-pai tem de existir** para nascer um contador para ela — o que uma chave
+      //     concatenada na raiz não teria como exigir.
+      //
+      // O invariante permanece o mesmo do documento antigo, e é o que importa: **monotônico**, nunca
+      // retrocede (rewind produziria bilhete duplicado) e **sem delete** — não concedido, default-deny.
+      // Zerar um contador é reemitir números já impressos.
+      //
+      // A corrida entre dois caixas no mesmo N **não é resolvível por regra** (a regra vê uma escrita por
+      // vez, não a leitura que a precedeu): quem a resolve é a transação no app, que lê do servidor e
+      // grava no mesmo passo. A regra impede o retrocesso; a transação impede o empate.
+      match /ocorrencias/{data} {
+        allow read: if autenticado();
+
+        allow create: if autenticado()
+                      && papelConhecido()
+                      && exists(/databases/$(database)/documents/viagens/$(doc))
+                      && request.resource.data.ultimoNumero is int
+                      && request.resource.data.ultimoNumero > 0;
+
+        allow update: if autenticado()
+                      && papelConhecido()
+                      && request.resource.data.ultimoNumero is int
+                      && request.resource.data.ultimoNumero > resource.data.get('ultimoNumero', -1);
+
+        allow delete: if false;
+      }
     }
 
-    // --- Passagens: create sem forjar dono; update/delete por posse ou editar-qualquer ---
+    // --- Passagens: create sem forjar dono; update por posse ou editar-qualquer; **delete não existe** ---
+    //
+    // Duas exceções saíram deste bloco na F9.2, e vale dizer o que cada uma era:
+    //
+    //  - **o `id != 'contador'` repetido em cada verbo** morreu com o documento que o justificava. O
+    //    contador nunca foi uma passagem, e vivia dentro de `passagens/` obrigando toda regra a abrir
+    //    exceção para ele. Agora é subcoleção da viagem, e a regra dele mora lá;
+    //  - **o `allow delete`** vira `if false`, entrando na lista das seis coleções que já registram fato e
+    //    não admitem remoção (ADR-0024 D11). Não é um `if` com condição de cargo: se ninguém deve apagar, a
+    //    condição é `false`, e isso é auditável de relance. O que existe é `CANCELADA`, que é transição —
+    //    cancelada não ocupa, não fatura e **fica com o número**: sequência com buraco é o normal de uma
+    //    numeração que registra fatos.
+    //
+    // **O que esta regra não consegue verificar, e está declarado em teste que passa de propósito:** a
+    // consistência da lista de `lancamentos`. As regras não iteram — dá para exigir que o campo exista e
+    // seja lista, não que cada item tenha forma conhecida e valor positivo. Com as quatro colunas de valor
+    // uma regra podia ao menos falar de `valorPix`; com a lista, **o dinheiro passa a ser inteiramente
+    // responsabilidade do cliente**. Sustenta-se porque lançamento inválido é dado ruim de quem já está
+    // autorizado a vender, não escalonamento de privilégio.
     match /passagens/{id} {
       allow read: if autenticado();
-
-      // Doc especial do contador de bilhete (passagens/contador): quem emite passagem incrementa
-      // o número. Endurecido — o contador é infra compartilhada, então o papel certo ainda escreve,
-      // mas só preservando o invariante: incremento MONOTÔNICO (nunca retrocede → sem bilhete
-      // duplicado por rewind) e SEM delete (não é concedido → default-deny). Bootstrap/seed via create.
-      // (A corrida de dois clientes no mesmo N não é resolvível por regra — exige transação no app.)
-      allow create: if autenticado() && id == 'contador' && papelConhecido();
-      allow update: if autenticado() && id == 'contador' && papelConhecido()
-                    && request.resource.data.numeroBilhete > resource.data.get('numeroBilhete', -1);
 
       // Emissão: papel conhecido e o dono declarado tem que ser o FUNCIONÁRIO do autor (não dá forjar,
       // porque o cliente não escreve o próprio funcionarioId). Dono vazio é recusado: quem emite é da
       // operação (ADR-0015 §8.4) — sem isso, dois perfis de plataforma gerariam passagens órfãs.
       allow create: if autenticado()
-                    && id != 'contador'
                     && papelConhecido()
                     && funcionarioIdDoAutor() != ''
                     && request.resource.data.funcionarioId == funcionarioIdDoAutor();
@@ -401,19 +458,15 @@ service cloud.firestore {
       // Editar: o funcionarioId é sempre imutável (não reatribui dono) e o status só percorre arestas
       // legais da FSM (ADR-0012), nunca retrocede nem pula. Dois eixos de autorização:
       //  - confirmação de embarque (EMITIDA→EMBARCADA, carimbada): QUALQUER papel conhecido (eixo novo);
-      //  - qualquer outra edição (inclui emitir A_EMITIR→EMITIDA): plataforma/Supervisor ou o dono.
+      //  - qualquer outra edição (inclui emitir A_EMITIR→EMITIDA e cancelar): plataforma/Supervisor ou o dono.
       allow update: if autenticado()
-                    && id != 'contador'
                     && request.resource.data.funcionarioId == resource.data.funcionarioId
                     && transicaoStatusLegal()
                     && (ehConfirmacaoEmbarque()
                           ? podeConfirmarEmbarque()
                           : (podeEditarQualquerPassagem() || ehDonoPassagem()));
 
-      // Deletar: mesmas regras de editar (ADR-0010).
-      allow delete: if autenticado()
-                    && id != 'contador'
-                    && (podeEditarQualquerPassagem() || ehDonoPassagem());
+      allow delete: if false;
     }
 
     // Coleções não listadas: negadas por omissão (default-deny).
