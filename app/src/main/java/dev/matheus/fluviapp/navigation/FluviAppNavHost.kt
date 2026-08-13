@@ -6,6 +6,7 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import dev.matheus.fluviapp.extensions.navegaParaEmbarque
+import dev.matheus.fluviapp.extensions.navegaParaBilhete
 import dev.matheus.fluviapp.extensions.navegaParaEmissao
 import dev.matheus.fluviapp.extensions.navegaParaFormularioFuncionario
 import dev.matheus.fluviapp.extensions.navegaParaLoginGraph
@@ -50,6 +51,7 @@ import dev.matheus.fluviapp.navigation.graphs.selecaoVinculoGraph
 import dev.matheus.fluviapp.navigation.graphs.splashGraph
 import dev.matheus.fluviapp.navigation.navcomposables.funcionario.formFuncionarioNavComposable
 import dev.matheus.fluviapp.navigation.navcomposables.funcionario.resultSearchFuncionarioNavComposable
+import dev.matheus.fluviapp.navigation.navcomposables.passagem.bilheteNavComposable
 import dev.matheus.fluviapp.navigation.navcomposables.passagem.embarqueNavComposable
 import dev.matheus.fluviapp.navigation.navcomposables.passagem.emissaoNavComposable
 
@@ -169,8 +171,17 @@ fun FluviAppNavHost(
             onClickVoltar = {
                 navController.navigateUp()
             },
-            // O bilhete digital é o desfecho (ADR-0029 D5), e a tela dele é a próxima fatia.
-            onNavegaParaBilhete = {},
+            onNavegaParaBilhete = { idPassagem ->
+                navController.navegaParaBilhete(idPassagem)
+            },
+        )
+
+        // O bilhete tem **destino próprio** porque é o mesmo documento em dois momentos: logo após emitir e
+        // quando alguém for buscá-lo depois (decisão do analista: *mesmo bilhete*).
+        bilheteNavComposable(
+            onClickVoltar = {
+                navController.navigateUp()
+            },
         )
 
         embarqueNavComposable(

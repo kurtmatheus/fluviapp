@@ -69,6 +69,7 @@
     <string name="label_email">E-mail</string>
     <string name="label_senha">Senha</string>
     <string name="label_documento">Documento</string>
+    <string name="subtitle_bilhete_digital">Bilhete Digital</string>
     <!-- Emissão em passos (F9.5, ADR-0029): os rótulos dos dois formulários que restaram no fluxo. -->
     <string name="label_tipo_documento">Tipo de Documento</string>
     <string name="label_telefone_cliente">Telefone (opcional)</string>

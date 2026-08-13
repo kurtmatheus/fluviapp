@@ -3,6 +3,9 @@ package dev.matheus.fluviapp.navigation.destinations
 /** A chave da ocorrência (`viagemId@yyyy-MM-dd`) que a emissão recebe do card de saída (F9.5). */
 const val ARG_OCORRENCIA = "ocorrencia"
 
+/** O id da passagem — o que o QR carrega, e o que o bilhete recebe para se desenhar. */
+const val ARG_ID_PASSAGEM = "idPassagem"
+
 sealed class FluviAppNavComposableDestinations(val route: String) {
     data object MainScreenNavComposable : FluviAppNavComposableDestinations("mainScreen")
     data object FormPassagemNavComposable : FluviAppNavComposableDestinations("formPassagem")
@@ -21,6 +24,17 @@ sealed class FluviAppNavComposableDestinations(val route: String) {
     data object EmissaoNavComposable :
         FluviAppNavComposableDestinations("emissao/{$ARG_OCORRENCIA}") {
         fun comOcorrencia(chave: String) = "emissao/$chave"
+    }
+
+    /**
+     * O **bilhete digital** — destino próprio, e não um pedaço da emissão.
+     *
+     * *"Mesmo bilhete"* (analista): quem acabou de emitir e quem for buscar uma passagem antiga chegam ao
+     * mesmo lugar. O documento é um só, e duas telas desenhando o mesmo documento é como elas divergem.
+     */
+    data object BilheteNavComposable :
+        FluviAppNavComposableDestinations("bilhete/{$ARG_ID_PASSAGEM}") {
+        fun comPassagem(idPassagem: String) = "bilhete/$idPassagem"
     }
     data object ContagemPassagemNavComposable : FluviAppNavComposableDestinations("contagemPassagem")
     data object FormFuncionarioNavComposable: FluviAppNavComposableDestinations("formFuncionario")

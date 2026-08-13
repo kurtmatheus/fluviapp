@@ -75,6 +75,11 @@ fun NavHostController.navegaParaEmissao(chaveDaOcorrencia: String) {
     navegaDireto(FluviAppNavComposableDestinations.EmissaoNavComposable.comOcorrencia(chaveDaOcorrencia))
 }
 
+/** Abre o **bilhete** de uma passagem — o mesmo destino para quem emitiu agora e para quem foi buscar. */
+fun NavHostController.navegaParaBilhete(idPassagem: String) {
+    navegaDireto(FluviAppNavComposableDestinations.BilheteNavComposable.comPassagem(idPassagem))
+}
+
 fun NavHostController.navegaParaFormularioFuncionario(idFuncionario: String = "") {
     navegaDireto("${FluviAppNavComposableDestinations.FormFuncionarioNavComposable.route}?idFuncionario=$idFuncionario")
 }
