@@ -87,7 +87,10 @@ fun ConteudoDePagamento(
             TextRegularBrownItalic(text = "Informe ao menos uma forma de pagamento")
         }
 
-        TextSubTitleBrownBold(text = "Total: ${pagamento.total.formataParaMoedaBrasileira()}")
+        // O **total não mora aqui** — mora na barra fixa, ao lado do botão de emitir. O teste em aparelho
+        // mostrou por quê: com uma forma marcada e a observação abaixo, ele já saía da dobra num A56, e o
+        // total é justamente o número que o operador confere contra o dinheiro na mão. Valor que se confere
+        // não pode depender de rolagem.
 
         FormTextFieldBrownNoIcon(
             modifier = Modifier.fillMaxWidth(),

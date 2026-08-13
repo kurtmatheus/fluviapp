@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -22,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import dev.matheus.fluviapp.R
 import dev.matheus.fluviapp.domain.passagem.Acomodacao
+import dev.matheus.fluviapp.extensions.formataParaMoedaBrasileira
 import dev.matheus.fluviapp.ui.components.forms.buttons.CommonIconButton
 import dev.matheus.fluviapp.ui.components.passagem.CabecalhoDaEmissao
 import dev.matheus.fluviapp.ui.components.passagem.TrilhaDePassos
@@ -103,7 +105,10 @@ fun EmissaoScreen(
             return@CommonScreenNoBottom
         }
 
-        Column(modifier = modifier.fillMaxSize()) {
+        // `navigationBarsPadding` na **coluna inteira**, e não só na barra de ação: o rodapé desta tela é
+        // fixo, então tudo o que fica abaixo da área rolável — o total e os botões — cai atrás da barra de
+        // gestos do sistema sem ele. Foi o teste em aparelho que cobrou; numa prévia o layout parecia certo.
+        Column(modifier = modifier.fillMaxSize().navigationBarsPadding()) {
             CabecalhoDaEmissao(state.cabecalho)
             TrilhaDePassos(numeroDoPasso = state.numeroDoPasso, totalDePassos = state.totalDePassos)
 
@@ -202,6 +207,17 @@ private fun BarraDePassos(
             CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
         }
         return
+    }
+
+    // O total acompanha o botão de emitir, e não a lista de lançamentos: é o número que se confere contra o
+    // dinheiro na mão, e o aparelho mostrou que dentro da rolagem ele sai da dobra.
+    if (passo == PassoDaEmissao.Pagamento) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
+            horizontalArrangement = Arrangement.Center,
+        ) {
+            TextSubTitleBrownBold(text = "Total: ${state.pagamento.total.formataParaMoedaBrasileira()}")
+        }
     }
 
     Row(
