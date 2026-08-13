@@ -31,6 +31,13 @@ data class EmissaoUiState(
     /** Erros do passo corrente, calculados na tentativa de avançar — nunca a cada tecla. */
     val erros: Set<ErroDeEmissao> = emptySet(),
     val emitindo: Boolean = false,
+    /**
+     * **O detalhamento aberto** — presente enquanto o operador confere, ausente no resto do tempo.
+     *
+     * Ele é estado e não passo ([ConfirmacaoDaEmissao]): não entra no roteiro, não mexe na trilha, e some
+     * tanto ao voltar para corrigir quanto ao confirmar.
+     */
+    val confirmacao: ConfirmacaoDaEmissao? = null,
     /** O id do bilhete, depois que a emissão se resolveu — é o que o passo do desfecho usa. */
     val idEmitida: String? = null,
 ) {

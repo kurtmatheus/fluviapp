@@ -27,9 +27,14 @@ data class MarcaAgencia(
  * **FluviApp** — o bilhete nunca sai sem assinatura.
  */
 fun marcaDaAgencia(agencia: String?): MarcaAgencia? = when (agencia?.trim()?.uppercase()) {
-    "MATRIZ" -> MarcaAgencia(
-        logoTopo = R.drawable.agencia_matriz_logo1,
-        marcaDagua = R.drawable.agencia_matriz_logo2,
+    // A arte entrou **vetorizada** (2026-08-13), no lugar dos dois PNG de tamanho fixo que havia antes. A
+    // diferença importa nos dois lugares em que ela aparece: o detalhamento de conferência e o bilhete
+    // digital são renderizados em tamanhos diferentes e o bilhete vira **imagem** — um PNG de origem
+    // escalado para cima chega ao arquivo final com a borda serrilhada, e é o arquivo que o passageiro
+    // guarda. Vetor resolve nos dois sem manter uma pilha de densidades no APK.
+    "NAVEG" -> MarcaAgencia(
+        logoTopo = R.drawable.naveg_logo1,
+        marcaDagua = R.drawable.naveg_logo2,
     )
 
     else -> null

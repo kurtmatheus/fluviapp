@@ -123,6 +123,17 @@ class EmissaoViewModelTest {
     private fun pagamentoEmDinheiro(valor: String = "150,00") =
         PagamentoEmEdicao(lancamentos = listOf(LancamentoEmEdicao(FormaPagamento.DINHEIRO, valor)))
 
+    /**
+     * O "Emitir" do passo 5 **abre a conferência**; quem emite é o gesto seguinte. Os dois estão juntos aqui
+     * porque é o que o operador faz — mas separados no ViewModel, que é o que permite voltar e corrigir.
+     */
+    private fun TestScope.confirmarEEmitir(viewModel: EmissaoViewModel) {
+        viewModel.avancar()
+        advanceUntilIdle()
+        viewModel.confirmarEmissao()
+        advanceUntilIdle()
+    }
+
     // --- O roteiro em movimento ---
 
     @Test
@@ -276,6 +287,85 @@ class EmissaoViewModelTest {
         coleta.cancel()
     }
 
+    // --- O detalhamento que precede a emissão (conferência) ---
+
+    /** O "Emitir" do passo 5 **não emite**: abre a conferência. Quem emite é o gesto seguinte. */
+    @Test
+    fun `o pagamento abre a conferencia em vez de emitir`() = runTest {
+        val passagens = FakePassagemRepository()
+        val viewModel = vm(passagens)
+
+        ateOPagamentoEmRede(viewModel)
+        viewModel.preencherPagamento(pagamentoEmDinheiro())
+        viewModel.avancar()
+        advanceUntilIdle()
+
+        assertTrue(viewModel.uiState.value.confirmacao != null)
+        assertTrue(passagens.emitidas.isEmpty())
+        // A conferência não é passo: o roteiro não andou, e a trilha continua no pagamento.
+        assertEquals(PassoDaEmissao.Pagamento, viewModel.uiState.value.passo)
+    }
+
+    @Test
+    fun `a conferencia mostra o que foi digitado`() = runTest {
+        val viewModel = vm()
+
+        ateOPagamentoEmRede(viewModel)
+        viewModel.preencherPagamento(pagamentoEmDinheiro())
+        viewModel.avancar()
+        advanceUntilIdle()
+
+        val confirmacao = viewModel.uiState.value.confirmacao!!
+        assertEquals("Rede", confirmacao.bilhete)
+        assertEquals("Ana Ribeiro", confirmacao.pessoas.single().nome)
+        // O documento sai **formatado pelo tipo**: é assim que a pessoa o lê no cartão que tem na mão.
+        assertEquals("CPF 529.982.247-25", confirmacao.pessoas.single().documento)
+        assertEquals("Dinheiro", confirmacao.lancamentos.single().forma)
+        assertTrue(confirmacao.total.contains("150"))
+    }
+
+    /** Gratuidade não tem lançamento, e a **ausência precisa dizer isso** — não parecer pagamento perdido. */
+    @Test
+    fun `a conferencia de gratuidade nao tem lancamento`() = runTest {
+        val viewModel = vm()
+
+        viewModel.escolherCategoria(CategoriaPassagem.PASSAGEIRO)
+        viewModel.avancar()
+        viewModel.escolherAcomodacao(Acomodacao.REDE)
+        viewModel.avancar()
+        viewModel.escolherTipo(TipoPassagem.GRATUIDADE)
+        viewModel.avancar()
+        viewModel.escolherGratuidade(TipoGratuidade.IDOSO)
+        viewModel.avancar()
+        viewModel.preencherPessoa(0, ana)
+        viewModel.avancar()
+        advanceUntilIdle()
+        viewModel.avancar()
+        advanceUntilIdle()
+
+        val confirmacao = viewModel.uiState.value.confirmacao!!
+        assertTrue(confirmacao.lancamentos.isEmpty())
+        assertEquals("Rede · Gratuidade · Idoso", confirmacao.bilhete)
+    }
+
+    /** Corrigir fecha a conferência **sem emitir**, e o atendimento continua inteiro onde estava. */
+    @Test
+    fun `corrigir volta para o pagamento sem emitir`() = runTest {
+        val passagens = FakePassagemRepository()
+        val viewModel = vm(passagens)
+
+        ateOPagamentoEmRede(viewModel)
+        viewModel.preencherPagamento(pagamentoEmDinheiro())
+        viewModel.avancar()
+        advanceUntilIdle()
+        viewModel.revisar()
+
+        assertNull(viewModel.uiState.value.confirmacao)
+        assertTrue(passagens.emitidas.isEmpty())
+        assertEquals(PassoDaEmissao.Pagamento, viewModel.uiState.value.passo)
+        assertEquals("150,00", viewModel.uiState.value.pagamento.lancamentos.single().valor)
+    }
+
     // --- A emissão ---
 
     @Test
@@ -287,8 +377,7 @@ class EmissaoViewModelTest {
 
         ateOPagamentoEmRede(viewModel)
         viewModel.preencherPagamento(pagamentoEmDinheiro())
-        viewModel.avancar()
-        advanceUntilIdle()
+        confirmarEEmitir(viewModel)
 
         val emitida = passagens.emitidas.single() as PassagemDePassageiro
         assertEquals("41", emitida.numero)
@@ -321,8 +410,7 @@ class EmissaoViewModelTest {
         // O passo 4 é o responsável, e ele é opcional: bilhete de veículo sem ninguém nomeado é o normal.
         viewModel.pular()
         viewModel.preencherPagamento(pagamentoEmDinheiro("80,00"))
-        viewModel.avancar()
-        advanceUntilIdle()
+        confirmarEEmitir(viewModel)
 
         val emitida = passagens.emitidas.single() as PassagemDeVeiculo
         assertEquals("ABC1D23", emitida.veiculoId)
@@ -348,8 +436,7 @@ class EmissaoViewModelTest {
         viewModel.preencherPessoa(0, ana)
         viewModel.avancar()
         advanceUntilIdle()
-        viewModel.avancar()
-        advanceUntilIdle()
+        confirmarEEmitir(viewModel)
 
         val emitida = passagens.emitidas.single() as PassagemDePassageiro
         assertTrue(emitida.lancamentos.isEmpty())
@@ -444,8 +531,7 @@ class EmissaoViewModelTest {
         viewModel.preencherPessoa(0, ana)
         viewModel.avancar()
         advanceUntilIdle()
-        viewModel.avancar()
-        advanceUntilIdle()
+        confirmarEEmitir(viewModel)
     }
 
     private fun gratuidadeJaEmitida(

@@ -30,6 +30,7 @@ import dev.matheus.fluviapp.ui.states.passagem.ParticipanteEmEdicao
 import dev.matheus.fluviapp.ui.states.passagem.PassoDaEmissao
 import dev.matheus.fluviapp.ui.viewmodel.helpers.passagem.ColetorDeReferencias
 import dev.matheus.fluviapp.ui.viewmodel.helpers.passagem.cabecalhoDe
+import dev.matheus.fluviapp.ui.viewmodel.helpers.passagem.confirmacaoDe
 import dev.matheus.fluviapp.ui.viewmodel.helpers.passagem.validarPasso
 import dev.matheus.fluviapp.util.Relogio
 import kotlinx.coroutines.channels.Channel
@@ -283,10 +284,48 @@ class EmissaoViewModel @Inject constructor(
 
         when (val passo = estado.passo) {
             is PassoDaEmissao.DadosDoCliente -> viewModelScope.launch { registrarERastrear(passo) }
-            PassoDaEmissao.Pagamento -> emitir()
+            // O pagamento **não emite**: ele abre a conferência. A emissão é o gesto seguinte, e é do
+            // operador — ver [abrirConferencia].
+            PassoDaEmissao.Pagamento -> viewModelScope.launch { abrirConferencia() }
             PassoDaEmissao.Desfecho -> Unit
             else -> seguir()
         }
+    }
+
+    /**
+     * **O detalhamento que precede a emissão** — conferência dos dados inseridos, não um passo.
+     *
+     * Ela não conta no roteiro porque não coleta decisão nenhuma: devolve o que já foi respondido para o
+     * operador ler antes de confirmar. O que a justifica é a **irreversibilidade**: cancelar depois mantém o
+     * número e o registro do bilhete errado, então conferir antes é mais barato — e é o que se faz no balcão
+     * de qualquer forma, lendo a tela em voz alta para o passageiro.
+     */
+    private suspend fun abrirConferencia() {
+        val estado = _uiState.value
+        val agencia = sessaoUsuario.atual()?.empresaAtivaNome.orEmpty()
+
+        _uiState.update {
+            it.copy(
+                confirmacao = confirmacaoDe(
+                    cabecalho = it.cabecalho,
+                    bilhete = it.bilhete,
+                    participante = it.participante,
+                    pagamento = it.pagamento,
+                    agencia = agencia,
+                ),
+            )
+        }
+    }
+
+    /** Fecha a conferência **sem emitir** — o operador voltou para corrigir algo que leu na tela. */
+    fun revisar() {
+        _uiState.update { it.copy(confirmacao = null) }
+    }
+
+    /** O gesto que **de fato emite**, depois da conferência. */
+    fun confirmarEmissao() {
+        _uiState.update { it.copy(confirmacao = null) }
+        emitir()
     }
 
     /** Voltar **não valida**: quem volta está corrigindo, e cobrar o passo na saída seria prendê-lo nele. */

@@ -64,6 +64,8 @@ fun EmissaoScreen(
     onAvancar: () -> Unit = {},
     onVoltar: () -> Unit = {},
     onPular: () -> Unit = {},
+    onConfirmarEmissao: () -> Unit = {},
+    onRevisar: () -> Unit = {},
     onClickVoltarTela: () -> Unit = {},
     onVerBilhete: (String) -> Unit = {},
     onNovaEmissao: () -> Unit = {},
@@ -76,6 +78,31 @@ fun EmissaoScreen(
         isRefreshing = false,
         onClickVoltar = onClickVoltarTela,
     ) { modifier, _ ->
+        // A conferência **substitui** o passo enquanto está aberta, e não se soma a ele: ela não é uma
+        // pergunta a mais, é o que já foi respondido, devolvido para leitura. Por isso não há trilha aqui —
+        // "5 de 6" continuaria valendo quando ela fechar.
+        val emConferencia = state.confirmacao
+        if (emConferencia != null) {
+            Column(modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+                CabecalhoDaEmissao(state.cabecalho)
+                if (state.emitindo) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(24.dp),
+                        horizontalArrangement = Arrangement.Center,
+                    ) {
+                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                    }
+                } else {
+                    DetalhamentoDaEmissao(
+                        confirmacao = emConferencia,
+                        onConfirmar = onConfirmarEmissao,
+                        onRevisar = onRevisar,
+                    )
+                }
+            }
+            return@CommonScreenNoBottom
+        }
+
         Column(modifier = modifier.fillMaxSize()) {
             CabecalhoDaEmissao(state.cabecalho)
             TrilhaDePassos(numeroDoPasso = state.numeroDoPasso, totalDePassos = state.totalDePassos)

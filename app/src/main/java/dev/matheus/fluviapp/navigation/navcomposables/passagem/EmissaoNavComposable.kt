@@ -66,6 +66,8 @@ fun NavGraphBuilder.emissaoNavComposable(
             onAvancar = viewModel::avancar,
             onVoltar = viewModel::voltar,
             onPular = viewModel::pular,
+            onConfirmarEmissao = viewModel::confirmarEmissao,
+            onRevisar = viewModel::revisar,
             onClickVoltarTela = onClickVoltar,
             onVerBilhete = onNavegaParaBilhete,
             onNovaEmissao = viewModel::reiniciar,
