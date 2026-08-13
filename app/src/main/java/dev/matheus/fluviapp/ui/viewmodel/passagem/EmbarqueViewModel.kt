@@ -7,6 +7,9 @@ import dev.matheus.fluviapp.domain.passagem.ResultadoEmbarque
 import dev.matheus.fluviapp.services.repository.operacoes.SessaoUsuario
 import dev.matheus.fluviapp.services.repository.passagem.PassagemRepository
 import dev.matheus.fluviapp.ui.states.passagem.EmbarqueUiState
+import dev.matheus.fluviapp.ui.viewmodel.helpers.passagem.ColetorDeReferencias
+import dev.matheus.fluviapp.ui.viewmodel.helpers.passagem.ReferenciasDaPassagem
+import dev.matheus.fluviapp.ui.viewmodel.helpers.passagem.paraConferencia
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -15,16 +18,23 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
- * ViewModel da validação de embarque (ADR-0012). Dono do estado; injeta a **porta** da passagem e a sessão
- * (identidade do operador que carimba o embarque).
+ * ViewModel da validação de embarque (ADR-0012). Dono do estado; injeta a **porta** da passagem, o coletor
+ * de referências e a sessão (identidade do operador que carimba o embarque).
  *
  * É o primeiro ViewModel de passagem a falar com [PassagemRepository] em vez da classe concreta — e o mais
  * barato de converter, porque as duas operações que ele usa (`obterDoServidorPorId` e `confirmarEmbarque`) já
- * eram as que a porta descreve. Com ela, este fluxo passa a ser testável em JVM com um fake ([ADR-0025] D1).
+ * eram as que a porta descreve. Com ela, este fluxo passa a ser **testável em JVM** com fakes ([ADR-0025] D1).
+ *
+ * ### O que a junção mudou aqui, e onde ela aparece
+ *
+ * O ViewModel **coleta** ([ColetorDeReferencias]) e depois **traduz** ([paraConferencia], função pura). As
+ * duas linhas ficam uma embaixo da outra de propósito: é isso que faz *"esta tela vai buscar cliente, viagem,
+ * rota e portos"* estar escrito onde alguém lê, em vez de escondido dentro de um `map`.
  */
 @HiltViewModel
 class EmbarqueViewModel @Inject constructor(
     private val passagemRepository: PassagemRepository,
+    private val coletorDeReferencias: ColetorDeReferencias,
     private val sessaoUsuario: SessaoUsuario,
 ) : ViewModel() {
 
@@ -41,9 +51,23 @@ class EmbarqueViewModel @Inject constructor(
         _uiState.update { it.copy(processando = true) }
         viewModelScope.launch {
             val passagem = runCatching { passagemRepository.obterDoServidorPorId(idPassagem) }.getOrNull()
+            if (passagem == null) {
+                _uiState.update { it.copy(processando = false, resultado = ResultadoEmbarque.NaoEncontrada) }
+                return@launch
+            }
+
+            // Coletar e traduzir, nesta ordem e à vista. Falha de referência **não derruba a conferência**:
+            // sem cliente, viagem ou rota, o bilhete continua conferível pelo que ele carrega em si — e
+            // recusar o embarque porque um lookup falhou seria deixar gente na doca por causa de rede.
+            val referencias = runCatching { coletorDeReferencias.de(passagem) }
+                .getOrDefault(ReferenciasDaPassagem())
+
             _uiState.update {
-                if (passagem == null) it.copy(processando = false, resultado = ResultadoEmbarque.NaoEncontrada)
-                else it.copy(processando = false, passagem = passagem)
+                it.copy(
+                    processando = false,
+                    passagem = passagem,
+                    conferencia = passagem.paraConferencia(referencias),
+                )
             }
         }
     }
@@ -63,7 +87,9 @@ class EmbarqueViewModel @Inject constructor(
             } else {
                 passagemRepository.confirmarEmbarque(passagem.id, contexto.usuario.id)
             }
-            _uiState.update { it.copy(processando = false, passagem = null, resultado = resultado) }
+            _uiState.update {
+                it.copy(processando = false, passagem = null, conferencia = null, resultado = resultado)
+            }
         }
     }
 

@@ -34,9 +34,8 @@ import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
 import dev.matheus.fluviapp.R
-import dev.matheus.fluviapp.domain.passagem.Passagem
 import dev.matheus.fluviapp.domain.passagem.ResultadoEmbarque
-import dev.matheus.fluviapp.domain.passagem.StatusPassagem
+import dev.matheus.fluviapp.ui.states.passagem.ConferenciaDeEmbarque
 import dev.matheus.fluviapp.ui.components.RequestPermission
 import dev.matheus.fluviapp.ui.components.contents.CommonTopRow
 import dev.matheus.fluviapp.ui.components.forms.buttons.CommonIconButton
@@ -80,8 +79,8 @@ fun EmbarqueScreen(
                     onReiniciar = onReiniciar
                 )
 
-                state.passagem != null -> ConferenciaView(
-                    passagem = state.passagem,
+                state.conferencia != null -> ConferenciaView(
+                    conferencia = state.conferencia,
                     onConfirmar = onConfirmar,
                     onCancelar = onReiniciar
                 )
@@ -131,15 +130,16 @@ private fun LeitorView(onQrLido: (String) -> Unit) {
 /**
  * Fase 2 — dados resolvidos ao vivo; operador confere o bilhete antes de confirmar.
  *
- * **O que esta tela deixou de mostrar na F9.2, e por quê**: nome do passageiro, placa, origem e destino eram
- * campos **congelados** no bilhete, e deixaram de existir no agregado — o participante virou entidade de pool e
- * a travessia virou referência ([ADR-0023] D5/D8). Resolvê-los é a **junção** da F9.4, que carrega cliente,
- * veículo e viagem por id. Enquanto ela não existe, a conferência mostra o que o agregado **tem**: número,
- * categoria, data da ocorrência e status — que é, aliás, o suficiente para a decisão de deixar embarcar.
+ * A tela recebe a **projeção pronta** ([ConferenciaDeEmbarque]) e não o agregado: nome, travessia e partida
+ * são ids no bilhete (ADR-0023 D8), e resolvê-los é da junção — que roda no ViewModel, com o carregamento à
+ * vista. Aqui não há um `Map` a consultar nem um id a traduzir; há texto a mostrar.
+ *
+ * A identificação pode vir vazia sem que nada tenha falhado: o pool é PII e a leitura dele é recortada pela
+ * assinatura, então quem embarca um bilhete vendido por **outra agência** legitimamente não vê o nome.
  */
 @Composable
 private fun ConferenciaView(
-    passagem: Passagem,
+    conferencia: ConferenciaDeEmbarque,
     onConfirmar: () -> Unit,
     onCancelar: () -> Unit,
 ) {
@@ -147,10 +147,11 @@ private fun ConferenciaView(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        TextTitleBrownRegular(text = "#${passagem.numero}")
-        TextSubTitleBrownBold(text = passagem.categoria.rotulo)
-        TextRegularBrown(text = passagem.ocorrencia.dataIso)
-        TextRegularBrownItalic(text = passagem.metadados.status.rotulo())
+        TextTitleBrownRegular(text = conferencia.numero)
+        TextSubTitleBrownBold(text = conferencia.identificacao)
+        if (conferencia.travessia.isNotBlank()) TextRegularBrown(text = conferencia.travessia)
+        TextRegularBrown(text = conferencia.partida)
+        TextRegularBrownItalic(text = conferencia.status)
     }
     CommonIconButton(
         modifier = Modifier,
