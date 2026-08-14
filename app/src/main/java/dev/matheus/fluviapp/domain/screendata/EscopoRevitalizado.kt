@@ -54,6 +54,16 @@ val SECOES_REVITALIZADAS: Set<SecaoMenu> = setOf(
     // percorre. Entra junto com o recorte por concessão — o painel da empresa passa a mostrar só o que a
     // atuação dela alcança, que é o que faz uma seção compartilhada não ser uma seção genérica.
     SecaoMenu.VIAGEM,
+    // **A Passagem acende (F9.6)** — a última da F9, e a que a fase inteira existiu para refazer.
+    //
+    // O menu dela tem **uma** ação: a busca. A emissão não está aqui de propósito, e isso não é omissão: um
+    // bilhete começa pela **saída**, e a saída se escolhe no Início. Uma ação de menu chamada "nova passagem"
+    // teria de perguntar qual viagem — que é exatamente a pergunta que o card de saída já responde.
+    //
+    // A **contagem** saiu do menu junto com esta entrada: ela é ocupação, ocupação não tem domínio planejado
+    // (ADR-0027 D2), e a tela dela foi apagada na F9.2. Uma seção que acende com um botão morto acende pior
+    // do que apagada.
+    SecaoMenu.PASSAGEM,
 )
 
 /** Se a seção já foi refeita ponta a ponta. */

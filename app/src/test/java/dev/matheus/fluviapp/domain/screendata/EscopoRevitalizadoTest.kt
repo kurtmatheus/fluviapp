@@ -10,12 +10,13 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * O recorte da revitalização, como domínio puro: **só a Empresa está viva**, e o menu de qualquer usuário
- * reflete isso — sem Firestore, sem sessão, sem tela.
+ * O recorte da revitalização, como domínio puro: o menu de qualquer usuário reflete o que já foi refeito —
+ * sem Firestore, sem sessão, sem tela.
  *
- * O que este teste protege não é a lista em si (ela muda a cada seção revitalizada), e sim as duas
- * propriedades que fazem o andaime ser seguro: o menu **nunca amplia** a permissão, e nenhuma seção não
- * revitalizada escapa por nenhum caminho de papel ou cargo.
+ * Desde a F9.6 o recorte **não recorta mais nada**: todas as seções entraram. As duas propriedades que
+ * fazem o andaime ser seguro continuam sendo o que este teste protege — o menu **nunca amplia** a permissão,
+ * e nenhuma seção de fora escapa por nenhum caminho de papel ou cargo —, e são elas que sobrevivem à
+ * eventual remoção do andaime, mudando de arquivo.
  */
 class EscopoRevitalizadoTest {
 
@@ -37,33 +38,19 @@ class EscopoRevitalizadoTest {
 
     // --- O escopo em si ---
 
+    /**
+     * **O andaime alcançou a paridade** (F9.6): a Passagem foi a última a entrar, e `SECOES_REVITALIZADAS`
+     * passou a ser `SecaoMenu.entries`.
+     *
+     * A asserção mudou de forma junto: não é mais uma lista escrita à mão — que precisava ser editada a cada
+     * seção — e sim a igualdade com o enum. É o critério que o próprio [SECOES_REVITALIZADAS] declara para
+     * o andaime poder ser removido, e enquanto ele existir este caso o mantém honesto: seção nova nasce
+     * fora, e este teste cobra a entrada dela.
+     */
     @Test
-    fun `estao revitalizadas as quatro do painel, a Equipe e os Usuarios`() {
-        assertEquals(
-            setOf(
-                SecaoMenu.EMPRESA,
-                SecaoMenu.EMBARCACAO,
-                SecaoMenu.LOCALIDADE,
-                SecaoMenu.PORTO,
-                SecaoMenu.EQUIPE,
-                SecaoMenu.USUARIOS,
-                SecaoMenu.ROTA,
-                SecaoMenu.VIAGEM,
-            ),
-            SECOES_REVITALIZADAS,
-        )
-        assertTrue(estaRevitalizada(SecaoMenu.USUARIOS))
-        assertTrue(estaRevitalizada(SecaoMenu.EMPRESA))
-        assertTrue(estaRevitalizada(SecaoMenu.EMBARCACAO))
-        assertTrue(estaRevitalizada(SecaoMenu.LOCALIDADE))
-        assertTrue(estaRevitalizada(SecaoMenu.PORTO))
-        // Entrou na F6.4, junto com a seleção de contexto — não antes (ADR-0022 D5).
-        assertTrue(estaRevitalizada(SecaoMenu.EQUIPE))
-        // O pool inteiro entrou: a Rota na F7, a Viagem na F8 — e a segunda é a que dá sentido à
-        // primeira, porque a ligação sem partida não vende nada.
-        assertTrue(estaRevitalizada(SecaoMenu.ROTA))
-        assertTrue(estaRevitalizada(SecaoMenu.VIAGEM))
-        assertFalse(estaRevitalizada(SecaoMenu.PASSAGEM))
+    fun `todas as secoes estao revitalizadas`() {
+        assertEquals(SecaoMenu.entries.toSet(), SECOES_REVITALIZADAS)
+        SecaoMenu.entries.forEach { assertTrue("$it fora do andaime", estaRevitalizada(it)) }
     }
 
     // --- O menu que o painel monta ---
@@ -92,20 +79,18 @@ class EscopoRevitalizadoTest {
     }
 
     /**
-     * **O supervisor ganhou a primeira seção dele** (F6.4): a Equipe atravessa painel e atuação (§2.2), e
-     * ele a gere na própria empresa. O agente continua sem menu — a seção dele é a Passagem, que ainda
-     * não foi revitalizada —, e isso não é bug: é o app agindo como recém-implementado.
+     * **O agente ganhou a seção dele** (F9.6): a Passagem é a razão de o cargo existir, e até aqui ele
+     * tinha menu só de leitura — via o pool e não emitia nada. A diferença entre os dois cargos deixa de
+     * ser "quem tem menu" e passa a ser o que o menu concede.
      */
     @Test
-    fun `o supervisor ve o pool e a Equipe, e o agente so o pool`() {
+    fun `o supervisor ve o pool, a Passagem e a Equipe, e o agente tudo menos a Equipe`() {
         assertEquals(
-            listOf(SecaoMenu.ROTA, SecaoMenu.VIAGEM, SecaoMenu.EQUIPE),
+            listOf(SecaoMenu.ROTA, SecaoMenu.VIAGEM, SecaoMenu.PASSAGEM, SecaoMenu.EQUIPE),
             secoesDoMenu(operador, supervisor, Atuacao.AGENCIAMENTO),
         )
-        // O agente vê o pool inteiro e não cria nada nele; a Passagem dele segue fora do andaime — é a
-        // primeira vez que alguém tem menu **só de leitura**, e isso é o desenho, não falta.
         assertEquals(
-            listOf(SecaoMenu.ROTA, SecaoMenu.VIAGEM),
+            listOf(SecaoMenu.ROTA, SecaoMenu.VIAGEM, SecaoMenu.PASSAGEM),
             secoesDoMenu(operador, agente, Atuacao.AGENCIAMENTO),
         )
     }

@@ -29,10 +29,15 @@ class AcaoMenuTest {
         }
     }
 
+    /**
+     * A única seção com **uma** ação, e por dois motivos que não se confundem: a emissão não está no menu
+     * porque começa pela saída (ADR-0028 D5), e a contagem saiu na F9.6 porque a ocupação não tem domínio
+     * planejado (ADR-0027 D2). Se voltar a haver duas ações aqui, este caso cobra o porquê.
+     */
     @Test
-    fun `a passagem oferece pesquisar e contagem`() {
+    fun `a passagem oferece so a pesquisa`() {
         assertEquals(
-            listOf(AcaoMenu.PASSAGEM_PESQUISAR, AcaoMenu.PASSAGEM_CONTAGEM),
+            listOf(AcaoMenu.PASSAGEM_PESQUISAR),
             AcaoMenu.de(SecaoMenu.PASSAGEM),
         )
     }

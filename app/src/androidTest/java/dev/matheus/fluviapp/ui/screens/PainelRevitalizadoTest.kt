@@ -7,6 +7,8 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import dev.matheus.fluviapp.R
+import dev.matheus.fluviapp.domain.operacoes.Atuacao
+import dev.matheus.fluviapp.domain.operacoes.Funcionario.Cargo
 import dev.matheus.fluviapp.domain.operacoes.Usuario.Papel
 import dev.matheus.fluviapp.domain.screendata.AcaoMenu
 import dev.matheus.fluviapp.domain.screendata.SecaoMenu
@@ -60,13 +62,26 @@ class PainelRevitalizadoTest {
         }
     }
 
-    private fun montarMenu(onNavegar: (AcaoMenu) -> Unit = {}) {
+    /**
+     * O menu de quem **opera**: desde a F9.6 ele não é mais um subconjunto do outro.
+     *
+     * O `ADM` deixou de enxergar o app inteiro quando o painel da plataforma passou a valer também sem
+     * vínculo, e a Passagem — que nunca foi do painel dela — só aparece aqui. Cobrar a seção acesa no menu
+     * do `ADM` seria cobrá-la onde ela não deve estar.
+     */
+    private val secoesDoAgente =
+        secoesDoMenu(Papel.OPERADOR.name, Cargo.AGENTE.name, Atuacao.AGENCIAMENTO)
+
+    private fun montarMenu(
+        secoes: List<SecaoMenu> = secoesDoAdm,
+        onNavegar: (AcaoMenu) -> Unit = {},
+    ) {
         composeTestRule.setContent {
             FluviAppTheme {
                 FluviMenuDrawer(
                     userName = "Odair",
-                    secoes = secoesDoAdm,
-                    acoesPorSecao = acoesPorSecao(secoesDoAdm),
+                    secoes = secoes,
+                    acoesPorSecao = acoesPorSecao(secoes),
                     isDarkTheme = false,
                     onInicio = {},
                     onNavegar = onNavegar,
@@ -121,8 +136,10 @@ class PainelRevitalizadoTest {
     }
 
     /**
-     * O embarque saiu do painel com o domínio que o alimenta (lê o QR de uma passagem) e ainda não voltou:
-     * a Passagem é a F9.
+     * O embarque saiu do painel com o domínio que o alimenta (lê o QR de uma passagem) e **não voltou com
+     * a F9**: a passagem existe, o QR está no bilhete, e mesmo assim a tela do scanner continua sem porta
+     * de entrada. É dívida declarada — conferir bilhete é um fluxo próprio, e ainda não tem lugar decidido
+     * no painel.
      */
     @Test
     fun painel_naoOfereceOQueNaoFoiRevitalizado() {
@@ -148,8 +165,30 @@ class PainelRevitalizadoTest {
         composeTestRule.onNodeWithText(texto(SecaoMenu.ROTA.titulo)).assertIsDisplayed()
         composeTestRule.onNodeWithText(texto(SecaoMenu.VIAGEM.titulo)).assertIsDisplayed()
 
+        // A Passagem **existe** desde a F9.6 e mesmo assim não está aqui: quem emite e consulta bilhete é
+        // quem tem vínculo de funcionário (ADR-0016 §2). A ausência mudou de motivo — era "ainda não foi
+        // refeita", virou "não é o trabalho da plataforma" —, e o menu do agente abaixo é a outra metade.
         composeTestRule.onNodeWithText(texto(SecaoMenu.PASSAGEM.titulo)).assertDoesNotExist()
         // **A Equipe é da empresa** (F6.6): o `ADM` não abre o quadro de pessoal de ninguém.
+        composeTestRule.onNodeWithText(texto(SecaoMenu.EQUIPE.titulo)).assertDoesNotExist()
+    }
+
+    /**
+     * **A seção acesa, em tela** (F9.6) — e o primeiro caso deste arquivo que monta o menu de quem opera.
+     *
+     * O agente é o menu mais estreito do app, e o que ele tem a menos importa tanto quanto o que tem: nada
+     * de cadastro de plataforma, nada de Equipe. O que ele tem a mais é a razão de o cargo existir.
+     */
+    @Test
+    fun menu_doAgente_mostraOPoolEAPassagem() {
+        montarMenu(secoes = secoesDoAgente)
+
+        composeTestRule.onNodeWithText(texto(SecaoMenu.PASSAGEM.titulo)).assertIsDisplayed()
+        composeTestRule.onNodeWithText(texto(SecaoMenu.ROTA.titulo)).assertIsDisplayed()
+        composeTestRule.onNodeWithText(texto(SecaoMenu.VIAGEM.titulo)).assertIsDisplayed()
+
+        composeTestRule.onNodeWithText(texto(SecaoMenu.EMPRESA.titulo)).assertDoesNotExist()
+        composeTestRule.onNodeWithText(texto(SecaoMenu.USUARIOS.titulo)).assertDoesNotExist()
         composeTestRule.onNodeWithText(texto(SecaoMenu.EQUIPE.titulo)).assertDoesNotExist()
     }
 
@@ -160,9 +199,13 @@ class PainelRevitalizadoTest {
      * usa. É o que faz a cobrança acompanhar o domínio sozinha — acrescentar uma ação a uma seção passa a
      * ser exigida em tela sem que este arquivo mude, que é o oposto de uma lista repetida por seção.
      */
-    private fun expandeENavega(secao: SecaoMenu, acaoTocada: AcaoMenu) {
+    private fun expandeENavega(
+        secao: SecaoMenu,
+        acaoTocada: AcaoMenu,
+        secoes: List<SecaoMenu> = secoesDoAdm,
+    ) {
         val navegadas = mutableListOf<AcaoMenu>()
-        montarMenu(onNavegar = { navegadas += it })
+        montarMenu(secoes = secoes, onNavegar = { navegadas += it })
 
         composeTestRule.onNodeWithText(texto(secao.titulo)).performClick()
 
@@ -204,6 +247,14 @@ class PainelRevitalizadoTest {
     @Test
     fun menu_expandeViagens_eNavegaPelaAcao() =
         expandeENavega(SecaoMenu.VIAGEM, AcaoMenu.VIAGEM_NOVA)
+
+    /**
+     * A Passagem se expande no menu **do agente**, e `AcaoMenu.de` cobra o que ela oferece: hoje, só a
+     * busca. Se a emissão ou a contagem voltarem ao menu, este caso fica vermelho sem ser editado.
+     */
+    @Test
+    fun menu_expandePassagens_eNavegaPelaAcao() =
+        expandeENavega(SecaoMenu.PASSAGEM, AcaoMenu.PASSAGEM_PESQUISAR, secoesDoAgente)
 }
 
 private val SAIDA_DE_EXEMPLO = ViagemDisponivelCard(

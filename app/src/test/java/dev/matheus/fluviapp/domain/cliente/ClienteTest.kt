@@ -1,13 +1,11 @@
 package dev.matheus.fluviapp.domain.cliente
 
 import dev.matheus.fluviapp.domain.documento.TipoDocumento
-import dev.matheus.fluviapp.revitalizacao.ForaDoEscopo
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import org.junit.experimental.categories.Category
 import java.time.LocalDate
 
 /**
@@ -18,9 +16,8 @@ import java.time.LocalDate
  * mesma pessoa com CPF numa agência e RG noutra vira **duas entradas**, e o **telefone não entra na chave** —
  * dois telefones não fazem duas pessoas.
  *
- * `@Category(ForaDoEscopo)` — tipo sem portador vivo (ver `AcomodacaoTest`).
+ * **De volta ao escopo na F9.6**: o portador acendeu (ver `AcomodacaoTest`).
  */
-@Category(ForaDoEscopo::class)
 class ClienteTest {
 
     private fun cliente(

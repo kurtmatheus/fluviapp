@@ -4,10 +4,8 @@ import dev.matheus.fluviapp.domain.passagem.Acomodacao
 import dev.matheus.fluviapp.domain.passagem.CategoriaPassagem
 import dev.matheus.fluviapp.domain.passagem.ClasseVeiculo
 import dev.matheus.fluviapp.domain.passagem.TipoPassagem
-import dev.matheus.fluviapp.revitalizacao.ForaDoEscopo
 import org.junit.Assert.assertEquals
 import org.junit.Test
-import org.junit.experimental.categories.Category
 
 /**
  * **O roteiro, sem tela e sem ViewModel** ([ADR-0029] D3).
@@ -16,7 +14,6 @@ import org.junit.experimental.categories.Category
  * responde *"escolher gratuidade insere o passo do subtipo?"* em três linhas. Com uma sequência fixa e `if`
  * de categoria espalhado pela navegação, a mesma pergunta só se responderia navegando.
  */
-@Category(ForaDoEscopo::class)
 class RoteiroDaEmissaoTest {
 
     private fun passageiro(

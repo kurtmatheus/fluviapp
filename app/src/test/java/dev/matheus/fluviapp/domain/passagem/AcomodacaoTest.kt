@@ -1,12 +1,10 @@
 package dev.matheus.fluviapp.domain.passagem
 
-import dev.matheus.fluviapp.revitalizacao.ForaDoEscopo
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import org.junit.experimental.categories.Category
 
 /**
  * A acomodação como tipo de domínio (ADR-0023 D3), no lugar do eixo único `ModoPassagem` — que tinha o veículo
@@ -15,10 +13,9 @@ import org.junit.experimental.categories.Category
  * O que se cobra aqui é a **regra que subiu para o tipo**: quais tipos tarifários cada acomodação admite, e
  * quantos clientes cabem num bilhete. Fora da rede, *meia* e *gratuidade* não existem.
  *
- * `@Category(ForaDoEscopo)` pela régua que o `TipoEmbarcacaoTest` escreveu: **tipo sem portador vivo fica fora**.
- * O portador é a `Passagem` selada, e a seção só é alcançável na F9.6 — é lá que estes casos voltam ao escopo.
+ * **De volta ao escopo na F9.6**, pela mesma régua que o tirou dele: tipo sem portador vivo fica fora, e o
+ * portador chegou — a seção `PASSAGEM` acende, e a emissão executa cada uma destas regras.
  */
-@Category(ForaDoEscopo::class)
 class AcomodacaoTest {
 
     @Test

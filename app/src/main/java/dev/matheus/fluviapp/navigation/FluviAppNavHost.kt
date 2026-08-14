@@ -7,6 +7,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import dev.matheus.fluviapp.extensions.navegaParaEmbarque
 import dev.matheus.fluviapp.extensions.navegaParaBilhete
+import dev.matheus.fluviapp.extensions.navegaParaPesquisaDePassagem
 import dev.matheus.fluviapp.extensions.navegaParaEmissao
 import dev.matheus.fluviapp.extensions.navegaParaFormularioFuncionario
 import dev.matheus.fluviapp.extensions.navegaParaLoginGraph
@@ -54,6 +55,7 @@ import dev.matheus.fluviapp.navigation.navcomposables.funcionario.resultSearchFu
 import dev.matheus.fluviapp.navigation.navcomposables.passagem.bilheteNavComposable
 import dev.matheus.fluviapp.navigation.navcomposables.passagem.embarqueNavComposable
 import dev.matheus.fluviapp.navigation.navcomposables.passagem.emissaoNavComposable
+import dev.matheus.fluviapp.navigation.navcomposables.passagem.pesquisaPassagemNavComposable
 
 @RequiresApi(Build.VERSION_CODES.S)
 @Composable
@@ -113,6 +115,9 @@ fun FluviAppNavHost(
             },
             onNavegaParaEmissao = { chaveDaOcorrencia ->
                 navController.navegaParaEmissao(chaveDaOcorrencia)
+            },
+            onNavegaParaPesquisaDePassagem = {
+                navController.navegaParaPesquisaDePassagem()
             },
             onNavegaParaFormularioNovoFuncionario = {
                 navController.navegaParaFormularioFuncionario()
@@ -176,8 +181,19 @@ fun FluviAppNavHost(
             },
         )
 
+        // A busca (F9.6) é a ação que acende a seção **Passagens** no menu — e ela desemboca no mesmo
+        // bilhete, que é o motivo de ele ter destino próprio.
+        pesquisaPassagemNavComposable(
+            onClickVoltar = {
+                navController.navigateUp()
+            },
+            onAbrirBilhete = { idPassagem ->
+                navController.navegaParaBilhete(idPassagem)
+            },
+        )
+
         // O bilhete tem **destino próprio** porque é o mesmo documento em dois momentos: logo após emitir e
-        // quando alguém for buscá-lo depois (decisão do analista: *mesmo bilhete*).
+        // quando alguém for buscá-lo depois (decisão registrada no ADR-0030 D5).
         bilheteNavComposable(
             onClickVoltar = {
                 navController.navigateUp()

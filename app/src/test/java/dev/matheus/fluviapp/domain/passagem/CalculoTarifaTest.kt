@@ -1,7 +1,5 @@
 package dev.matheus.fluviapp.domain.passagem
 
-import dev.matheus.fluviapp.revitalizacao.ForaDoEscopo
-import org.junit.experimental.categories.Category
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import java.math.BigDecimal
@@ -10,7 +8,6 @@ import java.math.BigDecimal
  * Regra pura de desconto (ADR-0013 §5): desconto = resíduo abaixo da tarifa devida, piso em zero.
  * Substitui o acúmulo ANTAC do antigo `CalculoDesconto` e a conta circular de `getValorTotal`.
  */
-@Category(ForaDoEscopo::class)
 class CalculoTarifaTest {
 
     @Test

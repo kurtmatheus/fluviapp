@@ -1,7 +1,5 @@
 package dev.matheus.fluviapp.domain.passagem
 
-import dev.matheus.fluviapp.revitalizacao.ForaDoEscopo
-import org.junit.experimental.categories.Category
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -18,7 +16,6 @@ import org.junit.Test
  * era verdade quando cancelar era *delete* físico. Está anotado abaixo, porque teste que defende o comportamento
  * antigo é pior do que teste nenhum.
  */
-@Category(ForaDoEscopo::class)
 class StatusPassagemTest {
 
     // --- de(): fronteira String -> enum, tolerante à grafia legada ---

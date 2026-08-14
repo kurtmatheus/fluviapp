@@ -1,9 +1,7 @@
 package dev.matheus.fluviapp.domain.passagem
 
-import dev.matheus.fluviapp.revitalizacao.ForaDoEscopo
 import org.junit.Assert.assertEquals
 import org.junit.Test
-import org.junit.experimental.categories.Category
 import java.math.BigDecimal
 
 /**
@@ -13,9 +11,8 @@ import java.math.BigDecimal
  * O que se cobra aqui é o que a lista consegue e as colunas não conseguiam: **dois lançamentos da mesma forma**
  * (dois cartões, dois pagadores no PIX) sem colapsar num número só.
  *
- * `@Category(ForaDoEscopo)` — tipo sem portador vivo (ver `AcomodacaoTest`).
+ * **De volta ao escopo na F9.6**: o portador acendeu (ver `AcomodacaoTest`).
  */
-@Category(ForaDoEscopo::class)
 class LancamentoTest {
 
     private fun lancamento(id: String, forma: FormaPagamento, valor: String) =

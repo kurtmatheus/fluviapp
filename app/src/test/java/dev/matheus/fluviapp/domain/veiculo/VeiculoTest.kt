@@ -1,12 +1,10 @@
 package dev.matheus.fluviapp.domain.veiculo
 
 import dev.matheus.fluviapp.domain.passagem.ClasseVeiculo
-import dev.matheus.fluviapp.revitalizacao.ForaDoEscopo
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import org.junit.experimental.categories.Category
 
 /**
  * O veículo como entidade de pool (ADR-0018 D5), com a regra governada pelo **tipo** (ADR-0023 D4).
@@ -15,9 +13,8 @@ import org.junit.experimental.categories.Category
  * (`ValidacaoVeiculo.kt:50`), de modo que carreta e caminhão **não passam** — é a primeira divergência do
  * ADR-0018 D19, e aqui ela está corrigida na origem.
  *
- * `@Category(ForaDoEscopo)` — tipo sem portador vivo (ver `AcomodacaoTest`).
+ * **De volta ao escopo na F9.6**: o portador acendeu (ver `AcomodacaoTest`).
  */
-@Category(ForaDoEscopo::class)
 class VeiculoTest {
 
     @Test

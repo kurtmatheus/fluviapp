@@ -36,6 +36,12 @@ sealed class FluviAppNavComposableDestinations(val route: String) {
         FluviAppNavComposableDestinations("bilhete/{$ARG_ID_PASSAGEM}") {
         fun comPassagem(idPassagem: String) = "bilhete/$idPassagem"
     }
+
+    /**
+     * A **busca de bilhetes** (F9.6). Sem argumento: o recorte vem do vínculo em vigor, não da rota — a
+     * agência é decisão da política, e não algo que se escolha pelo caminho.
+     */
+    data object PesquisaPassagemNavComposable : FluviAppNavComposableDestinations("pesquisaPassagem")
     data object ContagemPassagemNavComposable : FluviAppNavComposableDestinations("contagemPassagem")
     data object FormFuncionarioNavComposable: FluviAppNavComposableDestinations("formFuncionario")
     data object ResultPesquisarFuncionarioNavComposable: FluviAppNavComposableDestinations("pesquisarFuncionario")

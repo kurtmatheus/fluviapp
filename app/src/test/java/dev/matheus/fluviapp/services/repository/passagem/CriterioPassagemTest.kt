@@ -4,11 +4,9 @@ import dev.matheus.fluviapp.domain.operacoes.PermissoesUsuario.EscopoEmpresa
 import dev.matheus.fluviapp.domain.passagem.CategoriaPassagem
 import dev.matheus.fluviapp.domain.passagem.StatusPassagem
 import dev.matheus.fluviapp.domain.viagem.OcorrenciaViagem
-import dev.matheus.fluviapp.revitalizacao.ForaDoEscopo
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import org.junit.experimental.categories.Category
 import java.time.LocalDate
 
 /**
@@ -19,7 +17,6 @@ import java.time.LocalDate
  * O caso que mais importa é o primeiro: *"não tenho empresa nenhuma"* **não vira consulta sem filtro**. Com a
  * `String` vazia de antes, ele virava — e abria a listagem inteira para quem não deveria ver nada.
  */
-@Category(ForaDoEscopo::class)
 class CriterioPassagemTest {
 
     private val ocorrencia = OcorrenciaViagem(viagemId = "viagem-1", data = LocalDate.of(2026, 8, 18))

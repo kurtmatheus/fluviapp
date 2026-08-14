@@ -23,8 +23,14 @@ enum class AcaoMenu(
     @StringRes val titulo: Int,
     @DrawableRes val icone: Int,
 ) {
+    // A busca é a **única** ação da seção, e a emissão não está aqui de propósito: ela começa pela **saída**,
+    // no Início, porque um bilhete sem travessia não existe (ADR-0028 D5). Menu que oferecesse "nova
+    // passagem" teria de perguntar a viagem — que é a pergunta que o card de saída já respondeu.
+    //
+    // A **contagem saiu na F9.6**: ela é ocupação, e ocupação não tem domínio planejado (ADR-0027 D2). Ela
+    // estava aqui apontando para uma tela que a F9.2 apagou, e uma ação de menu que não leva a lugar nenhum
+    // é pior do que ação nenhuma. Volta com o domínio dela.
     PASSAGEM_PESQUISAR(SecaoMenu.PASSAGEM, R.string.btn_pesquisar_passagens, R.drawable.ic_lupa_75),
-    PASSAGEM_CONTAGEM(SecaoMenu.PASSAGEM, R.string.btn_contagem_passagem, R.drawable.ic_relatorio_75),
 
     // A Viagem volta com as ações da partida física (F8.2). São as mesmas duas de qualquer cadastro do
     // molde — e **não há uma terceira**: não existe "editar viagem" para ninguém (ADR-0016 §7.1).

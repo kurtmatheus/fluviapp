@@ -45,6 +45,7 @@
 
     <!-- Subtitles Common Area -->
     <string name="subtitle_viagens_disponiveis">Viagens Disponíveis</string>
+    <string name="subtitle_pesquisar_passagem">Bilhetes Emitidos</string>
     <string name="subtitle_menu_passagens">Menu Passagens</string>
     <string name="subtitle_menu_operacoes">Operações</string>
     <string name="subtitle_nova_passagem">Cadastrar Nova Passagem</string>

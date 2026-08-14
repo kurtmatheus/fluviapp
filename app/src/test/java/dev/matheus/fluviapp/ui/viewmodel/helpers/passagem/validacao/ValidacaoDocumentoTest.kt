@@ -1,7 +1,5 @@
 package dev.matheus.fluviapp.ui.viewmodel.helpers.passagem.validacao
 
-import dev.matheus.fluviapp.revitalizacao.ForaDoEscopo
-import org.junit.experimental.categories.Category
 import dev.matheus.fluviapp.R
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -12,7 +10,6 @@ import org.junit.Test
  * Regra pura do par (tipo, número) de documento (ADR-0020 D2). A parte nova é a terceira: até aqui o campo
  * era texto livre e nenhum dos `when` sobre `Constante.Descricao` validava — só decoravam.
  */
-@Category(ForaDoEscopo::class)
 class ValidacaoDocumentoTest {
 
     private val cpfValido = "529.982.247-25"

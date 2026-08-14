@@ -1,10 +1,8 @@
 package dev.matheus.fluviapp.domain.viagem
 
-import dev.matheus.fluviapp.revitalizacao.ForaDoEscopo
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
-import org.junit.experimental.categories.Category
 import java.time.LocalDate
 
 /**
@@ -14,9 +12,8 @@ import java.time.LocalDate
  * lexicograficamente, e é isso que faz faixa por período funcionar sem truque. E a fronteira é **fail-closed**:
  * uma ocorrência sem data não é uma ocorrência "de hoje" — não é nada.
  *
- * `@Category(ForaDoEscopo)` — tipo sem portador vivo (ver `AcomodacaoTest`).
+ * **De volta ao escopo na F9.6**: o portador acendeu (ver `AcomodacaoTest`).
  */
-@Category(ForaDoEscopo::class)
 class OcorrenciaViagemTest {
 
     @Test

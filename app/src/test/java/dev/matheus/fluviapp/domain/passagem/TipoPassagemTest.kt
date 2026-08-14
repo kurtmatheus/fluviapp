@@ -1,7 +1,5 @@
 package dev.matheus.fluviapp.domain.passagem
 
-import dev.matheus.fluviapp.revitalizacao.ForaDoEscopo
-import org.junit.experimental.categories.Category
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -11,7 +9,6 @@ import java.math.BigDecimal
  * Tipo tarifário como tipo de domínio (ADR-0013). Fronteira String→enum + a regra pura de tarifa devida
  * (inteira = base, meia = metade round-up scale 2, gratuidade = zero).
  */
-@Category(ForaDoEscopo::class)
 class TipoPassagemTest {
 
     // --- de(): fronteira String -> enum ---

@@ -24,7 +24,6 @@ import dev.matheus.fluviapp.fakes.FakeSessaoUsuario
 import dev.matheus.fluviapp.fakes.FakeVeiculoRepository
 import dev.matheus.fluviapp.fakes.FakeViagemRepository
 import dev.matheus.fluviapp.ui.viewmodel.helpers.passagem.ColetorDeReferencias
-import dev.matheus.fluviapp.revitalizacao.ForaDoEscopo
 import dev.matheus.fluviapp.ui.states.passagem.CabecalhoDaViagem
 import dev.matheus.fluviapp.ui.states.passagem.ClienteEmEdicao
 import dev.matheus.fluviapp.ui.states.passagem.ErroDeEmissao
@@ -44,7 +43,6 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
-import org.junit.experimental.categories.Category
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -58,7 +56,6 @@ import java.time.LocalDateTime
  * rede é o que a tolerância a falha do [ADR-0028] D3 proíbe.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
-@Category(ForaDoEscopo::class)
 class EmissaoViewModelTest {
 
     @get:Rule

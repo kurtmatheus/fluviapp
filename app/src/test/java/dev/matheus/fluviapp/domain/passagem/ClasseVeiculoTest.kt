@@ -1,7 +1,5 @@
 package dev.matheus.fluviapp.domain.passagem
 
-import dev.matheus.fluviapp.revitalizacao.ForaDoEscopo
-import org.junit.experimental.categories.Category
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -15,7 +13,6 @@ import org.junit.Test
  * `exigeModelo` — falso em carreta e caminhão, onde *o tipo já é o modelo*. É a correção, na origem, da primeira
  * divergência do ADR-0018 D19.
  */
-@Category(ForaDoEscopo::class)
 class ClasseVeiculoTest {
 
     @Test

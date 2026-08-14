@@ -95,12 +95,20 @@ class PermissoesUsuarioTest {
      * plataforma administra é *quem acessa o app* — que agora tem seção própria, `USUARIOS`. E ela é
      * `ADM`-only, então o `GESTOR` vê uma seção a menos que o `ADM`: é a primeira vez que os dois papéis
      * de plataforma divergem (ADR-0021 D1).
+     *
+     * **E a Passagem saiu junto** (F9.6) — não por permissão, e sim por família: o painel da plataforma
+     * nunca a teve, mas o galho da compatibilidade devolvia o enum inteiro para quem não tem vínculo, que é
+     * a condição permanente de `ADM` e `GESTOR`. Emitir e consultar bilhete exigem vínculo de funcionário
+     * (ADR-0016 §2); o menu passou a dizer isso sem atuação nenhuma.
      */
     @Test
-    fun `papel de plataforma ve tudo menos a Equipe — e so o ADM ve Usuarios`() {
-        assertEquals(SecaoMenu.entries - SecaoMenu.EQUIPE, PermissoesUsuario.secoesVisiveis(adm))
+    fun `papel de plataforma ve o painel — e so o ADM ve Usuarios`() {
         assertEquals(
-            SecaoMenu.entries - SecaoMenu.EQUIPE - SecaoMenu.USUARIOS,
+            SecaoMenu.entries - SecaoMenu.EQUIPE - SecaoMenu.PASSAGEM,
+            PermissoesUsuario.secoesVisiveis(adm),
+        )
+        assertEquals(
+            SecaoMenu.entries - SecaoMenu.EQUIPE - SecaoMenu.PASSAGEM - SecaoMenu.USUARIOS,
             PermissoesUsuario.secoesVisiveis(gestor),
         )
     }
@@ -145,11 +153,20 @@ class PermissoesUsuarioTest {
 
     // --- Família da atuação × permissão (ADR-0016 §2, ADR-0020 F3) ---
 
+    /**
+     * O caminho de compatibilidade é de **quem opera**: sem vínculo carregado, a família não filtra nada e
+     * só a permissão decide.
+     *
+     * A plataforma não anda mais por ele (F9.6). A diferença entre os dois é a natureza da atuação nula: no
+     * operador ela é um dado que ainda não chegou; no `ADM` é o estado definitivo — ele não tem vínculo, e
+     * nunca terá. Tratar as duas como a mesma coisa dava à plataforma o enum inteiro.
+     */
     @Test
-    fun `sem atuacao, o comportamento e o de antes — a familia nao filtra nada`() {
-        // O caminho de compatibilidade: o vínculo só existe a partir da F4. Enquanto não existir,
-        // esta fatia não pode mudar uma linha do que aparece em tela.
-        assertEquals(SecaoMenu.entries - SecaoMenu.EQUIPE, PermissoesUsuario.secoesVisiveis(adm, atuacao = null))
+    fun `sem atuacao, quem opera ve o de antes — e a plataforma ve o painel`() {
+        assertEquals(
+            PermissoesUsuario.secoesVisiveis(adm, atuacao = Atuacao.AGENCIAMENTO),
+            PermissoesUsuario.secoesVisiveis(adm, atuacao = null),
+        )
         assertEquals(
             listOf(SecaoMenu.ROTA, SecaoMenu.VIAGEM, SecaoMenu.PASSAGEM),
             PermissoesUsuario.secoesVisiveis(operador, agente, atuacao = null),

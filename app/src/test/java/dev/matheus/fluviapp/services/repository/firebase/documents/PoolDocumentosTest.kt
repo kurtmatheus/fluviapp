@@ -4,13 +4,11 @@ import dev.matheus.fluviapp.domain.cliente.Cliente
 import dev.matheus.fluviapp.domain.documento.TipoDocumento
 import dev.matheus.fluviapp.domain.passagem.ClasseVeiculo
 import dev.matheus.fluviapp.domain.veiculo.Veiculo
-import dev.matheus.fluviapp.revitalizacao.ForaDoEscopo
 import dev.matheus.fluviapp.services.repository.firebase.DocumentoBruto
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import org.junit.experimental.categories.Category
 import java.time.LocalDate
 
 /**
@@ -21,7 +19,6 @@ import java.time.LocalDate
  * assinar* encontrar quem existe sem poder lê-lo. Um `529.982.247-25` que não normalize para `52998224725`
  * cria uma segunda pessoa em silêncio — e duplicata de pool é o defeito que nenhuma tela mostra.
  */
-@Category(ForaDoEscopo::class)
 class PoolDocumentosTest {
 
     private val ana = Cliente(

@@ -1,7 +1,5 @@
 package dev.matheus.fluviapp.domain.passagem
 
-import dev.matheus.fluviapp.revitalizacao.ForaDoEscopo
-import org.junit.experimental.categories.Category
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -10,7 +8,6 @@ import org.junit.Test
  * Subtipo de gratuidade como tipo de domínio (ADR-0013). As quatro gratuidades legais; `CORTESIA`
  * aposentada (não é subtipo). Fronteira String→enum tolerante à grafia legada.
  */
-@Category(ForaDoEscopo::class)
 class TipoGratuidadeTest {
 
     @Test

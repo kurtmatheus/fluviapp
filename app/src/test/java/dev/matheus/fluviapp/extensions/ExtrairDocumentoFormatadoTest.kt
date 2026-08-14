@@ -1,7 +1,5 @@
 package dev.matheus.fluviapp.extensions
 
-import dev.matheus.fluviapp.revitalizacao.ForaDoEscopo
-import org.junit.experimental.categories.Category
 import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.CNPJ
 import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.CPF
 import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.PASSAPORTE
@@ -14,7 +12,6 @@ import org.junit.Test
  * StringIndexOutOfBounds em documento vazio/incompleto. Uma passagem com dado ruim NÃO pode derrubar
  * a listagem/detalhe (era crash fatal em PesquisarPassagem). Dado insuficiente → valor cru, sem exceção.
  */
-@Category(ForaDoEscopo::class)
 class ExtrairDocumentoFormatadoTest {
 
     @Test

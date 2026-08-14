@@ -27,6 +27,7 @@ fun NavGraphBuilder.mainScreenNavComposable(
     onNavegaParaLogin: () -> Unit,
     onNavegaParaEmbarque: () -> Unit,
     onNavegaParaEmissao: (String) -> Unit,
+    onNavegaParaPesquisaDePassagem: () -> Unit,
     onNavegaParaFormularioNovoFuncionario: () -> Unit,
     onNavegaParaFormularioPesquisaFuncionario: () -> Unit,
     onNavegaParaFormularioNovaEmpresa: () -> Unit,
@@ -74,13 +75,7 @@ fun NavGraphBuilder.mainScreenNavComposable(
         // `acoesDe(secao)`, o que tornava a estrutura do menu impossível de testar sem um NavGraphBuilder.
         // O `when` é exaustivo sobre o enum: ação nova sem destino não compila.
         fun navegar(acao: AcaoMenu) = when (acao) {
-            // REVITALIZAÇÃO (F9.2): as telas de pesquisa e contagem de passagem **não existem** — saíram com a
-            // camada de dados que as alimentava. As ações continuam no [AcaoMenu] porque elas são domínio do
-            // menu (o que cada seção oferece), e `PASSAGEM` não está em `SECOES_REVITALIZADAS`: nenhuma delas é
-            // alcançável. A pesquisa volta na F9.5; a contagem, quando a **ocupação** tiver domínio planejado
-            // (ADR-0027 D2 a deixa fora da F9 por não ter).
-            AcaoMenu.PASSAGEM_PESQUISAR -> Unit
-            AcaoMenu.PASSAGEM_CONTAGEM -> Unit
+            AcaoMenu.PASSAGEM_PESQUISAR -> onNavegaParaPesquisaDePassagem()
             AcaoMenu.EQUIPE_NOVO -> onNavegaParaFormularioNovoFuncionario()
             AcaoMenu.EQUIPE_PESQUISAR -> onNavegaParaFormularioPesquisaFuncionario()
             AcaoMenu.EMPRESA_NOVA -> onNavegaParaFormularioNovaEmpresa()

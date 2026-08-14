@@ -80,6 +80,11 @@ fun NavHostController.navegaParaBilhete(idPassagem: String) {
     navegaDireto(FluviAppNavComposableDestinations.BilheteNavComposable.comPassagem(idPassagem))
 }
 
+/** A busca de bilhetes — a ação da seção Passagens (F9.6). */
+fun NavHostController.navegaParaPesquisaDePassagem() {
+    navegaDireto(FluviAppNavComposableDestinations.PesquisaPassagemNavComposable.route)
+}
+
 fun NavHostController.navegaParaFormularioFuncionario(idFuncionario: String = "") {
     navegaDireto("${FluviAppNavComposableDestinations.FormFuncionarioNavComposable.route}?idFuncionario=$idFuncionario")
 }

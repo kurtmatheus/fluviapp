@@ -6,7 +6,6 @@ import dev.matheus.fluviapp.domain.passagem.CategoriaPassagem
 import dev.matheus.fluviapp.domain.passagem.ClasseVeiculo
 import dev.matheus.fluviapp.domain.passagem.FormaPagamento
 import dev.matheus.fluviapp.domain.passagem.TipoPassagem
-import dev.matheus.fluviapp.revitalizacao.ForaDoEscopo
 import dev.matheus.fluviapp.ui.states.passagem.BilheteEmEdicao
 import dev.matheus.fluviapp.ui.states.passagem.ClienteEmEdicao
 import dev.matheus.fluviapp.ui.states.passagem.ErroDeEmissao
@@ -17,7 +16,6 @@ import dev.matheus.fluviapp.ui.states.passagem.VeiculoEmEdicao
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import org.junit.experimental.categories.Category
 
 /**
  * A validação da emissão **sem ViewModel e sem fake**: entra estado, saem erros.
@@ -26,7 +24,6 @@ import org.junit.experimental.categories.Category
  * validava, e por isso era monotônica: erro aceso não apagava sozinho, e testar exigia montar o ViewModel
  * inteiro para ler o efeito colateral.
  */
-@Category(ForaDoEscopo::class)
 class ValidacaoEmissaoTest {
 
     private val ana = ClienteEmEdicao(

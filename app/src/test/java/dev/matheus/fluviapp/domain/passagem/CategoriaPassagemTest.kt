@@ -1,12 +1,10 @@
 package dev.matheus.fluviapp.domain.passagem
 
-import dev.matheus.fluviapp.revitalizacao.ForaDoEscopo
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import org.junit.experimental.categories.Category
 
 /**
  * A categoria como eixo raiz do agregado (ADR-0023 D1) e discriminador do documento (ADR-0024 D1).
@@ -15,9 +13,8 @@ import org.junit.experimental.categories.Category
  * sem portador é o que o ADR-0020 D4 corrigiu no tipo de embarcação — e que a fronteira é **fail-closed**, para
  * que documento com categoria ilegível seja recusado em vez de virar passageiro por padrão.
  *
- * `@Category(ForaDoEscopo)` — tipo sem portador vivo (ver `AcomodacaoTest`).
+ * **De volta ao escopo na F9.6**: o portador acendeu (ver `AcomodacaoTest`).
  */
-@Category(ForaDoEscopo::class)
 class CategoriaPassagemTest {
 
     @Test

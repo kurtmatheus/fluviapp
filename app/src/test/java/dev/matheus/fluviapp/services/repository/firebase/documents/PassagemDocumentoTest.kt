@@ -12,12 +12,10 @@ import dev.matheus.fluviapp.domain.passagem.TipoGratuidade
 import dev.matheus.fluviapp.domain.passagem.TipoPassagem
 import dev.matheus.fluviapp.domain.passagem.total
 import dev.matheus.fluviapp.domain.viagem.OcorrenciaViagem
-import dev.matheus.fluviapp.revitalizacao.ForaDoEscopo
 import dev.matheus.fluviapp.services.repository.firebase.DocumentoBruto
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
-import org.junit.experimental.categories.Category
 import java.math.BigDecimal
 import java.time.LocalDate
 
@@ -31,7 +29,6 @@ import java.time.LocalDate
  * Marcados fora do escopo pela régua da F9.1: a seção `PASSAGEM` não está em `SECOES_REVITALIZADAS`, e estes
  * casos voltam à suíte de escopo na F9.6.
  */
-@Category(ForaDoEscopo::class)
 class PassagemDocumentoTest {
 
     private val ocorrencia = OcorrenciaViagem(viagemId = "viagem-1", data = LocalDate.of(2026, 8, 18))

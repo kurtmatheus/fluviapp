@@ -14,12 +14,10 @@ import dev.matheus.fluviapp.domain.passagem.TipoGratuidade
 import dev.matheus.fluviapp.domain.passagem.TipoPassagem
 import dev.matheus.fluviapp.domain.veiculo.Veiculo
 import dev.matheus.fluviapp.domain.viagem.OcorrenciaViagem
-import dev.matheus.fluviapp.revitalizacao.ForaDoEscopo
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import org.junit.experimental.categories.Category
 import java.math.BigDecimal
 import java.time.LocalDate
 
@@ -30,7 +28,6 @@ import java.time.LocalDate
  * diferença é decisão ([ADR-0030] D1), não descuido. Um teste que aceitasse os dois formatos deixaria a
  * decisão livre para se perder na próxima refatoração.
  */
-@Category(ForaDoEscopo::class)
 class BilheteDigitalMapperTest {
 
     private val ocorrencia = OcorrenciaViagem(viagemId = "viagem-1", data = LocalDate.of(2026, 8, 18))

@@ -74,11 +74,15 @@ object PermissoesUsuario {
      * **permissão** decide *quais delas ela pode abrir* ([podeAcessar]). Família sem permissão não
      * aparece; permissão sem família também não.
      *
-     * [atuacao] **nula é o caminho de compatibilidade**, e é por ele que o app anda hoje: o vínculo
-     * `(empresa, atuação)` do logado só passa a existir na F4 do ADR-0020 (contexto e splash). Sem ele,
-     * cai-se no comportamento anterior — todas as seções, filtradas pela permissão —, de modo que esta
-     * fatia **não muda nada em tela**. Quando a F4 passar a atuação, a família entra em vigor sem que esta
-     * função mude.
+     * [atuacao] nula é o caminho de compatibilidade para **quem opera**: sem vínculo carregado, cai-se no
+     * comportamento anterior — todas as seções, filtradas pela permissão.
+     *
+     * **O papel de plataforma vem antes dele** (F9.6), e a ordem destes dois galhos é a correção de um
+     * desvio que o andaime da revitalização escondia: `ADM` e `GESTOR` **não têm vínculo** — atuação nula é
+     * o estado normal deles, não a ausência de um dado a carregar —, então o galho da compatibilidade os
+     * capturava e devolvia o enum inteiro, passando por cima do painel que [secoesDoPainel] define. Enquanto
+     * toda seção fora do painel também estava fora do andaime, ninguém via; a Passagem acendendo tornou
+     * visível. O painel da plataforma é a família dela **sempre**, com vínculo ou sem.
      */
     fun secoesVisiveis(
         papel: String?,
@@ -86,8 +90,8 @@ object PermissoesUsuario {
         atuacao: Atuacao? = null,
     ): List<SecaoMenu> {
         val familia = when {
-            atuacao == null -> SecaoMenu.entries.toSet()
             ehPapelPlataforma(papel) -> secoesDoPainel()
+            atuacao == null -> SecaoMenu.entries.toSet()
             else -> secoesDa(atuacao)
         }
         return SecaoMenu.entries.filter { it in familia && podeAcessar(it, papel, cargo) }

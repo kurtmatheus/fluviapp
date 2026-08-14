@@ -1,13 +1,11 @@
 package dev.matheus.fluviapp.domain.passagem
 
 import dev.matheus.fluviapp.domain.viagem.OcorrenciaViagem
-import dev.matheus.fluviapp.revitalizacao.ForaDoEscopo
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import org.junit.experimental.categories.Category
 import java.math.BigDecimal
 import java.time.LocalDate
 
@@ -18,10 +16,9 @@ import java.time.LocalDate
  * pendências — a forma que o agregado usa para dizer *qual* regra falhou, em vez de um booleano que obrigaria
  * quem chama a repetir a regra para descobrir o motivo.
  *
- * `@Category(ForaDoEscopo)` — o portador (a seção `PASSAGEM`) só é alcançável na F9.6, e é lá que estes casos
- * voltam ao escopo. A régua é a que o `TipoEmbarcacaoTest` escreveu.
+ * **De volta ao escopo na F9.6**: o portador (a seção `PASSAGEM`) acendeu, e o agregado passou a ser escrito
+ * de verdade pela emissão. A régua é a que o `TipoEmbarcacaoTest` escreveu.
  */
-@Category(ForaDoEscopo::class)
 class PassagemTest {
 
     private val ocorrencia = OcorrenciaViagem("v1", LocalDate.of(2026, 8, 18))
