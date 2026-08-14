@@ -69,8 +69,6 @@ fun EmissaoScreen(
     onConfirmarEmissao: () -> Unit = {},
     onRevisar: () -> Unit = {},
     onClickVoltarTela: () -> Unit = {},
-    onVerBilhete: (String) -> Unit = {},
-    onNovaEmissao: () -> Unit = {},
 ) {
     CommonScreenNoBottom(
         titleTopAppBar = R.string.title_top_passagem,
@@ -162,11 +160,6 @@ fun EmissaoScreen(
                         erros = state.erros,
                     )
 
-                    PassoDaEmissao.Desfecho -> ConteudoDoDesfecho(
-                        idPassagem = state.idEmitida,
-                        onVerBilhete = onVerBilhete,
-                        onNovaEmissao = onNovaEmissao,
-                    )
                 }
 
                 // **Os botões moram com o formulário**, dentro da rolagem — e não numa barra fixa.
@@ -289,7 +282,6 @@ private fun perguntaDo(passo: PassoDaEmissao, state: EmissaoUiState): String = w
     }
 
     PassoDaEmissao.Pagamento -> "Como foi pago?"
-    PassoDaEmissao.Desfecho -> "Passagem emitida"
 }
 
 private fun pessoaDo(passo: PassoDaEmissao.DadosDoCliente, state: EmissaoUiState): ClienteEmEdicao =
@@ -298,48 +290,3 @@ private fun pessoaDo(passo: PassoDaEmissao.DadosDoCliente, state: EmissaoUiState
         is ParticipanteEmEdicao.DeVeiculo -> participante.responsavel ?: ClienteEmEdicao()
     }
 
-/**
- * **O passo 6 — o desfecho** ([ADR-0029] D5).
- *
- * Ele nasce com **uma** saída, o bilhete digital, e com a forma preparada para ter mais de uma: a impressão
- * física traz surface própria (térmica, Bluetooth) e **vias** com destinatários diferentes — navio, agência,
- * cliente —, cada uma mostrando coisas distintas. Isso é estudo e ADR próprios; antecipá-los aqui seria
- * desenhar contra o que ainda não se sabe.
- */
-@Composable
-private fun ConteudoDoDesfecho(
-    idPassagem: String?,
-    onVerBilhete: (String) -> Unit,
-    onNovaEmissao: () -> Unit,
-) {
-    Column(
-        modifier = Modifier.fillMaxWidth().padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
-        Icon(
-            Icons.Filled.ConfirmationNumber,
-            contentDescription = null,
-            modifier = Modifier.padding(8.dp),
-            tint = MaterialTheme.colorScheme.primary,
-        )
-        TextSubTitleBrownBold(text = "A passagem foi emitida.")
-
-        idPassagem?.let { id ->
-            CommonIconButton(
-                modifier = Modifier,
-                onClick = { onVerBilhete(id) },
-                text = "Bilhete digital",
-                icon = { Icon(Icons.Filled.ConfirmationNumber, contentDescription = null) },
-            )
-        }
-
-        CommonIconButton(
-            modifier = Modifier,
-            onClick = onNovaEmissao,
-            text = "Nova passagem",
-            color = MaterialTheme.colorScheme.secondary,
-            icon = { Icon(Icons.Filled.Check, contentDescription = null) },
-        )
-    }
-}

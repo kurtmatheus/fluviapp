@@ -75,6 +75,10 @@ class BilheteViewModel @Inject constructor(
                 it.copy(
                     carregando = false,
                     bilhete = passagem.paraBilhete(referencias ?: ReferenciasVazias, agencia),
+                    // A saída sai **da própria passagem**, e é isso que permite "nova passagem" continuar na
+                    // mesma viagem sem que a rota do bilhete carregue um segundo argumento: o bilhete já
+                    // sabe de que travessia ele é.
+                    chaveDaOcorrencia = passagem.ocorrencia.chave,
                 )
             }
         }
@@ -114,4 +118,11 @@ data class BilheteUiState(
     val bilhete: BilheteDigital? = null,
     val arquivo: Uri? = null,
     val naoEncontrado: Boolean = false,
+    /**
+     * `viagemId@data` da passagem deste bilhete — o que leva de volta à emissão **na mesma saída**.
+     *
+     * É o caso do balcão: três pessoas seguidas comprando para a viagem das 18h. Voltar ao Início e escolher
+     * a saída de novo a cada atendimento seria um toque cobrado da fila inteira.
+     */
+    val chaveDaOcorrencia: String? = null,
 )

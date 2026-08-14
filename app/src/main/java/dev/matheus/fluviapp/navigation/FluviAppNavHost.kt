@@ -182,6 +182,11 @@ fun FluviAppNavHost(
             onClickVoltar = {
                 navController.navigateUp()
             },
+            // Atender o próximo da fila **na mesma saída**: volta à emissão sem passar pelo Início, que é o
+            // que o balcão faz quando três pessoas seguidas compram para a viagem das 18h.
+            onNovaPassagem = { chaveDaOcorrencia ->
+                navController.navegaParaEmissao(chaveDaOcorrencia)
+            },
         )
 
         embarqueNavComposable(

@@ -27,6 +27,7 @@ import dev.matheus.fluviapp.ui.viewmodel.passagem.BilheteViewModel
  */
 fun NavGraphBuilder.bilheteNavComposable(
     onClickVoltar: () -> Unit,
+    onNovaPassagem: (String) -> Unit,
 ) {
     composable(
         route = FluviAppNavComposableDestinations.BilheteNavComposable.route,
@@ -52,6 +53,7 @@ fun NavGraphBuilder.bilheteNavComposable(
                 }
                 contexto.startActivity(Intent.createChooser(envio, "Enviar bilhete"))
             },
+            onNovaPassagem = onNovaPassagem,
         )
     }
 }

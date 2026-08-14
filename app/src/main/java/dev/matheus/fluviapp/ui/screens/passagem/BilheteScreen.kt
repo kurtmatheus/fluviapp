@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -41,6 +42,7 @@ fun BilheteScreen(
     onClickVoltar: () -> Unit = {},
     onCapturar: (ImageBitmap) -> Unit = {},
     onCompartilhar: () -> Unit = {},
+    onNovaPassagem: (String) -> Unit = {},
 ) {
     CommonScreenNoBottom(
         titleTopAppBar = R.string.title_top_passagem,
@@ -87,6 +89,19 @@ fun BilheteScreen(
                         text = "Compartilhar",
                         icon = { Icon(Icons.Filled.Share, contentDescription = null) },
                     )
+
+                    // **Nova passagem na mesma saída** — o próximo da fila costuma ser para a mesma viagem.
+                    // Só aparece quando se sabe de que travessia este bilhete é; abrir um bilhete antigo por
+                    // outro caminho não oferece o gesto, porque ali não há atendimento em curso.
+                    state.chaveDaOcorrencia?.let { chave ->
+                        CommonIconButton(
+                            modifier = Modifier,
+                            onClick = { onNovaPassagem(chave) },
+                            text = "Nova passagem",
+                            color = MaterialTheme.colorScheme.secondary,
+                            icon = { Icon(Icons.Filled.Add, contentDescription = null) },
+                        )
+                    }
                 }
             }
         }

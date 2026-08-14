@@ -13,6 +13,7 @@ import dev.matheus.fluviapp.navigation.destinations.FluviAppNavComposableDestina
 import dev.matheus.fluviapp.ui.screens.passagem.emissao.EmissaoScreen
 import dev.matheus.fluviapp.ui.viewmodel.passagem.EmissaoViewModel
 import dev.matheus.fluviapp.ui.viewmodel.passagem.EventoDeEmissao
+import dev.matheus.fluviapp.ui.viewmodel.passagem.MotivoDeFalha
 
 /**
  * A emissão na navegação — **um destino só**, e é isso que a mantém honesta ([ADR-0029] D3).
@@ -41,12 +42,18 @@ fun NavGraphBuilder.emissaoNavComposable(
         // A saída chega uma vez, na entrada da tela: recarregar a cada recomposição apagaria o atendimento.
         LaunchedEffect(chave) { viewModel.iniciarPelaChave(chave) }
 
-        // A tela **reage** ao desfecho; ela não o produz (ADR-0026 D3). Bloqueio e falha já vivem no estado
-        // — o que a navegação precisa saber é só quando a emissão termina de vez.
+        // A navegação **reage** ao desfecho; ela não o produz (ADR-0026 D3).
+        //
+        // Emitir leva **direto ao bilhete**: a tela que anunciava "a passagem foi emitida" saiu, porque ela
+        // só **dizia** que deu certo — e o bilhete **mostra**, além de se salvar ao aparecer. Bloqueio e
+        // falha continuam no estado, que é onde o operador precisa deles: na tela em que estava.
         LaunchedEffect(Unit) {
             viewModel.eventos.collect { evento ->
-                if (evento is EventoDeEmissao.Falhou && evento.motivo == dev.matheus.fluviapp.ui.viewmodel.passagem.MotivoDeFalha.SEM_OCORRENCIA) {
-                    onClickVoltar()
+                when {
+                    evento is EventoDeEmissao.Emitida -> onNavegaParaBilhete(evento.idPassagem)
+
+                    evento is EventoDeEmissao.Falhou && evento.motivo == MotivoDeFalha.SEM_OCORRENCIA ->
+                        onClickVoltar()
                 }
             }
         }
@@ -69,8 +76,6 @@ fun NavGraphBuilder.emissaoNavComposable(
             onConfirmarEmissao = viewModel::confirmarEmissao,
             onRevisar = viewModel::revisar,
             onClickVoltarTela = onClickVoltar,
-            onVerBilhete = onNavegaParaBilhete,
-            onNovaEmissao = viewModel::reiniciar,
         )
     }
 }

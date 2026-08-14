@@ -65,18 +65,21 @@ data class EmissaoUiState(
      */
     val totalDePassos: Int get() = maxOf(roteiro.size, PASSOS_DE_UM_FLUXO_COMPLETO)
 
-    val podeVoltar: Boolean get() = indiceDoPasso > 0 && passo != PassoDaEmissao.Desfecho
+    val podeVoltar: Boolean get() = indiceDoPasso > 0
 }
 
 /**
  * O menor roteiro que existe, e ele é **o mesmo nos dois fluxos** (ADR-0029 D2): categoria → duas perguntas
- * do bilhete → cliente → pagamento → desfecho.
+ * do bilhete → cliente → pagamento.
  *
- * Rede: categoria, acomodação, tipo, cliente, pagamento, desfecho. Veículo: categoria, classe, dados do
- * veículo, cliente, pagamento, desfecho. Seis dos dois lados — coincidência que o desenho procurou, e que é
- * o que permite prometer "de 6" antes de saber qual caminho será.
+ * Rede: categoria, acomodação, tipo, cliente, pagamento. Veículo: categoria, classe, dados do veículo,
+ * cliente, pagamento. Cinco dos dois lados — coincidência que o desenho procurou, e que é o que permite
+ * prometer "de 5" antes de saber qual caminho será.
+ *
+ * Eram seis até a tela de desfecho sair: emitir leva **direto ao bilhete**, que é outro destino e não um
+ * passo — contá-lo aqui prometeria um passo que a trilha nunca chega a mostrar.
  */
-const val PASSOS_DE_UM_FLUXO_COMPLETO = 6
+const val PASSOS_DE_UM_FLUXO_COMPLETO = 5
 
 /**
  * O **cabeçalho de guia** ([ADR-0028] D5): a saída escolhida, visível nos três passos.

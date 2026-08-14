@@ -287,7 +287,6 @@ class EmissaoViewModel @Inject constructor(
             // O pagamento **não emite**: ele abre a conferência. A emissão é o gesto seguinte, e é do
             // operador — ver [abrirConferencia].
             PassoDaEmissao.Pagamento -> viewModelScope.launch { abrirConferencia() }
-            PassoDaEmissao.Desfecho -> Unit
             else -> seguir()
         }
     }
@@ -452,9 +451,9 @@ class EmissaoViewModel @Inject constructor(
                 concluir(EventoDeEmissao.Falhou(MotivoDeFalha.SEM_REDE))
                 return@launch
             }
-            // Resolvida: o roteiro anda para o **desfecho**, que é onde o bilhete se entrega ([ADR-0029] D5).
+            // Resolvida: **o roteiro acabou**. Quem leva ao bilhete é o evento, e a navegação reage a ele —
+            // não há tela de desfecho anunciando o sucesso, porque o bilhete é o sucesso à vista.
             _uiState.update { it.copy(idEmitida = id) }
-            seguir()
             concluir(EventoDeEmissao.Emitida(id))
         }
     }

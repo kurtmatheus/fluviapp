@@ -36,7 +36,6 @@ fun validarPasso(
     PassoDaEmissao.EscolhaDeGratuidade,
     PassoDaEmissao.QuantidadeDePessoas,
     PassoDaEmissao.ClasseDoVeiculo,
-    PassoDaEmissao.Desfecho,
     -> emptySet()
 
     is PassoDaEmissao.DadosDoCliente -> validarCliente(passo, participante)

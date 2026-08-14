@@ -52,11 +52,14 @@ sealed interface PassoDaEmissao {
      */
     data class DadosDoCliente(val indice: Int, val opcional: Boolean = false) : PassoDaEmissao
 
-    /** 5 — lançamentos e observação. */
+    /**
+     * 5 — lançamentos e observação, e o **fim do roteiro**.
+     *
+     * O que vinha depois era uma tela de desfecho anunciando *"a passagem foi emitida"*. Ela **saiu**: uma
+     * tela que só **diz** que deu certo cobra um toque de todo atendimento, enquanto o bilhete **mostra** que
+     * deu certo — e ainda se salva ao aparecer ([ADR-0030] D2). Emitir passou a levar direto ao bilhete.
+     */
     data object Pagamento : PassoDaEmissao
-
-    /** 6 — **resolver a emissão**. Hoje uma saída (o digital); a física e as vias têm ADR próprio (D5). */
-    data object Desfecho : PassoDaEmissao
 }
 
 /**
@@ -105,5 +108,4 @@ fun roteiroDe(bilhete: BilheteEmEdicao, participante: ParticipanteEmEdicao): Lis
     }
 
     add(PassoDaEmissao.Pagamento)
-    add(PassoDaEmissao.Desfecho)
 }

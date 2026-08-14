@@ -197,7 +197,8 @@ class EmissaoViewModelTest {
 
         val formularios = viewModel.uiState.value.roteiro.filterIsInstance<PassoDaEmissao.DadosDoCliente>()
         assertEquals(3, formularios.size)
-        assertEquals(6 + 2, viewModel.uiState.value.totalDePassos)
+        // Cinco do caminho mais curto, mais os dois acompanhantes.
+        assertEquals(5 + 2, viewModel.uiState.value.totalDePassos)
     }
 
     /** Reduzir descarta o que não cabe — melhor do que carregar em silêncio quem o bilhete não admite. */
@@ -387,9 +388,9 @@ class EmissaoViewModelTest {
         assertEquals(ocorrencia, emitida.ocorrencia)
         assertEquals(BigDecimal("150.00"), emitida.lancamentos.single().valor)
         assertEquals(listOf("CPF:52998224725"), emitida.clientes)
-        assertTrue(eventos.single() is EventoDeEmissao.Emitida)
-        // O roteiro anda para o desfecho, que é onde o bilhete se entrega.
-        assertEquals(PassoDaEmissao.Desfecho, viewModel.uiState.value.passo)
+        // **É o evento que leva ao bilhete**, e não um passo a mais: a tela que anunciava o sucesso saiu,
+        // porque o bilhete mostra o que ela dizia — e ainda se salva ao aparecer.
+        assertEquals(EventoDeEmissao.Emitida(emitida.id), eventos.single())
         assertEquals(emitida.id, viewModel.uiState.value.idEmitida)
         coleta.cancel()
     }

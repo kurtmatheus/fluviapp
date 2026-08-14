@@ -42,8 +42,9 @@ class RoteiroDaEmissaoTest {
         )
     }
 
+    /** Cinco desde que a tela de desfecho saiu: emitir leva **direto ao bilhete**, que é outro destino. */
     @Test
-    fun `rede inteira - seis passos`() {
+    fun `rede inteira - cinco passos`() {
         assertEquals(
             listOf(
                 PassoDaEmissao.Categoria,
@@ -51,7 +52,6 @@ class RoteiroDaEmissaoTest {
                 PassoDaEmissao.EscolhaDeTipo,
                 PassoDaEmissao.DadosDoCliente(0),
                 PassoDaEmissao.Pagamento,
-                PassoDaEmissao.Desfecho,
             ),
             passageiro(Acomodacao.REDE),
         )
@@ -112,7 +112,6 @@ class RoteiroDaEmissaoTest {
                 PassoDaEmissao.DadosDoVeiculo,
                 PassoDaEmissao.DadosDoCliente(indice = 0, opcional = true),
                 PassoDaEmissao.Pagamento,
-                PassoDaEmissao.Desfecho,
             ),
             veiculo(ClasseVeiculo.CARRETA),
         )
@@ -131,12 +130,11 @@ class RoteiroDaEmissaoTest {
         assertEquals(PassoDaEmissao.DadosDoCliente(0, opcional = true), comCarreta[3])
     }
 
-    /** E o pagamento e o desfecho fecham os dois, na mesma posição. */
+    /** E o **pagamento fecha** os dois fluxos: depois dele não há passo, há outro destino — o bilhete. */
     @Test
-    fun `pagamento e desfecho fecham os dois fluxos`() {
+    fun `o pagamento fecha os dois fluxos`() {
         listOf(passageiro(Acomodacao.REDE), veiculo(ClasseVeiculo.MOTO)).forEach { roteiro ->
-            assertEquals(PassoDaEmissao.Pagamento, roteiro[roteiro.lastIndex - 1])
-            assertEquals(PassoDaEmissao.Desfecho, roteiro.last())
+            assertEquals(PassoDaEmissao.Pagamento, roteiro.last())
         }
     }
 }
