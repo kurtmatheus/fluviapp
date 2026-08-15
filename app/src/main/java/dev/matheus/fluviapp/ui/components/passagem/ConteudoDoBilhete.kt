@@ -27,7 +27,6 @@ import androidx.compose.ui.graphics.layer.drawLayer
 import androidx.compose.ui.graphics.rememberGraphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.matheus.fluviapp.services.printerservice.qrcode.QRCodeGenerator
@@ -220,23 +219,6 @@ fun BilheteCapturavel(
     }
 }
 
-@Preview
-@Composable
-private fun ConteudoDoBilhetePreview() {
-    ConteudoDoBilhete(
-        bilhete = BilheteDigital(
-            idPassagem = "passagem-modelo-1",
-            numero = "#41",
-            agencia = "NAVEG",
-            travessia = "Porto de Val-de-Cães · Belém/PA → Porto de Parintins · Parintins/AM",
-            partida = "Terça-feira, 18/08 · 18:00",
-            embarcacao = "F/B Modelo",
-            bilhete = "Suíte · 2 pessoas",
-            passageiros = listOf(
-                PassageiroDoBilhete("Titular", "Ana Ribeiro", "CPF 529.982.247-25"),
-                PassageiroDoBilhete("Acompanhante", "Bruno Costa", "CPF 111.444.777-35"),
-            ),
-            total = "R$ 300,00",
-        ),
-    )
-}
+// As prévias deste desenho moram em `PreviaDoBilhete*.kt`, um arquivo por fluxo: rede inteira (a principal),
+// gratuidade, veículo pesado, suíte dupla e camarote triplo. Ficam fora daqui para que cada exemplar seja
+// editável sozinho.

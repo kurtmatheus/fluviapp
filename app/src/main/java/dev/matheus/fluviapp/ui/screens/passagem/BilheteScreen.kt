@@ -1,5 +1,6 @@
 package dev.matheus.fluviapp.ui.screens.passagem
 
+import android.net.Uri
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -19,10 +20,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import dev.matheus.fluviapp.R
 import dev.matheus.fluviapp.ui.components.forms.buttons.CommonIconButton
 import dev.matheus.fluviapp.ui.components.passagem.BilheteCapturavel
+import dev.matheus.fluviapp.ui.components.passagem.bilheteDeRedeInteira
 import dev.matheus.fluviapp.ui.components.texts.TextRegularBrownItalic
 import dev.matheus.fluviapp.ui.screens.forms.CommonScreenNoBottom
 import dev.matheus.fluviapp.ui.viewmodel.passagem.BilheteUiState
@@ -53,13 +56,18 @@ fun BilheteScreen(
         onClickVoltar = onClickVoltar,
     ) { modifier, _ ->
         Column(
-            modifier = modifier.fillMaxSize().navigationBarsPadding().verticalScroll(rememberScrollState()),
+            modifier = modifier
+                .fillMaxSize()
+                .navigationBarsPadding()
+                .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             when {
                 state.carregando && state.bilhete == null -> Row(
-                    modifier = Modifier.fillMaxWidth().padding(40.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(40.dp),
                     horizontalArrangement = Arrangement.Center,
                 ) {
                     CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
@@ -106,4 +114,23 @@ fun BilheteScreen(
             }
         }
     }
+}
+
+/**
+ * A tela **depois de gravada**: bilhete desenhado, aviso da galeria e os dois gestos. É este o estado que
+ * vale a pena ver desenhado — o de carregamento é um indicador centralizado, e o de não encontrado é uma
+ * linha de texto.
+ */
+@Preview(showBackground = true, heightDp = 1000)
+@Composable
+private fun BilheteScreenPreview() {
+    BilheteScreen(
+        state = BilheteUiState(
+            carregando = false,
+            naoEncontrado = false,
+            bilhete = bilheteDeRedeInteira,
+            arquivo = Uri.EMPTY,
+            chaveDaOcorrencia = "viagem-modelo-1@2026-08-18",
+        ),
+    )
 }
