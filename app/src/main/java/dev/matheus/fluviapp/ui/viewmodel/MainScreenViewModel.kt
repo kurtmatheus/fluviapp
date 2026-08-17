@@ -14,9 +14,7 @@ import dev.matheus.fluviapp.telemetry.EstadoSincronizacao
 // REVITALIZAÇÃO: voltam com as seções Passagem / Equipe.
 // import dev.matheus.fluviapp.services.repository.operacoes.FuncionarioRepository
 // import dev.matheus.fluviapp.services.repository.firebase.PassagemFirestoreRepository
-import dev.matheus.fluviapp.domain.viagem.inicioDoPainel
-import dev.matheus.fluviapp.ui.viewmodel.helpers.inicio.paraTela
-import dev.matheus.fluviapp.ui.viewmodel.helpers.inicio.rotuloCom
+import dev.matheus.fluviapp.ui.viewmodel.helpers.inicio.fluxoDoInicio
 import dev.matheus.fluviapp.services.repository.cadastro.localidade.LocalidadeRepository
 import dev.matheus.fluviapp.services.repository.cadastro.porto.PortoRepository
 import dev.matheus.fluviapp.services.repository.cadastro.rota.RotaRepository
@@ -83,31 +81,29 @@ class MainScreenViewModel @Inject constructor(
     }
 
     /**
-     * O Início, decidido pelo domínio.
+     * O Início, decidido pelo domínio e **assinado**, não lido uma vez.
      *
-     * As quatro leituras são de coleções pequenas e a junção é em memória — mesma escolha do "Porto X —
+     * Até 2026-08-17 este método fazia cinco leituras e copiava o resultado para o estado. A tela ficava com
+     * o snapshot do instante em que nasceu: uma viagem inativada pelo painel continuava no card até o app ser
+     * reaberto, porque este ViewModel vive enquanto a home está na pilha de navegação. O que mudou é só o
+     * regime — a montagem foi para [fluxoDoInicio], que assina os `StateFlow` das cinco coleções.
+     *
+     * As leituras seguem sendo de coleções pequenas com junção em memória — mesma escolha do "Porto X —
      * Belém/PA", e a única possível num pool sem `empresaId`. A alternativa (uma consulta por linha) não
      * existe no Firestore, e um índice denormalizado seria uma segunda verdade sobre a concessão.
      */
     private fun carregarInicio() {
         viewModelScope.launch {
-            val escopo = escopoDaSessao.atual()
-
-            val localidades = localidadeRepository.obterTodas().associate { it.id to it.rotulo }
-            val portosPorId = portoRepository.obterTodos()
-                .associate { it.id to it.rotuloCom(localidades) }
-            val rotasPorId = rotaRepository.obterTodas().associateBy { it.id }
-            val embarcacoes = embarcacaoRepository.obterTodos().associate { it.id to it.descricaoNome }
-
-            val inicio = inicioDoPainel(
-                escopo = escopo,
-                viagens = viagemRepository.obterTodas(),
-                rotasPorId = rotasPorId,
-                agora = relogio.agora(),
-            )
-
-            _uiState.update {
-                it.copy(inicio = inicio.paraTela(rotasPorId, portosPorId, embarcacoes))
+            fluxoDoInicio(
+                escopo = escopoDaSessao.atual(),
+                viagemRepository = viagemRepository,
+                rotaRepository = rotaRepository,
+                portoRepository = portoRepository,
+                localidadeRepository = localidadeRepository,
+                embarcacaoRepository = embarcacaoRepository,
+                relogio = relogio,
+            ).collect { inicio ->
+                _uiState.update { it.copy(inicio = inicio) }
             }
         }
     }
