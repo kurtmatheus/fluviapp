@@ -37,7 +37,7 @@ fun Passagem.paraBilhete(referencias: ReferenciasDaPassagem, agencia: String): B
         idPassagem = id,
         numero = "#$numero",
         agencia = agencia,
-        travessia = referencias.rota?.rotuloCom(referencias.portosPorId).orEmpty(),
+        trajeto = referencias.rota?.rotuloCom(referencias.portosPorId).orEmpty(),
         partida = partidaDoBilhete(referencias),
         embarcacao = referencias.embarcacao.orEmpty(),
         bilhete = descricaoDoBilheteCompleta(),

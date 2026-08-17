@@ -25,8 +25,17 @@ data class BilheteDigital(
     /** "#41" — a identidade exibida, por ocorrência. */
     val numero: String,
     val agencia: String,
-    /** "Porto de Val-de-Cães · Belém/PA → Porto de Parintins · Parintins/AM". */
-    val travessia: String,
+    /**
+     * "Porto de Val-de-Cães · Belém/PA → Porto de Parintins · Parintins/AM".
+     *
+     * Chamava-se `travessia`, e o nome mudou junto com o desenho: no bilhete este valor **leva rótulo**, e o
+     * rótulo é "Trajeto". Campo e rótulo com o mesmo nome é o que permite ler o documento e o DTO como a mesma
+     * coisa — a divergência é o que faz alguém procurar no código um campo que a tela não tem.
+     *
+     * A [ConferenciaDeEmbarque] segue com `travessia`, e sem rótulo: ali o valor é o assunto da tela, não um
+     * campo dela.
+     */
+    val trajeto: String,
     /** "Terça-feira, 18/08 · 18:00". */
     val partida: String,
     val embarcacao: String,
