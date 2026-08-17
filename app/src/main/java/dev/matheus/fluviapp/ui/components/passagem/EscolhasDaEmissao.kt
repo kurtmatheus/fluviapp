@@ -13,17 +13,42 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardColors
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import dev.matheus.fluviapp.ui.components.texts.TextSubTitleBrownBold
+import dev.matheus.fluviapp.ui.theme.AquaAccent
 import dev.matheus.fluviapp.ui.theme.FluviAppTheme
+import dev.matheus.fluviapp.ui.theme.HeaderNavy
+
+/**
+ * **A cor do alvo, decidida aqui** — e não como papel do esquema global.
+ *
+ * `primaryContainer`/`onPrimaryContainer` são papéis do Material: declarados no esquema, valem para todo
+ * componente tonal do app (`FilledTonalButton`, chip selecionado, `Badge`), e o que se quis pintar foi este
+ * cartão. Ancorada no componente, a escolha alcança exatamente quem a pediu.
+ *
+ * O fundo é o `surface` do esquema, que é o valor certo nos dois temas — navy no escuro, claro no claro. O
+ * conteúdo sai da **luminância desse fundo**, e não de `isSystemInDarkTheme()`: o tema aqui é escolha do
+ * usuário (`FluviAppTheme(darkTheme = …)`), então perguntar ao sistema responderia pelo aparelho e não pelo
+ * app.
+ */
+private val coresDoAlvo: CardColors
+    @Composable get() {
+        val fundo = MaterialTheme.colorScheme.surface
+        return CardDefaults.cardColors(
+            containerColor = fundo,
+            contentColor = if (fundo.luminance() < 0.5f) AquaAccent else HeaderNavy,
+        )
+    }
 
 /**
  * **O átomo do totem** ([ADR-0029] D1): um alvo grande, com ícone, que responde uma pergunta com um toque.
@@ -43,10 +68,7 @@ fun BotaoDeEscolha(
     Card(
         modifier = modifier.heightIn(min = 120.dp),
         onClick = onClick,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer,
-            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-        ),
+        colors = coresDoAlvo,
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
     ) {
         Column(
@@ -114,10 +136,7 @@ fun ListaDeEscolhas(
             Card(
                 modifier = Modifier.fillMaxWidth().heightIn(min = 64.dp),
                 onClick = escolha.aoEscolher,
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                ),
+                colors = coresDoAlvo,
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
             ) {
                 Row(

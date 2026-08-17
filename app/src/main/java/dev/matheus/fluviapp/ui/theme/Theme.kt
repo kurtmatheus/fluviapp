@@ -22,9 +22,7 @@ val DarkColors = darkColorScheme(
     onBackground = MistGray,
     surface = HeaderNavy,
     onSurface = MistGray,
-    outline = SteelTeal,
-    primaryContainer = HeaderNavy,
-    onPrimaryContainer = AquaAccent
+    outline = SteelTeal
 )
 
 // Tema claro: inverte fundo↔texto usando a mesma paleta; header navy fixo (marca).
@@ -38,9 +36,7 @@ val LightColors = lightColorScheme(
     onBackground = AbyssNavy,
     surface = SurfaceLight,
     onSurface = AbyssNavy,
-    outline = SteelTeal,
-    primaryContainer = SurfaceLight,
-    onPrimaryContainer = HeaderNavy
+    outline = SteelTeal
 )
 
 @Composable
