@@ -101,6 +101,31 @@ class FluxoDoInicioTest {
             coleta.cancel()
         }
 
+    /**
+     * O outro lado do mesmo relato: **a rota inativada** também tira o card, e sem recarga.
+     *
+     * Aqui as duas correções se encontram — o fluxo entrega o snapshot novo, e o domínio deixou de tratar
+     * "rota inativada" como "rota existente" (`noEscopo`). Sem a segunda, este teste falharia com o card
+     * ainda no lugar mesmo com a emissão em dia.
+     */
+    @Test
+    fun `rota inativada tira o card sem recarga`() = runTest(UnconfinedTestDispatcher()) {
+        rotas.rotas = listOf(rota)
+        viagens.viagens = listOf(viagem)
+
+        val vistos = mutableListOf<InicioDaTela>()
+        val coleta = launch { fluxo().collect { vistos += it } }
+        advanceUntilIdle()
+
+        assertEquals(1, cardsDe(vistos.last()).size)
+
+        rotas.inativar("r1")
+        advanceUntilIdle()
+
+        assertTrue(cardsDe(vistos.last()).isEmpty())
+        coleta.cancel()
+    }
+
     /** A viagem que **entra** chega pelo mesmo caminho — o fluxo não é um observador de remoções. */
     @Test
     fun `viagem criada aparece no inicio sem recarga`() = runTest(UnconfinedTestDispatcher()) {

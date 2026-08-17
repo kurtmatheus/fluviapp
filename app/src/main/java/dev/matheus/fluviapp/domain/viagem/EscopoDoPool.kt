@@ -86,18 +86,32 @@ fun List<Rota>.noEscopo(escopo: EscopoDoPool): List<Rota> = when (escopo) {
 }
 
 /**
- * As viagens que este escopo enxerga — **embarcação concedida e rota concedida**, as duas.
+ * As viagens que este escopo enxerga — **embarcação concedida e rota concedida e viva**, as três.
  *
  * A rota chega por [rotasPorId] porque os portos moram nela: a viagem sabe em quê e quando, não onde.
- * Viagem cuja rota **não está no mapa** é descartada — é órfã (rota apagada ou ainda não carregada), e
- * mostrá-la seria oferecer uma travessia sem origem nem destino. Fail-closed, como o resto.
+ * Viagem cuja rota **não está no mapa** é descartada — é órfã (rota ainda não carregada), e mostrá-la seria
+ * oferecer uma travessia sem origem nem destino. Fail-closed, como o resto.
+ *
+ * ### A rota inativada some junto (defeito medido em 2026-08-17)
+ *
+ * Antes só a **ausência** da rota derrubava a viagem, e por isso a inativação não derrubava nada: a porta da
+ * Rota não tem `deletar` — o que existe é [Rota.ativo] —, então a rota tirada de circulação continuava no
+ * mapa e continuava autorizando as viagens dela. O caso que a regra descrevia ("rota apagada") era
+ * inalcançável, e o caso real passava livre.
+ *
+ * A assimetria já estava visível de um lado: o cadastro de viagem só oferece rota ativa, *"porque oferecer
+ * uma inativada seria criar uma partida nascida sobre o que já foi encerrado"*. Se não se pode criar sobre
+ * ela, não se pode vender sobre ela — e depois da F8 **ver e vender são a mesma pergunta**.
+ *
+ * A plataforma segue vendo as duas (ela cura o pool, e o que ela não vê, não conserta): reativar a rota faz
+ * as viagens dela voltarem, porque nada foi apagado.
  */
 fun List<Viagem>.noEscopo(escopo: EscopoDoPool, rotasPorId: Map<String, Rota>): List<Viagem> =
     when (escopo) {
         EscopoDoPool.Todo -> this
         EscopoDoPool.Nenhum -> emptyList()
         is EscopoDoPool.Concedido -> filter { viagem ->
-            val rota = rotasPorId[viagem.rotaId] ?: return@filter false
+            val rota = rotasPorId[viagem.rotaId]?.takeIf { it.ativo } ?: return@filter false
             escopo.atuacao.podeOfertar(viagem, rota)
         }
     }

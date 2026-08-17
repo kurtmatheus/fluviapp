@@ -131,6 +131,40 @@ class EscopoDoPoolTest {
     }
 
     /**
+     * **Rota inativada esconde a viagem** — o defeito de 2026-08-17.
+     *
+     * Só a ausência da rota derrubava a viagem, e a porta da Rota não tem `deletar`: a rota tirada de
+     * circulação continuava no mapa e continuava autorizando as viagens dela. Se o cadastro não oferece rota
+     * inativada, a lista não pode oferecer viagem sobre ela — ver e vender são a mesma pergunta.
+     */
+    @Test
+    fun `rota inativada esconde a viagem, como se ela nao existisse`() {
+        val inativada = rotaConcedida.copy(ativo = false)
+        val viagens = listOf(viagem("v1", inativada.id))
+
+        assertTrue(
+            viagens.noEscopo(
+                EscopoDoPool.Concedido(atuacao),
+                mapOf(inativada.id to inativada),
+            ).isEmpty(),
+        )
+    }
+
+    /** Nada foi apagado: reativar a rota devolve as viagens dela, sem recadastro. */
+    @Test
+    fun `reativar a rota devolve a viagem`() {
+        val viagens = listOf(viagem("v1", rotaConcedida.id))
+
+        assertEquals(
+            viagens,
+            viagens.noEscopo(
+                EscopoDoPool.Concedido(atuacao),
+                mapOf(rotaConcedida.id to rotaConcedida.copy(ativo = true)),
+            ),
+        )
+    }
+
+    /**
      * A plataforma **continua vendo a órfã**: é ela quem cura o pool, e o que ela não vê, não conserta.
      */
     @Test
@@ -138,6 +172,18 @@ class EscopoDoPoolTest {
         val orfa = listOf(viagem("v1", "rota-que-nao-existe"))
 
         assertEquals(orfa, orfa.noEscopo(EscopoDoPool.Todo, emptyMap()))
+    }
+
+    /** E vê também a de rota inativada — é ela quem reativa a rota, e não veria o que precisa reativar. */
+    @Test
+    fun `a plataforma ve a viagem de rota inativada`() {
+        val inativada = rotaConcedida.copy(ativo = false)
+        val viagens = listOf(viagem("v1", inativada.id))
+
+        assertEquals(
+            viagens,
+            viagens.noEscopo(EscopoDoPool.Todo, mapOf(inativada.id to inativada)),
+        )
     }
 
     @Test
