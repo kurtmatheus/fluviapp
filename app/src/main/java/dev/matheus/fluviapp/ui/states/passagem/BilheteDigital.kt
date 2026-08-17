@@ -50,9 +50,17 @@ data class BilheteDigital(
     val gratuidade: String? = null,
 )
 
-/** Quem viaja, como o bilhete o apresenta: nome e documento completos. */
+/** Quem viaja, como o bilhete o apresenta: nome, documento e nascimento completos. */
 data class PassageiroDoBilhete(
     val papel: String,
     val nome: String,
     val documento: String,
+    /**
+     * "10/01/1975" — vazio quando o pool não devolveu a pessoa.
+     *
+     * Ela entra no documento porque é contra ela que se confere a **categoria por idade**: idoso e criança
+     * até 5 anos são gratuidade, e conferir isso pelo nome do tipo exigiria acreditar no bilhete. Com a data
+     * ao lado do documento, a doca compara com a identidade sem consultar nada.
+     */
+    val dataNascimento: String,
 )

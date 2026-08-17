@@ -22,9 +22,9 @@ internal val bilheteDeCamaroteTriplo = BilheteDigital(
     embarcacao = "N/M Modelo",
     bilhete = "Camarote · 3 pessoas",
     passageiros = listOf(
-        PassageiroDoBilhete("Titular", "Ana Ribeiro", "CPF 529.982.247-25"),
-        PassageiroDoBilhete("Acompanhante", "Bruno Costa", "CPF 111.444.777-35"),
-        PassageiroDoBilhete("Acompanhante", "Clara Menezes", "CPF 123.456.789-09"),
+        PassageiroDoBilhete("Titular", "Ana Ribeiro", "CPF 529.982.247-25", dataNascimento = "10/01/1975"),
+        PassageiroDoBilhete("Acompanhante", "Bruno Costa", "CPF 111.444.777-35", dataNascimento = "10/01/1975"),
+        PassageiroDoBilhete("Acompanhante", "Clara Menezes", "CPF 123.456.789-09", dataNascimento = "10/01/1975"),
     ),
     total = BigDecimal("540.00").formataParaMoedaBrasileira(),
 )

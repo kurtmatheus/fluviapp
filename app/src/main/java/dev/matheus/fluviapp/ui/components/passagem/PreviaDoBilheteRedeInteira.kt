@@ -31,7 +31,12 @@ internal val bilheteDeRedeInteira = BilheteDigital(
     embarcacao = "F/B Modelo",
     bilhete = "Rede",
     passageiros = listOf(
-        PassageiroDoBilhete("Passageiro", "Ana Ribeiro", "CPF 529.982.247-25"),
+        PassageiroDoBilhete(
+            "Passageiro",
+            "Ana Ribeiro",
+            "CPF 529.982.247-25",
+            dataNascimento = "10/01/1975"
+        ),
     ),
     total = BigDecimal("150.00").formataParaMoedaBrasileira(),
 )

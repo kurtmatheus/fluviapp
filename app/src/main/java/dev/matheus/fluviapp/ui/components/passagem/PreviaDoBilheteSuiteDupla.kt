@@ -23,8 +23,8 @@ internal val bilheteDeSuiteDupla = BilheteDigital(
     embarcacao = "F/B Modelo",
     bilhete = "Suíte · 2 pessoas",
     passageiros = listOf(
-        PassageiroDoBilhete("Titular", "Ana Ribeiro", "CPF 529.982.247-25"),
-        PassageiroDoBilhete("Acompanhante", "Bruno Costa", "CPF 111.444.777-35"),
+        PassageiroDoBilhete("Titular", "Ana Ribeiro", "CPF 529.982.247-25", dataNascimento = "10/01/1975"),
+        PassageiroDoBilhete("Acompanhante", "Bruno Costa", "CPF 111.444.777-35", dataNascimento = "10/01/1975"),
     ),
     total = BigDecimal("300.00").formataParaMoedaBrasileira(),
 )

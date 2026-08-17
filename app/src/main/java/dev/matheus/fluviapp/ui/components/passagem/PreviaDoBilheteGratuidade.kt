@@ -25,7 +25,7 @@ internal val bilheteDeGratuidade = BilheteDigital(
     embarcacao = "N/M Modelo",
     bilhete = "Rede · Gratuidade",
     passageiros = listOf(
-        PassageiroDoBilhete("Passageiro", "Raimunda Alves", "CPF 529.982.247-25"),
+        PassageiroDoBilhete("Passageiro", "Raimunda Alves", "CPF 529.982.247-25", dataNascimento = "10/01/1975"),
     ),
     total = BigDecimal("0.00").formataParaMoedaBrasileira(),
     gratuidade = "Idoso",

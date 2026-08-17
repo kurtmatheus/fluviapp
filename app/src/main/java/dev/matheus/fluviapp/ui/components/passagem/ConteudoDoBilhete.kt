@@ -104,7 +104,10 @@ fun ConteudoDoBilhete(
                     painter = painterResource(marca.marcaDagua),
                     contentDescription = null,
                     contentScale = ContentScale.Fit,
-                    modifier = Modifier.matchParentSize().padding(48.dp).alpha(0.12f),
+                    modifier = Modifier
+                        .matchParentSize()
+                        .padding(48.dp)
+                        .alpha(0.12f),
                 )
             } else {
                 FluviWordmark(
@@ -118,7 +121,9 @@ fun ConteudoDoBilhete(
             }
 
             Column(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 20.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 18.dp, vertical = 20.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
                 CabecalhoAssinado(bilhete = bilhete, marcaPresente = marca != null) {
@@ -377,11 +382,22 @@ private fun PassageiroNoBilhete(passageiro: PassageiroDoBilhete) {
     ) {
         RotuloDoCampo(texto = passageiro.papel)
         ValorDoCampo(texto = passageiro.nome.ifBlank { "Nome não informado" }, tamanho = 17.sp)
-        Text(
-            text = passageiro.documento,
-            color = AbyssNavy,
-            fontSize = 13.sp,
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = passageiro.documento,
+                color = AbyssNavy,
+                fontSize = 13.sp,
+            )
+            Text(
+                text = passageiro.dataNascimento,
+                color = AbyssNavy,
+                fontSize = 13.sp,
+            )
+        }
     }
 }
 
@@ -433,14 +449,18 @@ private fun QrDeEmbarque(idPassagem: String) {
     val qr = remember(idPassagem) { QRCodeGenerator().generate(idPassagem, size = 300) }
 
     Column(
-        modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         Image(
             bitmap = qr.asImageBitmap(),
             contentDescription = null,
-            modifier = Modifier.size(150.dp).background(Color.White),
+            modifier = Modifier
+                .size(150.dp)
+                .background(Color.White),
         )
         Text(
             text = "Apresente este código no embarque",

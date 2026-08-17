@@ -8,6 +8,7 @@ import dev.matheus.fluviapp.domain.passagem.PassagemDeVeiculo
 import dev.matheus.fluviapp.domain.passagem.TipoPassagem
 import dev.matheus.fluviapp.domain.passagem.total
 import dev.matheus.fluviapp.extensions.formataParaMoedaBrasileira
+import dev.matheus.fluviapp.extensions.formatarDataBarrasBr
 import dev.matheus.fluviapp.ui.states.passagem.BilheteDigital
 import dev.matheus.fluviapp.ui.states.passagem.PassageiroDoBilhete
 import dev.matheus.fluviapp.ui.states.passagem.VeiculoConferido
@@ -99,6 +100,7 @@ private fun Cliente?.comoPassageiro(papel: String) = PassageiroDoBilhete(
     nome = this?.nome.orEmpty(),
     documento = this?.let { "${it.tipoDocumento.rotulo} ${it.tipoDocumento.formatar(it.numeroDocumento)}" }
         .orEmpty(),
+    dataNascimento = this?.dataNascimento?.formatarDataBarrasBr().orEmpty()
 )
 
 private fun Passagem.partidaDoBilhete(referencias: ReferenciasDaPassagem): String =

@@ -27,7 +27,7 @@ internal val bilheteDeVeiculoPesado = BilheteDigital(
     embarcacao = "B/A Modelo",
     bilhete = "Veículo",
     passageiros = listOf(
-        PassageiroDoBilhete("Responsável pela retirada", "Célio Nogueira", "CPF 111.444.777-35"),
+        PassageiroDoBilhete("Responsável pela retirada", "Célio Nogueira", "CPF 111.444.777-35", dataNascimento = "10/01/1975"),
     ),
     veiculo = VeiculoConferido(
         placa = "PAA3G47",
