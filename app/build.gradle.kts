@@ -130,7 +130,6 @@ dependencies {
     val lifecycleVersion = "2.8.7"
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:$lifecycleVersion")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:$lifecycleVersion")
-    // LocalLifecycleOwner p/ vincular a câmera ao ciclo de vida (ADR-0012, tela de embarque).
     implementation("androidx.lifecycle:lifecycle-runtime-compose:$lifecycleVersion")
 
     val navVersion = "2.8.5"
@@ -174,15 +173,15 @@ dependencies {
 
     implementation("androidx.datastore:datastore-preferences:1.1.1")
 
-    // Geração de QR (bilhete): ZXing. Leitura de QR no embarque (ADR-0012): CameraX + ML Kit.
+    // Geração do QR (bilhete) e leitura no embarque (ADR-0012), na MESMA biblioteca: ZXing.
+    //
+    // O leitor era CameraX + ML Kit — cinco dependências para hospedar um preview na tela e analisar
+    // quadro a quadro o que a biblioteca abaixo resolve com um contrato de resultado. Além do código que
+    // sai, saem os dois custos que aquele arranjo cobrava: o modelo do ML Kit (baixado ou embarcado, para
+    // ler um formato que o ZXing já lia para gerar) e o `.so` do CameraX 1.3.4 alinhado a 4 KB, que era o
+    // único bloqueio do app para o requisito de 16 KB do targetSdk 35.
     implementation("com.google.zxing:core:3.5.3")
-
-    val cameraxVersion = "1.3.4"
-    implementation("androidx.camera:camera-core:$cameraxVersion")
-    implementation("androidx.camera:camera-camera2:$cameraxVersion")
-    implementation("androidx.camera:camera-lifecycle:$cameraxVersion")
-    implementation("androidx.camera:camera-view:$cameraxVersion")
-    implementation("com.google.mlkit:barcode-scanning:17.3.0")
+    implementation("com.journeyapps:zxing-android-embedded:4.3.0")
 
     implementation("com.google.code.gson:gson:2.11.0")
 

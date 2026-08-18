@@ -177,8 +177,12 @@ usado — provavelmente restou de um scaffold global que migrou para o `CommonSc
 
 ### 3.3 Dívidas de SDK já conhecidas
 
-`compileSdk 35` com `targetSdk 34`: subir o target exige o bump do CameraX (1.3.4 tem um `.so` a 4 KB e
-quebra o alinhamento de 16 KB). Já está registrado como dívida; entra aqui só para o mapa ficar completo.
+`compileSdk 35` com `targetSdk 34`: ~~subir o target exige o bump do CameraX (1.3.4 tem um `.so` a 4 KB e
+quebra o alinhamento de 16 KB)~~ — **paga em 2026-08-18**, e não pelo bump: o leitor de QR trocou de
+biblioteca (CameraX + ML Kit → `ScanContract` do zxing-android-embedded), e o `libimage_processing_util_jni.so`
+saiu do APK com o CameraX. Sobram dois `.so` no APK de debug — `libandroidx.graphics.path.so` e
+`libdatastore_shared_counter.so` —, os mesmos que a medição anterior já dava como alinhados. Subir o
+`targetSdk` volta a ser trabalho **de comportamento de API**, não de alinhamento.
 
 ## 4. Composição e estado
 

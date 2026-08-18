@@ -136,9 +136,11 @@ desenhado**, com teste de tela cobrindo o cursor.
 Nem tudo é correção, e dizer o que não muda evita retrabalho:
 
 - **`StatusPassagemBadge`** (71 linhas) — deriva do tipo, exibe rótulo; é o que o resto deveria parecer;
-- **o scanner do embarque** (`EmbarqueScreen`, 252) — CameraX + ML Kit, offline, com o `EmbarqueViewModel` no
-  molde. O ADR-0012 está inteiro e **não se refaz** (a dívida do CameraX 1.3.4 para 16 KB é de *build*, não de
-  UI);
+- **o scanner do embarque** (`EmbarqueScreen`, 252) — ~~CameraX + ML Kit~~, offline, com o `EmbarqueViewModel`
+  no molde. O ADR-0012 está inteiro e **não se refaz** — e ele continuou inteiro quando, em **2026-08-18**, a
+  *lib* do leitor foi trocada pelo `ScanContract` do **zxing-android-embedded** (a tela pede um resultado em vez
+  de hospedar a câmera: 106 linhas fora, 55 dentro). A **dívida do CameraX 1.3.4 para 16 KB deixou de existir** com a
+  troca: era de *build*, e o `.so` saiu junto com a biblioteca;
 - **a captura do bilhete em Compose** (§2.3) — muda o destino do arquivo, não o mecanismo;
 - **os `@Preview`** — o app tem 60, e eles são a razão pela qual as telas são testáveis sem Hilt. Cada tela
   refeita mantém os seus.

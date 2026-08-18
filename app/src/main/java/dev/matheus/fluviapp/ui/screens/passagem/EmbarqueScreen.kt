@@ -1,22 +1,15 @@
 package dev.matheus.fluviapp.ui.screens.passagem
 
 import android.Manifest
-import androidx.camera.core.CameraSelector
-import androidx.camera.core.ExperimentalGetImage
-import androidx.camera.core.ImageAnalysis
-import androidx.camera.core.ImageProxy
-import androidx.camera.core.Preview
-import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.view.PreviewView
+import android.content.Context
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -26,13 +19,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.AndroidView
-import androidx.core.content.ContextCompat
-import androidx.lifecycle.compose.LocalLifecycleOwner
-import com.google.mlkit.vision.barcode.BarcodeScannerOptions
-import com.google.mlkit.vision.barcode.BarcodeScanning
-import com.google.mlkit.vision.barcode.common.Barcode
-import com.google.mlkit.vision.common.InputImage
+import com.journeyapps.barcodescanner.ScanContract
+import com.journeyapps.barcodescanner.ScanOptions
 import dev.matheus.fluviapp.R
 import dev.matheus.fluviapp.domain.passagem.ResultadoEmbarque
 import dev.matheus.fluviapp.ui.states.passagem.ConferenciaDeEmbarque
@@ -91,7 +79,20 @@ fun EmbarqueScreen(
     }
 }
 
-/** Fase 1 — câmera ativa lendo o QR (pede a permissão de câmera antes). */
+/**
+ * Fase 1 — a leitura do QR, delegada ao **scanner do zxing-android-embedded** (`ScanContract`).
+ *
+ * A tela não hospeda mais a câmera: ela *pede um resultado*. O leitor é uma Activity da própria biblioteca,
+ * lançada por contrato de resultado — o que troca o preview embutido (câmera vinculada ao ciclo de vida do
+ * Composable, análise quadro a quadro, `ImageProxy` a fechar na mão) por uma fronteira de uma linha: entra
+ * [ScanOptions], volta o conteúdo lido.
+ *
+ * A permissão continua sendo pedida **aqui**, antes de lançar: a biblioteca também a pede, mas quem nega
+ * dentro dela só recebe um resultado vazio, e a tela ficaria muda. Pedindo antes, a negativa tem texto.
+ *
+ * O leitor abre sozinho ao entrar nesta fase — é o que a doca espera de um totem de embarque — e o botão
+ * fica para quem cancelou a leitura e quer tentar de novo.
+ */
 @Composable
 private fun LeitorView(onQrLido: (String) -> Unit) {
     val context = LocalContext.current
@@ -107,17 +108,23 @@ private fun LeitorView(onQrLido: (String) -> Unit) {
         )
     }
 
+    // `contents` é nulo quando a leitura foi cancelada (voltar, ou permissão negada dentro do scanner):
+    // cancelar não é ler, e nada sobe para o ViewModel.
+    val leitor = rememberLauncherForActivityResult(ScanContract()) { resultado ->
+        resultado.contents?.let(onQrLido)
+    }
+
     when {
         permissaoConcedida -> {
+            LaunchedEffect(Unit) { leitor.launch(opcoesDeLeitura(context)) }
+
             TextRegularBrown(text = stringResource(R.string.msg_aponte_qr))
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp)
-                    .aspectRatio(1f)
-            ) {
-                CameraPreviewQr(onQrLido = onQrLido, modifier = Modifier.fillMaxSize())
-            }
+            CommonIconButton(
+                modifier = Modifier,
+                text = stringResource(R.string.btn_escanear),
+                onClick = { leitor.launch(opcoesDeLeitura(context)) },
+                isProcessing = false
+            )
         }
 
         permissaoNegada -> TextRegularBrownItalic(
@@ -126,6 +133,19 @@ private fun LeitorView(onQrLido: (String) -> Unit) {
         )
     }
 }
+
+/**
+ * O que este leitor aceita: **só QR**. O bilhete é QR (ADR-0012), e um leitor que também decodificasse
+ * código de barras aceitaria ler o que a doca não emite — a restrição é do domínio, não de desempenho.
+ *
+ * `barcodeImageEnabled = false` porque o embarque quer o id, não a foto do bilhete; o bipe é a confirmação
+ * audível de que leu, para quem está olhando a fila e não a tela.
+ */
+private fun opcoesDeLeitura(context: Context) = ScanOptions()
+    .setDesiredBarcodeFormats(ScanOptions.QR_CODE)
+    .setPrompt(context.getString(R.string.msg_aponte_qr))
+    .setBeepEnabled(true)
+    .setBarcodeImageEnabled(false)
 
 /**
  * Fase 2 — dados resolvidos ao vivo; operador confere o bilhete antes de confirmar.
@@ -202,75 +222,4 @@ private fun ResultadoView(
         onClick = onReiniciar,
         isProcessing = false
     )
-}
-
-/**
- * Preview da câmera (CameraX) com análise por ML Kit (ADR-0012). Lê só QR; entrega o `rawValue`
- * (o id da passagem) via [onQrLido]. Vinculada ao ciclo de vida do Composable.
- */
-@Composable
-private fun CameraPreviewQr(
-    onQrLido: (String) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val context = LocalContext.current
-    val lifecycleOwner = LocalLifecycleOwner.current
-
-    AndroidView(
-        modifier = modifier,
-        factory = { ctx ->
-            val previewView = PreviewView(ctx)
-            val cameraProviderFuture = ProcessCameraProvider.getInstance(ctx)
-            cameraProviderFuture.addListener({
-                val cameraProvider = cameraProviderFuture.get()
-
-                val preview = Preview.Builder().build().also {
-                    it.setSurfaceProvider(previewView.surfaceProvider)
-                }
-
-                val scanner = BarcodeScanning.getClient(
-                    BarcodeScannerOptions.Builder()
-                        .setBarcodeFormats(Barcode.FORMAT_QR_CODE)
-                        .build()
-                )
-
-                val analise = ImageAnalysis.Builder()
-                    .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-                    .build()
-                    .also { it.setAnalyzer(ContextCompat.getMainExecutor(ctx)) { imageProxy ->
-                        analisarFrame(scanner, imageProxy, onQrLido)
-                    } }
-
-                runCatching {
-                    cameraProvider.unbindAll()
-                    cameraProvider.bindToLifecycle(
-                        lifecycleOwner,
-                        CameraSelector.DEFAULT_BACK_CAMERA,
-                        preview,
-                        analise
-                    )
-                }
-            }, ContextCompat.getMainExecutor(ctx))
-            previewView
-        }
-    )
-}
-
-@OptIn(ExperimentalGetImage::class)
-private fun analisarFrame(
-    scanner: com.google.mlkit.vision.barcode.BarcodeScanner,
-    imageProxy: ImageProxy,
-    onQrLido: (String) -> Unit,
-) {
-    val mediaImage = imageProxy.image
-    if (mediaImage == null) {
-        imageProxy.close()
-        return
-    }
-    val input = InputImage.fromMediaImage(mediaImage, imageProxy.imageInfo.rotationDegrees)
-    scanner.process(input)
-        .addOnSuccessListener { barcodes ->
-            barcodes.firstOrNull()?.rawValue?.let { onQrLido(it) }
-        }
-        .addOnCompleteListener { imageProxy.close() }
 }

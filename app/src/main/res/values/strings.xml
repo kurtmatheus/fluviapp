@@ -123,6 +123,7 @@
     <string name="msg_aponte_qr">Aponte a câmera para o QR do bilhete</string>
     <string name="msg_permissao_camera_negada">Permissão de câmera necessária para validar o embarque</string>
     <string name="btn_confirmar_embarque">Confirmar embarque</string>
+    <string name="btn_escanear">Escanear</string>
     <string name="btn_escanear_outro">Escanear outro</string>
     <string name="msg_embarque_confirmado">Embarque confirmado</string>
     <string name="msg_embarque_ja_utilizado">Bilhete já utilizado</string>
