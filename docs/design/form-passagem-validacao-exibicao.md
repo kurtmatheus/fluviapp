@@ -6,7 +6,7 @@ detectáveis no código. Semente para uma refatoração faseada.
 
 > Conversa com o [ADR-0006](../adr/0006-molde-de-cadastro.md) (molde de cadastro: VM dona do estado,
 > UiState puro, validação pura, evento one-shot — que o **form de Viagem** já cumpre e serve de prova), o
-> [ADR-0013](0013-tabela-de-tarifa-e-tipo-tarifario.md) (tarifa/gratuidade/cilindrada, guardas de emissão)
+> [ADR-0013](../adr/0013-tabela-de-tarifa-e-tipo-tarifario.md) (tarifa/gratuidade/cilindrada, guardas de emissão)
 > e o [ADR-0012](../adr/0012-ciclo-de-vida-passagem-e-embarque-qr.md).
 
 ---

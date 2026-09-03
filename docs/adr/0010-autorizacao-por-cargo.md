@@ -23,7 +23,9 @@ servidor), também implementado.
 >   agências), `SUPERVISOR`/`AGENTE` são de **agência**; "todas as passagens" passa a significar "todas da
 >   **minha agência**" para o `SUPERVISOR` (ADR-0015 §4.1, fase P2.6).
 
-> Formaliza o [estudo de autorização](../design/autorizacao-por-cargo.md). Conversa com o
+> Formaliza um estudo de autorização que **nunca chegou ao repositório** — o link para
+> `design/autorizacao-por-cargo.md` apontava para um arquivo que o histórico do git não conhece, e foi
+> removido na revisão de 2026-09-03. Este ADR é, portanto, a única fonte da decisão. Conversa com o
 > [ADR-0005](0005-autenticacao-sessao-firebase-datastore.md) (sessão Firebase + DataStore guarda
 > nome/cargo), o [ADR-0008](0008-relacionamentos-por-identidade.md) (relacionar por id, não por
 > nome) e o [ADR-0003](0003-modelo-de-memoria-do-dado.md) (normalização em trânsito; stack dormente
