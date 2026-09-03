@@ -9,6 +9,7 @@ import dev.matheus.fluviapp.domain.passagem.TipoGratuidade
 import dev.matheus.fluviapp.domain.passagem.TipoPassagem
 import dev.matheus.fluviapp.domain.passagem.ClasseVeiculo
 import dev.matheus.fluviapp.domain.veiculo.Veiculo
+import dev.matheus.fluviapp.domain.viagem.TipoEmbarcacao
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -25,6 +26,17 @@ data class EmissaoUiState(
     /** Onde se está **no roteiro** — que é derivado, não fixo ([ADR-0029] D3). */
     val indiceDoPasso: Int = 0,
     val cabecalho: CabecalhoDaViagem = CabecalhoDaViagem(),
+    /**
+     * **O que o casco desta viagem carrega** — o filtro das escolhas, e não texto de cabeçalho.
+     *
+     * Fica fora do [CabecalhoDaViagem] de propósito: aquele é leitura, e este é **restrição**. Misturá-los
+     * faria um DTO de exibição carregar regra, que é o começo de a tela decidir o que o domínio já decidiu.
+     *
+     * `null` quando a embarcação não pôde ser resolvida, e aí **não se filtra nada** — pelo mesmo princípio
+     * que o cabeçalho já segue: falhar em resolver a referência não impede vender, e uma fila parada é pior
+     * do que uma lista larga demais.
+     */
+    val tipoEmbarcacao: TipoEmbarcacao? = null,
     val bilhete: BilheteEmEdicao = BilheteEmEdicao(),
     val participante: ParticipanteEmEdicao = ParticipanteEmEdicao.DePassageiro(),
     val pagamento: PagamentoEmEdicao = PagamentoEmEdicao(),

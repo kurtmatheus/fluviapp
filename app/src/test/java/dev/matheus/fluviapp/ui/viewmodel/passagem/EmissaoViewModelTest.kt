@@ -12,7 +12,10 @@ import dev.matheus.fluviapp.domain.passagem.ResultadoEmissao
 import dev.matheus.fluviapp.domain.passagem.StatusPassagem
 import dev.matheus.fluviapp.domain.passagem.TipoGratuidade
 import dev.matheus.fluviapp.domain.passagem.TipoPassagem
+import dev.matheus.fluviapp.domain.viagem.Embarcacao
 import dev.matheus.fluviapp.domain.viagem.OcorrenciaViagem
+import dev.matheus.fluviapp.domain.viagem.TipoEmbarcacao
+import dev.matheus.fluviapp.domain.viagem.Viagem
 import dev.matheus.fluviapp.fakes.FakeClienteRepository
 import dev.matheus.fluviapp.fakes.FakeEmbarcacaoRepository
 import dev.matheus.fluviapp.fakes.FakeLocalidadeRepository
@@ -44,6 +47,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import java.math.BigDecimal
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -82,20 +86,22 @@ class EmissaoViewModelTest {
         clientes: FakeClienteRepository = FakeClienteRepository(),
         veiculos: FakeVeiculoRepository = FakeVeiculoRepository(),
         sessao: FakeSessaoUsuario = FakeSessaoUsuario.supervisor(),
+        viagens: FakeViagemRepository = FakeViagemRepository(),
+        embarcacoes: FakeEmbarcacaoRepository = FakeEmbarcacaoRepository(),
     ) = EmissaoViewModel(
         passagemRepository = passagens,
         clienteRepository = clientes,
         veiculoRepository = veiculos,
-        // O coletor só resolve o **cabeçalho**; com repositórios vazios ele devolve tudo em branco, que é
-        // exatamente o cenário de "vender mesmo sem conseguir resolver a saída" — a fila não para por isso.
+        // O coletor resolve o **cabeçalho e o casco**; com repositórios vazios ele devolve tudo em branco,
+        // que é exatamente o cenário de "vender mesmo sem conseguir resolver a saída" — a fila não para.
         coletorDeReferencias = ColetorDeReferencias(
             clienteRepository = clientes,
             veiculoRepository = veiculos,
-            viagemRepository = FakeViagemRepository(),
+            viagemRepository = viagens,
             rotaRepository = FakeRotaRepository(),
             portoRepository = FakePortoRepository(),
             localidadeRepository = FakeLocalidadeRepository(),
-            embarcacaoRepository = FakeEmbarcacaoRepository(),
+            embarcacaoRepository = embarcacoes,
         ),
         sessaoUsuario = sessao,
         relogio = FakeRelogio(LocalDateTime.of(2026, 8, 13, 9, 30)),
@@ -129,6 +135,74 @@ class EmissaoViewModelTest {
         advanceUntilIdle()
         viewModel.confirmarEmissao()
         advanceUntilIdle()
+    }
+
+    // --- O casco chega à emissão (ADR-0031, a promessa do ADR-0016 §8 enfim ligada) ---
+
+    /**
+     * **O tipo do casco entra no estado junto do cabeçalho**, e da mesma leitura — são duas perguntas sobre
+     * a mesma embarcação: *como ela se chama* e *o que ela carrega*.
+     *
+     * Antes disto o coletor tinha a `Embarcacao` inteira em mãos e guardava só o nome, e era por isso que
+     * `TipoEmbarcacao.admite()` não tinha um único chamador de produção.
+     */
+    @Test
+    fun `iniciar pela chave traz o tipo do casco, e nao so o nome`() = runTest {
+        val embarcacoes = FakeEmbarcacaoRepository().apply {
+            embarcacoes = listOf(
+                Embarcacao(
+                    id = "emb-1",
+                    descricaoNome = "N/M Modelo",
+                    tipo = TipoEmbarcacao.NAVIO,
+                    capacidadeVeiculo = 10,
+                    capacidadeSuite2 = 0,
+                    capacidadeSuite3 = 0,
+                    capacidadeCamarote = 0,
+                    empresaId = "e1",
+                ),
+            )
+        }
+        val viagens = FakeViagemRepository().apply {
+            viagens = listOf(
+                Viagem(
+                    id = "viagem-1",
+                    rotaId = "r1",
+                    embarcacaoId = "emb-1",
+                    diaSemana = DayOfWeek.TUESDAY,
+                    horaMin = 18 * 60,
+                ),
+            )
+        }
+        val viewModel = vm(viagens = viagens, embarcacoes = embarcacoes)
+
+        viewModel.iniciarPelaChave(ocorrencia.chave)
+        advanceUntilIdle()
+
+        assertEquals(TipoEmbarcacao.NAVIO, viewModel.uiState.value.tipoEmbarcacao)
+        assertEquals("N/M Modelo", viewModel.uiState.value.cabecalho.embarcacao)
+    }
+
+    /** Sem embarcação resolvida, o casco fica `null` — e `null` **não filtra nada**: a fila não para. */
+    @Test
+    fun `casco nao resolvido nao impede vender`() = runTest {
+        val viewModel = vm()
+
+        viewModel.iniciarPelaChave(ocorrencia.chave)
+        advanceUntilIdle()
+
+        assertNull(viewModel.uiState.value.tipoEmbarcacao)
+    }
+
+    /** Reiniciar é **na mesma saída**: o casco acompanha o cabeçalho em vez de ser reconsultado. */
+    @Test
+    fun `reiniciar conserva o casco, como conserva o cabecalho`() = runTest {
+        val viewModel = vm()
+        viewModel.iniciar(ocorrencia, CabecalhoDaViagem(travessia = "A → B"), TipoEmbarcacao.LANCHA)
+
+        viewModel.reiniciar()
+
+        assertEquals(TipoEmbarcacao.LANCHA, viewModel.uiState.value.tipoEmbarcacao)
+        assertEquals("A → B", viewModel.uiState.value.cabecalho.travessia)
     }
 
     // --- O roteiro em movimento ---

@@ -120,7 +120,10 @@ fun EmissaoScreen(
                 TextTitleBrownRegular(text = perguntaDo(state.passo, state))
 
                 when (val passo = state.passo) {
-                    PassoDaEmissao.Categoria -> EscolhaDeCategoria(aoEscolher = onEscolherCategoria)
+                    PassoDaEmissao.Categoria -> EscolhaDeCategoria(
+                        tipoEmbarcacao = state.tipoEmbarcacao,
+                        aoEscolher = onEscolherCategoria,
+                    )
 
                     PassoDaEmissao.EscolhaDeAcomodacao -> EscolhaDeAcomodacao(aoEscolher = onEscolherAcomodacao)
 
@@ -136,7 +139,10 @@ fun EmissaoScreen(
                         aoEscolher = onEscolherQuantidade,
                     )
 
-                    PassoDaEmissao.ClasseDoVeiculo -> EscolhaDeClasseDeVeiculo(aoEscolher = onEscolherClasse)
+                    PassoDaEmissao.ClasseDoVeiculo -> EscolhaDeClasseDeVeiculo(
+                        tipoEmbarcacao = state.tipoEmbarcacao,
+                        aoEscolher = onEscolherClasse,
+                    )
 
                     PassoDaEmissao.DadosDoVeiculo -> FormularioDeVeiculo(
                         veiculo = (state.participante as? ParticipanteEmEdicao.DeVeiculo)?.veiculo

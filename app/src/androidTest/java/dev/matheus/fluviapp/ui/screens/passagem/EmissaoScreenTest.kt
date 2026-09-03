@@ -14,6 +14,7 @@ import dev.matheus.fluviapp.extensions.formataParaMoedaBrasileira
 import dev.matheus.fluviapp.domain.passagem.Acomodacao
 import dev.matheus.fluviapp.domain.passagem.CategoriaPassagem
 import dev.matheus.fluviapp.domain.passagem.ClasseVeiculo
+import dev.matheus.fluviapp.domain.viagem.TipoEmbarcacao
 import dev.matheus.fluviapp.domain.passagem.FormaPagamento
 import dev.matheus.fluviapp.domain.passagem.TipoPassagem
 import dev.matheus.fluviapp.ui.screens.passagem.emissao.EmissaoScreen
@@ -113,6 +114,18 @@ class EmissaoScreenTest {
         assertEquals(CategoriaPassagem.VEICULO, escolhida)
     }
 
+    /**
+     * **"Não se vende veículo para uma lancha"**, e agora a tela obedece: a categoria some em vez de levar
+     * a um passo sem resposta. É a promessa do ADR-0016 §8, ligada no ADR-0031.
+     */
+    @Test
+    fun passo1_naLancha_naoOfereceVeiculo() {
+        montarTela(EmissaoUiState(cabecalho = cabecalho, tipoEmbarcacao = TipoEmbarcacao.LANCHA))
+
+        composeTestRule.onNodeWithText(CategoriaPassagem.PASSAGEIRO.rotulo).assertIsDisplayed()
+        composeTestRule.onNodeWithText(CategoriaPassagem.VEICULO.rotulo).assertDoesNotExist()
+    }
+
     // --- Passo 2 e 3: o que o domínio deixa escolher ---
 
     @Test
@@ -202,6 +215,30 @@ class EmissaoScreenTest {
             .performTextInput("Ana")
 
         assertEquals("Ana", digitado?.nome)
+    }
+
+    /**
+     * **A lista de classes é do casco, não do enum** (ADR-0031 D4). Num navio são duas — carro e moto —, e
+     * as outras quinze não aparecem. É este o ponto que manteve `TipoEmbarcacao.admite()` sem chamador de
+     * produção desde 2026-08-03: a regra existia, era testada, e a tela oferecia tudo.
+     */
+    @Test
+    fun passo2Veiculo_noNavio_ofereceSoCarroEMoto() {
+        montarTela(escolhaDeClasse(TipoEmbarcacao.NAVIO))
+
+        composeTestRule.onNodeWithText(ClasseVeiculo.CARRO.rotulo).assertIsDisplayed()
+        composeTestRule.onNodeWithText(ClasseVeiculo.MOTO.rotulo).assertIsDisplayed()
+        listOf(ClasseVeiculo.CARRETA, ClasseVeiculo.ONIBUS, ClasseVeiculo.RETROESCAVADEIRA)
+            .forEach { composeTestRule.onNodeWithText(it.rotulo).assertDoesNotExist() }
+    }
+
+    /** Na balsa aparecem as dezessete — e as onze novas junto, sem ninguém as ter declarado no casco. */
+    @Test
+    fun passo2Veiculo_naBalsa_ofereceAsDezessete() {
+        montarTela(escolhaDeClasse(TipoEmbarcacao.FERRY_BOAT))
+
+        listOf(ClasseVeiculo.CARRO, ClasseVeiculo.CARRETA, ClasseVeiculo.ONIBUS, ClasseVeiculo.JET_SKI)
+            .forEach { composeTestRule.onNodeWithText(it.rotulo).performScrollTo().assertIsDisplayed() }
     }
 
     /**
@@ -337,6 +374,15 @@ class EmissaoScreenTest {
         indiceDoPasso = 2,
         bilhete = BilheteEmEdicao(categoria = CategoriaPassagem.VEICULO),
         participante = ParticipanteEmEdicao.DeVeiculo(VeiculoEmEdicao(classe = classe)),
+    )
+
+    /** O passo da classe, com o casco que decide o que ele oferece. */
+    private fun escolhaDeClasse(tipoEmbarcacao: TipoEmbarcacao?) = EmissaoUiState(
+        cabecalho = cabecalho,
+        indiceDoPasso = 1,
+        bilhete = BilheteEmEdicao(categoria = CategoriaPassagem.VEICULO),
+        participante = ParticipanteEmEdicao.DeVeiculo(VeiculoEmEdicao()),
+        tipoEmbarcacao = tipoEmbarcacao,
     )
 
     private fun confirmacao(

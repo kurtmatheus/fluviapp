@@ -40,7 +40,7 @@ fun Passagem.paraBilhete(referencias: ReferenciasDaPassagem, agencia: String): B
         agencia = agencia,
         trajeto = referencias.rota?.rotuloCom(referencias.portosPorId).orEmpty(),
         partida = partidaDoBilhete(referencias),
-        embarcacao = referencias.embarcacao.orEmpty(),
+        embarcacao = referencias.embarcacao?.descricaoNome.orEmpty(),
         bilhete = descricaoDoBilheteCompleta(),
         passageiros = passageirosDo(referencias),
         veiculo = (this as? PassagemDeVeiculo)?.let { passagem ->

@@ -8,6 +8,7 @@ import dev.matheus.fluviapp.domain.passagem.PassagemDeVeiculo
 import dev.matheus.fluviapp.domain.passagem.TipoPassagem
 import dev.matheus.fluviapp.domain.rota.Rota
 import dev.matheus.fluviapp.domain.veiculo.Veiculo
+import dev.matheus.fluviapp.domain.viagem.Embarcacao
 import dev.matheus.fluviapp.domain.viagem.OcorrenciaViagem
 import dev.matheus.fluviapp.domain.viagem.Viagem
 import dev.matheus.fluviapp.domain.viagem.formatarHora
@@ -34,8 +35,19 @@ data class ReferenciasDaPassagem(
     val rota: Rota? = null,
     /** Id do porto → rótulo já pronto ("Porto de Val-de-Cães · Belém/PA"). */
     val portosPorId: Map<String, String> = emptyMap(),
-    /** O nome da embarcação — o cabeçalho da emissão o mostra; a conferência de embarque, não. */
-    val embarcacao: String? = null,
+    /**
+     * A embarcação da viagem — **a entidade, não o nome**.
+     *
+     * Ela guardava só o `descricaoNome`, e essa era a razão técnica de a promessa do ADR-0016 §8 nunca ter
+     * sido cumprida: o coletor tinha a `Embarcacao` inteira em mãos e descartava tudo menos o texto, de
+     * modo que o **tipo do casco** não chegava à emissão e `TipoEmbarcacao.admite()` ficava sem um único
+     * chamador de produção.
+     *
+     * Quem quer o nome pede `descricaoNome`; quem quer saber o que ela carrega pede `tipo`. Um campo, dois
+     * leitores — em vez de dois campos derivados da mesma entidade, que é como duas verdades sobre a mesma
+     * viagem começam a divergir.
+     */
+    val embarcacao: Embarcacao? = null,
 )
 
 /**
@@ -103,7 +115,7 @@ fun cabecalhoDe(ocorrencia: OcorrenciaViagem, referencias: ReferenciasDaPassagem
     CabecalhoDaViagem(
         travessia = referencias.rota?.rotuloCom(referencias.portosPorId).orEmpty(),
         partida = partidaDe(ocorrencia, referencias.viagem),
-        embarcacao = referencias.embarcacao.orEmpty(),
+        embarcacao = referencias.embarcacao?.descricaoNome.orEmpty(),
     )
 
 private fun Passagem.partidaCom(viagem: Viagem?): String = partidaDe(ocorrencia, viagem)

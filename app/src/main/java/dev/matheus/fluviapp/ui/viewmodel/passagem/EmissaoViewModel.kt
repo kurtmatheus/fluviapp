@@ -14,6 +14,7 @@ import dev.matheus.fluviapp.domain.passagem.StatusPassagem
 import dev.matheus.fluviapp.domain.passagem.TipoPassagem
 import dev.matheus.fluviapp.domain.passagem.avaliarEmissao
 import dev.matheus.fluviapp.domain.viagem.OcorrenciaViagem
+import dev.matheus.fluviapp.domain.viagem.TipoEmbarcacao
 import dev.matheus.fluviapp.services.repository.operacoes.SessaoUsuario
 import dev.matheus.fluviapp.services.repository.passagem.CriterioPassagem
 import dev.matheus.fluviapp.services.repository.passagem.PassagemRepository
@@ -96,9 +97,13 @@ class EmissaoViewModel @Inject constructor(
     /** A saída vem **pronta** do card de Início: a emissão não pergunta data nem hora ([ADR-0028] D5). */
     private var ocorrencia: OcorrenciaViagem? = null
 
-    fun iniciar(ocorrencia: OcorrenciaViagem, cabecalho: CabecalhoDaViagem) {
+    fun iniciar(
+        ocorrencia: OcorrenciaViagem,
+        cabecalho: CabecalhoDaViagem,
+        tipoEmbarcacao: TipoEmbarcacao? = null,
+    ) {
         this.ocorrencia = ocorrencia
-        _uiState.update { EmissaoUiState(cabecalho = cabecalho) }
+        _uiState.update { EmissaoUiState(cabecalho = cabecalho, tipoEmbarcacao = tipoEmbarcacao) }
     }
 
     /**
@@ -120,13 +125,22 @@ class EmissaoViewModel @Inject constructor(
         viewModelScope.launch {
             val referencias = runCatching { coletorDeReferencias.daOcorrencia(ocorrencia) }.getOrNull()
                 ?: return@launch
-            _uiState.update { it.copy(cabecalho = cabecalhoDe(ocorrencia, referencias)) }
+            _uiState.update {
+                it.copy(
+                    cabecalho = cabecalhoDe(ocorrencia, referencias),
+                    // O casco vem junto do cabeçalho, e da mesma leitura: são duas perguntas sobre a mesma
+                    // embarcação — *como ela se chama* e *o que ela carrega*.
+                    tipoEmbarcacao = referencias.embarcacao?.tipo,
+                )
+            }
         }
     }
 
     /** Recomeça o atendimento **na mesma saída** — o gesto de "nova passagem" do desfecho. */
     fun reiniciar() {
-        _uiState.update { EmissaoUiState(cabecalho = it.cabecalho) }
+        // O casco acompanha o cabeçalho: é a **mesma saída**, e reconsultá-lo seria pagar uma leitura para
+        // obter a resposta que já se tem.
+        _uiState.update { EmissaoUiState(cabecalho = it.cabecalho, tipoEmbarcacao = it.tipoEmbarcacao) }
     }
 
     // --- Passo 1: o bilhete ---

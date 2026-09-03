@@ -76,8 +76,11 @@ class ColetorDeReferencias @Inject constructor(
             viagem = viagem,
             rota = rota,
             portosPorId = portosPorId,
+            // A entidade inteira, e nao so o nome: e o tipo dela que diz o que a viagem pode vender
+            // (ADR-0016 §8, ligado enfim no ADR-0031). Descartar o resto aqui era o que mantinha
+            // `TipoEmbarcacao.admite()` sem chamador.
             embarcacao = viagem?.embarcacaoId?.let { id ->
-                embarcacaoRepository.obterTodos().firstOrNull { it.id == id }?.descricaoNome
+                embarcacaoRepository.obterTodos().firstOrNull { it.id == id }
             },
         )
     }

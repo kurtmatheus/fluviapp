@@ -25,31 +25,50 @@ import dev.matheus.fluviapp.domain.passagem.ClasseVeiculo
 import dev.matheus.fluviapp.domain.passagem.NaturezaVeiculo
 import dev.matheus.fluviapp.domain.passagem.TipoGratuidade
 import dev.matheus.fluviapp.domain.passagem.TipoPassagem
+import dev.matheus.fluviapp.domain.viagem.TipoEmbarcacao
 import dev.matheus.fluviapp.ui.components.passagem.EscolhaVisual
 import dev.matheus.fluviapp.ui.components.passagem.GradeDeEscolhas
 import dev.matheus.fluviapp.ui.components.passagem.ListaDeEscolhas
 
+// --- As perguntas que se respondem com um toque (ADR-0029 D1) ---
+//
+// Todas saem do **domínio**, e não de texto de recurso: o rótulo é vocabulário de negócio, já mora no tipo,
+// e é lá que o teste o alcança.
+//
+// O que muda entre elas é **de onde sai a lista**, e a régua é uma só: quem conhece a restrição é quem
+// fornece as opções. Três já a seguem — o tipo tarifário vem da acomodação, e a categoria e a classe de
+// veículo vêm do **casco** (desde 2026-09-03). O resto percorre `entries` porque não há restrição a aplicar.
+//
+// A alternativa que essa régua rejeita é sempre a mesma: listar tudo e desabilitar o que não vale. Mostrar
+// escolha que não existe é pior do que não mostrá-la.
+
 /**
- * **As cinco perguntas que se respondem com um toque** ([ADR-0029] D1).
+ * A categoria — e a lista é **recortada pelo casco** ([ADR-0016] §8, ligado em 2026-09-03).
  *
- * Todas elas percorrem `entries` do enum correspondente, e isso não é economia de digitação: é o que faz o
- * **domínio ser a fonte da tela**. Acrescentar `PassagemDeCarga` ou uma classe de veículo nova aparece aqui
- * sozinho — e o `when` do ícone, que é exaustivo, obriga alguém a decidir como ela se mostra.
+ * *"Não se vende veículo para uma lancha."* Oferecer a categoria e descobrir no passo seguinte que não há
+ * classe nenhuma seria fazer o operador percorrer um caminho que termina em parede.
  *
- * Cada função devolve as escolhas já com o **rótulo do domínio** (`Acomodacao.rotulo`, `ClasseVeiculo.rotulo`),
- * e não com texto de recurso: o rótulo é vocabulário de negócio e já mora no tipo, onde o teste o alcança.
+ * **Casco desconhecido oferece tudo.** Falhar em resolver a embarcação não impede vender (é o mesmo
+ * princípio do cabeçalho), e recusar por não saber transformaria uma referência que não carregou numa
+ * venda que não acontece.
  */
 @Composable
-fun EscolhaDeCategoria(aoEscolher: (CategoriaPassagem) -> Unit, modifier: Modifier = Modifier) {
+fun EscolhaDeCategoria(
+    tipoEmbarcacao: TipoEmbarcacao?,
+    aoEscolher: (CategoriaPassagem) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     GradeDeEscolhas(
         modifier = modifier,
-        escolhas = CategoriaPassagem.entries.map { categoria ->
-            EscolhaVisual(
-                rotulo = categoria.rotulo,
-                icone = categoria.icone(),
-                aoEscolher = { aoEscolher(categoria) },
-            )
-        },
+        escolhas = CategoriaPassagem.entries
+            .filter { it != CategoriaPassagem.VEICULO || tipoEmbarcacao?.levaVeiculo != false }
+            .map { categoria ->
+                EscolhaVisual(
+                    rotulo = categoria.rotulo,
+                    icone = categoria.icone(),
+                    aoEscolher = { aoEscolher(categoria) },
+                )
+            },
     )
 }
 
@@ -128,12 +147,25 @@ fun EscolhaDeQuantidade(
     )
 }
 
-/** A classe do veículo em **lista vertical** — é a pergunta mais longa do fluxo, e o rótulo é o que distingue. */
+/**
+ * A classe do veículo em **lista vertical** — é a pergunta mais longa do fluxo, e o rótulo é o que distingue.
+ *
+ * A lista sai de [TipoEmbarcacao.classesAdmitidas], e não de `ClasseVeiculo.entries`: **quem sabe o que
+ * cabe é o casco**. É o mesmo desenho de [EscolhaDeTipo], que já lia a lista da acomodação em vez de listar
+ * tudo e desabilitar o que não vale — mostrar escolhas que não existem é pior do que não mostrá-las.
+ *
+ * Foi este ponto que manteve `TipoEmbarcacao.admite()` sem chamador de produção desde 2026-08-03: a regra
+ * existia, era testada, e ninguém a consultava.
+ */
 @Composable
-fun EscolhaDeClasseDeVeiculo(aoEscolher: (ClasseVeiculo) -> Unit, modifier: Modifier = Modifier) {
+fun EscolhaDeClasseDeVeiculo(
+    tipoEmbarcacao: TipoEmbarcacao?,
+    aoEscolher: (ClasseVeiculo) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     ListaDeEscolhas(
         modifier = modifier,
-        escolhas = ClasseVeiculo.entries.map { classe ->
+        escolhas = (tipoEmbarcacao?.classesAdmitidas ?: ClasseVeiculo.entries).map { classe ->
             EscolhaVisual(rotulo = classe.rotulo, icone = classe.icone(), aoEscolher = { aoEscolher(classe) })
         },
     )
