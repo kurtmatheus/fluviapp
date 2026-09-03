@@ -4,7 +4,7 @@
 > reativa). Este é o documento-base companheiro (mapeamento, opções e as decisões D1–D5 + §10).
 > Conversa com o [ADR-0003](../adr/0003-modelo-de-memoria-do-dado.md)
 > (Firestore = verdade, Room = espelho), o [ADR-0008](../adr/0008-relacionamentos-por-identidade.md)
-> (mappers agora `suspend`) e o [fluxo-main-screen.md](fluxo-main-screen.md) (§8.3 — normalizar os
+> (mappers agora `suspend`) e o [as telas antes da revitalização §2](../historico/as-telas-antes-da-revitalizacao.md) (§8.3 — normalizar os
 > repositórios espelhados). Ancorado no código concreto em `2026-07`.
 
 ## 1. Premissa: design firestore-driven
@@ -152,7 +152,7 @@ Coexiste com o listener de sessão; atende o "necessário a nível de UX" (açã
   "Opção 1": consertar dentro do modelo Room-espelho.
 - **Syncs caronistas** (`sincronizarNumeroBilheteEmTempoReal`, agente): decidir se sobem para o
   escopo de sessão (junto do de viagem) ou permanecem separados. Relaciona com o §8.3 do
-  [fluxo-main-screen.md](fluxo-main-screen.md) (contrato comum dos repositórios espelhados).
+  [as telas antes da revitalização §2](../historico/as-telas-antes-da-revitalizacao.md) (contrato comum dos repositórios espelhados).
 
 ## 8. Impacto no código
 

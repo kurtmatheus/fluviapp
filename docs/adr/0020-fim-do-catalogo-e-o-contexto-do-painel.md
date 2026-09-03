@@ -6,7 +6,7 @@ F3–F5 pendentes.
 [ADR-0017](0017-eixo-de-storage-firestore-only.md) (F1) · a F1 do
 [ADR-0019](0019-camada-de-dados-dinamica-e-dto-por-caso-de-uso.md)
 **Estudo:** [`docs/design/e2-painel-e-fim-do-catalogo.md`](../design/e2-painel-e-fim-do-catalogo.md) — a
-medição · [`e3-catalogo.md`](../design/e3-catalogo.md) — a prova parcial que a antecedeu
+medição · [o domínio antigo §3](../historico/o-dominio-antigo.md) — a prova parcial que a antecedeu
 
 ---
 
@@ -26,7 +26,7 @@ nomeadas dentro do próprio ADR-0016**:
    `id` + `descricao` para *"reresolver contra o catálogo se a grafia mudar"*.
 
 Três exceções numa decisão só é o modelo avisando que a categoria não fecha. O
-[mapa da E3](../design/e3-catalogo.md) mediu o resto e concluiu que *"some quase tudo"*, deixando `DOCUMENTO`
+[mapa da E3](../historico/o-dominio-antigo.md) mediu o resto e concluiu que *"some quase tudo"*, deixando `DOCUMENTO`
 como *"rótulo puro, sem regra"* e `PAGAMENTO` em aberto.
 
 **`DOCUMENTO` não é rótulo puro, e o código prova há muito tempo:**

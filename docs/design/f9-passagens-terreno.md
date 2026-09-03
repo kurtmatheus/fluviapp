@@ -14,7 +14,7 @@
 > Conversa com o [ADR-0018](../adr/0018-agregado-passagem-participantes-modo-e-lancamentos.md) (o agregado
 > novo e o plano de migração dele), o [ADR-0022](../adr/0022-painel-da-empresa-e-fases.md) (a F9 como fase),
 > o [ADR-0017](../adr/0017-eixo-de-storage-firestore-only.md) (a F5 dele *é* a Passagem saindo do Room), o
-> [estudo do agregado](dominio-passagem.md) e o [estudo do form](form-passagem-validacao-exibicao.md).
+> [estudo do agregado](dominio-passagem.md) e o [estudo do form](../historico/as-telas-antes-da-revitalizacao.md).
 
 ## 1. O que a F9 recebeu para fazer
 

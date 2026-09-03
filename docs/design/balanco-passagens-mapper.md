@@ -221,6 +221,6 @@ alternativa** antes — o método hoje faz `runBlocking { dao.salvar }` por doc 
 4. **Faturamento** módulo separado (menu) — migra o ADR-0014 para lá.
 5. **Threading** (Q4) — avaliar/refatorar `obterTodasPorDataStatus`.
 
-A ordem-fonte da confusão (Viagem × Trecho) está em [viagem-vs-trecho.md](viagem-vs-trecho.md) — rework maior,
+A ordem-fonte da confusão (Viagem × Trecho) está em [o domínio antigo §2](../historico/o-dominio-antigo.md) — rework maior,
 à parte.
 ```

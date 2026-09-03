@@ -6,7 +6,7 @@ que **dissolveu o Trecho, criou a Localidade e fixou a lei do domínio sobre a p
 (2026-07-31)**, que definiu **Rota e Viagem como capacidades compartilhadas da plataforma** e **adormeceu a
 tarifa cadastrada**. Sem código: este ADR fixa o domínio e o mapa de coleções; a implementação é faseada abaixo. Supera a pergunta de provisionamento que estava
 aberta no [roadmap do MVP](../design/mvp-roadmap.md) (Pilar 3) e promove a
-[nota Viagem × Trecho](../design/viagem-vs-trecho.md) de "fora do MVP" para dentro dele, na versão do §7.
+[nota Viagem × Trecho](../historico/o-dominio-antigo.md) de "fora do MVP" para dentro dele, na versão do §7.
 
 > Conversa com o [ADR-0003](0003-modelo-de-memoria-do-dado.md) (Room espelha Firestore),
 > o [ADR-0008](0008-relacionamentos-por-identidade.md) (relacionar por id),
@@ -447,7 +447,7 @@ Consequências diretas:
 
 *Revisado na 7ª rodada: o `Trecho` foi **dissolvido**.*
 
-Aqui a nota [Viagem × Trecho](../design/viagem-vs-trecho.md) se resolve. O erro de vocabulário não era só "viagem
+Aqui a nota [Viagem × Trecho](../historico/o-dominio-antigo.md) se resolve. O erro de vocabulário não era só "viagem
 devia ser trecho": era que **duas coisas diferentes estavam espremidas numa entidade só** — a ligação entre dois
 lugares e a oferta que uma empresa faz sobre ela. Até a 6ª rodada a separação produziu **duas** entidades
 (Trecho + Rota); a 7ª mostrou que a primeira era redundante.

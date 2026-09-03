@@ -14,10 +14,10 @@ Ancorado no código em `2026-07-31`, depois do pacote `model` virar **`domain`**
 > (d) **`Porto` tem `localidade`**, não `cidade: String`. Os pontos afetados do ADR-0016 são §5, §7 e o
 > plano F4/F7.
 
-> Substitui, como visão geral, o [estudo transversal de domínio](dominio-relacionamentos-e-camadas.md)
+> Substitui, como visão geral, o [estudo transversal de domínio](../historico/o-dominio-antigo.md)
 > (escrito na era do ADR-0008, quando ainda havia `Agente` e relação por nome). Não substitui o
 > [desenho do agregado Passagem](dominio-passagem.md), que continua sendo a fonte para o bilhete, nem a
-> nota [Viagem × Trecho](viagem-vs-trecho.md). Decisões-fonte por assunto estão citadas em cada seção.
+> nota [Viagem × Trecho](../historico/o-dominio-antigo.md). Decisões-fonte por assunto estão citadas em cada seção.
 
 **Como ler os marcadores.** O domínio está em transição, e misturar o que existe com o que foi decidido é
 a forma mais rápida de tornar um documento destes inútil:

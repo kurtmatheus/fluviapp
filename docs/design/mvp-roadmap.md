@@ -41,7 +41,7 @@ dos outros segmentos.
   com `runBlocking`; logos no repo mas não usados.~~ **Resolvido pelo Pilar 2** (ADR-0015, P2.3/P2.4): a agência
   do bilhete vem do emissor, `Passagem.agente` morreu, a área manual e o último `runBlocking` do form saíram, e
   a marca da agência entrou no bilhete digital. `funcionarioId = uid` congela desde o ADR-0010.
-- **Insight estrutural** (`viagem-vs-trecho.md`): a Viagem de hoje é o Trecho. **Entrou no MVP** pelo
+- **Insight estrutural** (`o domínio antigo §2`): a Viagem de hoje é o Trecho. **Entrou no MVP** pelo
   [ADR-0016](../adr/0016-dominio-da-plataforma.md) §7 — e o desenho final tem **três** conceitos, não dois:
   **Rota** (o onde, sem dono), **Viagem** (o quando e em quê — `(rota, navio, diaSemana, hora)`, atômica) e a
   **ocorrência** `(viagemId, data)`. **O Trecho foi dissolvido** na 7ª rodada: o par de cidades é derivável
@@ -412,7 +412,7 @@ de regime da camada de dados. O índice de vigência ([`docs/adr/README.md`](../
 
 ---
 
-> O rework "Viagem vira Trecho" (`viagem-vs-trecho.md`) **entrou no MVP** pelo
+> O rework "Viagem vira Trecho" (`o domínio antigo §2`) **entrou no MVP** pelo
 > [ADR-0016](../adr/0016-dominio-da-plataforma.md) §7 — e chegou mais longe que a nota previa: **o Trecho foi
 > dissolvido** e o que existe é Rota + Viagem + ocorrência (§7.1). A parte pesada (ocorrências persistidas +
 > contador por acomodação) segue fora — mas a contagem deixou de ser só relatório: com a capacidade no navio

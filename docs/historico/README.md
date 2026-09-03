@@ -1,14 +1,38 @@
-# Linha do tempo — em que ordem as decisões aconteceram
+# Histórico — a linha do tempo, e o que foi superado
 
-Este documento **não decide nada**. Os dois índices respondem *o que vale* ([ADRs](adr/README.md)) e *o que
-cada estudo mediu* ([estudos](design/README.md)); aqui se responde a pergunta que nenhum dos dois responde:
-**por que essa decisão veio nessa hora.**
+Esta pasta guarda o que **já não vale como referência**, sem jogar fora o que ele achou. Nada aqui tem
+autoridade: os dois índices respondem *o que vale* ([ADRs](../adr/README.md)) e *o que cada estudo mediu*
+([estudos](../design/README.md)).
+
+## O que há aqui
+
+| Documento | O que é |
+|---|---|
+| **este arquivo** | a **linha do tempo** — responde a pergunta que os índices não respondem: *por que essa decisão veio nessa hora* |
+| [o-dominio-antigo.md](o-dominio-antigo.md) | síntese de **três estudos superados** do domínio: o catálogo que não nasceu, a relação por nome e a confusão da data. Absorve `e3-catalogo`, `dominio-relacionamentos-e-camadas` e `viagem-vs-trecho` |
+| [as-telas-antes-da-revitalizacao.md](as-telas-antes-da-revitalizacao.md) | síntese de **três estudos de apresentação**: o login que documentava capacidades hoje removidas, o painel proposto que não foi o construído, e o form de passagem anterior ao molde. Absorve `fluxo-login`, `fluxo-main-screen` e `form-passagem-validacao-exibicao` |
+
+> **Nada se perdeu.** Os seis estudos absorvidos estão íntegros no histórico do git, até o commit que os
+> removeu (2026-09-03). O que se ganhou foi parar de oferecer, num índice de referências vivas, documentos
+> que descreviam um app que não existe mais — e, no caso do `fluxo-login`, um que **documentava com
+> segurança três capacidades deliberadamente removidas**.
+
+## Como um documento chega aqui
+
+Quando ele deixa de descrever o presente **e** o que ele achou ainda vale. Se o achado também morreu, o
+documento simplesmente sai; se o documento ainda descreve o presente, ele fica em `design/`. O critério não
+é idade — é se alguém que o ler hoje, sem contexto, seria induzido ao erro.
+
+---
+
+# A linha do tempo
 
 As datas são as de entrada no repositório (`git log --diff-filter=A`), não as do texto — quando as duas
 divergem, é porque a decisão foi tomada antes de ser escrita, e o ADR diz isso na linha de status.
 
-> **Escala.** Do primeiro commit (2026-07-07) a hoje: **trinta ADRs**, **vinte e nove estudos**, duas
-> versões em produção e cerca de trezentos commits. Julho concentrou o desenho; agosto, a construção.
+> **Escala.** Do primeiro commit (2026-07-07) a hoje: **trinta ADRs**, **vinte e três estudos vivos** (mais
+> seis absorvidos aqui), duas versões em produção e cerca de trezentos commits. Julho concentrou o desenho;
+> agosto, a construção.
 
 ---
 

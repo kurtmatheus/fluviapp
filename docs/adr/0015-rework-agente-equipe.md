@@ -24,7 +24,7 @@ está completo**. O que sobra são os débitos registrados nas *Consequências* 
 renomeadas**: na tela o coletivo é "Equipe" e o indivíduo é "Agente" (P2.1) — o código nomeia a entidade,
 a tela nomeia o que o usuário chama. É o **Pilar 2** do
 [`mvp-roadmap.md`](../design/mvp-roadmap.md) e responde o §6 do
-[estudo do form de passagem](../design/form-passagem-validacao-exibicao.md).
+[estudo do form de passagem](../historico/as-telas-antes-da-revitalizacao.md).
 
 > Conversa com o [ADR-0010](0010-autorizacao-por-cargo.md) (autorização por cargo; `funcionarioId = uid` já
 > é o emissor), o [ADR-0008](0008-relacionamentos-por-identidade.md) (relacionar por id), o
@@ -32,7 +32,7 @@ a tela nomeia o que o usuário chama. É o **Pilar 2** do
 > por este, §4a) e o [ADR-0003](0003-modelo-de-memoria-do-dado.md), o
 > [ADR-0012](0012-ciclo-de-vida-passagem-e-embarque-qr.md) (o check-in virou QR), o
 > [ADR-0011](0011-regras-firestore-por-cargo.md) (regras Firestore), a
-> nota [Viagem × Trecho](../design/viagem-vs-trecho.md) (a **ocupação das embarcações** é a dimensão que
+> nota [Viagem × Trecho](../historico/o-dominio-antigo.md) (a **ocupação das embarcações** é a dimensão que
 > cruza agências) e a [identidade visual](../design/) (branding por agência; os drawables `agencia_matriz_logo1/2.png` no repo).
 
 ## Contexto
@@ -380,7 +380,7 @@ de todas as agências que venderam nela. Isso vale **já no MVP**, não espera o
 
 > Consequência técnica: hoje `BalancoPassagensMapper` agrupa por **`navioId`** congelado
 > (`BalancoPassagensMapper.kt:33`) — um proxy do recorte certo enquanto uma "Viagem" ainda é o **trecho sem
-> data** (`viagem-vs-trecho.md`). A Passagem já congela `viagemId`, então mover o `groupBy` para ele é
+> data** (`o domínio antigo §2`). A Passagem já congela `viagemId`, então mover o `groupBy` para ele é
 > mecânico; mas só com o rework Viagem→Trecho (viagem = trecho + data) o "por viagem" deixa de misturar dias.
 > Enquanto isso, o agrupamento por navio **não conflita** com a decisão: ambos ignoram a agência.
 

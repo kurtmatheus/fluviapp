@@ -25,7 +25,7 @@ volta ao código **e** registra a rodada de decisões do analista sobre o agrega
 > Os **§1, §2 e §5 foram reescritos** para essa forma. O §11 e seguintes ficam como estavam: são o **registro
 > das rodadas de decisão**, e reescrevê-los apagaria o caminho — ao lê-los, aplique as duas traduções acima.
 
-> Complementa o [estudo transversal de domínio](dominio-relacionamentos-e-camadas.md) e o
+> Complementa o [estudo transversal de domínio](../historico/o-dominio-antigo.md) e o
 > [catálogo do domínio da plataforma](dominio-da-plataforma.md) (§3.11 resume o que aqui está por extenso).
 > Decisões-fonte: [ADR-0003](../adr/0003-modelo-de-memoria-do-dado.md) (camadas do dado, hoje superado em
 > parte pelo ADR-0017), [ADR-0008](../adr/0008-relacionamentos-por-identidade.md) (id vs. snapshot),
@@ -86,7 +86,7 @@ Bilhete de veículo **sem ninguém nomeado é a forma normal**, não uma inconsi
 é um `Cliente` referenciado — a mesma entidade do passageiro.
 
 > Isto **revisa duas vezes** o rótulo "value object" que o
-> [estudo transversal](dominio-relacionamentos-e-camadas.md) deu a passageiros/veículo: primeiro para
+> [estudo transversal](../historico/o-dominio-antigo.md) deu a passageiros/veículo: primeiro para
 > *participantes* (§11), agora para **sub-domínios** — e o participante-pessoa virou **entidade referenciada**.
 
 **O que o código ainda é** (`domain/passagem/Passagem.kt:9`): `@Entity` do Room, modelo de domínio e fonte
@@ -256,7 +256,7 @@ emulador em `firestore-tests/rules.test.js`.
   o `Cliente` da §11 preenche — e a melhor prova de que a apresentação já pediu o que falta embaixo.
 - **`androidx.room.Ignore` dentro de `ui/states/passagem/FormPassageiroUiState.kt:3`** — anotação de
   persistência num UiState. Não faz nada; some com o ADR-0017, mas revela o vazamento de camada.
-- **O form de emissão entrou no molde** (o [estudo do form](form-passagem-validacao-exibicao.md) descreve o
+- **O form de emissão entrou no molde** (o [estudo do form](../historico/as-telas-antes-da-revitalizacao.md) descreve o
   estado **anterior**): a validação já é **pura** (`ValidacaoPassageiro`/`ValidacaoVeiculo`/
   `ValidacaoDadosPassagem` devolvem `Erros*`, sem mutar estado), os três UiStates já são **puros** (sem
   lambdas) e os eventos vão threadados por parâmetro no `FormPassagemScreen`. O que sobra de estrutural é o
@@ -819,7 +819,7 @@ precisão em duas decisões já tomadas, que sem ela ficariam ambíguas:
   "receita da travessia" sempre quis dizer.
 
 > Conversa direto com o ADR-0016 (**Rota** = a viagem de verdade, com portos, tarifas e **agenda**) e com a
-> nota de vocabulário do [viagem × trecho](viagem-vs-trecho.md). O que este parágrafo acrescenta é a
+> nota de vocabulário do [viagem × trecho](../historico/o-dominio-antigo.md). O que este parágrafo acrescenta é a
 > **atomicidade**: a unidade da agenda é `(dia da semana, hora)`, e a ocorrência é a materialização dela numa
 > data.
 
@@ -989,4 +989,4 @@ valer, como apresentar viagem sem histórico, e se a inferência é calculada na
 - [ADR-0012](../adr/0012-ciclo-de-vida-passagem-e-embarque-qr.md) — ciclo de vida + embarque por QR
 - [ADR-0008](../adr/0008-relacionamentos-por-identidade.md) — relacionar por identidade
 - [ADR-0010](../adr/0010-autorizacao-por-cargo.md) / [ADR-0011](../adr/0011-regras-firestore-por-cargo.md) — autorização e regras
-- [Catálogo do domínio da plataforma](dominio-da-plataforma.md) · [Estudo do form de passagem](form-passagem-validacao-exibicao.md) · [Estudo da camada de apresentação](camada-de-apresentacao.md)
+- [Catálogo do domínio da plataforma](dominio-da-plataforma.md) · [Estudo do form de passagem](../historico/as-telas-antes-da-revitalizacao.md) · [Estudo da camada de apresentação](camada-de-apresentacao.md)

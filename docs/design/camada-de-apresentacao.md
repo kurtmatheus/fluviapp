@@ -8,8 +8,8 @@
 > evento one-shot), o [ADR-0016](../adr/0016-dominio-da-plataforma.md) (que parte o menu em duas famílias
 > e é o que **força** este estudo agora) e o [catálogo do domínio](dominio-da-plataforma.md), que é a base
 > de qualquer transformação daqui. Complementa os estudos de fluxo já existentes
-> ([login](fluxo-login.md), [main screen](fluxo-main-screen.md),
-> [form de passagem](form-passagem-validacao-exibicao.md)), que olham **uma tela cada**; aqui o corte é a
+> ([login](../historico/as-telas-antes-da-revitalizacao.md), [main screen](../historico/as-telas-antes-da-revitalizacao.md),
+> [form de passagem](../historico/as-telas-antes-da-revitalizacao.md)), que olham **uma tela cada**; aqui o corte é a
 > **camada**.
 
 **Números do mapeamento.** 138 arquivos em `ui/` (22 telas, 50 componentes, 23 estados, 39 ViewModels e
@@ -90,7 +90,7 @@ de estado ao Android.
 
 O molde do ADR-0006 já tem a resposta para isso — **evento one-shot**: o ViewModel emite `Salvo(id)` /
 `Bloqueado(msg)` / `Falhou`, e a navegação só reage. A fatia de emissão nunca foi migrada para o molde
-(é o que o [estudo do form de passagem](form-passagem-validacao-exibicao.md) já registrou por outro
+(é o que o [estudo do form de passagem](../historico/as-telas-antes-da-revitalizacao.md) já registrou por outro
 ângulo).
 
 ### 2.3 Callback drilling: 13 lambdas num grafo, 43 numa tela

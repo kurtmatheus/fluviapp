@@ -2,13 +2,13 @@
 
 Estudo de arquitetura e lógica dos módulos de cadastro **Viagem** e **Agente**, avaliado contra as
 decisões de arquitetura já adotadas no projeto, com uma **estrutura refatorada** que serve de molde
-para implementar **Empresa** limpo (fase 2 de [fluxo-main-screen.md](fluxo-main-screen.md)).
+para implementar **Empresa** limpo (fase 2 de [as telas antes da revitalização §2](../historico/as-telas-antes-da-revitalizacao.md)).
 
 Decisões-base de referência:
 - **DIP + resultado de domínio** na borda (padrão `ResultadoAutenticacao`, ADR-0005).
 - **Room espelha Firestore** (ADR-0003).
-- **Fonte única de estado** e **validação/autorização centralizada** (fluxo-main-screen §8).
-- **Sem framework CRUD genérico prematuro** (fluxo-main-screen §8.6) — normalizar por *convenção* e
+- **Fonte única de estado** e **validação/autorização centralizada** (as telas antes da revitalização §2).
+- **Sem framework CRUD genérico prematuro** (as telas antes da revitalização §2) — normalizar por *convenção* e
   um repositório-base fino, não um `FormViewModel<T>` genérico.
 
 ---

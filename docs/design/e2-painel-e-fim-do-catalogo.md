@@ -2,7 +2,7 @@
 
 **Status:** **fechado → [ADR-0020](../adr/0020-fim-do-catalogo-e-o-contexto-do-painel.md)** (`2026-08-03`,
 2ª rodada). Análise da frente **E2** do [roadmap](mvp-roadmap.md), refeita a partir de uma decisão do
-analista. Substitui [e3-catalogo.md](e3-catalogo.md), que mapeou a mesma superfície e parou um passo antes da
+analista. Substitui [o domínio antigo §3](../historico/o-dominio-antigo.md), que mapeou a mesma superfície e parou um passo antes da
 conclusão.
 
 > **A decisão que motiva esta revisão:** *o `Catalogo` não nasce.* Máscara de CPF/CNPJ/RG/passaporte é regra —
@@ -17,7 +17,7 @@ conclusão.
 
 O [ADR-0016 §3](../adr/0016-dominio-da-plataforma.md) escreveu a régua: **quem tem regra vira tipo de domínio;
 quem é só rótulo vira linha de catálogo.** A régua está certa. O que esta análise faz é aplicá-la sem exceção
-às cinco categorias que sobreviveram ao [mapa da E3](e3-catalogo.md) §1 — e nenhuma passa.
+às cinco categorias que sobreviveram ao [mapa da E3](../historico/o-dominio-antigo.md) §1 — e nenhuma passa.
 
 ### 1.1 `DOCUMENTO` — o rótulo que já governa comportamento
 
@@ -139,7 +139,7 @@ Some junto a regra de unicidade `(categoria, descricao)` que o §3 criou só par
 **Não sobra linha.** O `Catalogo` não seria um `Constante` menor — seria uma coleção sem documentos, um CRUD
 sem o que criar, uma seção de menu com tela vazia, uma regra de servidor guardando nada e uma
 `IObjetoSimplificado` sem implementador. E como `domain/catalogo/Catalogo.kt` **nunca foi escrito** (passo 2 do
-[mapa da E3](e3-catalogo.md) §5), matá-lo agora não demole nada: é o momento mais barato que existirá.
+[mapa da E3](../historico/o-dominio-antigo.md) §5), matá-lo agora não demole nada: é o momento mais barato que existirá.
 
 **A regra que fica, e que é o conteúdo do ADR:** *vocabulário que o código consome é **tipo**; dado que o
 negócio cria é **entidade**. Não há terceira categoria.* A tabela `Constante` era a terceira categoria — e
@@ -310,12 +310,12 @@ Levantamento completo, para o ADR marcar como superado.
 
 | Documento | Trecho | Como fica |
 |---|---|---|
-| [e3-catalogo.md](e3-catalogo.md) | o documento inteiro | **superado por este.** Mas o §1 dele é **a prova**: foi ele que mediu que "some quase tudo". Este estudo só levou a mesma conta até o fim |
+| [o domínio antigo §3](../historico/o-dominio-antigo.md) | o documento inteiro | **superado por este.** Mas o §1 dele é **a prova**: foi ele que mediu que "some quase tudo". Este estudo só levou a mesma conta até o fim |
 | [dominio-da-plataforma.md](dominio-da-plataforma.md) | **§3.8** (*"Catálogo — as informações adjuntas"*), **§4.8.1** (*"`Catalogo.Categoria` — o índice"*), as linhas de `Catalogo` embutido em `Localidade` (§3.4 / linhas 299-300), o mapa de coleções e a tabela de deltas | **superado nesses pontos** — é o catálogo do domínio e precisa refletir os tipos novos |
 | [eixo-de-storage-firestore-only.md](eixo-de-storage-firestore-only.md) **§7.1** | a escolha do piloto | **superado** — piloto passa a ser Empresa |
 | [dominio-passagem.md](dominio-passagem.md):186 | *"`STATUS_PASSAGEM` some com a F1 do ADR-0016"* | **continua verdade, muda a razão**: some porque o catálogo inteiro some |
 | [mvp-roadmap.md](mvp-roadmap.md) | **E3** (*"`Catalogo` primeiro, e como última opção do menu"*), **P3.A** (a cadeia `catálogo → porto/trecho e empresa → …`) e a caixa de sequência | **reescritos**: a cadeia começa em **Empresa**, e o passo *domínio* da E2 fecha os tipos |
-| [README.md](README.md) | linha de `e3-catalogo.md` (*"em execução"*) | vira **superado**, apontando para este |
+| [README.md](README.md) | linha de `e3-catalogo.md` (*"em execução"*) | **feito** — e em 2026-09-03 o estudo saiu do índice: foi absorvido por [`historico/o-dominio-antigo.md`](../historico/o-dominio-antigo.md) |
 
 ### Código e regras
 
@@ -339,7 +339,7 @@ Levantamento completo, para o ADR marcar como superado.
 | `TIPO_EMBARCACAO` como tipo | **confirmado**, e o tipo é da embarcação; junto veio `Navio` → `Embarcacao` como rename futuro (§1.4) |
 | `IObjetoSimplificado` | **não morre como forma** — morre o uso neste app (§2.1) |
 
-**Contador de bilhete — respondido junto, e a resposta já existia.** O [mapa da E3](e3-catalogo.md) §3 deixou
+**Contador de bilhete — respondido junto, e a resposta já existia.** O [mapa da E3](../historico/o-dominio-antigo.md) §3 deixou
 `ContadorBilhete` "anotado para a fase da numeração". Não há o que projetar: ele **já vira `count` por
 ocorrência** — `count(passagens where viagemId = X and data = D)`, que é o mecanismo que o
 [ADR-0016 §7.1](../adr/0016-dominio-da-plataforma.md) (9ª rodada) criou ao dar identidade única à partida

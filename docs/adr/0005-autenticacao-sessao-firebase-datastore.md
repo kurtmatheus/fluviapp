@@ -1,6 +1,6 @@
 # ADR-0005: Autenticação por sessão Firebase + DataStore, sem senha local
 
-**Status:** Aceita (direção); execução após documentação do fluxo (ver `docs/design/fluxo-login.md`)
+**Status:** Aceita (direção); execução após documentação do fluxo (ver `docs/historico/as-telas-antes-da-revitalizacao.md`)
 
 **Contexto**
 
@@ -58,5 +58,5 @@ real — só reimplementa mal o que a sessão persistida já dá, adicionando ri
 
 - Multi-conta / troca rápida de usuário: o DataStore de sessão evolui para uma lista de perfis
   em cache, com `currentUser` decidindo o ativo.
-- Ver `docs/design/fluxo-login.md` para as capacidades novas (cadastro + verificação de e-mail,
+- Ver `docs/historico/as-telas-antes-da-revitalizacao.md` para as capacidades novas (cadastro + verificação de e-mail,
   Google, recuperação de senha) que se apoiam nesta base.

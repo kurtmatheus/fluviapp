@@ -1,13 +1,14 @@
 # Documentação do FluviApp — por onde entrar
 
-Esta pasta guarda **como o app pensa**, não como ele se usa. São três coisas, e elas têm autoridades
+Esta pasta guarda **como o app pensa**, não como ele se usa. São quatro coisas, e elas têm autoridades
 diferentes:
 
 | Onde | O que é | Autoridade |
 |---|---|---|
 | [`adr/`](adr/) | **decisões** tomadas, com o contexto que as justificou e o custo assumido | **máxima** — ADR não se apaga; quando muda de ideia, escreve-se outro |
 | [`design/`](design/) | **estudos** que mediram o código e prepararam decisão | nenhuma — estudo propõe, ADR decide |
-| [`historico.md`](historico.md) | a **linha do tempo**: em que ordem as decisões aconteceram e o que cada leva mudou | narrativa — não decide nada, explica por que a ordem foi essa |
+| [`historico/`](historico/) | a **linha do tempo** e o que foi **superado**, sintetizado por assunto | narrativa — não decide nada; explica por que a ordem foi essa, e guarda o achado do que saiu |
+| [`esteira.md`](esteira.md) | **operação**: como um commit vira APK na mão de um tester | procedimento — descreve o que está no ar, e envelhece com os workflows |
 
 > **Régua de precedência, em uma linha:** *ADR vence estudo; ADR mais novo vence ADR mais velho no ponto em
 > que se cruzam — nunca no documento inteiro.*
@@ -22,8 +23,9 @@ diferentes:
   0020** — quase todos foram emendados em algum ponto.
 - **[`design/README.md`](design/README.md) — o índice de estudos**, dividido em cinco eixos (domínio, dados,
   apresentação, operação, produto). Diz de que cada documento trata e **quanto ele ainda vale**.
-- **[`historico.md`](historico.md) — a linha do tempo.** Não substitui os dois acima; serve para a pergunta
-  que eles não respondem: *por que essa decisão veio nessa hora?*
+- **[`historico/README.md`](historico/README.md) — a linha do tempo, e o índice do que foi superado.** Não
+  substitui os dois acima; serve para a pergunta que eles não respondem — *por que essa decisão veio nessa
+  hora?* — e para achar o que um estudo aposentado tinha medido.
 
 ## Por onde começar, conforme a pergunta
 
@@ -32,8 +34,9 @@ diferentes:
 | *o que o negócio é* | [`design/dominio-da-plataforma.md`](design/dominio-da-plataforma.md) — o catálogo completo de entidades, tipos e regras puras |
 | *como a passagem funciona* | [`design/dominio-passagem.md`](design/dominio-passagem.md), depois os ADRs **0023 a 0031** |
 | *o que ainda falta construir* | [`design/mvp-roadmap.md`](design/mvp-roadmap.md) e a seção *O que está esperando decisão* do índice de ADRs |
-| *por que isto está assim* | [`historico.md`](historico.md), e daí para o ADR da data |
+| *por que isto está assim* | [`historico/README.md`](historico/README.md), e daí para o ADR da data |
 | *posso mexer nisto?* | o índice de vigência — a coluna *o que caiu* costuma responder antes de o código responder |
+| *como isto chega no aparelho* | [`esteira.md`](esteira.md) — os três workflows, os grupos de tester e o que continua manual **por princípio** |
 
 ## Como escrever o próximo
 
