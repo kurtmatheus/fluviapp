@@ -76,15 +76,22 @@ fun fluxoDoInicio(
 
             // O relógio é lido a cada emissão, e não uma vez: a janela de sete dias é relativa a *agora*, e
             // um snapshot que chega depois da meia-noite tem de ser recortado pelo dia de hoje.
+            //
+            // Lido **uma vez por emissão**, e não duas: o recorte do domínio e o destaque da apresentação
+            // têm de concordar sobre que dia é hoje. Duas leituras separadas por milissegundos discordam
+            // uma vez por dia, à meia-noite — e o defeito só aparece nesse instante.
+            val agora = relogio.agora()
+
             inicioDoPainel(
                 escopo = escopo,
                 viagens = viagens,
                 rotasPorId = rotasPorId,
-                agora = relogio.agora(),
+                agora = agora,
             ).paraTela(
                 rotasPorId = rotasPorId,
                 portosPorId = portosPorId,
                 embarcacoes = nomesDeEmbarcacao,
+                hoje = agora.toLocalDate(),
             )
         },
     )

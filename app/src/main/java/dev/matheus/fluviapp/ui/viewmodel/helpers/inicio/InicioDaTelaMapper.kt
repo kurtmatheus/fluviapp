@@ -9,6 +9,7 @@ import dev.matheus.fluviapp.domain.viagem.rotulo
 import dev.matheus.fluviapp.domain.viagem.rotuloCurto
 import dev.matheus.fluviapp.ui.states.InicioDaTela
 import dev.matheus.fluviapp.ui.states.ViagemDisponivelCard
+import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 /**
@@ -26,6 +27,7 @@ fun InicioDoPainel.paraTela(
     rotasPorId: Map<String, Rota>,
     portosPorId: Map<String, String>,
     embarcacoes: Map<String, String>,
+    hoje: LocalDate,
 ): InicioDaTela = when (this) {
     InicioDoPainel.DaPlataforma -> InicioDaTela.DaPlataforma
     InicioDoPainel.SemConcessao -> InicioDaTela.SemConcessao
@@ -49,6 +51,10 @@ fun InicioDoPainel.paraTela(
                     if (it.diasDepois > 0) "${it.diaSemana.rotuloCurto} ${formatarHora(it.horaMin)}"
                     else formatarHora(it.horaMin)
                 }.orEmpty(),
+                // A comparação é por **data**, não por instante: a saída das 18:00 continua sendo *a de
+                // hoje* às 19:00, mesmo já tendo partido. Quem decide se ela ainda aparece na lista é o
+                // domínio (`disponiveisAPartirDe` descarta partida vencida); aqui só se diz qual é o dia.
+                ehHoje = ocorrencia.data == hoje,
             )
         }
     )

@@ -1,8 +1,10 @@
 package dev.matheus.fluviapp.ui.screens
 
 import androidx.activity.ComponentActivity
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -120,6 +122,29 @@ class PainelRevitalizadoTest {
         composeTestRule.onNodeWithText(texto(R.string.subtitle_viagens_disponiveis)).assertIsDisplayed()
         composeTestRule.onNodeWithText(SAIDA_DE_EXEMPLO.partida).assertIsDisplayed()
         composeTestRule.onNodeWithText(SAIDA_DE_EXEMPLO.embarcacao).assertIsDisplayed()
+    }
+
+    /**
+     * O selo marca **qual** saída é a de hoje, e só ela: numa semana em que nenhuma é, ele não aparece —
+     * que é o caso em que confundir *primeiro da lista* com *agora* custaria caro.
+     */
+    @Test
+    fun painel_daEmpresa_marcaApenasASaidaDeHoje() {
+        montarPainel(
+            InicioDaTela.DaEmpresa(
+                listOf(SAIDA_DE_EXEMPLO.copy(ehHoje = true), SAIDA_DE_EXEMPLO.copy(id = "v2@2026-08-14")),
+            ),
+        )
+
+        composeTestRule.onAllNodesWithText(texto(R.string.label_info_hoje).uppercase())
+            .assertCountEquals(1)
+    }
+
+    @Test
+    fun painel_daEmpresa_semSaidaHoje_naoMarcaNenhuma() {
+        montarPainel(InicioDaTela.DaEmpresa(listOf(SAIDA_DE_EXEMPLO)))
+
+        composeTestRule.onNodeWithText(texto(R.string.label_info_hoje).uppercase()).assertDoesNotExist()
     }
 
     /**

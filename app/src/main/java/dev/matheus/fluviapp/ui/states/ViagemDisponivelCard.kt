@@ -22,4 +22,13 @@ data class ViagemDisponivelCard(
     val embarcacao: String,
     /** "Qui 00:00", ou vazio quando a rota não diz o tempo. */
     val chegada: String,
+    /**
+     * A saída é **de hoje** — o único fato do card que não se lê no texto dele.
+     *
+     * Entra como booleano porque os outros campos já chegam formatados: a tela não tem `LocalDate` para
+     * comparar, e dar-lhe um só para essa conta faria a apresentação decidir o que é *hoje* — pergunta
+     * que depende do relógio, e o relógio tem porta (`Relogio`) justamente para não ser lido em qualquer
+     * lugar.
+     */
+    val ehHoje: Boolean = false,
 )

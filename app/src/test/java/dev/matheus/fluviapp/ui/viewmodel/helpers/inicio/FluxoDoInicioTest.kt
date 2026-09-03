@@ -19,6 +19,7 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.time.DayOfWeek
@@ -182,6 +183,39 @@ class FluxoDoInicioTest {
 
         assertEquals(InicioDaTela.DaPlataforma, vistos.last())
         coleta.cancel()
+    }
+
+    /**
+     * **O destaque de hoje vem do relógio, e não da ordem da lista.**
+     *
+     * A mesma viagem semanal, colhida em dois dias diferentes: na terça ela é a saída de hoje; na quarta
+     * ela é a terça **seguinte**, continua sendo o primeiro item da lista e deixa de vir marcada. É o caso
+     * que justifica o selo existir — *primeiro* e *hoje* são informações diferentes, e só a primeira a
+     * ordenação sabia dar.
+     *
+     * O teste mede a ligação `Relogio → fluxoDoInicio → paraTela → card`; que a comparação de datas está
+     * certa é assunto do `InicioDaTelaMapperTest`.
+     */
+    @Test
+    fun `o destaque de hoje vem do relogio`() = runTest(UnconfinedTestDispatcher()) {
+        rotas.rotas = listOf(rota)
+        viagens.viagens = listOf(viagem)
+
+        val naTerca = mutableListOf<InicioDaTela>()
+        val coletaTerca = launch { fluxo().collect { naTerca += it } }
+        advanceUntilIdle()
+        assertTrue(cardsDe(naTerca.last()).single().ehHoje)
+        coletaTerca.cancel()
+
+        relogio.instante = tercaDeManha.plusDays(1)
+
+        val naQuarta = mutableListOf<InicioDaTela>()
+        val coletaQuarta = launch { fluxo().collect { naQuarta += it } }
+        advanceUntilIdle()
+        val card = cardsDe(naQuarta.last()).single()
+        assertFalse("a terça seguinte não é hoje", card.ehHoje)
+        assertEquals("Terça-feira, 18/08 · 18:00", card.partida)
+        coletaQuarta.cancel()
     }
 
     /** Sem concessão é estado próprio: o recado é "falta provisionar", não "não há saída". */

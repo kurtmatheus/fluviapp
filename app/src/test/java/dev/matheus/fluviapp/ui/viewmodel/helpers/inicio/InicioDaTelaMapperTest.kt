@@ -6,6 +6,7 @@ import dev.matheus.fluviapp.domain.viagem.Viagem
 import dev.matheus.fluviapp.domain.viagem.ViagemSemana
 import dev.matheus.fluviapp.ui.states.InicioDaTela
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.time.LocalDate
@@ -36,9 +37,9 @@ class InicioDaTelaMapperTest {
     private fun ocorrencia(rotaId: String = "r1", horaMin: Int = 18 * 60, data: LocalDate = terca) =
         ViagemSemana(Viagem("v1", rotaId, "e1", data.dayOfWeek, horaMin), data)
 
-    private fun telaCom(vararg ocorrencias: ViagemSemana) =
+    private fun telaCom(vararg ocorrencias: ViagemSemana, hoje: LocalDate = terca) =
         InicioDoPainel.DaEmpresa(ocorrencias.toList())
-            .paraTela(rotasPorId, portosPorId, embarcacoes) as InicioDaTela.DaEmpresa
+            .paraTela(rotasPorId, portosPorId, embarcacoes, hoje = hoje) as InicioDaTela.DaEmpresa
 
     // --- As faces que atravessam sem dado ---
 
@@ -47,18 +48,18 @@ class InicioDaTelaMapperTest {
     fun `plataforma e sem-concessao atravessam sem cards`() {
         assertEquals(
             InicioDaTela.DaPlataforma,
-            InicioDoPainel.DaPlataforma.paraTela(rotasPorId, portosPorId, embarcacoes),
+            InicioDoPainel.DaPlataforma.paraTela(rotasPorId, portosPorId, embarcacoes, hoje = terca),
         )
         assertEquals(
             InicioDaTela.SemConcessao,
-            InicioDoPainel.SemConcessao.paraTela(rotasPorId, portosPorId, embarcacoes),
+            InicioDoPainel.SemConcessao.paraTela(rotasPorId, portosPorId, embarcacoes, hoje = terca),
         )
     }
 
     @Test
     fun `empresa sem saida vira lista vazia, nao outro estado`() {
         val tela = InicioDoPainel.DaEmpresa(emptyList())
-            .paraTela(rotasPorId, portosPorId, embarcacoes)
+            .paraTela(rotasPorId, portosPorId, embarcacoes, hoje = terca)
 
         assertTrue((tela as InicioDaTela.DaEmpresa).disponiveis.isEmpty())
     }
@@ -131,7 +132,7 @@ class InicioDaTelaMapperTest {
     @Test
     fun `porto desconhecido cai no proprio id, e nao em branco`() {
         val card = InicioDoPainel.DaEmpresa(listOf(ocorrencia()))
-            .paraTela(rotasPorId, emptyMap(), embarcacoes)
+            .paraTela(rotasPorId, emptyMap(), embarcacoes, hoje = terca)
             .let { (it as InicioDaTela.DaEmpresa).disponiveis.single() }
 
         assertEquals("porto-a → porto-b", card.rota)
@@ -140,10 +141,64 @@ class InicioDaTelaMapperTest {
     @Test
     fun `embarcacao desconhecida deixa o campo vazio`() {
         val card = InicioDoPainel.DaEmpresa(listOf(ocorrencia()))
-            .paraTela(rotasPorId, portosPorId, emptyMap())
+            .paraTela(rotasPorId, portosPorId, emptyMap(), hoje = terca)
             .let { (it as InicioDaTela.DaEmpresa).disponiveis.single() }
 
         assertEquals("", card.embarcacao)
+    }
+
+    // --- O destaque de hoje ---
+
+    /**
+     * O card não tem `LocalDate` — todos os campos dele chegam formatados —, então quem sabe se a saída é
+     * de hoje é esta tradução, com a data que o fluxo leu do relógio.
+     */
+    @Test
+    fun `a saida do dia corrente vem marcada`() {
+        val card = telaCom(ocorrencia(), hoje = terca).disponiveis.single()
+
+        assertTrue(card.ehHoje)
+    }
+
+    @Test
+    fun `a saida de outro dia nao vem marcada`() {
+        val card = telaCom(ocorrencia(data = terca.plusDays(3)), hoje = terca).disponiveis.single()
+
+        assertFalse(card.ehHoje)
+    }
+
+    /**
+     * **A virada de meia-noite.** A mesma ocorrência, lida no dia seguinte, deixa de ser a de hoje — e a
+     * marcação tem de acompanhar, porque o fluxo relê o relógio a cada snapshot. Sem este caso, o destaque
+     * poderia ser calculado uma vez e envelhecer preso ao dia em que a tela abriu.
+     */
+    @Test
+    fun `a mesma saida deixa de ser a de hoje no dia seguinte`() {
+        val vespera = telaCom(ocorrencia(), hoje = terca.minusDays(1)).disponiveis.single()
+        val noDia = telaCom(ocorrencia(), hoje = terca).disponiveis.single()
+
+        assertFalse(vespera.ehHoje)
+        assertTrue(noDia.ehHoje)
+    }
+
+    /** A comparação é por **data**, não por instante: às 19h a saída das 18h ainda é a de hoje. */
+    @Test
+    fun `a saida ja partida no mesmo dia continua sendo a de hoje`() {
+        val card = telaCom(ocorrencia(horaMin = 6 * 60), hoje = terca).disponiveis.single()
+
+        assertTrue(card.ehHoje)
+    }
+
+    /** Uma semana sem saída hoje: a lista tem primeiro item, e nenhum é o de hoje. */
+    @Test
+    fun `semana sem saida hoje nao marca o primeiro da lista`() {
+        val tela = telaCom(
+            ocorrencia(data = terca.plusDays(1)),
+            ocorrencia(data = terca.plusDays(3)),
+            hoje = terca,
+        )
+
+        assertTrue(tela.disponiveis.none { it.ehHoje })
     }
 
     // --- Ordem preservada ---

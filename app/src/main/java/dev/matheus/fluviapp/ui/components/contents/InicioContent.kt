@@ -1,5 +1,6 @@
 package dev.matheus.fluviapp.ui.components.contents
 
+import android.content.res.Configuration.UI_MODE_NIGHT_YES
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -100,6 +101,7 @@ private val exemplo = listOf(
         rota = "Porto de Val-de-Cães · Belém/PA → Porto de Parintins · Parintins/AM",
         embarcacao = "F/B Modelo",
         chegada = "Qui 00:00",
+        ehHoje = true,
     ),
     ViagemDisponivelCard(
         id = "v2@2026-08-14",
@@ -115,6 +117,25 @@ private val exemplo = listOf(
 @Composable
 private fun InicioDaEmpresaPreview() {
     FluviAppTheme { InicioContent(Modifier, InicioDaTela.DaEmpresa(exemplo)) }
+}
+
+/** As duas leituras lado a lado, no escuro — é aí que a distinção depende da borda e não do fundo. */
+@Preview(showBackground = true, uiMode = UI_MODE_NIGHT_YES)
+@Composable
+private fun InicioDaEmpresaEscuroPreview() {
+    FluviAppTheme { InicioContent(Modifier, InicioDaTela.DaEmpresa(exemplo)) }
+}
+
+/**
+ * **A semana sem saída hoje**, que é o caso que justifica o destaque existir: a lista continua tendo um
+ * primeiro item, e nenhum deles é de hoje. Sem o selo, *primeiro* se lê como *agora*.
+ */
+@Preview(showBackground = true)
+@Composable
+private fun InicioDaEmpresaSemSaidaHojePreview() {
+    FluviAppTheme {
+        InicioContent(Modifier, InicioDaTela.DaEmpresa(exemplo.map { it.copy(ehHoje = false) }))
+    }
 }
 
 @Preview(showBackground = true)
