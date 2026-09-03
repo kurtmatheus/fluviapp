@@ -22,8 +22,6 @@ fun CommonScreen(
     hasRefresh: Boolean,
     isRefreshing: Boolean,
     rightIcon: ImageVector = Icons.Filled.Search,
-    inicioAtivo: Boolean = false,
-    onClickInicio: () -> Unit = {},
     onClickEmbarque: () -> Unit = {},
     onClickVoltar: () -> Unit = {},
     onClickRightIcon: () -> Unit = {},
@@ -41,8 +39,6 @@ fun CommonScreen(
         rightIcon = rightIcon,
         hasRefresh = hasRefresh,
         isRefreshing = isRefreshing,
-        inicioAtivo = inicioAtivo,
-        onClickInicio = onClickInicio,
         onClickEmbarque = onClickEmbarque,
         onClickVoltar = onClickVoltar,
         onClickRightIcon = onClickRightIcon,
@@ -65,7 +61,6 @@ private fun MenuCommonScreenPreview() {
         isShowRightIcon = false,
         hasRefresh = false,
         isRefreshing = false,
-        inicioAtivo = true,
         content = { modifier, title -> CommonTopRow(modifier = modifier, titulo = title) },
     )
 }

@@ -43,8 +43,6 @@ fun CommonScaffold(
     hasRefresh: Boolean,
     isRefreshing: Boolean,
     rightIcon: ImageVector = Icons.Filled.Search,
-    inicioAtivo: Boolean = false,
-    onClickInicio: () -> Unit = {},
     onClickEmbarque: () -> Unit = {},
     onClickVoltar: () -> Unit = {},
     onClickRightIcon: () -> Unit = {},
@@ -67,8 +65,6 @@ fun CommonScaffold(
             hasRefresh = hasRefresh,
             isRefreshing = isRefreshing,
             rightIcon = rightIcon,
-            inicioAtivo = inicioAtivo,
-            onClickInicio = onClickInicio,
             onClickEmbarque = onClickEmbarque,
             onClickMenu = {},
             onClickVoltar = onClickVoltar,
@@ -94,14 +90,11 @@ fun CommonScaffold(
                 hasRefresh = hasRefresh,
                 isRefreshing = isRefreshing,
                 rightIcon = rightIcon,
-                inicioAtivo = inicioAtivo,
-                onClickInicio = onClickInicio,
-                onClickEmbarque = onClickEmbarque,
+                        onClickEmbarque = onClickEmbarque,
                 onClickMenu = {},
                 onClickVoltar = onClickVoltar,
                 onClickRightIcon = onClickRightIcon,
                 onRefresh = onRefresh,
-                mostrarMenuNaBarra = false,
                 content = content,
             )
         }
@@ -128,8 +121,6 @@ fun CommonScaffold(
             hasRefresh = hasRefresh,
             isRefreshing = isRefreshing,
             rightIcon = rightIcon,
-            inicioAtivo = inicioAtivo,
-            onClickInicio = onClickInicio,
             onClickEmbarque = onClickEmbarque,
             onClickMenu = abrirDrawer,
             onClickVoltar = onClickVoltar,
@@ -152,14 +143,11 @@ private fun ScaffoldConteudo(
     hasRefresh: Boolean,
     isRefreshing: Boolean,
     rightIcon: ImageVector,
-    inicioAtivo: Boolean,
-    onClickInicio: () -> Unit,
     onClickEmbarque: () -> Unit,
     onClickMenu: () -> Unit,
     onClickVoltar: () -> Unit,
     onClickRightIcon: () -> Unit,
     onRefresh: () -> Unit,
-    mostrarMenuNaBarra: Boolean = true,
     content: @Composable () -> Unit,
 ) {
     val pullToRefreshState = rememberPullToRefreshState()
@@ -181,11 +169,7 @@ private fun ScaffoldConteudo(
         bottomBar = {
             if (isShowBottomAppBar) FluviBottomAppBar(
                 modifier = modifier,
-                inicioAtivo = inicioAtivo,
-                onClickInicio = onClickInicio,
                 onClickEmbarque = onClickEmbarque,
-                onClickMenu = onClickMenu,
-                mostrarMenu = mostrarMenuNaBarra,
             )
         },
         // FAB de embarque protruso, ancorado ao centro sobre a barra (só onde a barra aparece).
@@ -225,7 +209,6 @@ private fun ScaffoldGenericoPreview() {
         isShowRightIcon = false,
         hasRefresh = false,
         isRefreshing = false,
-        inicioAtivo = true,
         content = { Text(modifier = Modifier.padding(20.dp), text = "Conteudo") },
     )
 }

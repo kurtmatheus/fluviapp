@@ -50,6 +50,12 @@ fun MainScreen(
     state: MainScreenUiState,
     acoesPorSecao: Map<SecaoMenu, List<AcaoMenu>> = emptyMap(),
     onAcaoMenu: (AcaoMenu) -> Unit = {},
+    /**
+     * O "Início" do **menu lateral** — o único que restou depois de a barra inferior perder o dela.
+     *
+     * O da barra era navegação para a tela onde a barra está; este vem de dentro do drawer, onde há
+     * outras seções abertas, e leva de volta ao painel. Mesma palavra, gestos diferentes.
+     */
     onClickInicio: () -> Unit = {},
     onClickDeslogar: () -> Unit = {},
     isDarkTheme: Boolean = false,
@@ -74,8 +80,6 @@ fun MainScreen(
         isShowRightIcon = false,
         hasRefresh = false,
         isRefreshing = state.isRefreshing,
-        inicioAtivo = true,
-        onClickInicio = onClickInicio,
         onClickEmbarque = onClickEmbarque,
         drawerContent = { fechar ->
             FluviMenuDrawer(
