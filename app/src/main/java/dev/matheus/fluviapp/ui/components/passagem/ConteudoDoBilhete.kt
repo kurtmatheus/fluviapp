@@ -208,9 +208,11 @@ fun ConteudoDoBilhete(
                             )
                         }
 
-                        // **Uma caixa por campo que existe**, e nenhuma pelo que não se pergunta: carreta e
-                        // caminhão não têm modelo (o tipo já é o modelo), e só a moto tem cilindrada. A linha
-                        // se encurta em vez de abrir lacuna, e nenhum campo se esconde dentro de outro.
+                        // **Uma caixa por campo que existe**, e nenhuma pelo que ficou em branco: o modelo é
+                        // opcional em carreta e caminhão (o tipo já serve de resposta) e só a moto tem
+                        // cilindrada. A linha se encurta em vez de abrir lacuna, e nenhum campo se esconde
+                        // dentro de outro. O filtro é por **valor**, não por classe, e é o que faz o bilhete
+                        // desenhar o modelo do caminhão quando ele foi informado.
                         val complementos = listOf(
                             "Modelo" to veiculo.modelo,
                             "Cor" to veiculo.cor,

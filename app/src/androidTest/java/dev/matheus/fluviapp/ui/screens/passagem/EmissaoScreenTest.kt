@@ -205,17 +205,21 @@ class EmissaoScreenTest {
     }
 
     /**
-     * **O formulário se rearranja pela classe** (ADR-0023 D4): carreta *já é* o modelo, então o campo não
-     * existe — e campo que não existe é melhor que campo desabilitado.
+     * **O formulário se rearranja pela classe** (ADR-0023 D4), e a régua é a diferença entre *não pedir* e
+     * *não deixar dizer*.
+     *
+     * A **cilindrada** some: numa carreta ela não é opcional, é sem sentido. O **modelo** fica: o tipo já
+     * serve de resposta, mas quem tem "Scania R450" no pátio precisa poder escrevê-lo — e é a frota pesada
+     * que mais se distingue por modelo na hora de achar o veículo.
      */
     @Test
-    fun passo3Veiculo_carretaNaoPedeModeloNemCilindrada() {
+    fun passo3Veiculo_carretaOfereceModeloENaoOfereceCilindrada() {
         montarTela(estadoDeVeiculo(ClasseVeiculo.CARRETA))
 
         composeTestRule.onNodeWithText(texto(dev.matheus.fluviapp.R.string.label_placa_veículo))
             .assertIsDisplayed()
         composeTestRule.onNodeWithText(texto(dev.matheus.fluviapp.R.string.label_modelo_veiculo))
-            .assertDoesNotExist()
+            .assertIsDisplayed()
         composeTestRule.onNodeWithText(texto(dev.matheus.fluviapp.R.string.label_cilindrada))
             .assertDoesNotExist()
     }

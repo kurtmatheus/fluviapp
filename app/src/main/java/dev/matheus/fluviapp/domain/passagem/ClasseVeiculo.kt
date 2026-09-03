@@ -22,7 +22,13 @@ enum class ClasseVeiculo(
     val rotulo: String,
     /** A tarifa desta classe depende da cilindrada informada. Só a moto. */
     val exigeCilindrada: Boolean,
-    /** Há um modelo a informar, ou o tipo **já é** o modelo? (ADR-0023 D4) */
+    /**
+     * O modelo é **obrigatório** nesta classe, ou o tipo já serve de resposta? (ADR-0023 D4)
+     *
+     * Mede obrigação, e só isso. O formulário oferece o campo a toda classe: em carreta e caminhão o
+     * modelo é opcional, não proibido — *não pedir* é diferente de *não deixar dizer*, e é a frota pesada
+     * que mais se distingue por modelo na hora de achar o veículo no pátio.
+     */
     val exigeModelo: Boolean,
 ) {
     CARRO("Carro", exigeCilindrada = false, exigeModelo = true),

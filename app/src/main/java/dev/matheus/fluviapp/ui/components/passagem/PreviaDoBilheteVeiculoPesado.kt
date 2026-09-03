@@ -11,9 +11,11 @@ import java.math.BigDecimal
 /**
  * **Carreta** — a passagem de veículo, e a única das quatro em que quem viaja não é o assunto do bilhete.
  *
- * O `modelo` vem **nulo de propósito**: carreta e caminhão *já são* o modelo (`ClasseVeiculo.exigeModelo`),
- * de modo que a linha do veículo aqui tem um campo a menos que a de um carro. É o que esta prévia serve para
- * olhar — se a linha ficar com separador solto ou espaço sobrando, é neste desenho que aparece.
+ * O `modelo` vem **nulo de propósito**: em carreta e caminhão ele é **opcional** — o tipo já serve de
+ * resposta (`ClasseVeiculo.exigeModelo`) —, e este é o caso de quem não o informou, com a linha do veículo
+ * tendo um campo a menos que a de um carro. É o que esta prévia serve para olhar: se a linha ficar com
+ * separador solto ou espaço sobrando, é neste desenho que aparece. O caso oposto, com o modelo preenchido,
+ * já é o da prévia do carro — o bilhete filtra por **valor**, não por classe.
  *
  * O responsável pela retirada é **opcional** no domínio; está preenchido para que a seção de pessoas não
  * apareça vazia. Apagar essa linha é uma edição legítima, e mostra o outro caso.

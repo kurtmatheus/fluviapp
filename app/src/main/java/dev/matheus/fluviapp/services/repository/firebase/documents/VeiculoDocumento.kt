@@ -25,7 +25,10 @@ data class VeiculoDocumento(
     /** Chave natural, na grafia canônica (sem hífen, caixa alta). É também o id do documento. */
     val placa: String = "",
     val tipo: String = "",
-    /** Ausente quando o tipo **já é** o modelo (carreta, caminhão) — [ClasseVeiculo.exigeModelo]. */
+    /**
+     * Pode faltar onde o tipo já serve de resposta (carreta, caminhão) — [ClasseVeiculo.exigeModelo]. Ali
+     * ele é **opcional**, e não ausente por construção: o formulário oferece o campo a toda classe.
+     */
     val modelo: String? = null,
     val cor: String = "",
     /** Só moto. Número porque sobre ele se faz conta (a faixa de 100 cm³ da tarifa). */

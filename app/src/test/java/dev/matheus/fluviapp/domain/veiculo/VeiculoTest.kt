@@ -32,6 +32,27 @@ class VeiculoTest {
         assertTrue(caminhao.completo)
     }
 
+    /**
+     * **Não pedir não é proibir.** `exigeModelo` mede obrigação; a classe pesada que informa o modelo segue
+     * completa, e o modelo informado **passa a ser como ela se anuncia** — que é o efeito visível de o
+     * formulário ter deixado de esconder o campo.
+     */
+    @Test
+    fun `carreta COM modelo segue completa, e passa a se descrever por ele`() {
+        val carreta = Veiculo(placa = "ABC-1234", tipo = ClasseVeiculo.CARRETA, modelo = "Scania R450")
+
+        assertTrue(carreta.completo)
+        assertEquals("Scania R450", carreta.descricao)
+    }
+
+    /** Sem modelo, a mesma carreta continua se anunciando pelo tipo — o caso não desapareceu. */
+    @Test
+    fun `carreta sem modelo se descreve pelo tipo`() {
+        val carreta = Veiculo(placa = "ABC-1234", tipo = ClasseVeiculo.CARRETA)
+
+        assertEquals("Carreta", carreta.descricao)
+    }
+
     @Test
     fun `carro sem modelo tem pendencia de modelo`() {
         val carro = Veiculo(placa = "ABC-1234", tipo = ClasseVeiculo.CARRO)

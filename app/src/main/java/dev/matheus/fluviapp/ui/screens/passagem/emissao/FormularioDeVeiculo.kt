@@ -19,15 +19,19 @@ import dev.matheus.fluviapp.util.visualtransformation.PlacaVisualTransformation
 /**
  * **O formulário do veículo — rearranjado pela classe** ([ADR-0029] D2, [ADR-0023] D4).
  *
- * A classe já foi escolhida no passo anterior, e é ela que decide o que se pergunta aqui:
+ * A classe já foi escolhida no passo anterior, e é ela que decide o que se **exige** aqui:
  *
- * - **modelo** só onde `exigeModelo`. Carreta e caminhão *já são* o modelo — perguntar seria perguntar duas
- *   vezes a mesma coisa, e foi por exigir modelo sempre que o validador antigo não deixava os dois passarem
- *   (a primeira divergência do ADR-0018 D19, corrigida **no tipo**);
- * - **cilindrada** só na moto, que é a única cuja tarifa depende dela.
+ * - **modelo** é oferecido sempre, e obrigatório só onde `exigeModelo`. Em carreta e caminhão o tipo *já
+ *   serve* de modelo, e era por isso que o validador antigo — que exigia modelo **sempre** — não deixava os
+ *   dois passarem (a primeira divergência do ADR-0018 D19, corrigida **no tipo**). Não pedir é diferente de
+ *   não deixar dizer: quem tem "Scania R450" no pátio precisa poder escrevê-lo, e a frota pesada é
+ *   justamente a que se distingue por modelo na hora de achar o veículo;
+ * - **cilindrada** só na moto, que é a única cuja tarifa depende dela — e essa continua sendo pergunta que
+ *   não se faz a quem não a tem, porque ali o campo não é opcional, é **sem sentido**.
  *
- * O campo que não existe é melhor do que o campo desabilitado: o segundo ainda ocupa a tela e ainda faz o
- * operador se perguntar se deveria preenchê-lo.
+ * A assimetria entre os dois é a régua: some o campo que **não se aplica**; fica o campo que se aplica e
+ * apenas não se cobra. O campo desabilitado não entra em nenhum dos dois casos — ele ocupa a tela e ainda
+ * faz o operador se perguntar se deveria preenchê-lo.
  */
 @Composable
 fun FormularioDeVeiculo(
@@ -52,15 +56,15 @@ fun FormularioDeVeiculo(
             isError = ErroDeEmissao.VEICULO_SEM_PLACA in erros,
         )
 
-        if (veiculo.classe?.exigeModelo == true) {
-            FormTextFieldBrownNoIcon(
-                modifier = Modifier.fillMaxWidth(),
-                value = veiculo.modelo,
-                label = R.string.label_modelo_veiculo,
-                onValueChange = { aoMudar(veiculo.copy(modelo = it)) },
-                isError = ErroDeEmissao.VEICULO_SEM_MODELO in erros,
-            )
-        }
+        // Oferecido em toda classe; cobrado só onde `exigeModelo` — quem decide a obrigação continua sendo
+        // o tipo, e `VEICULO_SEM_MODELO` só nasce lá (ValidacaoEmissao).
+        FormTextFieldBrownNoIcon(
+            modifier = Modifier.fillMaxWidth(),
+            value = veiculo.modelo,
+            label = R.string.label_modelo_veiculo,
+            onValueChange = { aoMudar(veiculo.copy(modelo = it)) },
+            isError = ErroDeEmissao.VEICULO_SEM_MODELO in erros,
+        )
 
         if (veiculo.classe?.exigeCilindrada == true) {
             FormTextFieldBrownNoIcon(
