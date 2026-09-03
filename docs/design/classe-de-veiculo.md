@@ -21,6 +21,12 @@
 > há **pelo menos dezesseis** classes, cada uma com o seu valor, definidas na operação. **A lista veio no
 > mesmo dia** e está no §6.4: são **dezessete**, e ela corrige o desenho do §6.
 >
+> **FECHADO em 2026-09-03 → [ADR-0031](../adr/0031-classe-de-veiculo-natureza-e-casco-por-exclusao.md).**
+> As três perguntas do §9 foram respondidas, e o ADR **supera este estudo em dois pontos**: o §6.4 concluía
+> por **dois eixos** (porte × propulsão) e sobrou **um** — a natureza —, porque o casco passou a admitir
+> **por exclusão** (D4) e o porte perdeu o consumidor que o justificava (D6); e o §6.4 pedia renomear a
+> classe `Lancha`, o que foi recusado (D5). O resto do documento vale como o caminho até a decisão.
+>
 > Marcadores: **[hoje]** o que está no ar · **[alvo]** o que o pedido pede · **[cai]** o que teria de sair.
 
 ---
