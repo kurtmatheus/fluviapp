@@ -41,8 +41,41 @@ class FormEmpresaViewModelTest {
 
         val s = vm.uiState.value
         assertTrue(s.isNomeError)
-        assertTrue(s.isRazaoSocialError)
-        assertTrue(s.isCnpjError)
+        assertTrue(s.isAtuacoesError)
+        // O CNPJ em branco deixou de ser erro em 2026-09-03; a razão social não tem mais nem flag.
+        assertFalse(s.isCnpjError)
+        assertTrue(fake.salvos.isEmpty())
+    }
+
+    /** A decisão de 2026-09-03 na porta do ViewModel: nome e atuação bastam para persistir. */
+    @Test
+    fun `salvar com nome e atuacao apenas persiste a empresa`() = runTest(mainRule.dispatcher) {
+        val fake = FakeEmpresaRepository()
+        val vm = viewModel(fake)
+
+        vm.onNomeChange("ACME")
+        vm.onAtuacaoToggle(Atuacao.AGENCIAMENTO)
+        vm.salvar()
+        advanceUntilIdle()
+
+        assertEquals(1, fake.salvos.size)
+        assertEquals("", fake.salvos.first().razaoSocial)
+        assertEquals("", fake.salvos.first().cnpj)
+    }
+
+    /** Opcional não é livre: o CNPJ preenchido e inválido continua barrando a escrita. */
+    @Test
+    fun `cnpj preenchido e invalido marca erro e nao persiste`() = runTest(mainRule.dispatcher) {
+        val fake = FakeEmpresaRepository()
+        val vm = viewModel(fake)
+
+        vm.onNomeChange("ACME")
+        vm.onCnpjChange("11222333000180")
+        vm.onAtuacaoToggle(Atuacao.AGENCIAMENTO)
+        vm.salvar()
+        advanceUntilIdle()
+
+        assertTrue(vm.uiState.value.isCnpjError)
         assertTrue(fake.salvos.isEmpty())
     }
 
@@ -76,6 +109,9 @@ class FormEmpresaViewModelTest {
         vm.onNomeChange("ACME")
         vm.onRazaoSocialChange("ACME LTDA")
         vm.onCnpjChange("11222333000181")
+        // Sem a atuação o teste passava sem tocar no repositório: a validação barrava antes, e as duas
+        // asserções abaixo valiam por acidente. Com ela, a falha medida é mesmo a da escrita.
+        vm.onAtuacaoToggle(Atuacao.AGENCIAMENTO)
         vm.salvar()
         advanceUntilIdle()
 

@@ -118,9 +118,11 @@ fun CardResultEmpresa(
                 horizontalAlignment = Alignment.Start,
                 verticalArrangement = Arrangement.spacedBy(2.dp),
             ) {
+                // Só o nome é obrigatório (2026-09-03), então razão social e CNPJ podem não existir. A
+                // linha vazia é pior que a linha ausente: ela ocupa altura e parece dado que não chegou.
                 TextTitleBrownRegular(text = empresa.nome)
-                TextSubTitleBrownItalic(text = empresa.razaoSocial)
-                TextRegularBrown(text = empresa.cnpj)
+                if (empresa.razaoSocial.isNotBlank()) TextSubTitleBrownItalic(text = empresa.razaoSocial)
+                if (empresa.cnpj.isNotBlank()) TextRegularBrown(text = empresa.cnpj)
             }
 
             IconButton(onClick = { onEditar(empresa.id) }) {

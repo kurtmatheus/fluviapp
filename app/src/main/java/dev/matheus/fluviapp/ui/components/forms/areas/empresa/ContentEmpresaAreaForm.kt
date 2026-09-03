@@ -62,7 +62,6 @@ fun ContentEmpresaAreaForm(
             value = state.razaoSocial,
             label = R.string.label_razao_social,
             onValueChange = onRazaoSocialChange,
-            isError = state.isRazaoSocialError,
             keyboardOptions = KeyboardOptions(
                 capitalization = KeyboardCapitalization.Characters,
                 imeAction = ImeAction.Next,

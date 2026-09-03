@@ -103,7 +103,7 @@ class FormEmpresaViewModel @Inject constructor(
     }
 
     fun onNomeChange(v: String) = _uiState.update { it.copy(nome = v, isNomeError = false) }
-    fun onRazaoSocialChange(v: String) = _uiState.update { it.copy(razaoSocial = v, isRazaoSocialError = false) }
+    fun onRazaoSocialChange(v: String) = _uiState.update { it.copy(razaoSocial = v) }
     fun onCnpjChange(v: String) = _uiState.update { it.copy(cnpj = v.filter(Char::isDigit).take(14), isCnpjError = false) }
     fun onEnderecoChange(v: String) = _uiState.update { it.copy(endereco = v) }
     fun onTelefone1Change(v: String) = _uiState.update { it.copy(telefone1 = v) }
@@ -171,7 +171,6 @@ class FormEmpresaViewModel @Inject constructor(
             _uiState.update {
                 it.copy(
                     isNomeError = erros.nome,
-                    isRazaoSocialError = erros.razaoSocial,
                     isCnpjError = erros.cnpj,
                     isAtuacoesError = erros.atuacoes,
                 )

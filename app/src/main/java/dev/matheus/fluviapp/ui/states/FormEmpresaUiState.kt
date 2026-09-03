@@ -13,9 +13,10 @@ data class FormEmpresaUiState(
     val titulo: Int = R.string.subtitle_cadastrar_nova_empresa,
     val nome: String = "",
     val isNomeError: Boolean = false,
+    /** Opcional desde 2026-09-03, e por isso sem flag de erro: não há como estar errada. */
     val razaoSocial: String = "",
-    val isRazaoSocialError: Boolean = false,
     val cnpj: String = "",
+    /** Opcional, mas não livre: o erro agora só existe para CNPJ **preenchido** e inválido. */
     val isCnpjError: Boolean = false,
     val endereco: String = "",
     val telefone1: String = "",
