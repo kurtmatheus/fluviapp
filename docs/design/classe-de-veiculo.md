@@ -18,7 +18,8 @@
 > Ela oferecia três saídas — apelido, gabarito, entidade — e as três eram catálogo disfarçado ou cadastro.
 > A direção do analista foi outra, e é a do §6: *"melhor não planejar como entidade nem catálogo, mas unir
 > o poder do enum ao registro de classe… no final, a classe é só registro"*, com o fato operacional de que
-> há **pelo menos dezesseis** classes, cada uma com o seu valor, definidas na operação.
+> há **pelo menos dezesseis** classes, cada uma com o seu valor, definidas na operação. **A lista veio no
+> mesmo dia** e está no §6.4: são **dezessete**, e ela corrige o desenho do §6.
 >
 > Marcadores: **[hoje]** o que está no ar · **[alvo]** o que o pedido pede · **[cai]** o que teria de sair.
 
@@ -172,7 +173,7 @@ como enum tem identidade estável por construção (o `name`, que é o que o Fir
 cadastro precisaria de id **e** de disciplina para nunca reaproveitá-lo.
 
 **A revisão inverte o sinal deste argumento, e o fortalece.** Com o preço fora da classe (§2.1), os
-dezesseis valores não existem *apesar* de a série precisar deles — existem **precisamente para serem a
+dezessete valores não existem *apesar* de a série precisar deles — existem **precisamente para serem a
 chave dela**. É a única coisa que a classe faz que nada mais faz: dizer *que espécie de veículo foi este*,
 de forma que a soma de amanhã reconheça a de ontem. Identidade estável deixa de ser preferência de
 engenharia e passa a ser a razão de o conceito existir.
@@ -230,7 +231,7 @@ deixassem de morar na mesma palavra**. Aqui a separação basta, e o registro po
 porque ele tem uma propriedade que o cargo não tinha: **é a chave de uma série histórica** (§3.3), e séries
 não convivem com identidade que se renomeia.
 
-Então: cada um dos dezesseis valores declara **uma** coisa — a família a que pertence —, e
+Então: cada um dos dezessete valores declara **uma** coisa — a família a que pertence —, e
 `exigeCilindrada`, `exigeModelo` e a admissibilidade por casco passam a ser lidos da família, que tem três
 ou quatro valores.
 
@@ -248,22 +249,22 @@ Hoje, com seis valores, existem **três** assinaturas de comportamento distintas
 | não exige cilindrada · exige modelo | `CARRO`, `VAN`, `SUV` | 3 |
 | não exige nada · só a balsa leva | `CAMINHAO`, `CARRETA` | 2 |
 
-**Metade da tabela já é repetição.** Com dezesseis valores seria em torno de quatro quintos — e não porque
-as dezesseis sejam iguais, mas porque **elas não diferem naquilo que o código lê**. Diferem no valor, e o
+**Metade da tabela já é repetição.** Com dezessete seria em torno de quatro quintos — e não porque
+as dezessete sejam iguais, mas porque **elas não diferem naquilo que o código lê**. Diferem no valor, e o
 valor saiu da classe em 2026-08-11 (§2.1).
 
-O que de fato multiplicaria por dezesseis, se nada mudar:
+O que de fato multiplicaria por dezessete, se nada mudar:
 
-- dezesseis linhas de **quatro** colunas na tabela do enum;
-- dezesseis ramos no `when` de ícone (`ConteudosDeEscolha.kt:172`) para talvez quatro ícones distintos;
+- dezessete linhas de **quatro** colunas na tabela do enum;
+- dezessete ramos no `when` de ícone (`ConteudosDeEscolha.kt:172`) para talvez quatro ícones distintos;
 - cerca de **vinte e oito** pertencimentos escritos à mão nos três conjuntos de `TipoEmbarcacao` — e sobre
   esses o próprio código já confessa a fragilidade (`TipoEmbarcacao.kt:35-38`): a atribuição é *"leitura
-  minha sobre o que cada casco carrega, não decisão registrada"*. Com seis é uma leitura; com dezesseis
+  minha sobre o que cada casco carrega, não decisão registrada"*. Com seis é uma leitura; com dezessete
   são vinte e oito apostas, e nenhuma o compilador confere.
 
-Com a família no meio, os mesmos dezesseis custam **dezesseis linhas de uma coluna**, três ou quatro ramos
+Com o eixo no meio, os mesmos dezessete custam **dezessete linhas de uma coluna**, três ou quatro ramos
 de ícone e três ou quatro pertencimentos por casco. O comprimento deixa de importar: o Kotlin não se
-incomoda com dezesseis constantes, e quem abre o arquivo passa a ver **uma lista de nomes**, que é o que um
+incomoda com dezessete constantes, e quem abre o arquivo passa a ver **uma lista de nomes**, que é o que um
 registro deve parecer.
 
 ### 6.2 O precedente de forma já existe no projeto
@@ -274,7 +275,7 @@ registro deve parecer.
 certa.
 
 Vale notar que `Acomodacao` sofre do mesmo mal em miniatura: `SUITE` e `CAMAROTE` são linhas **idênticas**
-exceto pelo rótulo. Com três valores isso passa despercebido. É a mesma redundância que, com dezesseis,
+exceto pelo rótulo. Com três valores isso passa despercebido. É a mesma redundância que, com dezessete,
 deixa de passar.
 
 ### 6.3 O que a via preserva, e que catálogo e entidade perderiam
@@ -283,12 +284,97 @@ deixa de passar.
   sem depender de disciplina de cadastro;
 - **fail-closed na fronteira** — `VeiculoDocumento.kt:48` recusa o documento cuja classe não existe, e
   continua recusando;
-- **exaustividade do compilador** — mas sobre **três famílias**, onde ela é útil, em vez de sobre dezesseis
+- **exaustividade do compilador** — mas sobre **três famílias**, onde ela é útil, em vez de sobre dezessete
   nomes, onde é burocracia;
 - **nada de coleção, codec, porta, CRUD, regra de servidor ou seção de menu** (§7).
 
 E a decisão de 2026-08-01 sai **confirmada**: a classe segue tipo fechado, segue não sendo catálogo
 editável. O que muda é que ela para de fingir ser uma tabela de propriedades.
+
+### 6.4 A lista da operação, e a correção que ela impõe **[alvo]**
+
+Lista dada pelo analista em 2026-09-03, em resposta à pergunta *"quais são as dezesseis?"*. São **dez de
+uma vez, mais uma acrescentada em seguida** — `Van` já existia, e o total fecha em **dezessete**:
+
+| Já existem (6) | A acrescentar (11) |
+|---|---|
+| Carro · Moto · Van · SUV · Caminhão · Carreta | Trator · Trailer · **Lancha** · Carretilha · Jet-Ski · Quadriciclo · Empilhadeira · Retroescavadeira · Motorhome · Ônibus · **Carreta Cavalinho** |
+
+A lista não é só um número maior. Ela **corrige o desenho do §6**, e traz três achados que nenhum documento
+anterior tinha.
+
+#### As quatro naturezas
+
+*Agrupamento é leitura minha sobre a lista, não decisão registrada — é exatamente o tipo de leitura que o
+§6.1 diz que não deve ficar espalhada por vinte e dois pertencimentos escritos à mão.*
+
+| Natureza | Da lista |
+|---|---|
+| automotor rodoviário | Ônibus · Motorhome · Van · Carro · SUV · Caminhão |
+| motor medido em **cilindrada** | Jet-Ski · Quadriciclo · Moto |
+| máquina autopropelida | Trator · Empilhadeira · Retroescavadeira |
+| **rebocado — sem propulsão própria** | Trailer · Carretilha · Lancha · Carreta |
+| **não sei classificar** | Carreta Cavalinho |
+
+A quarta linha é a que informa mais: **trailer, carretilha e lancha não entram andando**. É fato
+operacional — manobra, rampa, quem conduz —, e hoje o domínio não tem onde registrá-lo.
+
+E a quinta linha vale mais do que parece. *"Cavalinho"* remete ao **cavalo mecânico**, que é a unidade
+**tratora** — motorizada —, enquanto *"carreta"* nomeia o semirreboque, que é **rebocado**. O nome carrega
+as duas metades, e sem a definição da operação eu não sei em qual linha pô-la.
+
+**Isso não é lacuna do estudo; é o argumento dele.** Se quem escreve o código não consegue derivar a
+natureza a partir do nome, então essa natureza **tem de ser declarada** — que é exatamente o que o eixo
+abaixo faz, e o que os vinte e dois pertencimentos escritos à mão não fariam: eles registrariam o meu
+palpite como se fosse regra.
+
+#### A correção: **o eixo não é um só**
+
+O §6 propôs *uma* família (porte). A lista quebra isso num caso específico, e o caso é a prova:
+
+> o **jet-ski exige cilindrada** *e* **é rebocado**. O trailer é rebocado e não tem cilindrada; a moto tem
+> cilindrada e não é rebocada.
+
+Duas propriedades que se cruzam não colapsam numa família única. **Isto responde a pergunta 1 do §9 — e
+responde contra o que o §6 sugeria.** O que fecha é o eixo declarado em duas colunas pequenas:
+
+- **porte** — quanto de convés ocupa. É o que o casco admite, e é o que substitui os pertencimentos
+  escritos à mão em `TipoEmbarcacao.classesAdmitidas`;
+- **propulsão** — entra andando × rebocado. É o que a lista trouxe de novo, e o que separa lancha, trailer
+  e carretilha de tudo o mais.
+
+Mais `exigeCilindrada`, que sobrevive como terceira coluna, pequena e óbvia (moto, quadriciclo, jet-ski).
+Continua sendo muitíssimo menos que a tabela de hoje multiplicada por dezessete — e, ao contrário dela,
+**cada coluna tem um critério que se pode discutir em vez de adivinhar**.
+
+#### Uma colisão de vocabulário e uma armadilha de nome
+
+- **`Lancha` já é `TipoEmbarcacao.LANCHA`.** Como classe de veículo ela é carga sobre carretilha; como tipo
+  de embarcação, é o casco que transporta. É o mesmo choque que forçou `Navio` → `Embarcacao`
+  ([ADR-0020](../adr/0020-fim-do-catalogo-e-o-contexto-do-painel.md) D4: *"gênero e espécie deixaram de
+  disputar a mesma palavra"*). Com ironia mensurável: hoje `LANCHA.classesAdmitidas = emptySet()` — a
+  lancha-casco não leva veículo nenhum, inclusive lancha.
+- **Três nomes com o mesmo radical:** `Carreta`, `Carretilha` e `Carreta Cavalinho` — semirreboque de
+  caminhão, carrinho de rebocar lancha, e uma terceira configuração que a operação distingue. Numa lista de
+  dezessete botões isso é erro de seleção esperando acontecer, e ele vai parar **na série de agregação**
+  (§3.3) sem deixar rastro. É a primeira razão de forma para o §9.3 (o totem) não ser detalhe de UI.
+
+#### Duas perguntas de negócio que a lista levanta
+
+**Ônibus e motorhome carregam pessoas dentro.** Um ônibus embarcado ocupa uma vaga de veículo e **quantos
+lugares de passageiro**? A capacidade da embarcação é contada nos dois eixos ([ADR-0018](../adr/0018-agregado-passagem-participantes-modo-e-lancamentos.md)
+D8 — *o tipo diz o que cabe, a capacidade diz quanto*), e hoje nada liga um ao outro. A pergunta não existia
+enquanto a maior classe era a carreta.
+
+#### O custo de fazer isto no formato de hoje
+
+Acrescentar as onze sem mexer na forma custa onze rótulos e cerca de **cinquenta e cinco decisões de
+comportamento escritas à mão**: vinte e duas de propriedade, onze ramos de ícone e **vinte e duas de
+pertencimento** — cada classe nova entra ou não no conjunto do Ferry Boat e no do Navio.
+
+As vinte e duas últimas são as piores, porque **não há critério registrado para tomá-las**. O teste é
+direto: *um Navio leva retroescavadeira? leva carretilha com lancha?* Cada resposta dessas, hoje, seria uma
+linha de código sem argumento por trás — e é o que o porte, declarado, resolve de uma vez.
 
 ## 7. O custo desta via, e o único preço real
 
@@ -298,7 +384,7 @@ e cinco suítes de teste —, aqui não nasce **nenhuma** dessas peças.
 
 **No domínio.** Nasce o tipo da família; `ClasseVeiculo` perde três colunas e ganha uma;
 `TipoEmbarcacao.classesAdmitidas` passa a listar famílias em vez de classes (de dez pertencimentos para
-seis, e de ~vinte e oito para ~oito quando as dezesseis existirem); `ehPesado` ou ganha leitor ou sai
+seis, e de ~vinte e dois para ~seis quando as dezessete existirem); `ehPesado` ou ganha leitor ou sai
 (§2.1); `Veiculo.pendencias()` e `ValidacaoEmissao` passam a perguntar à família — **uma indireção, mesma
 forma**.
 
@@ -306,7 +392,7 @@ forma**.
 registro seguir sendo enum.
 
 **Na apresentação.** O `when` de ícone desce para a família. A escolha do passo 2 da emissão ganha um
-problema novo, que é de UI e está no §9: dezesseis botões numa tela de totem.
+problema novo, que é de UI e está no §9: dezessete botões numa tela de totem.
 
 **O único preço real: classe nova exige deploy.** Vale enfrentá-lo de frente, porque é a objeção que o
 pedido original levanta com razão.
@@ -319,7 +405,7 @@ agência.** "Bitrem" existe no Brasil, não na empresa X — e as duas classes q
 
 Onde essa resposta **não** serviria: se cada agência definisse recortes próprios — se a A vendesse
 "caminhão pequeno" onde a B vende só "caminhão". Aí a lista não seria da estrada. Mas note que, nesse
-cenário, o que difere entre elas é o **preço**, que já é I/O desde 2026-08-11: a mesma lista de dezesseis
+cenário, o que difere entre elas é o **preço**, que já é I/O desde 2026-08-11: a mesma lista de dezessete
 atende as duas, e cada uma pratica o seu valor. É o §9 que precisa confirmar isso contra a operação real.
 
 ## 8. A metade que não depende disto: o modelo **[entregue]**
@@ -342,22 +428,35 @@ abrir a classe.
 ## 9. O que fica para decisão
 
 As quatro perguntas da primeira versão caíram com o enquadramento dela (§1.1) — *de quem é a classe*, *o
-que acontece com a série* e *se o mecanismo do `Cargo` se aplica* estão respondidas em §6 e §3.3. Sobram
-três, e as três são de fora do código.
+que acontece com a série* e *se o mecanismo do `Cargo` se aplica* estão respondidas em §6 e §3.3. Das três
+que sobraram, **duas foram respondidas pela lista** de 2026-09-03 (§6.4):
 
-1. **Qual é o eixo da família.** É um só — porte, o quanto de convés o veículo ocupa — ou são dois, porque
-   a moto se separa por **propulsão** e não por tamanho? Hoje o que a distingue é a cilindrada, que é
-   pergunta de formulário; se ela também fosse a única a caber num casco que as outras não cabem, o eixo
-   seria um. O código de hoje sugere três famílias (§6.1); a operação pode conhecer quatro.
-2. **Quais são as dezesseis.** É insumo da operação, não decisão de arquitetura — e o estudo pede a lista
-   em vez de inventá-la, porque é dela que sai o teste do §7: se as dezesseis forem fatos da estrada, o
-   deploy é aceitável; se forem recortes comerciais de cada agência, o §7 precisa ser reaberto.
-3. **Como dezesseis escolhas cabem no totem.** A classe é o **passo 2** da emissão
+- ~~*qual é o eixo da família*~~ → **são dois** (porte × propulsão), mais `exigeCilindrada`. O jet-ski é a
+  prova, e a resposta contraria o que o §6 sugeria;
+- ~~*quais são as dezesseis*~~ → **dezessete**, listadas no §6.4.
+
+Ficam estas, e uma delas nasceu da própria lista:
+
+1. **Os valores do porte.** Quantas faixas a operação distingue de fato, e por qual medida — comprimento,
+   área de convés, peso? É a coluna que substitui os vinte e dois pertencimentos escritos à mão, e ela só
+   vale a troca se tiver um critério dizível. *Retroescavadeira e carreta são o mesmo porte?* é a pergunta
+   que separa uma coluna útil de um rótulo novo.
+   **E junto vai uma definição que falta:** o que é a `Carreta Cavalinho` — unidade tratora (motorizada) ou
+   semirreboque (rebocado)? O nome tem as duas metades, e ela é hoje a única da lista que não consigo pôr
+   numa natureza (§6.4).
+2. **Ônibus e motorhome contra a capacidade de passageiros** (§6.4). Um veículo que leva gente dentro
+   ocupa vaga nos **dois** eixos que o ADR-0018 D8 conta, e hoje nada liga um ao outro. Pode ser que a
+   resposta seja *ninguém viaja dentro do ônibus na travessia* — mas isso é decisão, e não está escrita.
+3. **Como dezessete escolhas cabem no totem.** A classe é o **passo 2** da emissão
    (`RoteiroDaEmissao.kt:38`), e o ADR-0029 desenhou cada passo como *uma pergunta cuja resposta é um
-   toque*. Dezesseis botões numa tela não é escolha, é catálogo impresso. Ou a lista vem agrupada pela
-   família, ou a **família vira o passo e a classe o sub-passo** — o que o roteiro derivado já sabe fazer,
-   porque é assim que o subtipo de gratuidade entra. É consequência desta decisão, e não deve ser
-   descoberta depois dela.
+   toque*. Dezessete botões numa tela não é escolha, é catálogo impresso — e com `Carreta`, `Carretilha` e
+   `Carreta Cavalinho` na mesma lista, é também erro de seleção que contamina a série (§3.3). Ou a lista
+   vem agrupada pelo porte, ou o **porte vira o passo e a classe o sub-passo** — o que o roteiro derivado
+   já sabe fazer, porque é assim que o subtipo de gratuidade entra.
+
+E fica **fora de decisão, mas dentro de execução**: `Lancha` como classe colide com `TipoEmbarcacao.LANCHA`
+(§6.4). Não é escolha de arquitetura, é escolha de nome — e o precedente do `Navio` → `Embarcacao` diz que
+ela se paga se não for feita na hora.
 
 ---
 
@@ -373,3 +472,4 @@ três, e as três são de fora do código.
 | O modelo é oferecido em toda classe (obrigação segue no tipo) | issue #4, `73fd609` | 2026-09-03 |
 | Preço é I/O — a emissão não calcula valor, e a classe não o carrega | ADR-0016 §7.2 · índice de vigência | 2026-08-11 |
 | **Nem entidade nem catálogo: o enum é o registro, e o comportamento sobe para a família** | este estudo §6 | 2026-09-03 |
+| **As dezessete classes**, e a correção que elas impõem: o eixo é **duplo** (porte × propulsão) | este estudo §6.4 | 2026-09-03 |
