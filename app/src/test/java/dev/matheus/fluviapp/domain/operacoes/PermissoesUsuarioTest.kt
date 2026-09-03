@@ -431,6 +431,47 @@ class PermissoesUsuarioTest {
         assertFalse(PermissoesUsuario.podeConfirmarEmbarque("GERENTE"))
     }
 
+    // --- A ENTRADA do embarque: pergunta diferente de quem pode validar ---
+
+    /** Conferir bilhete é do painel que emite bilhete: onde há a seção Passagem, há a barra. */
+    @Test
+    fun `quem agencia tem entrada de embarque`() {
+        listOf(supervisor, agente).forEach { cargo ->
+            assertTrue(
+                "cargo $cargo deveria ter entrada de embarque",
+                PermissoesUsuario.temEntradaDeEmbarque(operador, cargo, Atuacao.AGENCIAMENTO),
+            )
+        }
+    }
+
+    /**
+     * `ADM` e `GESTOR` **podem** validar um QR (é ação de doca) e **não têm** onde fazê-lo no painel
+     * deles: papel de plataforma não emite passagem, então não há bilhete próprio a conferir.
+     */
+    @Test
+    fun `papel de plataforma valida embarque mas nao tem entrada no painel`() {
+        listOf(adm, gestor).forEach { papel ->
+            assertTrue(PermissoesUsuario.podeConfirmarEmbarque(papel))
+            assertFalse(
+                "papel $papel não deveria ter entrada de embarque",
+                PermissoesUsuario.temEntradaDeEmbarque(papel),
+            )
+        }
+    }
+
+    /** Transporte tem equipe e não vende: sem seção Passagem, sem barra. */
+    @Test
+    fun `transporte nao tem entrada de embarque`() {
+        assertFalse(PermissoesUsuario.temEntradaDeEmbarque(operador, agente, Atuacao.TRANSPORTE))
+    }
+
+    /** Fail-closed nos dois eixos: papel desconhecido não abre a entrada nem com atuação que vende. */
+    @Test
+    fun `papel desconhecido nao tem entrada de embarque`() {
+        assertFalse(PermissoesUsuario.temEntradaDeEmbarque("GERENTE", agente, Atuacao.AGENCIAMENTO))
+        assertFalse(PermissoesUsuario.temEntradaDeEmbarque(null, agente, Atuacao.AGENCIAMENTO))
+    }
+
     // --- Deletar segue as mesmas regras de editar ---
 
     @Test

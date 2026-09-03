@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.matheus.fluviapp.domain.operacoes.Funcionario
+import dev.matheus.fluviapp.domain.operacoes.PermissoesUsuario
 import dev.matheus.fluviapp.domain.screendata.secoesDoMenu
 import dev.matheus.fluviapp.preferences.PreferencesKey
 import com.google.firebase.auth.FirebaseAuth
@@ -136,6 +137,9 @@ class MainScreenViewModel @Inject constructor(
                         // `secoesDoMenu` = a política (quem pode) ∩ o escopo revitalizado (o que existe).
                         // A política em si continua intacta — o recorte é do andaime, não da autorização.
                         secoesVisiveis = secoesDoMenu(papel, cargo, atuacao),
+                        // O embarque é gesto, não seção: não passa pelo andaime porque não tem seção
+                        // para revitalizar — a tela e a escrita já existem e estão testadas.
+                        podeEmbarcar = PermissoesUsuario.temEntradaDeEmbarque(papel, cargo, atuacao),
                     )
                 }
             }

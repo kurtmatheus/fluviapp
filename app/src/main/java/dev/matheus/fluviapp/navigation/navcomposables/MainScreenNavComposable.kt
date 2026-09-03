@@ -108,9 +108,9 @@ fun NavGraphBuilder.mainScreenNavComposable(
             isDarkTheme = escuro,
             onToggleTheme = { themeViewModel.alternarTema(escuro) },
             onClickViagemDisponivel = onNavegaParaEmissao,
-            // REVITALIZAÇÃO: embarque, nova passagem e pull-to-refresh saíram do painel com os domínios
-            // que os alimentam (ADR-0020). Os destinos continuam no grafo, sem entrada pela Main Screen.
-            // onClickEmbarque = onNavegaParaEmbarque,
+            onClickEmbarque = onNavegaParaEmbarque,
+            // REVITALIZAÇÃO: nova passagem não volta — um bilhete começa pela **saída**, e a saída se
+            // escolhe no Início (F9.6). O pull-to-refresh fica para a F10.
             // onRefresh = { viewModel.refresh() },
         )
     }

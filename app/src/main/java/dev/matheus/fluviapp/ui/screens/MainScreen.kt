@@ -33,13 +33,17 @@ import dev.matheus.fluviapp.ui.states.MainScreenState
 import dev.matheus.fluviapp.ui.states.MainScreenUiState
 
 /**
- * **Revitalização (ADR-0020):** o painel exibe apenas o que já foi refeito ponta a ponta — hoje, a
- * Empresa. Some daqui tudo que pertence a domínio ainda não revitalizado: a lista de próximas viagens, o
- * atalho de nova passagem, o pull-to-refresh que atualizava essa lista e a barra inferior com o embarque
- * (que é leitura de QR de passagem). O menu já chega recortado pelo `secoesDoMenu`.
+ * **Revitalização (ADR-0020):** o painel exibe apenas o que já foi refeito ponta a ponta. Sai daqui tudo
+ * que pertence a domínio ainda não revitalizado — o atalho de nova passagem e o pull-to-refresh —, e o
+ * menu já chega recortado pelo `secoesDoMenu`.
  *
  * A escolha é agir como app **recém-implementado**, e não como app completo com pedaços quebrados: quem
- * abre o painel vê um lugar vazio e um menu com uma seção, não botões que levam a telas sem dado.
+ * abre o painel vê um menu com o que existe, não botões que levam a telas sem dado.
+ *
+ * **A barra inferior com o embarque voltou**, e voltou por medida e não por prazo: a F9 refez a tela, o
+ * ViewModel, a escrita e a regra de servidor da aresta `EMITIDA→EMBARCADA` — o que faltava era só a porta.
+ * Ela aparece onde o painel vende (`state.podeEmbarcar`), pelo mesmo critério que dá a seção Passagem a
+ * quem agencia: conferir bilhete é do painel que emite bilhete.
  */
 @Composable
 fun MainScreen(
@@ -52,8 +56,10 @@ fun MainScreen(
     onToggleTheme: () -> Unit = {},
     /** Tocar numa saída do Início abre a **emissão** naquela ocorrência (F9.5). */
     onClickViagemDisponivel: (String) -> Unit = {},
-    // REVITALIZAÇÃO: voltam com as seções Passagem / Viagem.
-    // onClickEmbarque: () -> Unit = {},
+    /** O FAB central da barra inferior: ler o QR de um bilhete e conferir o embarque (ADR-0012). */
+    onClickEmbarque: () -> Unit = {},
+    // REVITALIZAÇÃO: o pull-to-refresh volta com a F10, se voltar — com o Início assinando a fonte
+    // (2026-08-17), o gesto perdeu a função técnica e o que sobra é a expectativa de quem opera.
     // onRefresh: () -> Unit = {},
 ) {
     val estado = state.mainScreenState
@@ -64,12 +70,13 @@ fun MainScreen(
         isMainTopAppBar = true,
         titleTopAppBar = 0,
         userNameTopAppBar = state.userName,
-        isShowBottomAppBar = false,
+        isShowBottomAppBar = state.podeEmbarcar,
         isShowRightIcon = false,
         hasRefresh = false,
         isRefreshing = state.isRefreshing,
         inicioAtivo = true,
         onClickInicio = onClickInicio,
+        onClickEmbarque = onClickEmbarque,
         drawerContent = { fechar ->
             FluviMenuDrawer(
                 userName = state.userName,
@@ -139,13 +146,15 @@ private fun BannerSincronizacaoOffline() {
     }
 }
 
-@Preview(name = "Home", showBackground = true)
+/** O painel de quem vende: a barra inferior existe, com o FAB de embarque protruso sobre ela. */
+@Preview(name = "Home da empresa (com embarque)", showBackground = true)
 @Composable
 private fun MainScreenHomePreview() {
     MainScreen(
         MainScreenUiState(
             userName = "Odair",
             secoesVisiveis = SECOES_REVITALIZADAS.toList(),
+            podeEmbarcar = true,
             mainScreenState = MainScreenState.HOME,
         ),
         acoesPorSecao = acoesPorSecao(SECOES_REVITALIZADAS.toList()),

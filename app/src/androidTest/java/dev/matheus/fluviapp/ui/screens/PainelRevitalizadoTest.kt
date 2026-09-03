@@ -46,17 +46,23 @@ class PainelRevitalizadoTest {
     /** O menu de quem mais enxerga no app: se nem para o ADM vazou, não vazou para ninguém. */
     private val secoesDoAdm = secoesDoMenu(Papel.ADM.name)
 
-    private fun montarPainel(inicio: InicioDaTela = InicioDaTela.DaPlataforma) {
+    private fun montarPainel(
+        inicio: InicioDaTela = InicioDaTela.DaPlataforma,
+        podeEmbarcar: Boolean = false,
+        onClickEmbarque: () -> Unit = {},
+    ) {
         composeTestRule.setContent {
             FluviAppTheme {
                 MainScreen(
                     state = MainScreenUiState(
                         userName = "Odair",
                         secoesVisiveis = secoesDoAdm,
+                        podeEmbarcar = podeEmbarcar,
                         inicio = inicio,
                         mainScreenState = MainScreenState.HOME,
                     ),
                     acoesPorSecao = acoesPorSecao(secoesDoAdm),
+                    onClickEmbarque = onClickEmbarque,
                 )
             }
         }
@@ -136,16 +142,29 @@ class PainelRevitalizadoTest {
     }
 
     /**
-     * O embarque saiu do painel com o domínio que o alimenta (lê o QR de uma passagem) e **não voltou com
-     * a F9**: a passagem existe, o QR está no bilhete, e mesmo assim a tela do scanner continua sem porta
-     * de entrada. É dívida declarada — conferir bilhete é um fluxo próprio, e ainda não tem lugar decidido
-     * no painel.
+     * **O embarque voltou, e voltou recortado.** No painel de quem administra a plataforma ele não
+     * existe: `ADM` e `GESTOR` podem validar um QR — é ação de doca —, mas não emitem passagem, então
+     * não há bilhete próprio a conferir. A ausência aqui é a mesma decisão que a `SecaoMenu.PASSAGEM`
+     * já tomava, aplicada ao gesto.
      */
     @Test
-    fun painel_naoOfereceOQueNaoFoiRevitalizado() {
-        montarPainel()
+    fun painel_daPlataforma_naoOfereceEmbarque() {
+        montarPainel(podeEmbarcar = false)
 
         composeTestRule.onNodeWithContentDescription(texto(R.string.btn_embarque)).assertDoesNotExist()
+    }
+
+    /** O painel de quem vende tem o FAB, e ele avisa a navegação — o destino não é da tela. */
+    @Test
+    fun painel_daEmpresa_ofereceEmbarqueEAvisaAoTocar() {
+        var toques = 0
+        montarPainel(podeEmbarcar = true, onClickEmbarque = { toques++ })
+
+        composeTestRule.onNodeWithContentDescription(texto(R.string.btn_embarque))
+            .assertIsDisplayed()
+            .performClick()
+
+        assertEquals(1, toques)
     }
 
     // --- O menu ---

@@ -8,6 +8,15 @@ data class MainScreenUiState(
     val secoesVisiveis: List<SecaoMenu> = emptyList(),
 
     /**
+     * Se a barra inferior com o embarque existe neste painel — `PermissoesUsuario.temEntradaDeEmbarque`.
+     *
+     * Entra como **booleano já decidido**, e não como papel/cargo/atuação para a tela recompor: a
+     * pergunta é de política, e política respondida na tela é política que se repete diferente na
+     * próxima tela.
+     */
+    val podeEmbarcar: Boolean = false,
+
+    /**
      * **O Início, decidido pelo domínio** (F8.4). O `listaViagens` que existia aqui antes da
      * revitalização era uma lista só, igual para todo mundo; agora o tipo carrega *de quem é o painel* —
      * a plataforma não vê saídas porque não vende, e "sem concessão" é estado próprio, não lista vazia.

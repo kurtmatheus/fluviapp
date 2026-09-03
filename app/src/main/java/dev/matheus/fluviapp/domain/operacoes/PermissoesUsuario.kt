@@ -267,4 +267,21 @@ object PermissoesUsuario {
      * vendido); papel desconhecido, não (fail-closed).
      */
     fun podeConfirmarEmbarque(papel: String?): Boolean = Papel.de(papel) != null
+
+    /**
+     * Onde o gesto de embarque tem **entrada** no painel — pergunta diferente de [podeConfirmarEmbarque],
+     * e é a distinção que fez o embarque voltar sem contradizer o ADR-0012.
+     *
+     * Aquela responde *quem pode validar o QR*, e responde largo de propósito: é ação de doca, e quem
+     * está na doca valida mesmo sem ter vendido. Esta responde *em que painel o botão existe*, e é
+     * estreita pelo mesmo motivo que a [SecaoMenu.PASSAGEM] é estreita: **conferir bilhete é do painel
+     * que vende**. `ADM` e `GESTOR` não emitem passagem (ADR-0016 §2), logo não têm o que conferir — e
+     * um botão de doca no painel de quem administra a plataforma seria oferecer um gesto sem objeto.
+     *
+     * A composição não cria coordenada nova: são as duas perguntas que a política já sabia responder,
+     * e a entrada só existe quando as duas dizem sim. Foi assim que [podeConfirmarEmbarque] deixou de
+     * ser regra sem chamador — ela existia desde o ADR-0012 e só o servidor a espelhava.
+     */
+    fun temEntradaDeEmbarque(papel: String?, cargo: String? = null, atuacao: Atuacao? = null): Boolean =
+        podeConfirmarEmbarque(papel) && SecaoMenu.PASSAGEM in secoesVisiveis(papel, cargo, atuacao)
 }
