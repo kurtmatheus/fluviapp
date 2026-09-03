@@ -248,7 +248,8 @@ enum class ErroDeEmissao {
     PESSOA_REPETIDA,
     VEICULO_SEM_PLACA,
     VEICULO_SEM_CLASSE,
-    VEICULO_SEM_MODELO,
+    // `VEICULO_SEM_MODELO` saiu em 2026-09-03 (ADR-0031): o modelo é oferecido a toda classe e cobrado em
+    // nenhuma, então não há erro a apontar.
     VEICULO_SEM_CILINDRADA,
     RESPONSAVEL_INCOMPLETO,
     SEM_PAGAMENTO,

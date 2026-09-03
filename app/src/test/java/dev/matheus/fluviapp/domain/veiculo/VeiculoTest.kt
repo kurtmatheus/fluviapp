@@ -53,19 +53,26 @@ class VeiculoTest {
         assertEquals("Carreta", carreta.descricao)
     }
 
+    /**
+     * **Nenhuma classe cobra modelo** desde 2026-09-03 (ADR-0031). O carro sem modelo, que era o caso
+     * canônico de pendência, passa a estar completo — e é ele que mede a decisão.
+     */
     @Test
-    fun `carro sem modelo tem pendencia de modelo`() {
+    fun `carro sem modelo esta completo - nenhuma classe cobra modelo`() {
         val carro = Veiculo(placa = "ABC-1234", tipo = ClasseVeiculo.CARRO)
 
-        assertEquals(setOf(Veiculo.Pendencia.MODELO), carro.pendencias())
-        assertFalse(carro.completo)
+        assertTrue(carro.completo)
+        assertEquals(emptySet<Veiculo.Pendencia>(), carro.pendencias())
     }
 
+    /** E vale para as dezessete: fora do motociclo, placa preenchida basta. */
     @Test
-    fun `van e suv pedem modelo, como o carro`() {
-        listOf(ClasseVeiculo.VAN, ClasseVeiculo.SUV).forEach { tipo ->
-            assertEquals(setOf(Veiculo.Pendencia.MODELO), Veiculo(placa = "ABC-1234", tipo = tipo).pendencias())
-        }
+    fun `fora do motociclo, so a placa e cobrada`() {
+        ClasseVeiculo.entries
+            .filterNot { it.exigeCilindrada }
+            .forEach {
+                assertTrue("$it não deveria ter pendência", Veiculo(placa = "ABC-1234", tipo = it).completo)
+            }
     }
 
     @Test
@@ -110,7 +117,7 @@ class VeiculoTest {
         val vazio = Veiculo(placa = "", tipo = ClasseVeiculo.MOTO)
 
         assertEquals(
-            setOf(Veiculo.Pendencia.PLACA, Veiculo.Pendencia.MODELO, Veiculo.Pendencia.CILINDRADA),
+            setOf(Veiculo.Pendencia.PLACA, Veiculo.Pendencia.CILINDRADA),
             vazio.pendencias(),
         )
     }

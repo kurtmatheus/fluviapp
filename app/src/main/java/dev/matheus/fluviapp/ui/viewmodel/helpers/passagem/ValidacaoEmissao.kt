@@ -121,7 +121,14 @@ fun validarParticipante(
     }
 }
 
-/** O que falta ao veículo é o **tipo** quem diz: carreta não tem modelo a informar, e só moto tem cilindrada. */
+/**
+ * O que falta ao veículo é a **natureza** quem diz, e ela diz uma coisa só: a cilindrada, de quem tem motor
+ * medido em cilindrada (ADR-0031 D2).
+ *
+ * O **modelo saiu da cobrança** em 2026-09-03: ele é oferecido a toda classe e exigido em nenhuma. A placa
+ * continua sendo cobrada por outro motivo — é a **chave natural** do pool, e sem ela não há veículo a que se
+ * referir.
+ */
 fun validarVeiculo(veiculo: VeiculoEmEdicao): Set<ErroDeEmissao> = buildSet {
     if (veiculo.placa.isBlank()) add(ErroDeEmissao.VEICULO_SEM_PLACA)
     val classe = veiculo.classe
@@ -129,7 +136,6 @@ fun validarVeiculo(veiculo: VeiculoEmEdicao): Set<ErroDeEmissao> = buildSet {
         add(ErroDeEmissao.VEICULO_SEM_CLASSE)
         return@buildSet
     }
-    if (classe.exigeModelo && veiculo.modelo.isBlank()) add(ErroDeEmissao.VEICULO_SEM_MODELO)
     if (classe.exigeCilindrada && veiculo.cilindrada.filter { it.isDigit() }.toIntOrNull() == null) {
         add(ErroDeEmissao.VEICULO_SEM_CILINDRADA)
     }

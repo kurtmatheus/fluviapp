@@ -48,18 +48,9 @@ class CalculoTarifaTest {
         assertEquals(BigDecimal("0.00"), descontoDerivado(devidaGratuidade, BigDecimal.ZERO))
     }
 
-    // --- Moto: piso à centena da cilindrada (ADR-0013) ---
-
-    @Test
-    fun `tarifa da moto e o piso a centena da cilindrada em reais`() {
-        assertEquals(BigDecimal("100.00"), tarifaMotoBase(125))
-        assertEquals(BigDecimal("200.00"), tarifaMotoBase(250))
-        assertEquals(BigDecimal("300.00"), tarifaMotoBase(300))
-        assertEquals(BigDecimal("600.00"), tarifaMotoBase(600))
-    }
-
-    @Test
-    fun `moto abaixo de 100cc cai no piso zero`() {
-        assertEquals(BigDecimal("0.00"), tarifaMotoBase(50))
-    }
+    // A tarifa da moto por faixa de cilindrada saiu em 2026-09-03 (ADR-0031), e com ela estes dois casos.
+    //
+    // Ela era a regra provisória do ADR-0013 e já não tinha chamador em produção desde que *preço é I/O*: a
+    // emissão não calcula valor, o operador informa o praticado. O que restava era o vínculo conceitual
+    // entre classe de veículo e dinheiro, e ele caiu quando a cilindrada passou a derivar da natureza.
 }

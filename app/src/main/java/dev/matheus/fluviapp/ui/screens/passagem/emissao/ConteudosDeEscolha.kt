@@ -1,8 +1,8 @@
 package dev.matheus.fluviapp.ui.screens.passagem.emissao
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AirportShuttle
 import androidx.compose.material.icons.filled.Accessible
+import androidx.compose.material.icons.filled.Agriculture
 import androidx.compose.material.icons.filled.ChildCare
 import androidx.compose.material.icons.filled.ConfirmationNumber
 import androidx.compose.material.icons.filled.DirectionsCar
@@ -13,7 +13,6 @@ import androidx.compose.material.icons.filled.HotelClass
 import androidx.compose.material.icons.filled.LocalShipping
 import androidx.compose.material.icons.filled.MeetingRoom
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Terrain
 import androidx.compose.material.icons.filled.TwoWheeler
 import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material.icons.filled.Weekend
@@ -23,6 +22,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import dev.matheus.fluviapp.domain.passagem.Acomodacao
 import dev.matheus.fluviapp.domain.passagem.CategoriaPassagem
 import dev.matheus.fluviapp.domain.passagem.ClasseVeiculo
+import dev.matheus.fluviapp.domain.passagem.NaturezaVeiculo
 import dev.matheus.fluviapp.domain.passagem.TipoGratuidade
 import dev.matheus.fluviapp.domain.passagem.TipoPassagem
 import dev.matheus.fluviapp.ui.components.passagem.EscolhaVisual
@@ -141,9 +141,13 @@ fun EscolhaDeClasseDeVeiculo(aoEscolher: (ClasseVeiculo) -> Unit, modifier: Modi
 
 // --- Os ícones: apresentação, e por isso aqui e não no domínio ---
 //
-// Os `when` são exaustivos de propósito. Quando a carga entrar em `CategoriaPassagem`, ou uma classe nova em
-// `ClasseVeiculo`, o compilador vai parar **aqui** e cobrar a decisão de como ela se mostra — que é
-// exatamente o que o tipo selado do ADR-0023 D1 comprou para o resto do app.
+// Os `when` são exaustivos de propósito: quando a carga entrar em `CategoriaPassagem`, ou uma **natureza**
+// nova em `NaturezaVeiculo`, o compilador para **aqui** e cobra a decisão de como ela se mostra — que é o
+// que o tipo selado do ADR-0023 D1 comprou para o resto do app.
+//
+// Desde o ADR-0031 a cobrança mudou de altitude: uma **classe** nova não para mais aqui, porque ela herda o
+// ícone da natureza. É troca consciente — dezessete ramos para quatro desenhos não seria decisão de
+// produto, seria burocracia.
 
 private fun CategoriaPassagem.icone(): ImageVector = when (this) {
     CategoriaPassagem.PASSAGEIRO -> Icons.Filled.Person
@@ -169,11 +173,21 @@ private fun TipoGratuidade.icone(): ImageVector = when (this) {
     TipoGratuidade.PASSE_FEDERAL -> Icons.Filled.VerifiedUser
 }
 
-private fun ClasseVeiculo.icone(): ImageVector = when (this) {
-    ClasseVeiculo.CARRO -> Icons.Filled.DirectionsCar
-    ClasseVeiculo.MOTO -> Icons.Filled.TwoWheeler
-    ClasseVeiculo.VAN -> Icons.Filled.AirportShuttle
-    ClasseVeiculo.SUV -> Icons.Filled.Terrain
-    ClasseVeiculo.CAMINHAO -> Icons.Filled.LocalShipping
-    ClasseVeiculo.CARRETA -> Icons.Filled.LocalShipping
+/**
+ * **O ícone da classe é o da natureza dela** (ADR-0031).
+ *
+ * Quando eram seis classes, um ícone por valor era barato — e mesmo assim `CAMINHAO` e `CARRETA` já
+ * dividiam o mesmo. Com dezessete, seriam dezessete ramos para talvez quatro desenhos distintos, e o que a
+ * exaustividade cobraria não seria uma decisão de produto: seria burocracia.
+ *
+ * O `when` continua exaustivo, mas sobre a **natureza** — quatro valores. Uma classe nova não precisa de
+ * ícone; uma **natureza** nova precisa, e essa é a decisão que vale a pena o compilador cobrar.
+ */
+private fun ClasseVeiculo.icone(): ImageVector = natureza.icone()
+
+private fun NaturezaVeiculo.icone(): ImageVector = when (this) {
+    NaturezaVeiculo.AUTOMOTOR -> Icons.Filled.DirectionsCar
+    NaturezaVeiculo.MOTOCICLO -> Icons.Filled.TwoWheeler
+    NaturezaVeiculo.MAQUINA -> Icons.Filled.Agriculture
+    NaturezaVeiculo.REBOCADO -> Icons.Filled.LocalShipping
 }

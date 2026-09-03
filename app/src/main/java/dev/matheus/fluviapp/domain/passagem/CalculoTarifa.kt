@@ -24,10 +24,12 @@ fun descontoDerivado(tarifaDevida: BigDecimal, valorCobrado: BigDecimal): BigDec
     return residuo.max(BigDecimal.ZERO).setScale(ESCALA_MOEDA, ARREDONDAMENTO)
 }
 
-/**
- * Tarifa da inteira da **moto** (ADR-0013, regra provisória): **piso à centena da cilindrada, 1:1 em
- * reais** — `floor(cc/100)*100`. 125cc→100, 250cc→200, 300cc→300. Abaixo de 100cc resulta em 0 (consequência
- * do piso). Substituível por tabela cadastrada por viagem no futuro (ver ADR *Alternativas futuras*).
- */
-fun tarifaMotoBase(cilindradaCc: Int): BigDecimal =
-    BigDecimal((cilindradaCc / 100) * 100).setScale(ESCALA_MOEDA, ARREDONDAMENTO)
+// O `tarifaMotoBase` — piso à centena da cilindrada, 1:1 em reais — saiu em 2026-09-03 (ADR-0031).
+//
+// Ele era a regra provisória do ADR-0013 e **já não tinha chamador em produção** desde que *preço é I/O*
+// (2026-08-11): a emissão não calcula valor, o operador informa o praticado. O que o ADR-0031 acrescentou
+// foi tirar-lhe também a razão conceitual — com a cilindrada derivando da natureza, some o último vínculo
+// entre a classe do veículo e dinheiro.
+//
+// Se a inferência tarifária vier a precisar de uma régua por cilindrada, ela nasce no módulo de
+// faturamento, sobre o agregado de passagens — não aqui.

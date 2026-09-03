@@ -73,6 +73,24 @@ class TipoEmbarcacaoTest {
         ClasseVeiculo.entries.forEach { assertTrue(TipoEmbarcacao.FERRY_BOAT.admite(it)) }
     }
 
+    /**
+     * **O caso que mede o D4.** Não basta a balsa levar as dezessete de hoje: ela tem de levar a
+     * **dezoito**, quando ela existir, sem que ninguém a declare em lugar nenhum.
+     *
+     * É o que separa *"a lista está completa"* de *"não há lista"* — e é a diferença entre esta forma e a
+     * anterior, em que cada classe nova nascia admitida por nenhum casco até alguém lembrar de acrescentá-la.
+     */
+    @Test
+    fun `a balsa admite por exclusao, e nao por enumeracao`() {
+        assertEquals(CargaAdmitida.Todas, TipoEmbarcacao.FERRY_BOAT.cargaAdmitida)
+        assertEquals(ClasseVeiculo.entries.size, TipoEmbarcacao.FERRY_BOAT.classesAdmitidas.size)
+    }
+
+    /**
+     * **O navio encolheu com o D4**: eram carro, moto, van e SUV; passam a ser carro e moto. O nome deste
+     * caso já dizia isso antes de o código dizer — ele estava certo e as asserções é que não o
+     * acompanhavam.
+     */
     @Test
     fun `o navio leva carro e moto, mas nao carga pesada`() {
         assertTrue(TipoEmbarcacao.NAVIO.admite(ClasseVeiculo.CARRO))
@@ -82,23 +100,30 @@ class TipoEmbarcacaoTest {
     }
 
     /**
-     * **Van e SUV vão onde o carro vai** (F9.1, ADR-0023 D4). Deixá-las fora de todos os conjuntos as faria
-     * nascer **invendáveis** — o mesmo defeito que a F7 corrigiu quando toda embarcação nascia sem concessão.
-     * É leitura de quem escreveu, não decisão registrada: se estiver errada, o conserto é uma linha por tipo.
+     * E leva **só** esses dois: van e SUV saíram, e com elas as onze classes novas. O navio é a única
+     * exceção enumerada do domínio, e por isso é o único lugar onde acrescentar uma classe exige decisão.
      */
     @Test
-    fun `van e suv acompanham o carro`() {
-        listOf(ClasseVeiculo.VAN, ClasseVeiculo.SUV).forEach { classe ->
-            assertTrue(TipoEmbarcacao.FERRY_BOAT.admite(classe))
-            assertTrue(TipoEmbarcacao.NAVIO.admite(classe))
-            assertFalse(TipoEmbarcacao.LANCHA.admite(classe))
-        }
+    fun `o navio leva exatamente duas classes`() {
+        assertEquals(
+            listOf(ClasseVeiculo.CARRO, ClasseVeiculo.MOTO),
+            TipoEmbarcacao.NAVIO.classesAdmitidas,
+        )
+        listOf(ClasseVeiculo.VAN, ClasseVeiculo.SUV, ClasseVeiculo.ONIBUS, ClasseVeiculo.TRATOR)
+            .forEach { assertFalse("$it não deveria entrar no navio", TipoEmbarcacao.NAVIO.admite(it)) }
     }
 
+    /**
+     * *"Não se vende veículo para uma lancha se a cadastrarmos."* Inclusive — e aqui a frase fica
+     * involuntariamente literal — a `ClasseVeiculo.LANCHA`, que é a embarcação **transportada** sobre
+     * carretilha: o casco lancha não leva nem a lancha rebocada.
+     */
     @Test
     fun `nao se vende veiculo para uma lancha`() {
         ClasseVeiculo.entries.forEach { assertFalse(TipoEmbarcacao.LANCHA.admite(it)) }
         assertFalse(TipoEmbarcacao.LANCHA.levaVeiculo)
+        assertEquals(CargaAdmitida.Nenhuma, TipoEmbarcacao.LANCHA.cargaAdmitida)
+        assertTrue(TipoEmbarcacao.LANCHA.classesAdmitidas.isEmpty())
     }
 
     @Test

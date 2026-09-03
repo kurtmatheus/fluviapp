@@ -9,12 +9,17 @@ import dev.matheus.fluviapp.domain.passagem.ClasseVeiculo
  * clientes acumular duplicata legítima. Então este pool **não polui** — duplicata aqui só nasce de digitação
  * errada, e é contra isso que existe a máscara na entrada (D15).
  *
- * ### O tipo governa o que se exige
+ * ### O que se exige vem da **natureza**, e é uma coisa só
  *
- * *"Carreta ou caminhão já equivalentes ao modelo; outros tipos são van, SUV, que têm modelo nomeado"* — palavra
- * do analista ([ADR-0023] D4). Quem sabe se há modelo a pedir é o [ClasseVeiculo], não o formulário: é assim que
- * a primeira divergência do D19 se corrige **no tipo**, e não com um `if` no validador que exigia modelo
- * **sempre** — de modo que carreta e caminhão não passavam.
+ * A cilindrada, e nada mais ([ADR-0031] D2): ela é de quem tem motor medido em cilindrada — moto,
+ * quadriciclo, jet-ski —, e quem sabe disso é a `NaturezaVeiculo`, não o formulário. Nas outras naturezas
+ * ela não é opcional: é **sem sentido**, e por isso o campo não existe em vez de ficar em branco.
+ *
+ * O **modelo saiu da conta** em 2026-09-03. A regra antiga (*"carreta e caminhão já são o modelo"*,
+ * ADR-0023 D4) corrigia no tipo o que o validador de então errava exigindo modelo **sempre**; ela cumpriu
+ * o papel e caiu quando as classes passaram de seis para dezessete — mantê-la obrigaria a arbitrar onze
+ * vezes uma pergunta que o *data-intensive* já responde: **guarda-se o que se tem, não se cobra o que não
+ * se sabe**. O campo continua sendo oferecido a toda classe; o que saiu foi a cobrança.
  *
  * ### O responsável pela retirada não mora aqui
  *
@@ -26,10 +31,10 @@ data class Veiculo(
     /** Chave natural. Canônica na grafia oficial do padrão — máscara na entrada (ADR-0018 D15). */
     val placa: String,
     val tipo: ClasseVeiculo,
-    /** Ausente quando o tipo **já é** o modelo (carreta, caminhão). */
+    /** **Sempre opcional** — oferecido a toda classe, cobrado em nenhuma (ADR-0031). */
     val modelo: String? = null,
     val cor: String = "",
-    /** Só moto: é o cc que distingue uma moto de outra na travessia. */
+    /** Só na natureza `MOTOCICLO`: é o cc que distingue uma moto de outra na travessia. */
     val cilindrada: Int? = null,
     /** Assinatura das agências que já o atenderam (ADR-0018 D3), como no pool de clientes. */
     val agenciaIds: Set<String> = emptySet(),
@@ -43,14 +48,20 @@ data class Veiculo(
      */
     fun pendencias(): Set<Pendencia> = buildSet {
         if (placa.isBlank()) add(Pendencia.PLACA)
-        if (tipo.exigeModelo && modelo.isNullOrBlank()) add(Pendencia.MODELO)
         if (tipo.exigeCilindrada && (cilindrada == null || cilindrada <= 0)) add(Pendencia.CILINDRADA)
     }
 
     val completo: Boolean get() = pendencias().isEmpty()
 
-    /** O que pode faltar num veículo — nomeado, para a tela apontar o campo certo. */
-    enum class Pendencia { PLACA, MODELO, CILINDRADA }
+    /**
+     * O que pode faltar num veículo — nomeado, para a tela apontar o campo certo.
+     *
+     * **O `MODELO` saiu em 2026-09-03** (ADR-0031): o modelo é sempre oferecido e nunca cobrado. Ele era a
+     * única exigência que não derivava da natureza, e mantê-lo obrigaria a arbitrar, uma a uma, se cada
+     * das onze classes novas o exige — decisão que o *data-intensive* já respondia: guarda-se o que se
+     * tem, não se cobra o que não se sabe.
+     */
+    enum class Pendencia { PLACA, CILINDRADA }
 
     /** Como o veículo se anuncia num bilhete: o modelo quando existe, senão o próprio tipo. */
     val descricao: String get() = modelo?.takeIf { it.isNotBlank() } ?: tipo.rotulo

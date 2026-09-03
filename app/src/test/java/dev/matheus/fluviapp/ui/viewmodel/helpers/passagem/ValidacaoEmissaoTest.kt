@@ -93,9 +93,9 @@ class ValidacaoEmissaoTest {
 
     // --- Passo 2: veículo ---
 
-    /** O que falta é o **tipo** quem diz: carreta já é o modelo, e só moto tem cilindrada. */
+    /** O que falta é a **natureza** quem diz, e ela diz uma coisa só: a cilindrada de quem tem motor. */
     @Test
-    fun `carreta nao pede modelo`() {
+    fun `carreta com placa nao deve nada`() {
         val carreta = ParticipanteEmEdicao.DeVeiculo(
             VeiculoEmEdicao(placa = "XYZ9A88", classe = ClasseVeiculo.CARRETA),
         )
@@ -103,16 +103,32 @@ class ValidacaoEmissaoTest {
         assertTrue(validarParticipante(BilheteEmEdicao(categoria = CategoriaPassagem.VEICULO), carreta).isEmpty())
     }
 
+    /**
+     * **A van sem modelo passa** desde 2026-09-03 (ADR-0031) — o modelo é oferecido e não cobrado. A moto
+     * sem cilindrada continua sendo barrada, e a assimetria é a régua: some o que não se aplica, fica sem
+     * cobrança o que se aplica e não se sabe.
+     */
     @Test
-    fun `van sem modelo e moto sem cilindrada sao cobradas`() {
+    fun `van sem modelo passa, e moto sem cilindrada e cobrada`() {
         val bilhete = BilheteEmEdicao(categoria = CategoriaPassagem.VEICULO)
         val van = ParticipanteEmEdicao.DeVeiculo(VeiculoEmEdicao(placa = "AAA1B11", classe = ClasseVeiculo.VAN))
         val moto = ParticipanteEmEdicao.DeVeiculo(
             VeiculoEmEdicao(placa = "AAA1B11", classe = ClasseVeiculo.MOTO, modelo = "Fan"),
         )
 
-        assertEquals(setOf(ErroDeEmissao.VEICULO_SEM_MODELO), validarParticipante(bilhete, van))
+        assertTrue(validarParticipante(bilhete, van).isEmpty())
         assertEquals(setOf(ErroDeEmissao.VEICULO_SEM_CILINDRADA), validarParticipante(bilhete, moto))
+    }
+
+    /** E o jet-ski e o quadriciclo entram na mesma cobrança, porque a natureza é a mesma. */
+    @Test
+    fun `jet-ski e quadriciclo sem cilindrada tambem sao cobrados`() {
+        val bilhete = BilheteEmEdicao(categoria = CategoriaPassagem.VEICULO)
+
+        listOf(ClasseVeiculo.JET_SKI, ClasseVeiculo.QUADRICICLO).forEach { classe ->
+            val participante = ParticipanteEmEdicao.DeVeiculo(VeiculoEmEdicao(placa = "AAA1B11", classe = classe))
+            assertEquals(setOf(ErroDeEmissao.VEICULO_SEM_CILINDRADA), validarParticipante(bilhete, participante))
+        }
     }
 
     /** Ausente é a forma normal ([ADR-0028] D3); pela metade é erro. */

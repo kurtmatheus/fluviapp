@@ -1,45 +1,71 @@
 package dev.matheus.fluviapp.domain.passagem
 
 /**
- * Classe do veículo embarcado como tipo de domínio ([ADR-0018] D7), no lugar da linha de catálogo
- * `Constante.Categoria.VEICULO`. Entra junto da F1 do [ADR-0020] porque sem ela o
- * [dev.matheus.fluviapp.domain.viagem.TipoEmbarcacao] não tem o que admitir — a regra dele é justamente
- * um conjunto destas.
+ * A classe do veículo embarcado — **um registro, e o enum é o registro** ([ADR-0031] D1).
  *
- * A classe governa **exigências e tarifa**: a moto é a única cuja tarifa depende de cilindrada (ADR-0013,
- * por faixa de 100 cm³), e o par caminhão/carreta é o que só a balsa carrega (ADR-0016 §8).
+ * ### Por que continua sendo tipo, e não virou cadastro
  *
- * ### O que a F9.1 acrescentou, e por quê ([ADR-0023] D4)
+ * O pedido da operação foi que o supervisor pudesse cadastrar classes novas, e a resposta é a mesma de
+ * 2026-08-01, alcançada por outro caminho: **a classe é a chave de uma série histórica** — o produto do
+ * modo veículo é a série *contagem × classe × preço* — e série não convive com identidade que se renomeia.
+ * O `name` do enum é essa identidade, e é o que o Firestore grava.
  *
- * **`VAN` e `SUV`** entraram porque o analista os nomeou como tipos com **modelo nomeado**, ao lado do carro.
+ * O mecanismo veio do `Cargo`, **sem a segunda metade dele**: o que a régua do [ADR-0020] exigia era que
+ * **poder e registro deixassem de morar na mesma palavra**. Ali, tirar o poder fez o cargo virar dado —
+ * mas isso foi consequência, não requisito. Aqui a separação bastou.
  *
- * **`exigeModelo`** nasceu para dizer o que estava implícito: *"carreta ou caminhão já equivalentes ao modelo"*.
- * Nesses dois, perguntar o modelo é perguntar duas vezes a mesma coisa. Com a regra no tipo, a primeira
- * divergência do [ADR-0018] D19 se corrige **na origem** — o validador exigia modelo **sempre**, de modo que
- * carreta e caminhão não passavam.
+ * ### O que cada valor declara: uma coisa só
+ *
+ * A [NaturezaVeiculo]. Todo o resto **deriva** dela ou deixou de existir:
+ *
+ * - `exigeCilindrada` deriva — é a natureza que sabe se há motor a medir;
+ * - `exigeModelo` **morreu** (decisão de 2026-09-03): o modelo é sempre oferecido e nunca cobrado. Onze
+ *   classes novas exigiriam onze arbitragens sobre uma pergunta que o *data-intensive* já respondia —
+ *   guarda-se o que se tem, não se cobra o que não se sabe;
+ * - `ehPesado` **morreu** por outra razão: nunca teve um leitor. O recorte da balsa acabou sendo feito por
+ *   pertencimento explícito, e desde o D4 é o casco que responde, por exclusão.
+ *
+ * Sobrou uma tabela de dezessete linhas e **uma coluna de comportamento**, que é o que o estudo prometeu.
  */
 enum class ClasseVeiculo(
     val rotulo: String,
-    /** A tarifa desta classe depende da cilindrada informada. Só a moto. */
-    val exigeCilindrada: Boolean,
-    /**
-     * O modelo é **obrigatório** nesta classe, ou o tipo já serve de resposta? (ADR-0023 D4)
-     *
-     * Mede obrigação, e só isso. O formulário oferece o campo a toda classe: em carreta e caminhão o
-     * modelo é opcional, não proibido — *não pedir* é diferente de *não deixar dizer*, e é a frota pesada
-     * que mais se distingue por modelo na hora de achar o veículo no pátio.
-     */
-    val exigeModelo: Boolean,
+    val natureza: NaturezaVeiculo,
 ) {
-    CARRO("Carro", exigeCilindrada = false, exigeModelo = true),
-    MOTO("Moto", exigeCilindrada = true, exigeModelo = true),
-    VAN("Van", exigeCilindrada = false, exigeModelo = true),
-    SUV("SUV", exigeCilindrada = false, exigeModelo = true),
-    CAMINHAO("Caminhão", exigeCilindrada = false, exigeModelo = false),
-    CARRETA("Carreta", exigeCilindrada = false, exigeModelo = false);
+    // --- Automotor: roda em estrada e entra andando ---
+    CARRO("Carro", NaturezaVeiculo.AUTOMOTOR),
+    VAN("Van", NaturezaVeiculo.AUTOMOTOR),
+    SUV("SUV", NaturezaVeiculo.AUTOMOTOR),
+    CAMINHAO("Caminhão", NaturezaVeiculo.AUTOMOTOR),
+    MOTORHOME("Motorhome", NaturezaVeiculo.AUTOMOTOR),
+    ONIBUS("Ônibus", NaturezaVeiculo.AUTOMOTOR),
 
-    /** Carga pesada — o recorte que separa a balsa das demais embarcações (ADR-0016 §8). */
-    val ehPesado: Boolean get() = this == CAMINHAO || this == CARRETA
+    // "Cavalinho" é o cavalo mecânico: a unidade **tratora**, motorizada — e não o semirreboque que o
+    // nome também evoca. Foi o único valor da lista que o estudo não conseguiu classificar sozinho, e a
+    // definição veio do analista. É o caso que prova por que a natureza precisa ser declarada.
+    CARRETA_CAVALINHO("Carreta Cavalinho", NaturezaVeiculo.AUTOMOTOR),
+
+    // --- Motociclo: o motor é o que distingue um do outro ---
+    MOTO("Moto", NaturezaVeiculo.MOTOCICLO),
+    QUADRICICLO("Quadriciclo", NaturezaVeiculo.MOTOCICLO),
+    JET_SKI("Jet-Ski", NaturezaVeiculo.MOTOCICLO),
+
+    // --- Máquina: trabalha, não transporta ---
+    TRATOR("Trator", NaturezaVeiculo.MAQUINA),
+    EMPILHADEIRA("Empilhadeira", NaturezaVeiculo.MAQUINA),
+    RETROESCAVADEIRA("Retroescavadeira", NaturezaVeiculo.MAQUINA),
+
+    // --- Rebocado: não entra andando ---
+    CARRETA("Carreta", NaturezaVeiculo.REBOCADO),
+    TRAILER("Trailer", NaturezaVeiculo.REBOCADO),
+    CARRETILHA("Carretilha", NaturezaVeiculo.REBOCADO),
+
+    // `Lancha` **como classe** — a embarcação transportada sobre carretilha, não o casco que transporta.
+    // O nome colide com `TipoEmbarcacao.LANCHA` e o analista recusou renomear (ADR-0031 D5): o rename de
+    // `Navio` → `Embarcacao` já separou gênero de espécie, e os três papéis são explícitos.
+    LANCHA("Lancha", NaturezaVeiculo.REBOCADO);
+
+    /** A cilindrada é da **natureza**, não da classe: o que distingue uma moto de outra é o motor. */
+    val exigeCilindrada: Boolean get() = natureza.exigeCilindrada
 
     companion object {
         /** Fronteira String→enum; `null` se desconhecido (fail-closed). Tolerante à grafia legada. */
