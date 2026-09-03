@@ -43,8 +43,10 @@ anotada em outro documento**: o `.so` do CameraX 1.3.4 era o único bloqueio do 
 e ele saiu do APK junto com a biblioteca. É o caso em que **escolha de implementação vira consequência de
 arquitetura** — motivo de estar aqui e não só no `git log`.
 
-**Emendado em 2026-09-03** pelo [0031](0031-classe-de-veiculo-natureza-e-casco-por-exclusao.md), que nasce de
-um pedido de apresentação institucional e termina **confirmando** uma decisão de agosto em vez de derrubá-la.
+**Emendado em 2026-09-03** pelo [0031](0031-classe-de-veiculo-natureza-e-casco-por-exclusao.md) — **o
+primeiro ADR escrito e implementado no mesmo dia**, e por isso o primeiro cuja seção de execução nasce
+junto com ele. Ele vem de um pedido de apresentação institucional e termina **confirmando** uma decisão de
+agosto em vez de derrubá-la.
 Vale registrar o método, porque ele se repete: o pedido (*"o supervisor cadastra classes de veículo"*) foi
 medido contra o que já estava decidido, a primeira leitura foi **rejeitada no enquadramento** — punha a
 questão como *tipo ou entidade* — e a pergunta certa era **onde mora o comportamento**. Três medições de
@@ -94,9 +96,51 @@ cujo §8 muda de forma e de conteúdo.
 | [0028](0028-as-etapas-da-emissao.md) | As etapas da emissão | **vigente · direção** (2026-08-13) | novo, e **completa o D4 do 0026**, que fixou o eixo (*emissão por etapas*) e deixou o roteiro aberto. São **três passos** — o bilhete, quem viaja, o pagamento —, e a ordem é **imposta pelo domínio**: a acomodação vem antes da lista de clientes porque é ela quem declara quantos cabem, e o tipo tarifário fica no passo 1 porque é propriedade do **espaço vendido** (meia e gratuidade só existem na rede). **Bilhete unitário**, exceto suíte e camarote: família de três em redes são **três emissões**, e o `isVeiculoChecked` morre porque era a forma visível de um modelo que misturava dois sub-domínios. **`TipoGratuidade` volta ao agregado** — a F9.1 gravava "gratuidade" sem dizer qual, e sem o subtipo a **cota do 0013 §8** não tem o que contar. **Passageiro exige portador; veículo não** (o responsável é opcional *por regra de negócio*), e o registro no pool — a única operação que **exige rede** — tem de **tolerar falha sem perder o atendimento**. O cabeçalho da viagem vira **persistente** e **data/hora deixam de ser campos**: eram editáveis e podiam discordar da saída escolhida, o mesmo defeito que a agência digitada teve até a P2.3. Morre também o `scrollParaErro` — com passos, o erro **está no passo** |
 | [0029](0029-os-fluxos-da-emissao.md) | Os fluxos da emissão | **vigente · direção** (2026-08-13) | novo, e **supera o D4 do 0028** — escrito horas antes — em **granularidade**, não em princípio: os três blocos dão lugar a **muitos passos pequenos**, um por decisão, no modelo de um **totem de restaurante**. Cada passo é uma pergunta e a resposta é um **toque**, porque o domínio já enumera quase todas (categoria, acomodação, tipo, subtipo, classe são `enum`) — formulário sobra só para **pessoa e veículo**, que é onde há dado que só se digita. **Dois fluxos**, com o **cliente no passo 4 nos dois** (decisão de desenho: aprende-se uma sequência, e a diferença fica nos passos 2 e 3, onde ela é real). O **roteiro é derivado** do estado, não fixo: dá "passo N de M" correto em qualquer caminho, voltar sem `if` de categoria espalhado, e vira **teste de lista** — é assim que *"escolher gratuidade insere o passo do subtipo"* se verifica sem tela. O subtipo vira **passo**, e com isso "gratuidade sem subtipo" deixa de ser estado a validar e passa a ser **inalcançável**. Cada pessoa é **salva no passo dela**, para a operação que exige rede falhar **uma por vez**, onde o operador está. O passo 6 é o **desfecho**, hoje só digital — física e **vias** (navio, agência, cliente) exigem estudo e ADR próprios |
 | [0030](0030-o-bilhete-digital.md) | O bilhete digital | **vigente · implementada** (2026-08-13) | novo. Fecha o botão sem destino que a F9.5 deixou. **O bilhete não mascara o documento e a conferência mascara** — e a assimetria tem régua: mascarar protege de **quem está por perto** (a fila diante do balcão), e o bilhete vai para a mão de quem já sabe o próprio número. **O arquivo nasce ao ser visto**: não há botão de salvar, porque um segundo gesto é um gesto a ser esquecido com fila esperando — e como a tela já desenha, a captura grava **o que está na tela**, em vez das duas renderizações do caminho antigo. **Compartilhar continua** (na navegação, não no VM: gesto de plataforma). **Reabrir procura antes** de regenerar, e regenerar segue legítimo porque o arquivo é cache e a origem é o Firestore. E **é o mesmo bilhete** nos dois momentos, então ele tem **destino próprio** — a consulta futura aponta para ele, em vez de outra tela desenhando o mesmo documento. Efeito colateral: o `ColetorDeReferencias.completas`, escrito na F9.4 e nunca chamado, ganha seu consumidor. **Emendado em 2026-08-17 — documento, não cupom** (decisão do analista): o desenho era o do **papel de 80 mm** (coluna centralizada, um só corpo de texto, campos sem rótulo), e a via digital não tem largura fixa nem custo por milímetro. Passa a ter **hierarquia** (a embarcação abre o bilhete, acima do trajeto — é a primeira pergunta de quem está na doca), **rótulo em cada valor** e **caixa em vez de tracejado**; o total inverte para navy, e o QR ganha legenda. A **impressão física conserva o desenho dela** (`services/printerservice` não conhece o `BilheteDigital`): são dois suportes, e o que compartilham é o conteúdo. Dois campos entram na mesma leva — a **cilindrada**, que existia no DTO e nunca era desenhada, e o **nascimento** ao lado do documento, porque a categoria por idade (idoso, criança até 5) é o que se fiscaliza e conferi-la pelo nome do tipo exigiria acreditar no bilhete |
-| [0031](0031-classe-de-veiculo-natureza-e-casco-por-exclusao.md) | A classe de veículo — enum, natureza e casco por exclusão | **vigente · direção** (2026-09-03) | novo. Nasce da issue #4 (*"o supervisor cadastrar classes"*) e **confirma por outro caminho** a decisão de 2026-08-01 (*a classe não é catálogo editável*): nem entidade, nem catálogo — **o enum é o registro**, porque ele é a chave de uma série histórica e série não convive com identidade que se renomeia. Aplica o mecanismo do `Cargo` **sem a segunda metade dele**: bastava que poder e registro deixassem de morar na mesma palavra. A propriedade que fica é a **natureza** (automotor · cilindrada · máquina autopropelida · rebocado), e ela existe **pela capacidade analítica** — *"data-intensive: guardar todas as informações possíveis"* —, não pela arrumação do código; com ela `exigeCilindrada` passa a **derivar**. A lista fecha em **dezessete** (onze novas), e a `Carreta Cavalinho` é **tratora, motorizada** — o caso que prova o D2, porque o nome não deixava derivar a natureza. **Revisa o [0016](0016-dominio-da-plataforma.md) §8 em forma e conteúdo:** o casco admite **por exclusão** (Balsa **todas** · Navio **apenas carro e moto** · Lancha **nenhuma**), de modo que classe nova **nasce vendável** sem decisão humana — o oposto do "Catamarã inerte". Caem o **porte** (perdeu o consumidor que o justificava) e o `ehPesado` (nunca teve leitor); `tarifaMotoBase` fica sem razão. A emissão ganha **passo + subpasso** (natureza → classe), que também separa `Carreta`, `Carretilha` e `Carreta Cavalinho` de um seletor único. A classe é **capacidade compartilhada sem concessão** — diferente de Rota e Viagem, toda agência dispõe de todas. **Supera o §6.4 do estudo**, que concluía por dois eixos |
+| [0031](0031-classe-de-veiculo-natureza-e-casco-por-exclusao.md) | A classe de veículo — enum, natureza e casco por exclusão | **vigente · IMPLEMENTADA** (2026-09-03) | **escrito e executado no mesmo dia**, em quatro commits (`e749fb6`, `f901653`, `3807657`, `3f7c63a`) — ver *[O que a execução do 0031 acrescentou](#o-que-a-execução-do-0031-acrescentou)*. Nasce da issue #4 (*"o supervisor cadastrar classes"*) e **confirma por outro caminho** a decisão de 2026-08-01 (*a classe não é catálogo editável*): nem entidade, nem catálogo — **o enum é o registro**, porque ele é a chave de uma série histórica e série não convive com identidade que se renomeia. Aplica o mecanismo do `Cargo` **sem a segunda metade dele**: bastava que poder e registro deixassem de morar na mesma palavra. A propriedade que fica é a **natureza** (automotor · cilindrada · máquina autopropelida · rebocado), e ela existe **pela capacidade analítica** — *"data-intensive: guardar todas as informações possíveis"* —, não pela arrumação do código; com ela `exigeCilindrada` passa a **derivar**. A lista fecha em **dezessete** (onze novas), e a `Carreta Cavalinho` é **tratora, motorizada** — o caso que prova o D2, porque o nome não deixava derivar a natureza. **Revisa o [0016](0016-dominio-da-plataforma.md) §8 em forma e conteúdo:** o casco admite **por exclusão** (Balsa **todas** · Navio **apenas carro e moto** · Lancha **nenhuma**), de modo que classe nova **nasce vendável** sem decisão humana — o oposto do "Catamarã inerte". Caem o **porte** (perdeu o consumidor que o justificava) e o `ehPesado` (nunca teve leitor); `tarifaMotoBase` fica sem razão. A emissão ganha **passo + subpasso** (natureza → classe), que também separa `Carreta`, `Carretilha` e `Carreta Cavalinho` de um seletor único. A classe é **capacidade compartilhada sem concessão** — diferente de Rota e Viagem, toda agência dispõe de todas. **Supera o §6.4 do estudo**, que concluía por dois eixos |
 
 ---
+
+## O que a execução do 0031 acrescentou
+
+O ADR foi escrito e construído no mesmo dia, em **cinco passos com relatório entre eles**. Três coisas
+apareceram no caminho, e nenhuma estava no documento:
+
+**1. Dois passos do plano eram uma fatia só, e o teste disse isso antes de mim.** Acrescentar as onze
+classes sem mudar o casco deixou `a balsa leva todas as classes` **vermelho**: as novas nasciam admitidas
+por casco nenhum. É o *"Catamarã inerte"* do ADR-0016 §8 aparecendo como teste — e a prova de que não se
+acrescenta classe sem dizer qual casco a carrega.
+
+**2. A promessa do ADR-0016 §8 nunca tinha sido implementada, e o D4 sozinho não a implementaria.** A
+medição encontrou `TipoEmbarcacao.admite()` **sem um único chamador de produção**: a emissão oferecia
+`ClasseVeiculo.entries` cru, e o `ColetorDeReferencias` tinha a `Embarcacao` inteira em mãos e guardava
+**só o `descricaoNome`**. Nasceu um passo que o ADR não previa — levar o casco até a escolha —, sem o qual
+o D4 teria trocado a forma de uma regra que ninguém lê. A correção coube em quatro pontos de propagação, e
+a referência passou a carregar **a entidade**: um campo, dois leitores.
+
+**3. A simetria do ADR-0029 quebrou — e sobrevive onde o casco é estreito.** Com a natureza inserida, o
+cliente foi para o **quinto** passo no fluxo de veículo, contrariando a decisão de que ele seria o quarto
+nos dois. A quebra foi aceita (o roteiro é derivado e mostra *"passo N de M"*; quem opera lê o contador em
+vez de contar passos), e apareceu uma consequência que ninguém previu: **num navio a classe não se
+pergunta**, o subpasso se dissolve, e o cliente volta a ser o quarto nos dois fluxos.
+
+Some junto o `PASSOS_DE_UM_FLUXO_COMPLETO`, que fica em cinco e **muda de razão**: não é mais a
+coincidência entre os fluxos, é o caminho mais curto que existe — um total que **encolhe** desmente o que
+já foi mostrado.
+
+**Duas peças morreram sem ninguém sentir falta**, e as duas foram achadas medindo, não lendo: `ehPesado`
+(sem leitor desde sempre) e `tarifaMotoBase` (sem chamador desde que *preço é I/O*). E uma terceira caiu
+por decisão do analista no meio da execução — **`exigeModelo`**: o modelo passa a ser oferecido a toda
+classe e cobrado em nenhuma, o que apagou onze arbitragens e deixou o enum com **uma coluna de
+comportamento**, que era o que o estudo prometia.
+
+**Medido:** 806 → **821 casos JVM**, **151 instrumentados verdes no aparelho** (SM-A566E), `assembleDebug`
+verde. **Nenhuma regra de servidor tocada e nenhuma migração** — as regras não conhecem classe de veículo,
+e a fronteira continua gravando o `name`. As mudanças de regra foram provadas **por mutação** nas cinco
+fatias.
+
+*Uma lição de método ficou registrada de graça: dois testes de tela escritos no passo 3 estavam **errados**
+— esperavam a lista de classes num navio, onde ela nunca aparece — e só o passo 4 os expôs, ao deslocar os
+índices. Eles compilavam.*
 
 ## O que a execução do §7.1 derrubou
 
