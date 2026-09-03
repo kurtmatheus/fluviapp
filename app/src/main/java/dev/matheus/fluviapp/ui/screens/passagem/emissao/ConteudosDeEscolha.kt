@@ -26,6 +26,8 @@ import dev.matheus.fluviapp.domain.passagem.NaturezaVeiculo
 import dev.matheus.fluviapp.domain.passagem.TipoGratuidade
 import dev.matheus.fluviapp.domain.passagem.TipoPassagem
 import dev.matheus.fluviapp.domain.viagem.TipoEmbarcacao
+import dev.matheus.fluviapp.ui.states.passagem.classesOfertaveis
+import dev.matheus.fluviapp.ui.states.passagem.naturezasOfertaveis
 import dev.matheus.fluviapp.ui.components.passagem.EscolhaVisual
 import dev.matheus.fluviapp.ui.components.passagem.GradeDeEscolhas
 import dev.matheus.fluviapp.ui.components.passagem.ListaDeEscolhas
@@ -148,24 +150,57 @@ fun EscolhaDeQuantidade(
 }
 
 /**
- * A classe do veículo em **lista vertical** — é a pergunta mais longa do fluxo, e o rótulo é o que distingue.
+ * **A natureza do veículo** — o passo que as dezessete classes tornaram necessário ([ADR-0031] D8).
  *
- * A lista sai de [TipoEmbarcacao.classesAdmitidas], e não de `ClasseVeiculo.entries`: **quem sabe o que
- * cabe é o casco**. É o mesmo desenho de [EscolhaDeTipo], que já lia a lista da acomodação em vez de listar
- * tudo e desabilitar o que não vale — mostrar escolhas que não existem é pior do que não mostrá-las.
+ * Quatro botões em grade, no lugar de uma lista de dezessete: *"passo é uma pergunta, e a resposta é um
+ * toque"* (ADR-0029 D1) deixa de valer quando a resposta exige rolar a tela para ser encontrada.
+ *
+ * A lista é recortada pelo casco, e as naturezas **vazias não viram botão**: num navio sobram duas.
+ */
+@Composable
+fun EscolhaDeNaturezaDeVeiculo(
+    tipoEmbarcacao: TipoEmbarcacao?,
+    aoEscolher: (NaturezaVeiculo) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    GradeDeEscolhas(
+        modifier = modifier,
+        escolhas = naturezasOfertaveis(tipoEmbarcacao).map { natureza ->
+            EscolhaVisual(
+                rotulo = natureza.rotulo,
+                icone = natureza.icone(),
+                aoEscolher = { aoEscolher(natureza) },
+                // Diz **o que há dentro**, que é o que evita abrir a natureza errada e ter de voltar.
+                descricao = classesOfertaveis(natureza, tipoEmbarcacao).joinToString(" · ") { it.rotulo },
+            )
+        },
+    )
+}
+
+/**
+ * A classe, **dentro da natureza escolhida** — em lista vertical, porque o rótulo é o que distingue.
+ *
+ * A lista é a interseção **casco ∩ natureza**, e não `ClasseVeiculo.entries`: quem sabe o que cabe é o
+ * casco, e quem sabe o que é da espécie é a natureza. Mesmo desenho de [EscolhaDeTipo], que já lia a lista
+ * da acomodação em vez de listar tudo e desabilitar o que não vale.
  *
  * Foi este ponto que manteve `TipoEmbarcacao.admite()` sem chamador de produção desde 2026-08-03: a regra
  * existia, era testada, e ninguém a consultava.
  */
 @Composable
 fun EscolhaDeClasseDeVeiculo(
+    natureza: NaturezaVeiculo?,
     tipoEmbarcacao: TipoEmbarcacao?,
     aoEscolher: (ClasseVeiculo) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val classes = natureza?.let { classesOfertaveis(it, tipoEmbarcacao) }
+        ?: tipoEmbarcacao?.classesAdmitidas
+        ?: ClasseVeiculo.entries
+
     ListaDeEscolhas(
         modifier = modifier,
-        escolhas = (tipoEmbarcacao?.classesAdmitidas ?: ClasseVeiculo.entries).map { classe ->
+        escolhas = classes.map { classe ->
             EscolhaVisual(rotulo = classe.rotulo, icone = classe.icone(), aoEscolher = { aoEscolher(classe) })
         },
     )

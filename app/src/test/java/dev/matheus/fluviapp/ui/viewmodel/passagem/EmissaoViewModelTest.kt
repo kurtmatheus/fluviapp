@@ -4,6 +4,7 @@ import dev.matheus.fluviapp.domain.documento.TipoDocumento
 import dev.matheus.fluviapp.domain.passagem.Acomodacao
 import dev.matheus.fluviapp.domain.passagem.CategoriaPassagem
 import dev.matheus.fluviapp.domain.passagem.ClasseVeiculo
+import dev.matheus.fluviapp.domain.passagem.NaturezaVeiculo
 import dev.matheus.fluviapp.domain.passagem.FormaPagamento
 import dev.matheus.fluviapp.domain.passagem.MetadadosPassagem
 import dev.matheus.fluviapp.domain.passagem.PassagemDePassageiro
@@ -218,14 +219,66 @@ class EmissaoViewModelTest {
         assertEquals(PassoDaEmissao.EscolhaDeAcomodacao, viewModel.uiState.value.passo)
     }
 
+    /** O veículo não tem acomodação: do que embarca vai direto para **a natureza** (ADR-0031 D8). */
     @Test
-    fun `o veiculo vai direto para a classe, sem acomodacao`() = runTest {
+    fun `o veiculo vai direto para a natureza, sem acomodacao`() = runTest {
         val viewModel = vm()
 
         viewModel.escolherCategoria(CategoriaPassagem.VEICULO)
         viewModel.avancar()
 
-        assertEquals(PassoDaEmissao.ClasseDoVeiculo, viewModel.uiState.value.passo)
+        assertEquals(PassoDaEmissao.NaturezaDoVeiculo, viewModel.uiState.value.passo)
+    }
+
+    /**
+     * **Escolher a natureza pode já responder a classe.** Num navio a natureza automotor tem uma classe a
+     * bordo, então o ViewModel a grava no mesmo gesto — e o roteiro, que dissolve o subpasso, concorda com
+     * o estado em vez de esperar por ele.
+     */
+    @Test
+    fun `natureza com classe unica no casco ja resolve a classe`() = runTest {
+        val viewModel = vm()
+        viewModel.iniciar(ocorrencia, CabecalhoDaViagem(), TipoEmbarcacao.NAVIO)
+
+        viewModel.escolherCategoria(CategoriaPassagem.VEICULO)
+        viewModel.avancar()
+        viewModel.escolherNaturezaDeVeiculo(NaturezaVeiculo.AUTOMOTOR)
+
+        val veiculo = viewModel.uiState.value.participante as ParticipanteEmEdicao.DeVeiculo
+        assertEquals(ClasseVeiculo.CARRO, veiculo.veiculo.classe)
+        assertEquals(false, PassoDaEmissao.ClasseDoVeiculo in viewModel.uiState.value.roteiro)
+    }
+
+    /** Com mais de uma, a classe fica em aberto — e o subpasso existe para perguntá-la. */
+    @Test
+    fun `natureza com varias classes deixa a classe em aberto`() = runTest {
+        val viewModel = vm()
+        viewModel.iniciar(ocorrencia, CabecalhoDaViagem(), TipoEmbarcacao.FERRY_BOAT)
+
+        viewModel.escolherCategoria(CategoriaPassagem.VEICULO)
+        viewModel.avancar()
+        viewModel.escolherNaturezaDeVeiculo(NaturezaVeiculo.AUTOMOTOR)
+
+        val veiculo = viewModel.uiState.value.participante as ParticipanteEmEdicao.DeVeiculo
+        assertNull(veiculo.veiculo.classe)
+        assertEquals(PassoDaEmissao.ClasseDoVeiculo, viewModel.uiState.value.roteiro[2])
+    }
+
+    /** Trocar a natureza **limpa a classe** que deixou de valer — a higiene de `escolherTipo`, aqui. */
+    @Test
+    fun `trocar a natureza descarta a classe que nao pertence a ela`() = runTest {
+        val viewModel = vm()
+        viewModel.iniciar(ocorrencia, CabecalhoDaViagem(), TipoEmbarcacao.FERRY_BOAT)
+
+        viewModel.escolherCategoria(CategoriaPassagem.VEICULO)
+        viewModel.avancar()
+        viewModel.escolherNaturezaDeVeiculo(NaturezaVeiculo.AUTOMOTOR)
+        viewModel.escolherClasseDeVeiculo(ClasseVeiculo.ONIBUS)
+        viewModel.escolherNaturezaDeVeiculo(NaturezaVeiculo.MAQUINA)
+
+        val veiculo = viewModel.uiState.value.participante as ParticipanteEmEdicao.DeVeiculo
+        assertEquals(NaturezaVeiculo.MAQUINA, veiculo.veiculo.natureza)
+        assertNull(veiculo.veiculo.classe)
     }
 
     /** Trocar a categoria **troca o objeto**: é o que apaga a limpeza reativa do formulário antigo. */

@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.matheus.fluviapp.domain.passagem.CategoriaPassagem
+import dev.matheus.fluviapp.domain.passagem.ClasseVeiculo
+import dev.matheus.fluviapp.domain.passagem.NaturezaVeiculo
 import dev.matheus.fluviapp.domain.passagem.Lancamento
 import dev.matheus.fluviapp.domain.passagem.MetadadosPassagem
 import dev.matheus.fluviapp.domain.passagem.Passagem
@@ -29,6 +31,7 @@ import dev.matheus.fluviapp.ui.states.passagem.EmissaoUiState
 import dev.matheus.fluviapp.ui.states.passagem.PagamentoEmEdicao
 import dev.matheus.fluviapp.ui.states.passagem.ParticipanteEmEdicao
 import dev.matheus.fluviapp.ui.states.passagem.PassoDaEmissao
+import dev.matheus.fluviapp.ui.states.passagem.classesOfertaveis
 import dev.matheus.fluviapp.ui.viewmodel.helpers.passagem.ColetorDeReferencias
 import dev.matheus.fluviapp.ui.viewmodel.helpers.passagem.cabecalhoDe
 import dev.matheus.fluviapp.ui.viewmodel.helpers.passagem.confirmacaoDe
@@ -215,8 +218,30 @@ class EmissaoViewModel @Inject constructor(
         }
     }
 
-    /** Passo 2 do fluxo de veículo — e é a classe que decide o que o formulário seguinte pergunta. */
-    fun escolherClasseDeVeiculo(classe: dev.matheus.fluviapp.domain.passagem.ClasseVeiculo) {
+    /**
+     * Passo 2 do fluxo de veículo — **a natureza**, e ela pode já responder a pergunta seguinte.
+     *
+     * Quando a natureza tem **uma só** classe possível neste casco, a classe é gravada aqui: o roteiro
+     * dissolve o subpasso no mesmo instante, e os dois nunca discordam sobre haver classe escolhida. Com
+     * mais de uma, `singleOrNull` devolve `null` — o que também **limpa a classe anterior** se a natureza
+     * mudou, que é a higiene de `escolherTipo` aplicada aqui.
+     */
+    fun escolherNaturezaDeVeiculo(natureza: NaturezaVeiculo) {
+        _uiState.update { estado ->
+            val atual = estado.participante as? ParticipanteEmEdicao.DeVeiculo ?: return@update estado
+            val unica = classesOfertaveis(natureza, estado.tipoEmbarcacao).singleOrNull()
+
+            estado.copy(
+                participante = atual.copy(
+                    veiculo = atual.veiculo.copy(natureza = natureza, classe = unica),
+                ),
+                erros = emptySet(),
+            )
+        }
+    }
+
+    /** Subpasso 2.1 — a classe dentro da natureza, quando há mais de uma a oferecer. */
+    fun escolherClasseDeVeiculo(classe: ClasseVeiculo) {
         _uiState.update { estado ->
             val atual = estado.participante as? ParticipanteEmEdicao.DeVeiculo ?: return@update estado
             estado.copy(

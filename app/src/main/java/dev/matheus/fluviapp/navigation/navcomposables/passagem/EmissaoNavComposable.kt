@@ -65,6 +65,7 @@ fun NavGraphBuilder.emissaoNavComposable(
             onEscolherTipo = { viewModel.escolherTipo(it); viewModel.avancar() },
             onEscolherGratuidade = { viewModel.escolherGratuidade(it); viewModel.avancar() },
             onEscolherQuantidade = { viewModel.escolherQuantidadeDePessoas(it); viewModel.avancar() },
+            onEscolherNatureza = { viewModel.escolherNaturezaDeVeiculo(it); viewModel.avancar() },
             onEscolherClasse = { viewModel.escolherClasseDeVeiculo(it); viewModel.avancar() },
             onPreencherPessoa = viewModel::preencherPessoa,
             onPreencherVeiculo = viewModel::preencherVeiculo,

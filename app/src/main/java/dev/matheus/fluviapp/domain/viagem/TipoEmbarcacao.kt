@@ -1,6 +1,7 @@
 package dev.matheus.fluviapp.domain.viagem
 
 import dev.matheus.fluviapp.domain.passagem.ClasseVeiculo
+import dev.matheus.fluviapp.domain.passagem.NaturezaVeiculo
 
 /**
  * **O que um casco admite** ([ADR-0031] D4) — e a forma importa tanto quanto o conteúdo.
@@ -89,8 +90,23 @@ enum class TipoEmbarcacao(
     /** `false` = embarcação só de passageiro; o modo veículo nem se oferece. */
     val levaVeiculo: Boolean get() = cargaAdmitida != CargaAdmitida.Nenhuma
 
-    /** As classes que este casco leva, **derivadas** — é o que a escolha da emissão vai oferecer. */
+    /** As classes que este casco leva, **derivadas** — é o que a escolha da emissão oferece. */
     val classesAdmitidas: List<ClasseVeiculo> get() = ClasseVeiculo.entries.filter(::admite)
+
+    /**
+     * As classes **de uma natureza** que este casco leva — a interseção que o subpasso da emissão apresenta
+     * ([ADR-0031] D8).
+     *
+     * É ela, e não `natureza.classes`, que responde quantas opções existem de verdade: num navio a natureza
+     * automotor tem sete classes no domínio e **uma** a bordo. Perguntar sobre uma resposta única é o que o
+     * ADR-0029 chama de passo sem pergunta.
+     */
+    fun classesDa(natureza: NaturezaVeiculo): List<ClasseVeiculo> =
+        classesAdmitidas.filter { it.natureza == natureza }
+
+    /** As naturezas que este casco leva — as que sobram depois do recorte, e nunca as vazias. */
+    val naturezasAdmitidas: List<NaturezaVeiculo>
+        get() = NaturezaVeiculo.entries.filter { classesDa(it).isNotEmpty() }
 
     companion object {
         /** Fronteira String→enum; `null` se desconhecido (fail-closed). Tolerante à grafia legada. */

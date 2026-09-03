@@ -35,6 +35,7 @@ fun validarPasso(
     PassoDaEmissao.EscolhaDeTipo,
     PassoDaEmissao.EscolhaDeGratuidade,
     PassoDaEmissao.QuantidadeDePessoas,
+    PassoDaEmissao.NaturezaDoVeiculo,
     PassoDaEmissao.ClasseDoVeiculo,
     -> emptySet()
 

@@ -8,6 +8,7 @@ import dev.matheus.fluviapp.domain.passagem.FormaPagamento
 import dev.matheus.fluviapp.domain.passagem.TipoGratuidade
 import dev.matheus.fluviapp.domain.passagem.TipoPassagem
 import dev.matheus.fluviapp.domain.passagem.ClasseVeiculo
+import dev.matheus.fluviapp.domain.passagem.NaturezaVeiculo
 import dev.matheus.fluviapp.domain.veiculo.Veiculo
 import dev.matheus.fluviapp.domain.viagem.TipoEmbarcacao
 import java.math.BigDecimal
@@ -57,7 +58,7 @@ data class EmissaoUiState(
      * O caminho que as escolhas desenharam. É **calculado**, e não guardado, porque guardá-lo criaria uma
      * segunda verdade a sincronizar a cada toque — que é como roteiro e estado passam a discordar.
      */
-    val roteiro: List<PassoDaEmissao> get() = roteiroDe(bilhete, participante)
+    val roteiro: List<PassoDaEmissao> get() = roteiroDe(bilhete, participante, tipoEmbarcacao)
 
     val passo: PassoDaEmissao get() = roteiro.getOrElse(indiceDoPasso) { PassoDaEmissao.Categoria }
 
@@ -78,15 +79,24 @@ data class EmissaoUiState(
     val totalDePassos: Int get() = maxOf(roteiro.size, PASSOS_DE_UM_FLUXO_COMPLETO)
 
     val podeVoltar: Boolean get() = indiceDoPasso > 0
+
+    /** A natureza já escolhida, se houver — é ela que recorta a lista do subpasso da classe. */
+    val naturezaEmEdicao: NaturezaVeiculo?
+        get() = (participante as? ParticipanteEmEdicao.DeVeiculo)?.veiculo?.natureza
 }
 
 /**
- * O menor roteiro que existe, e ele é **o mesmo nos dois fluxos** (ADR-0029 D2): categoria → duas perguntas
- * do bilhete → cliente → pagamento.
+ * O menor roteiro que existe — o **piso** do total exibido, e não mais a promessa de simetria que era.
  *
- * Rede: categoria, acomodação, tipo, cliente, pagamento. Veículo: categoria, classe, dados do veículo,
- * cliente, pagamento. Cinco dos dois lados — coincidência que o desenho procurou, e que é o que permite
- * prometer "de 5" antes de saber qual caminho será.
+ * Ele valia cinco porque os dois fluxos tinham cinco passos: rede era categoria, acomodação, tipo, cliente e
+ * pagamento; veículo era categoria, classe, dados do veículo, cliente e pagamento. **A coincidência acabou**
+ * quando o [ADR-0031] D8 inseriu a natureza: o fluxo de veículo passa a ter seis quando a classe é uma
+ * pergunta, e volta a cinco quando o casco a dissolve.
+ *
+ * O número fica em **cinco**, e agora por outra razão: ele é o piso do caminho **mais curto** que existe, e
+ * o total só cresce a partir dele. Subi-lo para seis prometeria, no primeiro toque de um fluxo de rede, um
+ * passo que aquele fluxo nunca terá — e um total que **encolhe** é pior que um que cresce, porque desmente
+ * o que já foi mostrado.
  *
  * Eram seis até a tela de desfecho sair: emitir leva **direto ao bilhete**, que é outro destino e não um
  * passo — contá-lo aqui prometeria um passo que a trilha nunca chega a mostrar.
@@ -197,9 +207,17 @@ data class ClienteEmEdicao(
     }
 }
 
-/** Um veículo como a tela o digita. O que se exige de cada campo é do [ClasseVeiculo], não do formulário. */
+/** Um veículo como a tela o digita. O que se exige de cada campo é da [NaturezaVeiculo], não do formulário. */
 data class VeiculoEmEdicao(
     val placa: String = "",
+    /**
+     * A natureza escolhida, **antes** da classe ([ADR-0031] D8).
+     *
+     * Ela é campo próprio e não se deriva de `classe?.natureza` por uma razão de roteiro: existe o estado
+     * intermediário *natureza escolhida, classe ainda não*, e é exatamente nele que o roteiro precisa parar.
+     * Derivá-la tornaria esse estado inexprimível.
+     */
+    val natureza: NaturezaVeiculo? = null,
     val classe: ClasseVeiculo? = null,
     val modelo: String = "",
     val cor: String = "",

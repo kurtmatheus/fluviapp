@@ -23,6 +23,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import dev.matheus.fluviapp.R
 import dev.matheus.fluviapp.domain.passagem.Acomodacao
+import dev.matheus.fluviapp.domain.passagem.NaturezaVeiculo
+import dev.matheus.fluviapp.domain.passagem.ClasseVeiculo
 import dev.matheus.fluviapp.extensions.formataParaMoedaBrasileira
 import dev.matheus.fluviapp.ui.components.forms.buttons.CommonIconButton
 import dev.matheus.fluviapp.ui.components.passagem.CabecalhoDaEmissao
@@ -58,7 +60,8 @@ fun EmissaoScreen(
     onEscolherTipo: (dev.matheus.fluviapp.domain.passagem.TipoPassagem) -> Unit = {},
     onEscolherGratuidade: (dev.matheus.fluviapp.domain.passagem.TipoGratuidade) -> Unit = {},
     onEscolherQuantidade: (Int) -> Unit = {},
-    onEscolherClasse: (dev.matheus.fluviapp.domain.passagem.ClasseVeiculo) -> Unit = {},
+    onEscolherNatureza: (NaturezaVeiculo) -> Unit = {},
+    onEscolherClasse: (ClasseVeiculo) -> Unit = {},
     onPreencherPessoa: (Int, ClienteEmEdicao) -> Unit = { _, _ -> },
     onPreencherVeiculo: (VeiculoEmEdicao) -> Unit = {},
     onPreencherResponsavel: (ClienteEmEdicao?) -> Unit = {},
@@ -139,7 +142,13 @@ fun EmissaoScreen(
                         aoEscolher = onEscolherQuantidade,
                     )
 
+                    PassoDaEmissao.NaturezaDoVeiculo -> EscolhaDeNaturezaDeVeiculo(
+                        tipoEmbarcacao = state.tipoEmbarcacao,
+                        aoEscolher = onEscolherNatureza,
+                    )
+
                     PassoDaEmissao.ClasseDoVeiculo -> EscolhaDeClasseDeVeiculo(
+                        natureza = state.naturezaEmEdicao,
                         tipoEmbarcacao = state.tipoEmbarcacao,
                         aoEscolher = onEscolherClasse,
                     )
@@ -278,6 +287,7 @@ private fun perguntaDo(passo: PassoDaEmissao, state: EmissaoUiState): String = w
     PassoDaEmissao.EscolhaDeTipo -> "Qual o tipo do bilhete?"
     PassoDaEmissao.EscolhaDeGratuidade -> "Qual a gratuidade?"
     PassoDaEmissao.QuantidadeDePessoas -> "Quantas pessoas?"
+    PassoDaEmissao.NaturezaDoVeiculo -> "O que vai embarcar como veículo?"
     PassoDaEmissao.ClasseDoVeiculo -> "Qual o tipo do veículo?"
     PassoDaEmissao.DadosDoVeiculo -> "Dados do veículo"
     is PassoDaEmissao.DadosDoCliente -> when {

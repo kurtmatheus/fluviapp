@@ -14,6 +14,7 @@ import dev.matheus.fluviapp.extensions.formataParaMoedaBrasileira
 import dev.matheus.fluviapp.domain.passagem.Acomodacao
 import dev.matheus.fluviapp.domain.passagem.CategoriaPassagem
 import dev.matheus.fluviapp.domain.passagem.ClasseVeiculo
+import dev.matheus.fluviapp.domain.passagem.NaturezaVeiculo
 import dev.matheus.fluviapp.domain.viagem.TipoEmbarcacao
 import dev.matheus.fluviapp.domain.passagem.FormaPagamento
 import dev.matheus.fluviapp.domain.passagem.TipoPassagem
@@ -44,7 +45,7 @@ import java.math.BigDecimal
  * - **o roteiro vira tela**: cada passo mostra a pergunta dele, e a escolha anterior decide qual é a
  *   próxima — é a diferença entre a lista derivada estar certa e o `when` da tela concordar com ela;
  * - **o toque escolhe e avança** (não há botão de confirmar nos passos de escolha);
- * - **o formulário do veículo se rearranja pela classe** — carreta sem modelo, moto com cilindrada;
+ * - **o formulário do veículo se rearranja pela natureza** — só o motociclo pede cilindrada;
  * - **a conferência não é passo**: ela substitui o conteúdo sem mexer na trilha.
  */
 class EmissaoScreenTest {
@@ -64,6 +65,7 @@ class EmissaoScreenTest {
         onEscolherAcomodacao: (Acomodacao) -> Unit = {},
         onEscolherTipo: (TipoPassagem) -> Unit = {},
         onEscolherQuantidade: (Int) -> Unit = {},
+        onEscolherNatureza: (NaturezaVeiculo) -> Unit = {},
         onEscolherClasse: (ClasseVeiculo) -> Unit = {},
         onPreencherPessoa: (Int, ClienteEmEdicao) -> Unit = { _, _ -> },
         onAvancar: () -> Unit = {},
@@ -79,6 +81,7 @@ class EmissaoScreenTest {
                     onEscolherAcomodacao = onEscolherAcomodacao,
                     onEscolherTipo = onEscolherTipo,
                     onEscolherQuantidade = onEscolherQuantidade,
+                    onEscolherNatureza = onEscolherNatureza,
                     onEscolherClasse = onEscolherClasse,
                     onPreencherPessoa = onPreencherPessoa,
                     onAvancar = onAvancar,
@@ -218,27 +221,46 @@ class EmissaoScreenTest {
     }
 
     /**
-     * **A lista de classes é do casco, não do enum** (ADR-0031 D4). Num navio são duas — carro e moto —, e
-     * as outras quinze não aparecem. É este o ponto que manteve `TipoEmbarcacao.admite()` sem chamador de
-     * produção desde 2026-08-03: a regra existia, era testada, e a tela oferecia tudo.
+     * **O passo 2 do veículo agora é a natureza** (ADR-0031 D8): quatro botões em grade, no lugar de uma
+     * lista de dezessete que exigiria rolar a tela para achar a resposta.
+     *
+     * A descrição de cada botão diz **o que há dentro** — é o que evita abrir a natureza errada e voltar.
      */
     @Test
-    fun passo2Veiculo_noNavio_ofereceSoCarroEMoto() {
-        montarTela(escolhaDeClasse(TipoEmbarcacao.NAVIO))
+    fun passo2Veiculo_naBalsa_ofereceAsQuatroNaturezas() {
+        montarTela(escolhaDeNatureza(TipoEmbarcacao.FERRY_BOAT))
 
-        composeTestRule.onNodeWithText(ClasseVeiculo.CARRO.rotulo).assertIsDisplayed()
-        composeTestRule.onNodeWithText(ClasseVeiculo.MOTO.rotulo).assertIsDisplayed()
-        listOf(ClasseVeiculo.CARRETA, ClasseVeiculo.ONIBUS, ClasseVeiculo.RETROESCAVADEIRA)
+        composeTestRule.onNodeWithText("O que vai embarcar como veículo?").assertIsDisplayed()
+        NaturezaVeiculo.entries.forEach {
+            composeTestRule.onNodeWithText(it.rotulo).performScrollTo().assertIsDisplayed()
+        }
+    }
+
+    /**
+     * **A lista é do casco, não do enum** (ADR-0031 D4). Num navio sobram duas naturezas — automotor e moto
+     * —, porque máquina e rebocado não têm classe nenhuma a bordo. É este o recorte que manteve
+     * `TipoEmbarcacao.admite()` sem chamador de produção desde 2026-08-03.
+     */
+    @Test
+    fun passo2Veiculo_noNavio_ofereceSoDuasNaturezas() {
+        montarTela(escolhaDeNatureza(TipoEmbarcacao.NAVIO))
+
+        composeTestRule.onNodeWithText(NaturezaVeiculo.AUTOMOTOR.rotulo).assertIsDisplayed()
+        composeTestRule.onNodeWithText(NaturezaVeiculo.MOTOCICLO.rotulo).assertIsDisplayed()
+        listOf(NaturezaVeiculo.MAQUINA, NaturezaVeiculo.REBOCADO)
             .forEach { composeTestRule.onNodeWithText(it.rotulo).assertDoesNotExist() }
     }
 
-    /** Na balsa aparecem as dezessete — e as onze novas junto, sem ninguém as ter declarado no casco. */
+    /** O subpasso mostra **só as classes daquela natureza** — e as onze novas entram sem serem declaradas. */
     @Test
-    fun passo2Veiculo_naBalsa_ofereceAsDezessete() {
-        montarTela(escolhaDeClasse(TipoEmbarcacao.FERRY_BOAT))
+    fun passo2Veiculo_oSubpassoMostraSoAsClassesDaNatureza() {
+        montarTela(escolhaDeClasse(NaturezaVeiculo.AUTOMOTOR, TipoEmbarcacao.FERRY_BOAT))
 
-        listOf(ClasseVeiculo.CARRO, ClasseVeiculo.CARRETA, ClasseVeiculo.ONIBUS, ClasseVeiculo.JET_SKI)
+        listOf(ClasseVeiculo.CARRO, ClasseVeiculo.ONIBUS, ClasseVeiculo.CARRETA_CAVALINHO)
             .forEach { composeTestRule.onNodeWithText(it.rotulo).performScrollTo().assertIsDisplayed() }
+        // De outra natureza, não aparecem — é o que separa `Carreta` de `Carreta Cavalinho` na tela.
+        listOf(ClasseVeiculo.CARRETA, ClasseVeiculo.MOTO, ClasseVeiculo.TRATOR)
+            .forEach { composeTestRule.onNodeWithText(it.rotulo).assertDoesNotExist() }
     }
 
     /**
@@ -274,15 +296,20 @@ class EmissaoScreenTest {
 
     /** O passo do responsável é o **4 do outro fluxo**, e traz o "Pular": não nomear ninguém é o normal. */
     @Test
-    fun passo4Veiculo_oResponsavelPodeSerPulado() {
+    fun passo5Veiculo_oResponsavelPodeSerPulado() {
         var pulou = false
         montarTela(
             EmissaoUiState(
                 cabecalho = cabecalho,
-                indiceDoPasso = 3,
+                // Quinto passo desde o ADR-0031 D8 — a natureza entrou antes da classe.
+                indiceDoPasso = 4,
                 bilhete = BilheteEmEdicao(categoria = CategoriaPassagem.VEICULO),
                 participante = ParticipanteEmEdicao.DeVeiculo(
-                    VeiculoEmEdicao(placa = "ABC1D23", classe = ClasseVeiculo.CARRETA),
+                    VeiculoEmEdicao(
+                        placa = "ABC1D23",
+                        natureza = NaturezaVeiculo.REBOCADO,
+                        classe = ClasseVeiculo.CARRETA,
+                    ),
                 ),
             ),
             onPular = { pulou = true },
@@ -369,19 +396,34 @@ class EmissaoScreenTest {
         composeTestRule.onNodeWithText("Sem pagamento (gratuidade)").assertIsDisplayed()
     }
 
+    /**
+     * O formulário do veículo — **índice 3** desde que a natureza virou passo (ADR-0031 D8): categoria,
+     * natureza, classe, e então os dados. A natureza vem preenchida porque sem ela o roteiro para antes.
+     */
     private fun estadoDeVeiculo(classe: ClasseVeiculo) = EmissaoUiState(
         cabecalho = cabecalho,
-        indiceDoPasso = 2,
+        indiceDoPasso = 3,
         bilhete = BilheteEmEdicao(categoria = CategoriaPassagem.VEICULO),
-        participante = ParticipanteEmEdicao.DeVeiculo(VeiculoEmEdicao(classe = classe)),
+        participante = ParticipanteEmEdicao.DeVeiculo(
+            VeiculoEmEdicao(natureza = classe.natureza, classe = classe),
+        ),
     )
 
-    /** O passo da classe, com o casco que decide o que ele oferece. */
-    private fun escolhaDeClasse(tipoEmbarcacao: TipoEmbarcacao?) = EmissaoUiState(
+    /** O passo da natureza — índice 1, logo depois da categoria. */
+    private fun escolhaDeNatureza(tipoEmbarcacao: TipoEmbarcacao?) = EmissaoUiState(
         cabecalho = cabecalho,
         indiceDoPasso = 1,
         bilhete = BilheteEmEdicao(categoria = CategoriaPassagem.VEICULO),
         participante = ParticipanteEmEdicao.DeVeiculo(VeiculoEmEdicao()),
+        tipoEmbarcacao = tipoEmbarcacao,
+    )
+
+    /** O subpasso da classe — índice 2, e a natureza já escolhida é o que o faz existir. */
+    private fun escolhaDeClasse(natureza: NaturezaVeiculo, tipoEmbarcacao: TipoEmbarcacao?) = EmissaoUiState(
+        cabecalho = cabecalho,
+        indiceDoPasso = 2,
+        bilhete = BilheteEmEdicao(categoria = CategoriaPassagem.VEICULO),
+        participante = ParticipanteEmEdicao.DeVeiculo(VeiculoEmEdicao(natureza = natureza)),
         tipoEmbarcacao = tipoEmbarcacao,
     )
 
