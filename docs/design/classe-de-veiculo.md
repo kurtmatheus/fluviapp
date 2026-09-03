@@ -8,10 +8,17 @@
 > principal"*.
 >
 > **Recorte deliberado: só domínio e a régua.** Tela, navegação e regra de servidor não entram — elas são
-> consequência, e o §7 mede o custo delas sem propô-las.
+> consequência; o §7 mede o custo delas sem propô-las, e o §9 devolve à decisão o único ponto de tela que
+> nasce daqui.
 >
 > **A parte que já foi entregue** (`73fd609`): *liberar o preenchimento de modelo para todas as classes*, a
 > segunda metade da issue. Ela não depende de nada deste estudo, e o §8 explica por quê.
+>
+> **Revisado em 2026-09-03, no mesmo dia**, depois de a primeira versão ser **rejeitada no enquadramento**.
+> Ela oferecia três saídas — apelido, gabarito, entidade — e as três eram catálogo disfarçado ou cadastro.
+> A direção do analista foi outra, e é a do §6: *"melhor não planejar como entidade nem catálogo, mas unir
+> o poder do enum ao registro de classe… no final, a classe é só registro"*, com o fato operacional de que
+> há **pelo menos dezesseis** classes, cada uma com o seu valor, definidas na operação.
 >
 > Marcadores: **[hoje]** o que está no ar · **[alvo]** o que o pedido pede · **[cai]** o que teria de sair.
 
@@ -41,16 +48,46 @@ O que o pedido tem a seu favor, e que a decisão antiga não pesou: ela foi toma
 painel de empresa, cargo de supervisor e a ideia de que a estrutura de uma empresa possa ser dela. É
 possível que o mundo tenha mudado sob a decisão — é isso que o §5 e o §6 testam.
 
+### 1.1 A pergunta estava errada **[revisão de 2026-09-03]**
+
+A primeira versão deste estudo pôs a questão como *tipo ou entidade*, e por isso todas as suas saídas
+custavam caro: uma coleção, um CRUD, uma regra de servidor, uma seção de menu — ou então um apelido que o
+ADR-0020 já havia rejeitado por nome.
+
+A pergunta certa é **onde mora o comportamento**. Feita assim, ela não põe a decisão de 2026-08-01 em
+xeque: **confirma-a por outro caminho**. A classe continua sendo tipo fechado, e continua não sendo
+catálogo. O que muda é que ela deixa de ser uma *tabela de propriedades* e passa a ser o que o analista
+disse que ela é — **um registro**: uma lista de nomes com identidade estável, cujo comportamento é lido de
+uma família acima dela.
+
+E o §2 mostra que o código já caminhou sozinho nessa direção: das quatro coisas que a classe governava
+quando foi desenhada, **duas não são mais lidas por ninguém**.
+
 ## 2. O que a `ClasseVeiculo` é hoje **[hoje]**
 
-`domain/passagem/ClasseVeiculo.kt` — enum de seis valores, com **três propriedades e um derivado**:
+`domain/passagem/ClasseVeiculo.kt` — enum de seis valores, com **três propriedades e um derivado**. A
+coluna que importa é a última:
 
-| Membro | O que decide | Onde é lido |
+| Membro | O que decide | Leitores em produção |
 |---|---|---|
-| `rotulo` | o texto na escolha e no bilhete | `ConteudosDeEscolha.kt:136`, `BilheteDigitalMapper.kt:51` |
-| `exigeCilindrada` | se o formulário pergunta cilindrada, e se a tarifa depende dela | `FormularioDeVeiculo.kt:65`, `Veiculo.kt:47`, `ValidacaoEmissao.kt:133` |
-| `exigeModelo` | se o modelo é **obrigatório** (desde `73fd609`, só isso) | `Veiculo.kt:46`, `ValidacaoEmissao.kt:132` |
-| `ehPesado` | o recorte que separa a balsa das demais embarcações | `ClasseVeiculo.kt:36` (ADR-0016 §8) |
+| `rotulo` | o texto na escolha e no bilhete | **2** — `ConteudosDeEscolha.kt:136`, `BilheteDigitalMapper.kt:51` |
+| `exigeCilindrada` | se o formulário pergunta cilindrada | **3** — `FormularioDeVeiculo.kt:69`, `Veiculo.kt:47`, `ValidacaoEmissao.kt:133` |
+| `exigeModelo` | se o modelo é **obrigatório** (desde `73fd609`, só isso) | **2** — `Veiculo.kt:46`, `ValidacaoEmissao.kt:132` |
+| `ehPesado` | *(o recorte que separaria a balsa — ADR-0016 §8)* | **0** |
+
+### 2.1 Dois membros já morreram, e ninguém reparou **[hoje]**
+
+- **`ehPesado` não tem leitor** (`ClasseVeiculo.kt:42`). O recorte da balsa acabou sendo feito por
+  **pertencimento explícito** em `TipoEmbarcacao.classesAdmitidas`, classe a classe, e o derivado que
+  existia para isso nunca foi consultado.
+- **`tarifaMotoBase` não tem chamador em produção** (`CalculoTarifa.kt:32`; só `CalculoTarifaTest`). Era o
+  último ponto em que a classe tocava dinheiro, e ele caiu quando **preço virou I/O** (2026-08-11): a
+  emissão não calcula valor, o operador informa o praticado.
+
+**Isto é a medição que sustenta a frase do analista.** A classe já não carrega preço, já não carrega o
+recorte da balsa, e desde `73fd609` já não decide o que a tela mostra. O que restou dela é rótulo, duas
+perguntas de formulário e a identidade — ou seja: **ela já é quase só registro**, e o que sobra de
+comportamento não pertence a cada classe, e sim a um punhado de famílias (§6).
 
 E, acima de tudo, ela é **conteúdo de outro tipo**: `TipoEmbarcacao.classesAdmitidas: Set<ClasseVeiculo>`
 (`domain/viagem/TipoEmbarcacao.kt:33`). A execução do ADR-0020 registrou exatamente isto ao explicar por
@@ -134,6 +171,12 @@ fazia a ligação: *"relação viva se faz por identidade, não por nome — e a
 como enum tem identidade estável por construção (o `name`, que é o que o Firestore grava); a classe como
 cadastro precisaria de id **e** de disciplina para nunca reaproveitá-lo.
 
+**A revisão inverte o sinal deste argumento, e o fortalece.** Com o preço fora da classe (§2.1), os
+dezesseis valores não existem *apesar* de a série precisar deles — existem **precisamente para serem a
+chave dela**. É a única coisa que a classe faz que nada mais faz: dizer *que espécie de veículo foi este*,
+de forma que a soma de amanhã reconheça a de ontem. Identidade estável deixa de ser preferência de
+engenharia e passa a ser a razão de o conceito existir.
+
 O ADR-0013, ainda que superado na tabela, deixou o precedente do custo: `TarifaViagem.chave` era canônica, e
 *"um valor fora dessa lista simplesmente não encontra célula"*.
 
@@ -174,55 +217,110 @@ correto:
 A diferença entre os dois casos é a que este estudo tem de aplicar à classe de veículo: **um cargo sem
 atividade é um fato de negócio real; um Catamarã sem oferta é uma linha inerte com cara de configuração.**
 
-## 6. O caminho de escape canônico, aplicado
+## 6. A via: o enum **é** o registro, e o comportamento sobe para a família **[alvo]**
 
-Quando um conceito parece exigir os dois lados, o projeto **não inventa uma terceira categoria** — ele
-separa o **conjunto de valores possíveis** (tipo, deploy) do **exercício** (entidade, painel). Foi assim
-com `Atuacao` × `empresas/{id}/atuacoes/{ATUACAO}` (ADR-0020 D5), e com `Cargo` depois que a `Atividade`
-levou a concessão.
+> **Direção do analista, 2026-09-03**, que substitui as três saídas da primeira versão deste estudo:
+> *"melhor não planejar como entidade nem catálogo, mas unir o poder do enum ao registro de classe… no
+> final, a classe é só registro"* — havendo **pelo menos dezesseis** classes, cada uma com o seu valor,
+> definidas na operação.
 
-Aplicando o mecanismo do §5 à classe de veículo, a pergunta fica concreta e desconfortável:
+O mecanismo do §5 se aplica **sem** a segunda metade dele. No `Cargo`, tirar o poder de dentro do conceito
+o fez virar dado — mas foi *consequência*, não requisito: o que a régua exigia era que **poder e registro
+deixassem de morar na mesma palavra**. Aqui a separação basta, e o registro pode continuar sendo um enum,
+porque ele tem uma propriedade que o cargo não tinha: **é a chave de uma série histórica** (§3.3), e séries
+não convivem com identidade que se renomeia.
 
-**Se o eixo de agregação (§3.3) e as exigências (§2) continuam no tipo, o que sobra para o supervisor
-cadastrar?**
+Então: cada um dos dezesseis valores declara **uma** coisa — a família a que pertence —, e
+`exigeCilindrada`, `exigeModelo` e a admissibilidade por casco passam a ser lidos da família, que tem três
+ou quatro valores.
 
-Três respostas possíveis, e o que cada uma custa:
+### 6.1 A pergunta de eficiência, respondida com número
 
-| Resposta | O que seria | O que custa |
+*"Um enum de dezesseis valores é o mais eficiente?"* — a pergunta certa não é **dezesseis é demais**, é
+**dezesseis vezes o quê**. O custo de um enum não cresce com o número de valores; cresce com o produto
+**valores × comportamentos**.
+
+Hoje, com seis valores, existem **três** assinaturas de comportamento distintas:
+
+| Assinatura | Classes | Quantas |
 |---|---|---|
-| **a) só o nome de exibição** | um apelido de agência sobre uma classe canônica | é a alternativa que o ADR-0020 **já rejeitou por nome** — duas fontes para o mesmo vocabulário. E não atende o pedido: quem quer cadastrar "CARRO PEQUENO" quer cobrar diferente, não escrever diferente |
-| **b) um gabarito de porte** | nasce um tipo fechado novo (o que a embarcação admite e a tarifa indexa), e a "classe" vira dado que **aponta** para ele | é o desenho do `Cargo`. Resolve o §3.1 (a classe nova nasce vendável porque herda o gabarito) e **não** resolve o §3.3 sozinho: duas classes com o mesmo gabarito continuam partindo a série, a menos que a agregação passe a ser pelo gabarito |
-| **c) a classe inteira vira entidade** | com `exigeModelo`, `exigeCilindrada`, porte e ícone como campos | é o que o pedido literalmente pede. Custo em §7, e o §3.3 fica em aberto: a régua da tarifa passa a ser configurável, e a série passa a depender de disciplina de cadastro |
+| exige cilindrada · exige modelo | `MOTO` | 1 |
+| não exige cilindrada · exige modelo | `CARRO`, `VAN`, `SUV` | 3 |
+| não exige nada · só a balsa leva | `CAMINHAO`, `CARRETA` | 2 |
 
-A **(b)** é a que segue o precedente. Ela também é a que exige a pergunta mais incômoda: se o gabarito é o
-que decide oferta e preço, **ele** é a classe, e o que o supervisor cadastraria é um rótulo comercial — o
-que devolve a discussão à **(a)**.
+**Metade da tabela já é repetição.** Com dezesseis valores seria em torno de quatro quintos — e não porque
+as dezesseis sejam iguais, mas porque **elas não diferem naquilo que o código lê**. Diferem no valor, e o
+valor saiu da classe em 2026-08-11 (§2.1).
 
-## 7. O custo, se a decisão cair **[cai]**
+O que de fato multiplicaria por dezesseis, se nada mudar:
 
-Medido, não estimado. Não é plano — é o preço a saber antes de decidir.
+- dezesseis linhas de **quatro** colunas na tabela do enum;
+- dezesseis ramos no `when` de ícone (`ConteudosDeEscolha.kt:172`) para talvez quatro ícones distintos;
+- cerca de **vinte e oito** pertencimentos escritos à mão nos três conjuntos de `TipoEmbarcacao` — e sobre
+  esses o próprio código já confessa a fragilidade (`TipoEmbarcacao.kt:35-38`): a atribuição é *"leitura
+  minha sobre o que cada casco carrega, não decisão registrada"*. Com seis é uma leitura; com dezesseis
+  são vinte e oito apostas, e nenhuma o compilador confere.
 
-**No domínio.** `ClasseVeiculo` deixa de ser enum; `TipoEmbarcacao.classesAdmitidas` deixa de ser
-`Set<ClasseVeiculo>` e vira conjunto de ids (ou some, se o porte assumir); `Veiculo.pendencias()` passa a
-ler campos de um cadastro; `ehPesado` precisa de portador. O `when` exaustivo de ícone perde a proteção do
-compilador e ganha um `else`.
+Com a família no meio, os mesmos dezesseis custam **dezesseis linhas de uma coluna**, três ou quatro ramos
+de ícone e três ou quatro pertencimentos por casco. O comprimento deixa de importar: o Kotlin não se
+incomoda com dezesseis constantes, e quem abre o arquivo passa a ver **uma lista de nomes**, que é o que um
+registro deve parecer.
 
-**Na fronteira.** `VeiculoDocumento` grava hoje o `name` do enum. Com entidade, grava id — e **os
-documentos já escritos carregam o nome**. Isto não é migração de produção (o app é portfólio, sem dado
-real), mas é reescrita de codec e de fixtures.
+### 6.2 O precedente de forma já existe no projeto
 
-**Na plataforma.** Nasce coleção, codec, porta, repositório, regra de servidor e suíte de emulador — a
-anatomia completa de uma entidade, como Localidade e Porto.
+`Acomodacao` (`domain/passagem/Acomodacao.kt`) é exatamente este formato: um enum cujos valores declaram um
+**conjunto de outro enum** (`tiposPermitidos: Set<TipoPassagem>`) e derivam o comportamento dele —
+`admite(tipo)` e `temEscolhaDeTipo`. A forma existe e é a convenção da casa; falta aplicá-la na altitude
+certa.
 
-**No menu.** Nova `SecaoMenu` (+ string + ícone), `AcaoMenu`, braço no `when` de
-`PermissoesUsuario.podeAcessar`, entrada em `MenuDaAtuacao.secoesDa`, entrada em `SECOES_REVITALIZADAS` e
-destino no `when` de `navegar`. Mais os testes: `AcaoMenuTest`, `MenuDaAtuacaoTest`,
-`EscopoRevitalizadoTest`, `PermissoesUsuarioTest`, `PainelRevitalizadoTest`.
+Vale notar que `Acomodacao` sofre do mesmo mal em miniatura: `SUITE` e `CAMAROTE` são linhas **idênticas**
+exceto pelo rótulo. Com três valores isso passa despercebido. É a mesma redundância que, com dezesseis,
+deixa de passar.
 
-**E o preço que o ADR-0020 assumiu na direção contrária**, que aqui se paga de volta: *"acrescentar um
-valor de vocabulário passa a exigir deploy… é aceitável porque, em todos os casos medidos, o valor novo já
-exigia código para significar alguma coisa"*. Se a classe voltar a ser dado, o deploy sai — e volta a
-pergunta de o que o valor novo significa sem código.
+### 6.3 O que a via preserva, e que catálogo e entidade perderiam
+
+- **identidade estável** — o `name` do enum é o que o Firestore grava, e a série de §3.3 continua íntegra
+  sem depender de disciplina de cadastro;
+- **fail-closed na fronteira** — `VeiculoDocumento.kt:48` recusa o documento cuja classe não existe, e
+  continua recusando;
+- **exaustividade do compilador** — mas sobre **três famílias**, onde ela é útil, em vez de sobre dezesseis
+  nomes, onde é burocracia;
+- **nada de coleção, codec, porta, CRUD, regra de servidor ou seção de menu** (§7).
+
+E a decisão de 2026-08-01 sai **confirmada**: a classe segue tipo fechado, segue não sendo catálogo
+editável. O que muda é que ela para de fingir ser uma tabela de propriedades.
+
+## 7. O custo desta via, e o único preço real
+
+O custo é **pequeno e local**, e é o argumento prático a favor dela. Comparado ao que a entidade exigiria
+— coleção, codec, porta, repositório, regra de servidor, suíte de emulador, seção de menu com seis paradas
+e cinco suítes de teste —, aqui não nasce **nenhuma** dessas peças.
+
+**No domínio.** Nasce o tipo da família; `ClasseVeiculo` perde três colunas e ganha uma;
+`TipoEmbarcacao.classesAdmitidas` passa a listar famílias em vez de classes (de dez pertencimentos para
+seis, e de ~vinte e oito para ~oito quando as dezesseis existirem); `ehPesado` ou ganha leitor ou sai
+(§2.1); `Veiculo.pendencias()` e `ValidacaoEmissao` passam a perguntar à família — **uma indireção, mesma
+forma**.
+
+**Na fronteira.** `VeiculoDocumento` continua gravando o `name` da classe. **Nada muda**: é a vantagem de o
+registro seguir sendo enum.
+
+**Na apresentação.** O `when` de ícone desce para a família. A escolha do passo 2 da emissão ganha um
+problema novo, que é de UI e está no §9: dezesseis botões numa tela de totem.
+
+**O único preço real: classe nova exige deploy.** Vale enfrentá-lo de frente, porque é a objeção que o
+pedido original levanta com razão.
+
+A resposta que o projeto já tem, do ADR-0020: *"acrescentar um valor de vocabulário passa a exigir deploy…
+é aceitável porque, em todos os casos medidos, o valor novo já exigia código para significar alguma
+coisa"*. Aqui há uma razão a mais, e ela é do negócio: **classe de veículo é fato da estrada, não da
+agência.** "Bitrem" existe no Brasil, não na empresa X — e as duas classes que entraram por pedido (`VAN` e
+`SUV`, ADR-0023 D4) entraram exatamente assim, por deploy, sem que ninguém sentisse falta de um cadastro.
+
+Onde essa resposta **não** serviria: se cada agência definisse recortes próprios — se a A vendesse
+"caminhão pequeno" onde a B vende só "caminhão". Aí a lista não seria da estrada. Mas note que, nesse
+cenário, o que difere entre elas é o **preço**, que já é I/O desde 2026-08-11: a mesma lista de dezesseis
+atende as duas, e cada uma pratica o seu valor. É o §9 que precisa confirmar isso contra a operação real.
 
 ## 8. A metade que não depende disto: o modelo **[entregue]**
 
@@ -243,18 +341,23 @@ abrir a classe.
 
 ## 9. O que fica para decisão
 
-1. **Qual é a demanda real.** Falta uma classe específica — e aí a resposta é um valor novo no enum, que é
-   deploy e não arquitetura —, ou falta *poder cadastrar sem depender de deploy*? A pergunta não é retórica:
-   das seis classes de hoje, `VAN` e `SUV` entraram por pedido, e entraram assim.
-2. **De quem seria a classe.** O pedido diz `SUPERVISOR`, logo a empresa. Mas `Veiculo` é **pool
-   compartilhado**, com placa como chave natural e `agenciaIds` como *"assinatura das agências que já o
-   atenderam"* (`Veiculo.kt:35`): um veículo comum a várias agências apontando para uma classe que pertence
-   a uma delas é contradição de modelo. A forma do pool diz **plataforma**, como Localidade e Porto — e aí
-   o pedido é atendido pela metade, porque o supervisor não cadastra.
-3. **O que acontece com a série** (§3.3). Aceitar que ela se parta, ou pagar identidade estável — id em vez
-   de nome, e agregação pelo que não muda?
-4. **Se o mecanismo do `Cargo` se aplica** (§5, §6b): existe um "porte" que possa levar embora o
-   comportamento, deixando a classe como registro? E se existir, **ele** não passa a ser a classe?
+As quatro perguntas da primeira versão caíram com o enquadramento dela (§1.1) — *de quem é a classe*, *o
+que acontece com a série* e *se o mecanismo do `Cargo` se aplica* estão respondidas em §6 e §3.3. Sobram
+três, e as três são de fora do código.
+
+1. **Qual é o eixo da família.** É um só — porte, o quanto de convés o veículo ocupa — ou são dois, porque
+   a moto se separa por **propulsão** e não por tamanho? Hoje o que a distingue é a cilindrada, que é
+   pergunta de formulário; se ela também fosse a única a caber num casco que as outras não cabem, o eixo
+   seria um. O código de hoje sugere três famílias (§6.1); a operação pode conhecer quatro.
+2. **Quais são as dezesseis.** É insumo da operação, não decisão de arquitetura — e o estudo pede a lista
+   em vez de inventá-la, porque é dela que sai o teste do §7: se as dezesseis forem fatos da estrada, o
+   deploy é aceitável; se forem recortes comerciais de cada agência, o §7 precisa ser reaberto.
+3. **Como dezesseis escolhas cabem no totem.** A classe é o **passo 2** da emissão
+   (`RoteiroDaEmissao.kt:38`), e o ADR-0029 desenhou cada passo como *uma pergunta cuja resposta é um
+   toque*. Dezesseis botões numa tela não é escolha, é catálogo impresso. Ou a lista vem agrupada pela
+   família, ou a **família vira o passo e a classe o sub-passo** — o que o roteiro derivado já sabe fazer,
+   porque é assim que o subtipo de gratuidade entra. É consequência desta decisão, e não deve ser
+   descoberta depois dela.
 
 ---
 
@@ -268,3 +371,5 @@ abrir a classe.
 | O tipo de embarcação admite um conjunto de classes | ADR-0016 §8, ADR-0020 D4 | 2026-08-05 |
 | O que concede é tipo, o que registra é dado | `empresa-com-duas-atuacoes.md` §5.1 | 2026-08-18 |
 | O modelo é oferecido em toda classe (obrigação segue no tipo) | issue #4, `73fd609` | 2026-09-03 |
+| Preço é I/O — a emissão não calcula valor, e a classe não o carrega | ADR-0016 §7.2 · índice de vigência | 2026-08-11 |
+| **Nem entidade nem catálogo: o enum é o registro, e o comportamento sobe para a família** | este estudo §6 | 2026-09-03 |
