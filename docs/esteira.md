@@ -92,12 +92,20 @@ sai da homologação não exige mexer no repositório.
 
 ## Distribuir
 
-Pela esteira, criando uma tag:
+Pela esteira, criando uma tag — **anotada** (`-a`), porque a mensagem dela é o que o tester vai ler:
 
 ```
-git tag v0.0.3-rc.1 && git push origin v0.0.3-rc.1     # homologação
-git tag v0.0.3      && git push origin v0.0.3          # produção, depois de aprovada
+git tag -a v0.0.3-rc.1 -m "o que mudou" && git push origin v0.0.3-rc.1   # homologação
+git tag -a v0.0.3      -m "o que mudou" && git push origin v0.0.3        # produção, depois de aprovada
 ```
+
+> **A nota da versão sai da mensagem da tag, e não do nome dela** (desde 2026-09-05). Até a `rc.14` o
+> tester recebia `v0.0.5-rc.14` como nota — o nome do ref, que não diz o que testar —, enquanto a
+> descrição da entrega ficava no repositório, que é justamente onde o tester não está. A esteira passa a
+> ler o corpo da tag e a mandá-lo por `--release-notes-file`; **arquivo e não variável**, porque a
+> mensagem é multilinha e multilinha atravessando `$GITHUB_OUTPUT` quebra pela crase de um trecho de
+> código. Se a tag for **leve** (sem `-a`), não há corpo para ler e sobra o nome, que é o comportamento
+> antigo — nada falha, só se perde a nota. No `workflow_dispatch`, vale o campo *notas* do formulário.
 
 À mão, da máquina (foi assim que a primeira entrega saiu):
 

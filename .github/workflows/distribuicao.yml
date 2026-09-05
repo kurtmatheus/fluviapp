@@ -52,6 +52,43 @@ jobs:
       - name: Resumo
         run: echo "### ${{ steps.destino.outputs.canal }} → grupo \`${{ steps.destino.outputs.grupo }}\`" >> "$GITHUB_STEP_SUMMARY"
 
+      # **As notas saem da MENSAGEM da tag, e não do nome dela.**
+      #
+      # Até a rc.14 o tester recebia `v0.0.5-rc.14` como nota — o nome do ref. Quem instalava não tinha
+      # como saber o que testar, e a descrição do que mudou ficava no repositório, que é justamente onde
+      # o tester não está. A tag anotada já carrega esse texto; faltava a esteira lê-lo.
+      #
+      # Vai por ARQUIVO (`--release-notes-file`) e não por variável: a mensagem é multilinha, e multilinha
+      # atravessando `$GITHUB_OUTPUT` e a expansão do YAML é o tipo de coisa que quebra em produção pelo
+      # acento errado ou pela crase de um trecho de código.
+      - name: Redigir as notas
+        id: notas
+        env:
+          NOTAS_MANUAIS: ${{ github.event.inputs.notas }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          ARQUIVO="$RUNNER_TEMP/release-notes.txt"
+          : > "$ARQUIVO"
+
+          if [ -n "$NOTAS_MANUAIS" ]; then
+            # Ensaio por botão: vale o que foi digitado no dispatch.
+            printf '%s\n' "$NOTAS_MANUAIS" > "$ARQUIVO"
+          elif [ "$(git cat-file -t "$TAG" 2>/dev/null)" = "tag" ]; then
+            # Só a tag ANOTADA tem corpo. A leve aponta direto para o commit, e `%(contents)` devolveria a
+            # mensagem do commit — que descreve a última mudança, não a entrega.
+            git tag -l --format='%(contents)' "$TAG" > "$ARQUIVO"
+          fi
+
+          # Sem corpo, sobra o nome — que é exatamente o que a esteira mandava antes desta mudança.
+          [ -s "$ARQUIVO" ] || printf '%s\n' "$TAG" > "$ARQUIVO"
+
+          echo "arquivo=$ARQUIVO" >> "$GITHUB_OUTPUT"
+          {
+            echo "**Notas enviadas ao tester:**"
+            echo
+            sed 's/^/> /' "$ARQUIVO"
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
@@ -132,14 +169,14 @@ jobs:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           APP_ID: ${{ secrets.FIREBASE_APP_ID }}
           GRUPO: ${{ steps.destino.outputs.grupo }}
-          NOTAS: ${{ github.event.inputs.notas || github.ref_name }}
+          NOTAS_ARQUIVO: ${{ steps.notas.outputs.arquivo }}
         run: |
           echo "$FIREBASE_SERVICE_ACCOUNT" > "$GOOGLE_APPLICATION_CREDENTIALS"
           npx --yes firebase-tools appdistribution:distribute \
             app/build/outputs/apk/release/app-release.apk \
             --app "$APP_ID" \
             --groups "$GRUPO" \
-            --release-notes "$NOTAS"
+            --release-notes-file "$NOTAS_ARQUIVO"
 
       - name: Guardar o APK do run
         uses: actions/upload-artifact@v4
