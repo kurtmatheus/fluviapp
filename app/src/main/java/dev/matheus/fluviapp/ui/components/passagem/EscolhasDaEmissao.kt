@@ -17,10 +17,12 @@ import androidx.compose.material3.CardColors
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -80,7 +82,18 @@ fun BotaoDeEscolha(
         ) {
             Icon(imageVector = icone, contentDescription = null, modifier = Modifier.size(48.dp))
             TextSubTitleBrownBold(text = rotulo)
-            descricao?.let { TextSubTitleBrownBold(text = it) }
+            // **Texto de suporte, e não segundo título.** Ele saía no mesmo corpo e no mesmo peso do
+            // rótulo, e com a lista de classes da natureza (ADR-0031 D8) isso passou a disputar a leitura:
+            // "Carro · Van · SUV · Caminhão · Motorhome · Ônibus · Carreta Cavalinho" ocupava cinco linhas
+            // em negrito e o nome da natureza sumia no meio. Menor e mais leve — mas **legível**, porque é
+            // ele que evita abrir a natureza errada.
+            descricao?.let {
+                Text(
+                    text = it,
+                    style = MaterialTheme.typography.bodySmall,
+                    textAlign = TextAlign.Center,
+                )
+            }
         }
     }
 }

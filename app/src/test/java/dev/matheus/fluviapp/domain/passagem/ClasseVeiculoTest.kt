@@ -65,9 +65,10 @@ class ClasseVeiculoTest {
     @Test
     fun `as dezessete se distribuem nas quatro naturezas`() {
         assertEquals(7, NaturezaVeiculo.AUTOMOTOR.classes.size)
-        assertEquals(3, NaturezaVeiculo.MOTOCICLO.classes.size)
+        assertEquals(2, NaturezaVeiculo.MOTOCICLO.classes.size)
         assertEquals(3, NaturezaVeiculo.MAQUINA.classes.size)
-        assertEquals(4, NaturezaVeiculo.REBOCADO.classes.size)
+        // Cinco desde 2026-09-05: o jet-ski chega sobre carretilha, como a lancha.
+        assertEquals(5, NaturezaVeiculo.REBOCADO.classes.size)
         assertEquals(17, NaturezaVeiculo.entries.sumOf { it.classes.size })
     }
 
@@ -89,29 +90,39 @@ class ClasseVeiculoTest {
     }
 
     /**
-     * `exigeCilindrada` **deixou de ser coluna**: ela deriva da natureza, e por isso vale para as três do
-     * motociclo — moto, quadriciclo e jet-ski — sem que ninguém as liste.
+     * **Só a moto exige cilindrada** — uma exceção em dezessete linhas (correção da operação, 2026-09-05).
+     *
+     * Isto já foi derivado da natureza, e a derivação caiu com dois fatos: o quadriciclo não a exige, e o
+     * jet-ski — que parecia provar que o traço era de família — é rebocado. O caso guarda a **exceção
+     * única**: se um segundo `true` aparecer, é sinal de que a régua mudou e alguém tem de dizer por quê.
      */
     @Test
-    fun `exigir cilindrada deriva da natureza, e vale para as tres do motociclo`() {
-        listOf(ClasseVeiculo.MOTO, ClasseVeiculo.QUADRICICLO, ClasseVeiculo.JET_SKI)
-            .forEach { assertTrue("$it deveria exigir cilindrada", it.exigeCilindrada) }
+    fun `so a moto exige cilindrada, e e a unica excecao da tabela`() {
+        assertTrue(ClasseVeiculo.MOTO.exigeCilindrada)
+        assertEquals(listOf(ClasseVeiculo.MOTO), ClasseVeiculo.entries.filter { it.exigeCilindrada })
+    }
 
-        ClasseVeiculo.entries
-            .filter { it.natureza != NaturezaVeiculo.MOTOCICLO }
-            .forEach { assertFalse("$it não deveria exigir cilindrada", it.exigeCilindrada) }
+    /** E o vizinho de natureza dela **não** exige — é o contraexemplo que derrubou a derivação. */
+    @Test
+    fun `o quadriciclo e da mesma natureza da moto e nao exige cilindrada`() {
+        assertEquals(ClasseVeiculo.MOTO.natureza, ClasseVeiculo.QUADRICICLO.natureza)
+        assertFalse(ClasseVeiculo.QUADRICICLO.exigeCilindrada)
     }
 
     /**
-     * **O teste de forma**, e o mais importante deste arquivo: a natureza é a única coisa que varia entre as
-     * classes. Duas classes da mesma natureza são **indistinguíveis para o código** — diferem no nome, que é
-     * a chave da série, e em nada mais.
+     * **O teste de forma**: fora da moto, a natureza é a única coisa que varia entre as classes. Duas
+     * classes da mesma natureza são então **indistinguíveis para o código** — diferem no nome, que é a
+     * chave da série, e em nada mais.
      */
     @Test
-    fun `classes da mesma natureza se comportam igual`() {
+    fun `fora da moto, classes da mesma natureza se comportam igual`() {
         NaturezaVeiculo.entries.forEach { natureza ->
-            val comportamentos = natureza.classes.map { it.exigeCilindrada }.distinct()
-            assertEquals("a natureza $natureza deveria ter um comportamento só", 1, comportamentos.size)
+            val comportamentos = natureza.classes
+                .filterNot { it == ClasseVeiculo.MOTO }
+                .map { it.exigeCilindrada }
+                .distinct()
+
+            assertTrue("a natureza $natureza tem mais de um comportamento", comportamentos.size <= 1)
         }
     }
 }

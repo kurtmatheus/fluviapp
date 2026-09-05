@@ -34,20 +34,35 @@ class NaturezaVeiculoTest {
     @Test
     fun `as classes vem na ordem do enum`() {
         assertEquals(
-            listOf(ClasseVeiculo.MOTO, ClasseVeiculo.QUADRICICLO, ClasseVeiculo.JET_SKI),
+            listOf(ClasseVeiculo.MOTO, ClasseVeiculo.QUADRICICLO),
             NaturezaVeiculo.MOTOCICLO.classes,
         )
     }
 
     /**
-     * **Só o motociclo mede motor.** Nas outras três a cilindrada não é opcional: é *sem sentido* — e é por
-     * isso que o formulário não a pergunta, em vez de deixá-la em branco.
+     * **A natureza não decide a cilindrada**, e não decidir é a correção de 2026-09-05.
+     *
+     * Ela derivava daqui até a operação apontar dois fatos: o quadriciclo não a exige, e o jet-ski — que a
+     * derivação usava como prova de que o traço era de família — é **rebocado**. Duas classes da mesma
+     * natureza com exigências diferentes é o contraexemplo que a forma não suportava.
+     *
+     * O caso guarda a ausência: se `exigeCilindrada` voltar para cá, este teste não compila.
      */
     @Test
-    fun `so o motociclo exige cilindrada`() {
-        assertTrue(NaturezaVeiculo.MOTOCICLO.exigeCilindrada)
-        listOf(NaturezaVeiculo.AUTOMOTOR, NaturezaVeiculo.MAQUINA, NaturezaVeiculo.REBOCADO)
-            .forEach { assertFalse("$it não deveria exigir cilindrada", it.exigeCilindrada) }
+    fun `a natureza classifica, e nao decide a cilindrada`() {
+        val motociclo = NaturezaVeiculo.MOTOCICLO.classes
+
+        assertTrue(ClasseVeiculo.MOTO in motociclo)
+        assertTrue(ClasseVeiculo.QUADRICICLO in motociclo)
+        assertTrue("a moto exige cilindrada", ClasseVeiculo.MOTO.exigeCilindrada)
+        assertFalse("o quadriciclo não exige", ClasseVeiculo.QUADRICICLO.exigeCilindrada)
+    }
+
+    /** O jet-ski é **moto aquática no nome e carga rebocada na doca** — e a natureza descreve a doca. */
+    @Test
+    fun `o jet-ski e rebocado, e nao motociclo`() {
+        assertEquals(NaturezaVeiculo.REBOCADO, ClasseVeiculo.JET_SKI.natureza)
+        assertFalse(ClasseVeiculo.JET_SKI in NaturezaVeiculo.MOTOCICLO.classes)
     }
 
     @Test

@@ -120,14 +120,21 @@ class ValidacaoEmissaoTest {
         assertEquals(setOf(ErroDeEmissao.VEICULO_SEM_CILINDRADA), validarParticipante(bilhete, moto))
     }
 
-    /** E o jet-ski e o quadriciclo entram na mesma cobrança, porque a natureza é a mesma. */
+    /**
+     * **O jet-ski e o quadriciclo passam sem cilindrada** — correção da operação em 2026-09-05, e o caso
+     * inverteu de sinal por causa dela.
+     *
+     * Ele afirmava o contrário, porque a cilindrada derivava da natureza e os dois estavam com a moto. Não
+     * estão mais: o quadriciclo não a exige, e o jet-ski é **rebocado**. A cobrança ficou onde o negócio a
+     * põe — na moto, e só nela.
+     */
     @Test
-    fun `jet-ski e quadriciclo sem cilindrada tambem sao cobrados`() {
+    fun `jet-ski e quadriciclo sem cilindrada passam`() {
         val bilhete = BilheteEmEdicao(categoria = CategoriaPassagem.VEICULO)
 
         listOf(ClasseVeiculo.JET_SKI, ClasseVeiculo.QUADRICICLO).forEach { classe ->
             val participante = ParticipanteEmEdicao.DeVeiculo(VeiculoEmEdicao(placa = "AAA1B11", classe = classe))
-            assertEquals(setOf(ErroDeEmissao.VEICULO_SEM_CILINDRADA), validarParticipante(bilhete, participante))
+            assertTrue("$classe não deveria ser cobrada", validarParticipante(bilhete, participante).isEmpty())
         }
     }
 

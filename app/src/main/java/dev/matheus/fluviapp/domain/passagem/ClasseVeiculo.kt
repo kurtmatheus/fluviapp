@@ -14,22 +14,31 @@ package dev.matheus.fluviapp.domain.passagem
  * **poder e registro deixassem de morar na mesma palavra**. Ali, tirar o poder fez o cargo virar dado —
  * mas isso foi consequência, não requisito. Aqui a separação bastou.
  *
- * ### O que cada valor declara: uma coisa só
+ * ### O que cada valor declara
  *
- * A [NaturezaVeiculo]. Todo o resto **deriva** dela ou deixou de existir:
+ * A [NaturezaVeiculo] — o eixo — e **uma exceção**: a cilindrada, que é da moto e de mais ninguém.
  *
- * - `exigeCilindrada` deriva — é a natureza que sabe se há motor a medir;
- * - `exigeModelo` **morreu** (decisão de 2026-09-03): o modelo é sempre oferecido e nunca cobrado. Onze
- *   classes novas exigiriam onze arbitragens sobre uma pergunta que o *data-intensive* já respondia —
- *   guarda-se o que se tem, não se cobra o que não se sabe;
- * - `ehPesado` **morreu** por outra razão: nunca teve um leitor. O recorte da balsa acabou sendo feito por
+ * O que morreu no caminho:
+ *
+ * - `exigeModelo` (decisão de 2026-09-03): o modelo é sempre oferecido e nunca cobrado. Onze classes novas
+ *   exigiriam onze arbitragens sobre uma pergunta que o *data-intensive* já respondia — guarda-se o que se
+ *   tem, não se cobra o que não se sabe;
+ * - `ehPesado`, por outra razão: nunca teve um leitor. O recorte da balsa acabou sendo feito por
  *   pertencimento explícito, e desde o D4 é o casco que responde, por exclusão.
  *
- * Sobrou uma tabela de dezessete linhas e **uma coluna de comportamento**, que é o que o estudo prometeu.
+ * `exigeCilindrada` **chegou a derivar da natureza** e voltou a ser declarada em 2026-09-05, quando a
+ * operação corrigiu dois fatos: o quadriciclo não a exige, e o jet-ski — que a derivação usava como prova
+ * de que o traço era de família — é **rebocado**. Sobrou um `true` numa tabela de dezessete linhas, e é
+ * assim que uma exceção deve parecer: visível, e só ela.
  */
 enum class ClasseVeiculo(
     val rotulo: String,
     val natureza: NaturezaVeiculo,
+    /**
+     * O cc é o que distingue uma moto de outra na travessia — e **só a moto**. Onde é `false`, a cilindrada
+     * não é opcional: é **sem sentido**, e por isso o formulário não a pergunta.
+     */
+    val exigeCilindrada: Boolean = false,
 ) {
     // --- Automotor: roda em estrada e entra andando ---
     CARRO("Carro", NaturezaVeiculo.AUTOMOTOR),
@@ -44,10 +53,12 @@ enum class ClasseVeiculo(
     // definição veio do analista. É o caso que prova por que a natureza precisa ser declarada.
     CARRETA_CAVALINHO("Carreta Cavalinho", NaturezaVeiculo.AUTOMOTOR),
 
-    // --- Motociclo: o motor é o que distingue um do outro ---
-    MOTO("Moto", NaturezaVeiculo.MOTOCICLO),
+    // --- Motociclo: duas ou quatro rodas de porte pequeno, que entram andando ---
+    //
+    // Só a **moto** exige cilindrada (correção da operação, 2026-09-05): no quadriciclo o cc não é o que a
+    // distingue na travessia, e cobrá-lo seria pedir um dado que ninguém usa.
+    MOTO("Moto", NaturezaVeiculo.MOTOCICLO, exigeCilindrada = true),
     QUADRICICLO("Quadriciclo", NaturezaVeiculo.MOTOCICLO),
-    JET_SKI("Jet-Ski", NaturezaVeiculo.MOTOCICLO),
 
     // --- Máquina: trabalha, não transporta ---
     TRATOR("Trator", NaturezaVeiculo.MAQUINA),
@@ -59,13 +70,14 @@ enum class ClasseVeiculo(
     TRAILER("Trailer", NaturezaVeiculo.REBOCADO),
     CARRETILHA("Carretilha", NaturezaVeiculo.REBOCADO),
 
+    // O nome diz *moto aquática*; a doca diz **rebocado** — ele chega sobre a carretilha, como a lancha
+    // (correção da operação, 2026-09-05). A natureza descreve **como embarca**, não o que é.
+    JET_SKI("Jet-Ski", NaturezaVeiculo.REBOCADO),
+
     // `Lancha` **como classe** — a embarcação transportada sobre carretilha, não o casco que transporta.
     // O nome colide com `TipoEmbarcacao.LANCHA` e o analista recusou renomear (ADR-0031 D5): o rename de
     // `Navio` → `Embarcacao` já separou gênero de espécie, e os três papéis são explícitos.
     LANCHA("Lancha", NaturezaVeiculo.REBOCADO);
-
-    /** A cilindrada é da **natureza**, não da classe: o que distingue uma moto de outra é o motor. */
-    val exigeCilindrada: Boolean get() = natureza.exigeCilindrada
 
     companion object {
         /** Fronteira String→enum; `null` se desconhecido (fail-closed). Tolerante à grafia legada. */

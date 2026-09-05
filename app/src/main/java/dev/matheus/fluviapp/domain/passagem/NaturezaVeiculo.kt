@@ -23,39 +23,39 @@ package dev.matheus.fluviapp.domain.passagem
  * É a mesma forma que a [Acomodacao] já usa (um enum cujos valores declaram propriedade de outro e derivam
  * a regra dela) — o que muda é a altitude.
  *
- * ### A cilindrada
+ * ### O que ela **não** decide: a cilindrada
  *
- * É o único comportamento que sobrou, e ele **pertence à natureza, não à classe**: o que distingue uma moto
- * de outra na travessia é o motor, e isso vale igual para o quadriciclo e para o jet-ski — que, em
- * português, é literalmente uma *moto aquática*. Nas outras três naturezas a cilindrada não é opcional: é
- * **sem sentido**, e por isso o formulário não a pergunta em vez de deixá-la em branco.
+ * A primeira versão derivava `exigeCilindrada` daqui, supondo que motor medido em cilindrada fosse traço de
+ * família. **A operação corrigiu em 2026-09-05, com dois fatos:** o jet-ski é moto aquática mas **é
+ * rebocado**, e o quadriciclo **não tem cilindrada obrigatória** — só a moto tem.
+ *
+ * Com isso a cilindrada volta a ser declarada em [ClasseVeiculo], e é honesto que seja: ela não é
+ * propriedade da espécie, é da **moto**. Uma natureza com duas classes em que só uma exige o campo não
+ * pode responder pelas duas — derivar ali seria escolher a forma bonita contra o fato.
+ *
+ * A natureza fica sendo o que o D2 dizia que ela era: **o eixo analítico** que, de quebra, organiza os
+ * passos, os ícones e o recorte do casco.
  */
-enum class NaturezaVeiculo(
-    val rotulo: String,
-    /**
-     * O que se pergunta a mais no formulário — e, no futuro, o eixo que o motor dá à análise.
-     *
-     * Não confundir com *opcional*: onde é `false`, a cilindrada **não se aplica**, e o campo não existe.
-     * O modelo, ao contrário, é sempre oferecido e nunca cobrado (ADR-0031, alternativa aceita em
-     * 2026-09-03).
-     */
-    val exigeCilindrada: Boolean,
-) {
+enum class NaturezaVeiculo(val rotulo: String) {
     /** Roda em estrada e entra andando: do carro ao ônibus, incluindo a unidade tratora. */
-    AUTOMOTOR(rotulo = "Automotor", exigeCilindrada = false),
+    AUTOMOTOR(rotulo = "Automotor"),
 
-    /** Motor medido em cilindrada — em terra ou na água. */
-    MOTOCICLO(rotulo = "Moto e similares", exigeCilindrada = true),
+    /** Duas ou quatro rodas de porte pequeno, que entram andando. */
+    MOTOCICLO(rotulo = "Moto e similares"),
 
     /** Equipamento autopropelido que trabalha, não transporta: trator, empilhadeira, retroescavadeira. */
-    MAQUINA(rotulo = "Máquina", exigeCilindrada = false),
+    MAQUINA(rotulo = "Máquina"),
 
     /**
      * **Não entra andando.** É a natureza que a lista da operação trouxe e que o domínio não sabia
      * registrar — e ela é fato operacional antes de ser dado: manobra, rampa e quem conduz mudam quando o
      * que embarca não tem propulsão própria.
+     *
+     * É onde mora o **jet-ski**, e a correção vale registrar: ele é *moto aquática* no nome e **carga
+     * rebocada** na doca. O nome descreve o que ele é; a natureza descreve **como ele embarca**, que é o
+     * que a operação precisa saber.
      */
-    REBOCADO(rotulo = "Rebocado", exigeCilindrada = false);
+    REBOCADO(rotulo = "Rebocado");
 
     companion object {
         /** Fronteira String→enum; `null` se desconhecido (fail-closed), como em toda a casa. */
