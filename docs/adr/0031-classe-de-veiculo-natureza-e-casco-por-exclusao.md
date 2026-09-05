@@ -1,6 +1,7 @@
 # ADR-0031: A classe de veículo — o enum é o registro, a natureza é a propriedade, e o casco admite por exclusão
 
-**Status:** Aceita (decisões do analista em 2026-09-03) · sem código
+**Status:** Aceita (decisões do analista em 2026-09-03) · **implementada** no mesmo dia ·
+**emendada no D2 em 2026-09-05** pela operação (o jet-ski é rebocado; só a moto exige cilindrada)
 
 **Estudo que preparou:** [`docs/design/classe-de-veiculo.md`](../design/classe-de-veiculo.md)
 
@@ -55,9 +56,9 @@ Cada classe declara **uma** coisa: a sua natureza. Quatro valores:
 | Natureza | Classes |
 |---|---|
 | **automotor rodoviário** | Carro · Van · SUV · Caminhão · Motorhome · Ônibus · Carreta Cavalinho |
-| **motor medido em cilindrada** | Moto · Jet-Ski · Quadriciclo |
+| **motociclo** | Moto · Quadriciclo |
 | **máquina autopropelida** | Trator · Empilhadeira · Retroescavadeira |
-| **rebocado** — sem propulsão própria | Carreta · Trailer · Lancha · Carretilha |
+| **rebocado** — sem propulsão própria | Carreta · Trailer · Lancha · Carretilha · **Jet-Ski** |
 
 A razão registrada é do analista, e é maior que a higiene do código:
 
@@ -69,8 +70,33 @@ rebocados atravessaram em agosto"* é uma pergunta que o negócio vai fazer, e q
 respondida sem alguém reclassificar dezessete nomes à mão. **A natureza é dado analítico que, de quebra,
 organiza o código.**
 
-**Efeito imediato: `exigeCilindrada` deixa de ser declarada e passa a derivar** — é `natureza == MOTOR_POR_CILINDRADA`,
-e cobre exatamente moto, jet-ski e quadriciclo. Uma coluna a menos, e sem exceção.
+**Efeito imediato: `exigeCilindrada` deixa de ser declarada e passa a derivar** — é `natureza == MOTOCICLO`,
+e cobre moto, jet-ski e quadriciclo. Uma coluna a menos, e sem exceção. **Este parágrafo caiu dois dias
+depois — ver a emenda logo abaixo.**
+
+### Emenda ao D2 — a cilindrada volta a ser declarada (2026-09-05)
+
+A operação corrigiu **dois fatos** ao ver o passo no aparelho, e os dois derrubam a derivação acima:
+
+1. **o jet-ski é moto aquática no nome e carga rebocada na doca** — ele chega sobre a carretilha, como a
+   lancha. Passa de `MOTOCICLO` a `REBOCADO`;
+2. **o quadriciclo não exige cilindrada** — só a moto exige.
+
+Com isso a natureza `MOTOCICLO` fica com duas classes e **exigências diferentes**, e nenhuma coluna
+derivada responde por duas. `exigeCilindrada` volta a ser **declarada na classe**, com um único `true` em
+dezessete linhas — que é a forma honesta de uma exceção: visível, e só ela.
+
+Vale registrar o que a derivação usava como prova, porque é o erro de método e não o de fato: **o jet-ski**.
+Ele parecia confirmar que *"motor medido em cilindrada"* era traço de família — e era justamente o valor que
+estava na família errada. Corrigido o fato, o padrão se desfez sozinho.
+
+O nome já denunciava a confusão: este documento chamava a natureza pelo **comportamento** (*"motor medido em
+cilindrada"*) enquanto o código a chamava pela **espécie** (`MOTOCICLO`). Prevalece a espécie — é o que a
+natureza sempre foi, e é o que sobra quando o comportamento sai dela.
+
+**O D2 não é revogado — é confirmado no que ele afirmava de si.** A natureza existe **pela capacidade
+analítica**, e organizar o código era o efeito colateral. Perdido o efeito colateral, a razão continua de pé:
+*"quantos rebocados atravessaram em agosto"* segue sendo a pergunta, e agora com o jet-ski do lado certo dela.
 
 ### D3 — As dezessete classes
 
@@ -163,10 +189,11 @@ da forma, não uma peça a construir.
 
 ## Consequências
 
-- **`ClasseVeiculo` perde duas colunas e ganha uma.** Sai `exigeCilindrada` (deriva do D2) e sai `ehPesado`
-  (sem leitor desde sempre, e sem função depois do D4); entra `natureza`. Sobrevive `exigeModelo` — e ela é
-  **a única propriedade que não deriva da natureza**: a lancha rebocada tem modelo e a carreta rebocada não.
-  Fica declarada por valor, com a alternativa registrada em *Alternativas futuras*.
+- **`ClasseVeiculo` perde colunas e ganha a natureza.** Saem `ehPesado` (sem leitor desde sempre, e sem
+  função depois do D4) e — por decisão do analista durante a execução — `exigeModelo`, cuja alternativa
+  estava registrada em *Alternativas futuras* e foi escolhida: o modelo é **oferecido a toda classe e cobrado
+  em nenhuma**. `exigeCilindrada` chegou a sair também, e **voltou em 2026-09-05** pela emenda ao D2 — é a
+  única coluna de comportamento declarada por valor, e tem um `true` só.
 - **`TipoEmbarcacao` muda de forma, e é a mudança mais visível do ADR.** O `Set<ClasseVeiculo>` dá lugar ao
   tipo de três estados do D4; `admite(classe)` e `levaVeiculo` continuam existindo com a mesma assinatura, e
   quem os chama não muda.
@@ -181,8 +208,8 @@ da forma, não uma peça a construir.
 - **Classe nova continua exigindo deploy**, e o preço é aceito pela razão do ADR-0020 mais uma do negócio:
   classe de veículo é **fato da estrada, não da agência**. `VAN` e `SUV` entraram exatamente assim
   ([ADR-0023](0023-passagem-por-categoria-e-referencia.md) D4), sem que ninguém sentisse falta de cadastro.
-- **`tarifaMotoBase` fica sem razão de existir.** Já não tem chamador; com a cilindrada derivada da
-  natureza, some também o último vínculo conceitual entre classe e dinheiro. Sai na fatia que implementar
+- **`tarifaMotoBase` fica sem razão de existir.** Já não tem chamador desde que *preço é I/O*, e não é a
+  cilindrada que o sustentava: o vínculo entre classe e dinheiro é que morreu. Saiu na fatia que implementou
   este ADR.
 - **A emissão sobre um Navio encolhe muito.** Com o D4, o casco Navio oferece duas classes; o passo da
   natureza passa a ter dois valores com uma classe cada. O roteiro derivado precisa **dissolver o subpasso
@@ -216,10 +243,10 @@ da forma, não uma peça a construir.
   primeiro destes casos: a **ocupação** passar a ser contada por área de convés em vez de por vaga; a
   **inferência tarifária** (o método continua em aberto desde o ADR-0013) usar dimensão como eixo; ou um
   casco novo cuja admissão não se descreva por *todas · apenas · nenhuma*.
-- **Se `exigeModelo` também deixar de derivar de alguma coisa útil.** Hoje ela é a única coluna declarada
-  por valor, e a alternativa é simplesmente **deixar o modelo sempre opcional** — o que alinharia com a
-  direção *data-intensive* do D2 (guarda-se o que se tem, não se cobra o que não se sabe) e apagaria a
-  última exceção da tabela. Fica registrada, não decidida.
+- ~~**Se `exigeModelo` também deixar de derivar de alguma coisa útil.**~~ **Decidida na execução, no mesmo
+  dia**: o modelo ficou **sempre opcional**, pela direção *data-intensive* do D2 (guarda-se o que se tem, não
+  se cobra o que não se sabe). O que restou de exceção na tabela não é essa — é a **cilindrada da moto**, e
+  ela é fato do negócio, não resíduo de forma.
 - **Se alguma agência precisar não ofertar uma classe.** Hoje isso não existe por decisão (D9). Se passar a
   existir, o instrumento **não** é lista de negadas — é o mesmo argumento de 2026-08-10: *ver e vender são a
   mesma pergunta*, e a resposta seria concessão, com todo o peso que ela tem.
