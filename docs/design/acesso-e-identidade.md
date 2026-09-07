@@ -351,71 +351,101 @@ são enfeite de UI: um acesso "desativado" que o Firestore continua aceitando n�
 
 ---
 
-## 8. Adendo — "Adicionar Perfil existente"
+## 8. Adendo — "Adicionar Perfil existente" *(decidido)*
 
 **O pedido:** `ADM` e `GESTOR` podem *adicionar um perfil existente* e **trocar de perfil sem
 relogar**, só carregando as informações do perfil.
 
-Antes de desenhar, uma restrição do código que decide entre leituras muito diferentes — e é por isso que
-este adendo não propõe solução.
+O adendo nasceu com três leituras possíveis, porque uma restrição do código as separava. A decisão veio
+no mesmo dia e escolheu a primeira — **perfis do mesmo dono** —, com um recorte que a torna mais barata
+do que ela parecia.
 
-### 8.1 A restrição
+### 8.1 A restrição que separava as leituras
 
-**O servidor decide por `request.auth.uid`.** Toda regra do `firestore.rules` parte daí: `papel()`
-lê `users/{request.auth.uid}`, `cargoDoAutor()` faz o segundo salto pelo `funcionarioId` desse
-documento. E o cliente tem **um `currentUser` por vez** — o SDK do Firebase Auth não guarda duas sessões
-na mesma instância.
+**O servidor decide por `request.auth.uid`.** Toda regra parte daí: `papel()` lê
+`users/{request.auth.uid}`, `cargoDoAutor()` faz o segundo salto pelo `funcionarioId` desse
+documento. E o cliente tem **um `currentUser` por vez** — o SDK não guarda duas sessões na mesma
+instância.
 
-Disso decorre o que qualquer desenho aqui tem de encarar: **se a troca de perfil não trocar o uid
-autenticado, o servidor continua vendo a pessoa original.** A tela mostraria um perfil e o Firestore
-aplicaria outro — e o sintoma seria a UI oferecendo seções cujas escritas voltam negadas.
+Logo: **troca que não muda o uid deixa o servidor vendo a pessoa original.** Era isso que separava
+"trocar de perfil" (um dono, dois papéis) de "trocar de conta" (dois donos) e de "ver como outro"
+(prévia sem escrita).
 
-Isso não é impedimento; é a linha que separa três coisas que o mesmo pedido pode significar.
+### 8.2 A decisão
 
-### 8.2 As três leituras
+**São perfis do mesmo dono, e são dois no máximo:** um com a **plataforma** e, se precisar, um com uma
+**empresa** — ou o inverso. A troca é **opção no menu**, e a capacidade é **restrita a `ADM` e
+`GESTOR`**.
 
-**(a) Perfis do mesmo dono.** A pessoa tem mais de um perfil e escolhe qual está ativo. O app **já faz
-isso um nível abaixo**: `EscolhaDeVinculo` guarda em nome de qual empresa alguém opera, e
-`ContextoUsuario.vinculoAtivo` revalida a escolha contra os vínculos atuais a cada leitura — *"um dado
-que não é consultado como autoridade não precisa de invalidação ativa"*. Subir isso um andar (do vínculo
-para o perfil) é o caminho mais curto, **mas exige que o servidor saiba qual perfil está ativo**, e hoje
-`users/{uid}.papel` é um valor só.
+**E o vínculo entre duas empresas é descartado.** A pessoa que operava em duas agências e escolhia entre
+elas deixa de existir como caso: o que sobra é *um* vínculo de empresa, e o segundo perfil é o da
+plataforma. A troca de perfil **substitui** aquela escolha — mesma mecânica, outro eixo.
 
-**(b) Ver como outro.** O `ADM` carrega o perfil de alguém para ver o que essa pessoa vê. O servidor
-**não se engana** (continua indo pelo uid), então isto é honestamente uma **prévia de UI** — útil para
-diagnóstico (*"por que o supervisor não enxerga a viagem?"*), e que precisa dizer na tela que é prévia,
-porque nenhuma escrita vai funcionar ali.
+### 8.3 Por que ela é barata no servidor: ele já concede a união
 
-**(c) Troca rápida de conta.** Duas contas de verdade, alternando sem repetir a senha toda vez. É o que o
-**[ADR-0005](../adr/0005-autenticacao-sessao-firebase-datastore.md) já previu** em *Alternativas
-futuras*: *"multi-conta / troca rápida de usuário: o DataStore de sessão evolui para uma lista de perfis
-em cache, com `currentUser` decidindo o ativo"*. Note a segunda metade — **o `currentUser` decide**: o
-cache é conveniência, a autoridade continua sendo o Auth. Tecnicamente dá para manter sessões paralelas
-com instâncias separadas de `FirebaseApp`, e o custo disso é real (duas árvores de dependência, dois
-caches offline, e o "quem está logado" deixando de ter resposta única).
+Este é o ponto que o recorte a `ADM`/`GESTOR` compra, e vale explicitar porque não é óbvio.
 
-### 8.3 O que muda conforme a leitura
+Com dois perfis no mesmo uid, o servidor lê **os dois** sem saber de troca nenhuma: o papel vem de
+`users/{uid}.papel` e o cargo vem de `funcionarios/{funcionarioId}`. Ele **concede a união** — e a
+troca no app é uma **lente**, não uma redução de poder.
 
-| | (a) perfis do mesmo dono | (b) ver como outro | (c) troca de conta |
-|---|---|---|---|
-| troca o uid? | não | não | **sim** |
-| o servidor acompanha? | só se o perfil ativo virar dado que a regra lê | não — e não precisa | sim, naturalmente |
-| escreve? | sim | **não** (prévia) | sim |
-| precedente no app | `EscolhaDeVinculo` | nenhum | `ADR-0005`, alternativas futuras |
-| risco principal | perfil ativo que a regra ignora | ser confundido com permissão | "quem está logado" sem resposta única |
+Isso seria inaceitável para um `OPERADOR` (a troca prometeria uma separação que o servidor não faz),
+e é **aceitável exatamente para quem a decisão autoriza**: para `ADM` e `GESTOR`, a união dos dois
+perfis já é o que eles têm. **É o recorte que dispensa mudar a regra**, não uma sorte.
 
-### 8.4 A pergunta
+### 8.4 O invariante que a decisão esclarece — e não quebra
 
-**Qual delas é o fluxo?** Descrito como a pessoa o vive — quem abre, o que vê na tela, o que acontece
-quando ela toca em "adicionar", e o que ela consegue *fazer* depois de trocar (só olhar, ou também
-emitir/gravar). É essa última metade que decide se o servidor precisa entrar na conversa.
+O [ADR-0015](../adr/0015-rework-agente-equipe.md) §8.4 diz que **`ADM`/`GESTOR` não emitem passagem**.
+Com um perfil de empresa, eles passariam a emitir — o que parece contradizê-lo.
 
-Minha leitura do enunciado — *"sem relogar, só carregando informações do perfil"* — aponta para **(b)**,
-e nesse caso o desenho é o mais barato dos três e o mais fácil de errar: barato porque não toca em Auth
-nem em regra; fácil de errar porque uma prévia que não se anuncia como prévia vira, na cabeça de quem
-usa, uma promessa de permissão.
+Não contradiz, e a prova está na regra (`firestore.rules:513-516`):
 
----
+```
+allow create: if autenticado()
+              && papelConhecido()
+              && funcionarioIdDoAutor() != ''
+              && request.resource.data.funcionarioId == funcionarioIdDoAutor();
+```
+
+A emissão **nunca foi barrada por papel** — é barrada por **não ter funcionário**, e o comentário ao lado
+diz exatamente isso: *"dono vazio é recusado: quem emite é da operação (§8.4) — sem isso, dois perfis de
+plataforma gerariam passagens órfãs"*.
+
+Ou seja: *"ADM/GESTOR não emitem"* sempre foi, no servidor, *"quem não tem funcionário não emite"*. Com o
+perfil de empresa, o `ADM` **tem** funcionário e emite **como ele** — e a passagem nasce com o dono
+certo, que é o funcionário, não a plataforma. **A regra já estava escrita na forma que a decisão precisa.**
+O que muda é a paráfrase do §8.4, não o invariante.
+
+### 8.5 O que morre, o que muda de sentido, o que fica
+
+**Morre** — a escolha entre empresas, medida em **~284 linhas / 5 arquivos**:
+
+| peça | linhas |
+|---|---|
+| `ui/screens/SelecaoVinculoScreen.kt` | 111 |
+| `ui/viewmodel/SelecaoVinculoViewModel.kt` | 71 |
+| `ui/states/SelecaoVinculoUiState.kt` | 24 |
+| `navigation/graphs/SelecaoVinculoGraphNavigation.kt` | 35 |
+| `preferences/EscolhaDeVinculo.kt` | 43 |
+
+Mais `precisaEscolherVinculo()` (`Vinculo.kt:98`) e o ramo `EscolherVinculo` da splash — que hoje é
+uma das cinco saídas de `destinoDaSplash()`, com casos de teste próprios.
+
+**Muda de sentido, e não morre:** o `EscolhaDeVinculo` guarda hoje *"em nome de qual empresa estou
+operando"*. Passa a guardar *"qual perfil está ativo"* — mesma forma (preferência no DataStore,
+revalidada a cada leitura, nunca consultada como autoridade), outro eixo. É o mesmo argumento que a
+[§8.3] usa: um dado que não concede nada não precisa de invalidação ativa.
+
+**Fica em aberto para o ADR:**
+
+- **`Funcionario.vinculos` ainda é lista?** Com uma empresa no máximo, ela tem no máximo um elemento —
+  e `empresaIds`, o derivado que existe para consulta, vira um id só. Simplificar o tipo é tentador e
+  toca a fronteira (o array no Firestore, as regras `souSupervisorDe`/`naoMexeNosPropriosVinculos`);
+- **onde entra no menu**, e como a tela diz **em qual perfil se está** — porque a lente não reduz poder,
+  e uma troca que não se anuncia é pior que nenhuma;
+- **quem liga os dois perfis.** Hoje o `funcionarioId` do `users/{uid}` é imutável pela regra e nasce
+  no primeiro acesso. Dar um perfil de empresa a um `ADM` que já existe é escrita que **hoje ninguém
+  pode fazer** — a mesma lacuna que a §7.5 abriu para desativar e expirar.
 
 ## 9. O que vem depois
 
