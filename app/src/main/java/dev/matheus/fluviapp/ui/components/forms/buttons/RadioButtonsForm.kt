@@ -19,7 +19,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import dev.matheus.fluviapp.R
-import dev.matheus.fluviapp.sampledata.listaFormaPagamentoSample
+import dev.matheus.fluviapp.domain.passagem.FormaPagamento
 import dev.matheus.fluviapp.ui.components.texts.SupportingText
 import dev.matheus.fluviapp.ui.components.texts.SupportingTextRed
 import dev.matheus.fluviapp.ui.components.texts.TextRegularBrown
@@ -87,7 +87,7 @@ fun FormRadioButtons(
 private fun FormRadioButtonPreview() {
         FormRadioButtons(
             modifier = Modifier.padding(10.dp),
-            opcoes = listaFormaPagamentoSample.map { it.descricaoNome }
+            opcoes = FormaPagamento.entries.map { it.rotulo }
         )
 }
 
@@ -96,7 +96,7 @@ private fun FormRadioButtonPreview() {
 private fun FormRadioButtonErrorPreview() {
     FormRadioButtons(
         modifier = Modifier.padding(10.dp),
-        opcoes = listaFormaPagamentoSample.map { it.descricaoNome },
+        opcoes = FormaPagamento.entries.map { it.rotulo },
         isError = true
     )
 }

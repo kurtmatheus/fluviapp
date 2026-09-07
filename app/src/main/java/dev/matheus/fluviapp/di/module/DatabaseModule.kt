@@ -4,13 +4,8 @@ import android.content.Context
 import androidx.room.Room
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
-import com.google.gson.Gson
 import dev.matheus.fluviapp.database.FluviAppDatabase
-import dev.matheus.fluviapp.database.dao.cadastro.ConstanteDao
 import dev.matheus.fluviapp.database.dao.operacoes.UsuarioDao
-import dev.matheus.fluviapp.database.dao.passagem.RascunhoPassagemDao
-import dev.matheus.fluviapp.services.repository.rascunho.RascunhoPassagemStoreRoom
-import dev.matheus.fluviapp.services.repository.rascunho.RascunhoStore
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -179,28 +174,5 @@ class DatabaseModule {
     @Provides
     fun provideUsuarioDao(db: FluviAppDatabase): UsuarioDao {
         return db.usuarioDao()
-    }
-
-    @Provides
-    fun provideConstanteConteudoDao(db: FluviAppDatabase): ConstanteDao {
-        return db.constanteDao()
-    }
-
-
-    @Provides
-    fun provideRascunhoPassagemDao(db: FluviAppDatabase): RascunhoPassagemDao {
-        return db.rascunhoPassagemDao()
-    }
-
-    @Provides
-    @Singleton
-    fun provideGson(): Gson {
-        return Gson()
-    }
-
-    @Provides
-    @Singleton
-    fun provideRascunhoStore(impl: RascunhoPassagemStoreRoom): RascunhoStore {
-        return impl
     }
 }

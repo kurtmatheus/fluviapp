@@ -21,8 +21,6 @@ class FakeSessaoUsuario(var contexto: ContextoUsuario? = null) : SessaoUsuario {
 
     override suspend fun escolherEmpresa(empresaId: String) { empresaEscolhida = empresaId }
 
-    override suspend fun limparEscolha() { empresaEscolhida = null }
-
     companion object {
         /** Papel puro de plataforma: existe no sistema, não existe na operação (sem funcionário). */
         fun plataforma(papel: String = Usuario.Papel.ADM.name) = FakeSessaoUsuario(

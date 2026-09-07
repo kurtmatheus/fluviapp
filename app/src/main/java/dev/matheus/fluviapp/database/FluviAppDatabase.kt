@@ -2,9 +2,7 @@ package dev.matheus.fluviapp.database
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
-import dev.matheus.fluviapp.database.dao.cadastro.ConstanteDao
 import dev.matheus.fluviapp.database.dao.operacoes.UsuarioDao
-import dev.matheus.fluviapp.database.dao.passagem.RascunhoPassagemDao
 import dev.matheus.fluviapp.domain.cadastro.constantes.Constante
 import dev.matheus.fluviapp.domain.operacoes.Usuario
 
@@ -33,16 +31,14 @@ import dev.matheus.fluviapp.domain.operacoes.Usuario
     exportSchema = true
 )
 abstract class FluviAppDatabase : RoomDatabase() {
-    abstract fun usuarioDao(): UsuarioDao
-    abstract fun constanteDao(): ConstanteDao
-
     /**
-     * O rascunho — **o habitante que fica** ([ADR-0027] D5, revisão do ADR-0025 D7).
+     * **O último DAO.** Em 2026-09-07 caíram os outros dois, e não por decisão nova: já não tinham
+     * consumidor. O `constanteDao` servia ao catálogo genérico que o ADR-0020 D1 matou; o
+     * `rascunhoPassagemDao` servia à porta `RascunhoStore`, cujo chamador foi demolido junto com o caminho
+     * antigo da emissão (F9.2).
      *
-     * Ele deixou de ser resíduo: um snapshot passa a ser uma **passagem incompleta**, com vários por agente e
-     * uma tela de recuperação, *"com garantia do Room"*. Por isso o Firestore-only não o alcança — ele vale
-     * para o **fato compartilhado**, e o atendimento em curso é local por natureza; é por ser local que ele
-     * sobrevive a app fechado e rede ausente.
+     * As tabelas `Constante` e `rascunho_passagem` continuam declaradas em `entities` de propósito: tirá-las
+     * agora seria escrever uma migração v9 que a saída do Room, duas fatias adiante, jogaria fora.
      */
-    abstract fun rascunhoPassagemDao(): RascunhoPassagemDao
+    abstract fun usuarioDao(): UsuarioDao
 }

@@ -10,14 +10,4 @@ fun BigDecimal.formataParaMoedaBrasileira(): String {
     return formatador.format(this)
 }
 
-fun BigDecimal.getValorFormatadoOrEmpty(): String {
-    return if (this > BigDecimal.ZERO) this.formataParaMoedaBrasileira() else ""
-}
-
 fun String.toBigDecimal() = BigDecimal(ifEmpty { "0" })
-
-fun Double?.converterParaBigDecimal(): BigDecimal {
-    return this?.let {
-        toBigDecimal()
-    } ?: BigDecimal(0)
-}

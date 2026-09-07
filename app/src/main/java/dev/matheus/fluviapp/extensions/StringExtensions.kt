@@ -2,17 +2,20 @@ package dev.matheus.fluviapp.extensions
 
 import dev.matheus.fluviapp.domain.documento.TipoDocumento
 
-fun String.formatarCampoCPF(): String {
-    val aux = length.dec()
-    return when (length) {
-        in (1..3) -> slice(0..aux)
-        in (4..6) -> "${slice(0..2)}.${slice(3..aux)}"
-        in (7..9) -> "${slice(0..2)}.${slice(3..5)}.${slice(6..aux)}"
-        in (10..11) -> "${slice(0..2)}.${slice(3..5)}.${slice(6..8)}-${slice(9..aux)}"
-        else -> this
-    }
-}
+/**
+ * O arquivo tinha onze funções de formatação de documento e ficou com **duas**.
+ *
+ * As nove que saíram em 2026-09-07 (`formatarCampoCPF`, `formatarCampoPassaporte`, `formatarCPF`,
+ * `mascararCPF`, `formatarCNPJ`, `formatarPassaporte`, `mascararPassaporte`, `mascararRG`, `mascararCNH`,
+ * `extrairLetrasOuNumeros`) eram a **cadeia antiga**: fatiavam por índice fixo, cada uma com o seu guarda
+ * de tamanho, e a política de ocultação estava repartida entre elas. O [TipoDocumento] assumiu tudo isso
+ * no ADR-0020 F2 — formatar, mascarar, validar e normalizar viraram comportamento do tipo, e o `when`
+ * exaustivo cobra o caso novo em vez de cair num `else` silencioso.
+ *
+ * O último chamador delas era o `FluviAppUnitTest`, o arquivo de exemplo do Android Studio.
+ */
 
+/** Máscara progressiva do CNPJ, a única que ainda tem uso próprio (`CnpjVisualTransformation`). */
 fun String.formatarCampoCNPJ(): String {
     val aux = length.dec()
     return when (length) {
@@ -25,57 +28,8 @@ fun String.formatarCampoCNPJ(): String {
     }
 }
 
-fun String.formatarCampoPassaporte(): String {
-    val aux = length.dec()
-    return when (length) {
-        in (1..2) -> slice(0..aux)
-        in (3..8) -> "${slice(0..1)}-${slice(2..aux)}"
-        else -> this
-    }
-}
-
-fun String.formatarCPF(comMascara: Boolean): String {
-    val cpfFormatado = "${slice(0..2)}.${slice(3..5)}.${slice(6..8)}-${slice(9..10)}"
-    return if (comMascara) {
-        cpfFormatado.mascararCPF()
-    } else {
-        cpfFormatado
-    }
-}
-
-fun String.mascararCPF(): String {
-    return "###.${slice(4..6)}.${slice(8..10)}-##"
-}
-
-fun String.formatarCNPJ(): String {
-    return "${slice(0..1)}.${slice(2..4)}.${slice(5..7)}/0001-${slice(12..13)}"
-}
-
 fun String.extrairNumeros(): String {
     return filter { it.isDigit() }
-}
-
-fun String.formatarPassaporte(comMascara: Boolean): String {
-    val passaporteFormatado = "${slice(0..1)}-${slice(2..7)}"
-    return if (comMascara) {
-        passaporteFormatado.mascararPassaporte()
-    } else passaporteFormatado
-}
-
-fun String.extrairLetrasOuNumeros(): String {
-    return filter { it.isLetterOrDigit() }
-}
-
-fun String.mascararRG(): String {
-    return replaceRange(1..3, "###")
-}
-
-fun String.mascararCNH(): String {
-    return replaceRange(2..7, "######")
-}
-
-fun String.mascararPassaporte(): String {
-    return replaceRange(4..6, "###")
 }
 
 // `isTextoNaoNulo()` saiu na F9.2, com os dois chamadores que tinha. Ela existia para um defeito, não para

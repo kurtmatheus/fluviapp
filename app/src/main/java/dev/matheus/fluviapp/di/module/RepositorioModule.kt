@@ -2,8 +2,6 @@ package dev.matheus.fluviapp.di.module
 
 import dev.matheus.fluviapp.services.ibge.ConsultaMunicipioIbge
 import dev.matheus.fluviapp.services.ibge.ConsultaMunicipioIbgeHttp
-import dev.matheus.fluviapp.services.repository.cadastro.ConstanteFirestoreRepository
-import dev.matheus.fluviapp.services.repository.cadastro.ConstanteRepository
 import dev.matheus.fluviapp.services.repository.cadastro.localidade.LocalidadeFirestoreRepository
 import dev.matheus.fluviapp.services.repository.cadastro.localidade.LocalidadeRepository
 import dev.matheus.fluviapp.services.repository.cadastro.porto.PortoFirestoreRepository
@@ -52,10 +50,6 @@ abstract class RepositorioModule {
     @Binds
     @Singleton
     abstract fun bindEmpresaRepository(impl: EmpresaFirestoreRepository): EmpresaRepository
-
-    @Binds
-    @Singleton
-    abstract fun bindConstanteRepository(impl: ConstanteFirestoreRepository): ConstanteRepository
 
     @Binds
     @Singleton

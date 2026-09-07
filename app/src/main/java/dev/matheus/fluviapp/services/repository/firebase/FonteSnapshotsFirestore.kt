@@ -31,16 +31,4 @@ class FonteSnapshotsFirestore @Inject constructor(
         awaitClose { registration.remove() }
     }
 
-    override fun observarDocumento(colecao: String, documento: String): Flow<ResultadoDocumento> = callbackFlow {
-        val registration = firestore.collection(colecao).document(documento)
-            .addSnapshotListener { value, error ->
-                if (error != null) {
-                    trySend(ResultadoDocumento.Falha(error))
-                    return@addSnapshotListener
-                }
-                val bruto = value?.takeIf { it.exists() }?.let { DocumentoBruto(it.id, it.data.orEmpty()) }
-                trySend(ResultadoDocumento.Dados(bruto, value?.metadata?.isFromCache ?: false))
-            }
-        awaitClose { registration.remove() }
-    }
 }

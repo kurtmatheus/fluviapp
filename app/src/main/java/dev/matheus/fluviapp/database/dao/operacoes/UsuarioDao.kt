@@ -13,15 +13,9 @@ interface UsuarioDao {
     @Insert(onConflict = REPLACE)
     suspend fun salvar(usuario: Usuario)
 
-    @Query("SELECT * FROM Usuario WHERE email = :email")
-    fun obterPorEmail(email: String): Flow<Usuario?>
-
     @Query("SELECT * FROM Usuario WHERE ultimoUsuarioLogado = 1")
     fun obterUltimoUsuarioLogado(): Flow<Usuario?>
 
     @Query("UPDATE Usuario SET ultimoUsuarioLogado = 0")
     suspend fun limparUltimoUsuarioLogado()
-
-    @Query("SELECT * FROM Usuario")
-    fun obterTodos(): Flow<List<Usuario>>
 }

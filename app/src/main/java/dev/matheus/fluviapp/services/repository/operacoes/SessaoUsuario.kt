@@ -28,8 +28,6 @@ interface SessaoUsuario {
      */
     suspend fun escolherEmpresa(empresaId: String)
 
-    /** Esquece a escolha — logout, ou troca deliberada de contexto. */
-    suspend fun limparEscolha()
 }
 
 /**
@@ -67,6 +65,4 @@ class SessaoUsuarioRoom @Inject constructor(
     }
 
     override suspend fun escolherEmpresa(empresaId: String) = escolhaDeVinculo.guardar(empresaId)
-
-    override suspend fun limparEscolha() = escolhaDeVinculo.limpar()
 }

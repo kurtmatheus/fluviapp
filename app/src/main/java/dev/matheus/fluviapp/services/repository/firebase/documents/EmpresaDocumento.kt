@@ -3,6 +3,14 @@ package dev.matheus.fluviapp.services.repository.firebase.documents
 import dev.matheus.fluviapp.domain.viagem.Empresa
 import dev.matheus.fluviapp.services.repository.firebase.DocumentoBruto
 
+/**
+ * A forma do documento em `empresas/{id}` — **documentação, não caminho** (ADR-0019 D2). A leitura e a
+ * escrita passam direto por `Map`, abaixo; esta data class fica como registro de quais campos existem.
+ *
+ * As duas conversões que a acompanhavam — `EmpresaDocumento.toEmpresa(id)` e `Empresa.toDocumento()` —
+ * saíram em 2026-09-07 sem chamador: eram as pontas do salto intermediário que o próprio comentário
+ * abaixo já dava por encerrado.
+ */
 data class EmpresaDocumento(
     val nome: String = "",
     val razaoSocial: String = "",
@@ -10,30 +18,6 @@ data class EmpresaDocumento(
     val endereco: String = "",
     val telefone1: String = "",
     val telefone2: String = "",
-)
-
-fun EmpresaDocumento.toEmpresa(id: String): Empresa {
-    return Empresa(
-        id = id,
-        nome = nome,
-        razaoSocial = razaoSocial,
-        cnpj = cnpj,
-        endereco = endereco,
-        telefone1 = telefone1,
-        telefone2 = telefone2
-    )
-}
-/**
- * Domínio → documento. Mora **aqui**, e não no arquivo da entidade, porque quem conhece a forma do
- * documento é a camada de dados — o domínio não importa DTO (ADR-0019 D2).
- */
-fun Empresa.toDocumento() = EmpresaDocumento(
-    nome = nome,
-    razaoSocial = razaoSocial,
-    cnpj = cnpj,
-    endereco = endereco,
-    telefone1 = telefone1,
-    telefone2 = telefone2,
 )
 
 /**

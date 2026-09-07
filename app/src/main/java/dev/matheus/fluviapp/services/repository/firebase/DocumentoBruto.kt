@@ -44,18 +44,4 @@ data class DocumentoBruto(
         }
     }
 
-    /**
-     * Mapa aninhado chave(String)→valor(Double) — a forma que o Firestore devolve um `map` de números
-     * (ADR-0013, tabela de tarifas). Coage cada valor de Number→Double (Firestore devolve Long ou
-     * Double); entradas com chave/valor de tipo inesperado são descartadas (defensivo, como os demais
-     * acessores). Ausente ou tipo errado → mapa vazio.
-     */
-    fun mapaDeDoubles(chave: String): Map<String, Double> {
-        val bruto = dados[chave] as? Map<*, *> ?: return emptyMap()
-        return bruto.entries.mapNotNull { (k, v) ->
-            val nome = k as? String ?: return@mapNotNull null
-            val valor = (v as? Number)?.toDouble() ?: return@mapNotNull null
-            nome to valor
-        }.toMap()
-    }
 }
