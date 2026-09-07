@@ -138,6 +138,67 @@ nome vir da tag evita a divergência silenciosa que existia antes: bastava esque
 numa versão que não existe. Num `workflow_dispatch` (sem tag) o nome cai no fallback — o `ref_name` ali é
 o nome da branch, e um APK chamado "master" não diz nada a ninguém.
 
+## O que o release carrega — R8 e recursos
+
+**Desde 2026-09-07 o release é minificado.** `isMinifyEnabled` e `isShrinkResources` estão ligados no
+`buildTypes.release`, e o efeito é grande porque nada disso estava ligado antes:
+
+| | sem R8 | com R8 |
+|---|---|---|
+| APK assinado | 19.343.421 B (18,45 MB) | **4.182.807 B (3,99 MB)** |
+| `res/` dentro do APK | 2,20 MB | **0,13 MB** |
+
+O corte de recurso tem um dono nomeável: os **46 PNGs da marca antiga** (`naveg_logo1_*`/`naveg_logo2_*`)
+eram 2,04 MB e nenhum código os referencia. O `shrinkResources` os tira do release **sem apagá-los do
+disco** — eles seguem no diretório de trabalho, fora do artefato.
+
+### A ordem que fez isso ser seguro
+
+O que o R8 quebra é o que ele **não enxerga**, e isso é quase sempre reflexão: a classe é alcançada por
+nome em tempo de execução, o encolhedor não vê a aresta, renomeia o campo, e a leitura passa a devolver
+vazio — sem erro, sem log, sem pista. Um bug assim atravessa o build verde e aparece no aparelho do tester.
+
+Por isso a reflexão saiu **antes** de o R8 entrar, e eram três pontos: o `toObject` do perfil, o
+`toObject` do funcionário e o `.set(UsuarioDocumento(...))` do primeiro acesso — este último achado pelo
+compilador durante a troca, não pela medição. Os três viraram `Map`, como o resto da fronteira desde o
+ADR-0025; o Gson já tinha saído junto com o Room. **O app não tem mais serialização por reflexão**, e é por
+isso que o `proguard-rules.pro` tem duas regras e não vinte.
+
+O que existe nele:
+
+- `-keepattributes SourceFile,LineNumberTable` + `-renamesourcefileattribute` — sem elas o Crashlytics
+  chega com nomes trocados e sem número de linha, e um crash de produção vira adivinhação. O `mapping.txt`
+  que o plugin do Crashlytics envia é o que devolve o nome original;
+- `-keepnames` nas exceções do domínio, para que `QRCodeException` apareça no log com esse nome.
+
+O que **não** existe, de propósito: `-keep` copiado de tutorial. Firebase, ZXing, Hilt e Compose publicam
+as próprias regras em `consumer-rules`, que o R8 aplica sozinho. Acumular `-keep` preventivo é o jeito
+mais silencioso de desligar o R8 sem desligá-lo.
+
+### Verificação, e por que ela é manual
+
+**Nenhum teste automatizado deste projeto roda sobre release.** `connectedDebugAndroidTest` roda em debug,
+onde o R8 não passou — então uma suíte verde não diz nada sobre o artefato que o tester recebe. A
+verificação de um release minificado é instalar e percorrer: abrir, entrar, emitir, ler o QR, ver o
+bilhete.
+
+Ao instalar localmente, dois tropeços conhecidos:
+
+```
+INSTALL_FAILED_UPDATE_INCOMPATIBLE   # debug e release têm assinaturas diferentes: desinstale antes
+INSTALL_FAILED_VERSION_DOWNGRADE     # o release local usa a contagem de commits; o debug usa 10
+```
+
+Ou seja: instalar um release local **impede** o `connectedDebugAndroidTest` seguinte até desinstalar. Se o
+`adb uninstall` falhar, `adb shell pm uninstall --user 0 br.com.fluviapp`.
+
+### O que ficou medido de quebra
+
+Os únicos `.so` que o release empacota são `libandroidx.graphics.path` e `libdatastore_shared_counter`, e
+**ambos estão alinhados a 16 KB** (`LOAD align = 0x4000`). A dívida que bloqueava o `targetSdk 35` era o
+`.so` do CameraX a 4 KB, e o CameraX saiu quando o leitor de QR passou a ser o ZXing. O `targetSdk`
+continua em **34** — subi-lo muda comportamento no Android 15, e isso é decisão, não consequência.
+
 ## O que continua manual, e não é pendência de build
 
 **Cada tester precisa de dois passos no console**, porque o autocadastro saiu na P2.2c e o seed foi

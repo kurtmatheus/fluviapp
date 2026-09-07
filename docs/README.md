@@ -36,7 +36,7 @@ diferentes:
 | *o que ainda falta construir* | [`design/mvp-roadmap.md`](design/mvp-roadmap.md) e a seção *O que está esperando decisão* do índice de ADRs |
 | *por que isto está assim* | [`historico/README.md`](historico/README.md), e daí para o ADR da data |
 | *posso mexer nisto?* | o índice de vigência — a coluna *o que caiu* costuma responder antes de o código responder |
-| *como isto chega no aparelho* | [`esteira.md`](esteira.md) — os três workflows, os grupos de tester e o que continua manual **por princípio** |
+| *como isto chega no aparelho* | [`esteira.md`](esteira.md) — os três workflows, os grupos de tester, **o que o release carrega** (R8, regras e recursos) e o que continua manual **por princípio** |
 
 ## Como escrever o próximo
 
