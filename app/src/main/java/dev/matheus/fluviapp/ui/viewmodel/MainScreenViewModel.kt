@@ -1,16 +1,9 @@
 package dev.matheus.fluviapp.ui.viewmodel
 
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.edit
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import dev.matheus.fluviapp.domain.operacoes.Funcionario
 import dev.matheus.fluviapp.domain.operacoes.PermissoesUsuario
 import dev.matheus.fluviapp.domain.screendata.secoesDoMenu
-import dev.matheus.fluviapp.preferences.PreferencesKey
-import dev.matheus.fluviapp.preferences.SessaoLocal
-import com.google.firebase.auth.FirebaseAuth
 import dev.matheus.fluviapp.services.repository.firebase.SincronizacaoSessao
 import dev.matheus.fluviapp.telemetry.EstadoSincronizacao
 // REVITALIZAÇÃO: voltam com as seções Passagem / Equipe.
@@ -22,7 +15,9 @@ import dev.matheus.fluviapp.services.repository.cadastro.porto.PortoRepository
 import dev.matheus.fluviapp.services.repository.cadastro.rota.RotaRepository
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.EmbarcacaoRepository
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.ViagemRepository
+import dev.matheus.fluviapp.services.repository.firebase.autenticacao.AutenticacaoRepository
 import dev.matheus.fluviapp.services.repository.operacoes.EscopoDaSessao
+import dev.matheus.fluviapp.services.repository.operacoes.SessaoUsuario
 import dev.matheus.fluviapp.ui.states.MainScreenState
 import dev.matheus.fluviapp.ui.states.MainScreenUiState
 import dev.matheus.fluviapp.util.Relogio
@@ -56,7 +51,6 @@ import javax.inject.Inject
  */
 @HiltViewModel
 class MainScreenViewModel @Inject constructor(
-    private val dataStore: DataStore<Preferences>,
     // REVITALIZAÇÃO: voltam com as seções Passagem / Equipe.
     // private val passagemRepository: PassagemFirestoreRepository,
     // private val funcionarioRepository: FuncionarioRepository,
@@ -67,8 +61,8 @@ class MainScreenViewModel @Inject constructor(
     private val localidadeRepository: LocalidadeRepository,
     private val escopoDaSessao: EscopoDaSessao,
     private val relogio: Relogio,
-    private val firebaseAuth: FirebaseAuth,
-    private val sessaoLocal: SessaoLocal,
+    private val autenticacaoRepository: AutenticacaoRepository,
+    private val sessaoUsuario: SessaoUsuario,
     private val sincronizacaoSessao: SincronizacaoSessao,
     private val estadoSincronizacao: EstadoSincronizacao,
 ) : ViewModel() {
@@ -121,21 +115,35 @@ class MainScreenViewModel @Inject constructor(
         }
     }
 
+    /**
+     * O menu, assinado ao **contexto** e não às chaves ([ADR-0032] D2).
+     *
+     * Até 2026-09-07 este método lia `USUARIO_ATUAL`/`PAPEL_ATUAL`/`CARGO_ATUAL` direto do DataStore — e
+     * **não era desleixo**: ele `collect`ava, então reagia, enquanto a porta só sabia responder uma vez.
+     * Com `SessaoUsuario.observar()`, a razão acabou, e três coisas somem juntas: a leitura crua, as duas
+     * chaves que existiam só para alimentá-la, e a derivação da atuação repetida aqui.
+     *
+     * O nome exibido passa a vir de `ContextoUsuario.nomeExibicao`, que **resolve melhor** do que a chave
+     * resolvia: a chave congelava o nome do login, e o contexto lê o funcionário de agora.
+     *
+     * Contexto nulo (ninguém logado) zera o menu em vez de manter o anterior — fail-closed, e é o estado
+     * de quem acabou de sair.
+     */
     private fun obterUsuario() {
         viewModelScope.launch {
-            dataStore.data.collect { prefs ->
-                val username = prefs[PreferencesKey.USUARIO_ATUAL]
+            sessaoUsuario.observar().collect { contexto ->
                 // O menu é quase todo eixo de SISTEMA, mas a seção Equipe também olha o cargo: ela
                 // existe para o supervisor gerir a própria agência (ADR-0015 §2.2/§8.2).
-                val papel = prefs[PreferencesKey.PAPEL_ATUAL]
-                val cargo = prefs[PreferencesKey.CARGO_ATUAL]
-                // A **família** do menu deriva da atuação (ADR-0016 §2, ADR-0020 F3/F4), e a atuação vem
-                // do cargo, que já a declara. Papel puro de plataforma não tem cargo — e aí `null` é a
-                // informação, não a falta dela: quem administra a plataforma não atua num segmento.
-                val atuacao = Funcionario.Cargo.de(cargo)?.atuacao
+                val papel = contexto?.papel
+                val cargo = contexto?.cargo
+                // A **família** do menu deriva da atuação (ADR-0016 §2, ADR-0020 F3/F4), e quem a declara
+                // é o contexto — a derivação `Cargo.de(cargo)?.atuacao` morava aqui **e** no
+                // `ContextoUsuario`, duas cópias do mesmo fato. Papel puro de plataforma não tem cargo, e
+                // aí `null` é a informação, não a falta dela.
+                val atuacao = contexto?.atuacao
                 _uiState.update { state ->
                     state.copy(
-                        userName = username ?: state.userName,
+                        userName = contexto?.nomeExibicao.orEmpty(),
                         // `secoesDoMenu` = a política (quem pode) ∩ o escopo revitalizado (o que existe).
                         // A política em si continua intacta — o recorte é do andaime, não da autorização.
                         secoesVisiveis = secoesDoMenu(papel, cargo, atuacao),
@@ -152,25 +160,29 @@ class MainScreenViewModel @Inject constructor(
         _uiState.update { it.copy(mainScreenState = MainScreenState.HOME) }
     }
 
+    /**
+     * Sair — **três gestos, três portas** ([ADR-0032] D2).
+     *
+     * Antes eram cinco linhas e duas delas conheciam o DataStore por dentro: o ViewModel sabia quais
+     * chaves existiam e apagava uma a uma. Um ViewModel assim precisa ser corrigido toda vez que uma
+     * chave nasce — e foi exatamente o que aconteceu quando a projeção do usuário mudou de casa.
+     *
+     * O `firebaseAuth.signOut()` também sai: `autenticacaoRepository.sair()` faz o mesmo, é o caminho que
+     * o login e o primeiro acesso já usam, e era **este** o único ponto do app que injetava `FirebaseAuth`
+     * num ViewModel sem precisar.
+     *
+     * A escolha de contexto (F6.4) sai junto, dentro do `encerrar()`: ela é de quem estava operando, não
+     * do aparelho — deixá-la para trás faria a próxima pessoa herdar a empresa da anterior, e o app não
+     * perguntaria, porque já teria uma resposta guardada.
+     */
     suspend fun deslogar() {
-        // para os listeners de sync da sessão (D2 — awaitClose remove as registrations), encerra a
-        // sessão do Firebase (autoridade) + limpa o cache de perfil no DataStore.
+        // Para os listeners da sessão (D2 — `awaitClose` remove as registrations).
         sincronizacaoSessao.parar()
-        firebaseAuth.signOut()
-        // O usuário logado sai junto, e isso é **correção**, não mudança de forma: ele morava numa linha
-        // do Room que este bloco não alcançava, então `SessaoUsuario.atual()` seguia devolvendo contexto
-        // para quem já tinha saído — só a navegação impedia que isso aparecesse. O e-mail fica, porque é
-        // conveniência do próximo login e não sessão.
-        sessaoLocal.limpar()
-        dataStore.edit {
-            it[PreferencesKey.LOGADO] = false
-            it[PreferencesKey.USUARIO_ATUAL] = ""
-            it[PreferencesKey.CARGO_ATUAL] = ""
-            // A escolha de contexto (F6.4) é de quem estava operando, não do aparelho: quem entrar
-            // depois responde de novo. Deixá-la para trás faria a próxima pessoa herdar a empresa da
-            // anterior — e o app não perguntaria, porque já teria uma resposta guardada.
-            it.remove(PreferencesKey.EMPRESA_ATIVA)
-        }
+        // A autoridade da credencial.
+        autenticacaoRepository.sair()
+        // A projeção local: quem entrou e o que escolheu. O e-mail fica, porque é conveniência do
+        // próximo login e não sessão.
+        sessaoUsuario.encerrar()
     }
 
     // REVITALIZAÇÃO: o pull-to-refresh saiu da tela com a lista antiga (ADR-0020) e não voltou com a nova.

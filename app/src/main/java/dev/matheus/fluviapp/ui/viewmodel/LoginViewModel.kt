@@ -2,18 +2,11 @@ package dev.matheus.fluviapp.ui.viewmodel
 
 import android.content.Context
 import android.util.Log
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.edit
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.matheus.fluviapp.R
 import dev.matheus.fluviapp.extensions.toastMessage
 import dev.matheus.fluviapp.domain.operacoes.Usuario
-import dev.matheus.fluviapp.preferences.PreferencesKey.CARGO_ATUAL
-import dev.matheus.fluviapp.preferences.PreferencesKey.PAPEL_ATUAL
-import dev.matheus.fluviapp.preferences.PreferencesKey.LOGADO
-import dev.matheus.fluviapp.preferences.PreferencesKey.USUARIO_ATUAL
 import dev.matheus.fluviapp.services.repository.operacoes.FuncionarioRepository
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.EmpresaRepository
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.EmbarcacaoRepository
@@ -36,7 +29,6 @@ import javax.inject.Inject
 
 @HiltViewModel
 class LoginViewModel @Inject constructor(
-    private val dataStore: DataStore<Preferences>,
     private val sessaoLocal: SessaoLocal,
     private val autenticacaoRepository: AutenticacaoRepository,
     private val empresaRepository: EmpresaRepository,
@@ -149,23 +141,17 @@ class LoginViewModel @Inject constructor(
      * autenticado()`. O login passou a *ser a origem* da projeção em vez de depender dela, e é isso que a
      * [SessaoUsuario] lê depois.
      *
-     * **Eram duas projeções e agora é uma** (2026-09-07): o `registrarLogin` gravava uma linha no Room e
-     * este bloco gravava chaves no DataStore, com o `papel` nos dois lugares. O [SessaoLocal] assumiu os
-     * campos do usuário — inclusive o `PAPEL_ATUAL`, que já era daqui — e o que sobra neste bloco é o que
-     * é **de sessão e não de usuário**: a flag de logado, o nome exibido e o cargo, que vem do
-     * funcionário e não do `Usuario`.
+     * **Eram duas projeções, depois três chaves, e agora é uma escrita** ([ADR-0032] D2). O
+     * `registrarLogin` já gravava os campos do usuário; ao lado dele, este bloco gravava `LOGADO`,
+     * `USUARIO_ATUAL` e `CARGO_ATUAL` cru no DataStore — dois donos do mesmo acontecimento.
      *
-     * O que se exibe é o **nome do funcionário**; sem funcionário (papel puro de plataforma), o
-     * `username` — o `Usuario` não tem nome (§8.1).
+     * As três chaves morreram porque **o contexto as deriva melhor**: o nome exibido sai de
+     * `ContextoUsuario.nomeExibicao` (que lê o funcionário de agora, em vez de congelar o do login), o
+     * cargo sai do próprio funcionário, e `LOGADO` não tinha leitor nenhum — quem decide se há sessão é
+     * `currentUser` + `SessaoUsuario`, não uma cópia.
      */
     private suspend fun logarUsuario(perfil: PerfilAutenticado, emailAutenticado: String) {
-        val usuario = perfil.toUsuario(emailAutenticado)
-        sessaoLocal.registrarLogin(usuario)
-        dataStore.edit { preferences ->
-            preferences[LOGADO] = true
-            preferences[USUARIO_ATUAL] = perfil.nome.ifBlank { usuario.username }
-            preferences[CARGO_ATUAL] = perfil.cargo
-        }
+        sessaoLocal.registrarLogin(perfil.toUsuario(emailAutenticado))
         _uiState.value = _uiState.value.copy(logado = true)
     }
 

@@ -4,7 +4,9 @@ import android.content.Context
 import androidx.datastore.preferences.core.edit
 import dev.matheus.fluviapp.domain.operacoes.Usuario
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -56,11 +58,20 @@ class SessaoLocal @Inject constructor(
      * afirmar que alguém está logado. O `email` vem do [PreferencesKey.ULTIMO_EMAIL] porque é o mesmo
      * e-mail, e guardá-lo duas vezes criaria duas respostas para uma pergunta.
      */
-    suspend fun logado(): Usuario? {
-        val preferences = context.dataStore.data.first()
-        val id = preferences[PreferencesKey.USUARIO_ID]?.takeIf { it.isNotBlank() } ?: return null
+    suspend fun logado(): Usuario? = observarLogado().first()
 
-        return Usuario(
+    /**
+     * **O logado como estado observável** ([ADR-0032] D2) — quem entrou, quem saiu, e a troca no meio.
+     *
+     * O DataStore já é um `Flow`; o que faltava era a projeção acompanhar. É esta função que permite ao
+     * menu largar a leitura crua das chaves sem perder reatividade — antes ele assinava `dataStore.data`
+     * direto **porque a porta só sabia responder uma vez**, e a leitura crua não era desleixo, era a
+     * única saída.
+     */
+    fun observarLogado(): Flow<Usuario?> = context.dataStore.data.map { preferences ->
+        val id = preferences[PreferencesKey.USUARIO_ID]?.takeIf { it.isNotBlank() } ?: return@map null
+
+        Usuario(
             id = id,
             email = preferences[PreferencesKey.ULTIMO_EMAIL].orEmpty(),
             username = preferences[PreferencesKey.USUARIO_USERNAME].orEmpty(),

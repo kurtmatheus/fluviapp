@@ -14,16 +14,24 @@ val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "lo
  * A **fonte** continua sendo `users/{uid}` + `funcionarios/{id}` — isto aqui é derivado e morre no
  * logout.
  *
- * As chaves de papel e cargo são **novas** (`papel_atual`/`cargo_funcionario_atual`) de propósito: a
- * antiga `cargo_atual` guardava o cargo do vocabulário velho, e reaproveitá-la faria uma sessão
- * pré-divisão ser lida como cargo de negócio. Chave nova = valor ausente = sem permissão (fail-closed),
- * que é o que se quer de uma sessão obsoleta.
+ * ### Três chaves saíram em 2026-09-07 ([ADR-0032] D2)
+ *
+ * Eram `logado`, `usuario_atual` e `cargo_funcionario_atual`, e as três existiam para alimentar a leitura
+ * crua que o menu fazia deste DataStore. Com `SessaoUsuario.observar()`, o menu passou a assinar o
+ * **contexto**, e elas perderam a função — cada uma por uma razão própria, que vale distinguir:
+ *
+ * - **`logado`** nunca teve leitor. Era resíduo de uma decisão do ADR-0005 (*"o DataStore guarda o estado
+ *   derivado para roteamento no Splash"*) que a execução superou por um caminho melhor: quem decide se há
+ *   sessão é `currentUser` + `SessaoUsuario`, ou seja, a autoridade em vez de uma cópia;
+ * - **`usuario_atual`** guardava o nome exibido, **congelado no login**. `ContextoUsuario.nomeExibicao`
+ *   resolve melhor, porque lê o funcionário de agora;
+ * - **`cargo_funcionario_atual`** guardava o cargo, que é do funcionário e vem com ele.
+ *
+ * Sobra o `papel_atual`, que **não** é duplicata: ele é do `Usuario`, e é o único campo do perfil de
+ * sistema que a projeção precisa guardar para montar o contexto antes de qualquer leitura remota.
  */
 object PreferencesKey {
-    val LOGADO = booleanPreferencesKey("logado")
-    val USUARIO_ATUAL = stringPreferencesKey("usuario_atual")
     val PAPEL_ATUAL = stringPreferencesKey("papel_atual")
-    val CARGO_ATUAL = stringPreferencesKey("cargo_funcionario_atual")
     val TEMA_ESCURO = booleanPreferencesKey("tema_escuro")
 
     /**

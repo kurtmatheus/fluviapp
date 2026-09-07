@@ -5,6 +5,8 @@ import dev.matheus.fluviapp.domain.operacoes.Funcionario
 import dev.matheus.fluviapp.domain.operacoes.Usuario
 import dev.matheus.fluviapp.domain.operacoes.Vinculo
 import dev.matheus.fluviapp.services.repository.operacoes.SessaoUsuario
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 
 /**
  * Fake da porta [SessaoUsuario] — é o que torna o **recorte por papel/cargo** testável sem Room nem
@@ -16,10 +18,23 @@ class FakeSessaoUsuario(var contexto: ContextoUsuario? = null) : SessaoUsuario {
     var empresaEscolhida: String? = null
         private set
 
-    override suspend fun atual(): ContextoUsuario? =
-        contexto?.copy(empresaAtivaId = empresaEscolhida ?: contexto?.empresaAtivaId)
+    /**
+     * O contexto como fluxo ([ADR-0032] D2). Emite **uma vez** e fica: o fake não simula a reatividade do
+     * DataStore, porque nenhum teste de hoje depende dela — quem quiser a próxima emissão troca o
+     * `contexto` e coleta de novo.
+     *
+     * `atual()` não é sobrescrito: a interface já o define como `observar().first()`, e ter duas
+     * implementações no fake seria a chance de elas discordarem.
+     */
+    override fun observar(): Flow<ContextoUsuario?> =
+        flowOf(contexto?.copy(empresaAtivaId = empresaEscolhida ?: contexto?.empresaAtivaId))
 
     override suspend fun escolherEmpresa(empresaId: String) { empresaEscolhida = empresaId }
+
+    override suspend fun encerrar() {
+        contexto = null
+        empresaEscolhida = null
+    }
 
     companion object {
         /** Papel puro de plataforma: existe no sistema, não existe na operação (sem funcionário). */

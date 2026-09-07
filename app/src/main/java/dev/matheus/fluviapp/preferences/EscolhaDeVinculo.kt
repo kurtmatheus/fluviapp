@@ -3,7 +3,9 @@ package dev.matheus.fluviapp.preferences
 import android.content.Context
 import androidx.datastore.preferences.core.edit
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -30,8 +32,11 @@ class EscolhaDeVinculo @Inject constructor(
 ) {
 
     /** `null` quando ninguém escolheu ainda — que é o estado normal de quem tem um vínculo só. */
-    suspend fun empresaEscolhida(): String? =
-        context.dataStore.data.first()[PreferencesKey.EMPRESA_ATIVA]?.takeIf { it.isNotBlank() }
+    suspend fun empresaEscolhida(): String? = observarEmpresaEscolhida().first()
+
+    /** A escolha como estado observavel (ADR-0032 D2) — o contexto acompanha a troca sem ser relido. */
+    fun observarEmpresaEscolhida(): Flow<String?> =
+        context.dataStore.data.map { it[PreferencesKey.EMPRESA_ATIVA]?.takeIf { id -> id.isNotBlank() } }
 
     suspend fun guardar(empresaId: String) {
         context.dataStore.edit { it[PreferencesKey.EMPRESA_ATIVA] = empresaId }
