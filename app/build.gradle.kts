@@ -162,7 +162,9 @@ dependencies {
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
     implementation("io.coil-kt:coil-compose:2.7.0")
 
-    val hiltVersion = "2.53.1"
+    // 2.53.1 → 2.57.2 em 2026-09-07, e o motivo não é "estar atualizado": é que a 2.53.1 **não roda sob
+    // KSP2**, e o KSP2 era o que sobrava depois que o Room saiu do caminho (ver `gradle.properties`).
+    val hiltVersion = "2.57.2"
     implementation("com.google.dagger:hilt-android:$hiltVersion")
     ksp("com.google.dagger:hilt-compiler:$hiltVersion")
     implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
