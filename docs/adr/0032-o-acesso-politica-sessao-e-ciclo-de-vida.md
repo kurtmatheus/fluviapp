@@ -1,6 +1,6 @@
 # ADR-0032: O acesso — a política volta ao gesto, a sessão vira fluxo, e o `ADM` gere quem entra
 
-**Status:** Aceita (decisões do analista em 2026-09-07) · **sem código** · com **perguntas abertas** (§Q)
+**Status:** Aceita (decisões do analista em 2026-09-07) · **sem código** · **§Q respondida no mesmo dia**
 
 **Estudo que preparou:** [`docs/design/acesso-e-identidade.md`](../design/acesso-e-identidade.md)
 
@@ -178,55 +178,50 @@ em aberto: ver §Q1.
 
 ---
 
-## Q — As perguntas que este ADR não fecha
+## Q — As três perguntas, e as respostas
 
-### Q1 — Onde mora "este acesso está ativo", e quem escreve ali
+Ficam **pergunta e resposta juntas**: a pergunta é o que a decisão abriu, a resposta é dele.
 
-Três decisões abrem **o mesmo buraco**: desativar/reativar (D6), expirar (D6) e ligar um perfil de empresa
-a um `ADM` que já existe (D5). As três são escrita em `users/{uid}` **por um terceiro** — e hoje a regra
-admite só o próprio dono, com `papel` e `funcionarioId` **imutáveis**. Foi assim que o anti-escalonamento
-foi fechado na P2.2a′, e não é coisa de afrouxar por conveniência.
+### Q1 — O estado do acesso mora **no próprio `users/{uid}`**, e expirar **impede a próxima operação**
 
-**Duas saídas, e eu recomendo a primeira:**
+Três decisões abriam o mesmo buraco — desativar/reativar (D6), expirar (D6) e ligar um perfil de empresa a
+um `ADM` que já existe (D5) —, porque as três são escrita em `users/{uid}` **por um terceiro**, e a
+regra admite só o próprio dono, com `papel` e `funcionarioId` imutáveis desde a P2.2a′.
 
-**(a) O estado do acesso mora no próprio `users/{uid}`, e o `ADM` escreve campos nomeados.** A regra de
-`update` ganha um segundo ramo — `ehAdm()` — restrito por `affectedKeys().hasOnly(['ativo', 'expiraEm',
-'funcionarioId'])`. O `papel` continua fora da lista, para ninguém, o que mantém o anti-escalonamento
-inteiro **e coerente com a D6**: nem o `ADM` promove alguém a `ADM`.
+**Decidido:** os campos moram no próprio documento de perfil. A regra de `update` ganha um segundo ramo
+para o `ADM`, restrito por lista fechada de chaves — e o **`papel` fica fora dela para todo mundo**,
+inclusive para o `ADM`, que é o que mantém o anti-escalonamento inteiro e coerente com a D6 (*não há
+convite de `ADM`*; também não há promoção a `ADM`).
 
-> **O argumento decisivo é de custo de leitura.** `papel()` **já faz** `get(users/{uid})` em toda
-> autorização. Pôr `ativo` e `expiraEm` nesse mesmo documento faz a verificação sair **de graça** —
-> `request.time < expiraEm` compara com um campo que a regra já tem em mãos. Nenhum salto novo.
+O argumento que decidiu é de **custo de leitura**: `papel()` **já faz** `get(users/{uid})` em toda
+autorização, então `ativo` e `expiraEm` viajam num documento que a regra já tem em mãos — a verificação
+sai **de graça**. A alternativa (guardar fora, ou no `convites/{email}`) cobraria um salto a mais em
+**toda operação autorizada do app**, para sempre.
 
-**(b) O estado mora fora — numa coleção própria, ou no `convites/{email}` que já existe** (escrito só pelo
-`ADM`, e que é o que a seção Usuários **de fato lista** hoje). Preserva o `users/{uid}` intocado, ao preço
-de **um `get()` a mais em cada operação autorizada do app inteiro**, para sempre — e de uma exceção para o
-`ADM`, que não tem convite.
+**E a expiração impede a próxima operação — não derruba a sessão em curso.** É o que a regra dá
+naturalmente (`request.time` comparado a `expiraEm` no momento da escrita), e a escolha tem uma
+propriedade que vale nomear: **quem está no meio de um atendimento termina o atendimento**. Derrubar a
+sessão no relógio seria interromper uma emissão pela metade para provar pontualidade.
 
-**Recomendo (a)**: o custo de (b) é pago em toda escrita, enquanto o de (a) é uma ampliação única de uma
-regra que já tem 160 casos de emulador em volta. E há um argumento de domínio: *"esta identidade está
-ativa"* é fato **da identidade**, não do convite que a originou — o convite é o passado, o perfil é o
-presente.
+### Q2 — `Funcionario.vinculos` **deixa de ser lista**
 
-**O que decidir:** (a) ou (b); e se `expiraEm` **derruba a sessão em curso** ou só impede a próxima
-operação — a segunda é o que a regra dá de graça, a primeira exige o app reagir ao relógio.
+Vira `vinculo: Vinculo?`. Com uma empresa no máximo (D5), a lista tinha no máximo um elemento — e
+estrutura que admite o que o domínio não reconhece é convite a estado inválido. É o mesmo princípio que o
+[ADR-0031](0031-classe-de-veiculo-natureza-e-casco-por-exclusao.md) aplicou à cilindrada: quando o fato
+tem uma forma, a estrutura segue a forma.
 
-### Q2 — `Funcionario.vinculos` continua sendo lista?
+Toca a fronteira, e o ADR registra o custo em vez de escondê-lo: o array no Firestore, o derivado
+`empresaIds` (que vira um id só), as funções de regra `souSupervisorDe()` e
+`naoMexeNosPropriosVinculos()`, e os documentos já gravados.
 
-Com uma empresa no máximo, a lista tem no máximo um elemento — e `empresaIds`, o derivado que existe para
-consulta, vira um id só. Trocar por `vinculo: Vinculo?` diz a verdade do domínio, e toca a fronteira: o
-array no Firestore, as regras `souSupervisorDe()` e `naoMexeNosPropriosVinculos()`, e os documentos já
-gravados.
+### Q3 — A troca de perfil se anuncia como **carregamento**, e nada além disso
 
-**Minha recomendação é trocar**, pelo mesmo princípio que o [ADR-0031](0031-classe-de-veiculo-natureza-e-casco-por-exclusao.md)
-usou com a cilindrada: quando o fato tem uma forma, a estrutura que admite outra é convite a estados que
-o domínio não reconhece. Mas é decisão sua, e o custo de migração é real.
+*"Carregando sessão e informações do perfil."* com um indicador circular padrão. Sem tela nova, sem
+cerimônia.
 
-### Q3 — A troca de perfil se anuncia como quê?
-
-A D5 é **lente, não redução de poder**: o servidor concede a união. Isso é seguro para `ADM`/`GESTOR`, e é
-enganoso se a tela sugerir o contrário. Falta decidir **o que a interface diz** quando se está no perfil de
-empresa — porque uma troca que promete separação e não a entrega é pior do que não ter troca.
+E a modéstia é a decisão certa pelo que a D5 estabeleceu: a troca é **lente, não redução de poder** — o
+servidor concede a união. Uma tela que celebrasse a troca sugeriria uma separação que não existe; um
+carregamento honesto diz o que de fato acontece, que é **recarregar o contexto**.
 
 ---
 
