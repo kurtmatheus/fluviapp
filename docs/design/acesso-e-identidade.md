@@ -278,35 +278,151 @@ mais forte.
 
 ---
 
-## 7. As perguntas
+## 7. As respostas (analista, 2026-09-07)
 
-### 7.1 O freio do cliente volta, ou a fronteira é só do servidor?
+As cinco perguntas foram respondidas no mesmo dia. Ficam abaixo **pergunta e decisão juntas** — a
+pergunta é o que a medição levantou, a decisão é dele.
 
-Doze funções de política sem consumidor são um custo silencioso. Há três saídas coerentes — reconectar a
-política aos gestos que existem hoje (emissão, embarque, gravar funcionário); assumir que a autorização é
-do servidor e **apagar** o que não se usa; ou declarar que são antecipação e datá-las. A pior é a atual:
-manter tudo e não dizer qual é.
+### 7.1 O freio do cliente **volta**
 
-### 7.2 A sessão é estado observável ou consulta?
+A política volta a ser consultada antes do gesto, e não só antes de desenhar o menu. As doze funções sem
+chamador deixam de ser "antecipação ou entulho": as que têm consumidor hoje passam a tê-lo de fato —
+`podeCriarPassagem` na emissão, `podeConfirmarEmbarque` no embarque, `podeCadastrarMembro` no
+`salvar()` do funcionário, `podeAcessar` na navegação.
 
-O menu lê o DataStore cru porque precisa reagir, e a porta só sabe responder uma vez. Se a resposta for
-"observável", `SessaoUsuario` ganha um `Flow` e o acoplamento morre sozinho — junto com a chave `LOGADO`
-e a escrita dupla do login.
+Isto **estende o [ADR-0010](../adr/0010-autorizacao-por-cargo.md)** no ponto em que ele se declarava
+"segurança por UI": a fronteira do servidor continua sendo a que vale, e o cliente passa a ter o segundo
+freio — que serve para duas coisas que a regra do servidor não faz: **falhar antes** (a pessoa não tenta
+o que não pode) e **falhar explicando** (o servidor devolve *permission denied*, não um motivo).
 
-### 7.3 O recorte da suíte de regras ainda tem função?
+### 7.2 A sessão é **estado observável**
 
-O andaime da revitalização se esvaziou no app (9 de 9 seções). Na suíte de regras ele ainda esconde 36%
-dos casos, e são os da autorização mais nova. Ligar `SUITE_COMPLETA` por padrão é uma linha — a pergunta
-é o que ela vai mostrar vermelho, e se isso é para agora.
+`SessaoUsuario` deixa de ser foto e passa a ser fluxo. É a decisão que dissolve três dos quatro
+acoplamentos de uma vez: o menu deixa de ler o DataStore cru **sem perder reatividade**, a chave
+`LOGADO` perde a última desculpa, e a escrita dupla do login some porque passa a haver um dono só do
+estado de sessão.
 
-### 7.4 O que um evento de operador precisa dizer?
+### 7.3 O recorte da suíte de regras: **liga, roda e analisa**
 
-Analytics agregado, fato auditável no documento, ou os dois com papéis diferentes? A resposta define se
-isto é uma fatia pequena (acrescentar `naoFatal` e um evento no embarque) ou um eixo próprio com
-implicação de dado pessoal.
+`SUITE_COMPLETA` passa a ser o padrão. A ordem importa e está na decisão: **ligar, rodar e analisar** —
+o que ficar vermelho é medição, não regressão, e cada caso vermelho é uma pergunta a responder antes de
+qualquer conserto. É o mesmo método que o ADR-0031 usou quando um teste ficou vermelho ao acrescentar as
+classes: o vermelho *era* o argumento.
 
-### 7.5 Convidar `ADM` continua sem limite e sem revogação?
+### 7.4 Observabilidade: **analytics agregado**
 
-A capacidade existe e nenhum documento a reconhece. Independentemente do que se decida sobre limite e
-revogação, **os três textos precisam parar de dizer o contrário do que o código faz** — e o comentário
-dentro do `firestore.rules` é o mais urgente dos três.
+O evento é analítico, não auditoria. Responde *"quantas emissões por agência nesta semana"*, e **não**
+*"o que a Ana fez às 14h"* — o operador entra como **coordenada agregável** (agência, papel, cargo), não
+como identidade.
+
+Duas consequências que essa escolha carrega, e que ela resolve de graça:
+
+- **fica cego a PII por construção**, que é o que se quer de um evento que sai do aparelho;
+- **não compete com o carimbo.** `MetadadosPassagem.funcionarioId` e `CarimboEmbarque.porId` continuam
+  sendo o registro de quem fez, dentro do documento, onde a auditoria mora. São camadas com papéis
+  diferentes: o evento conta, o documento prova.
+
+### 7.5 O ciclo de vida do usuário da plataforma
+
+A resposta foi maior que a pergunta, e reorganiza a §6 inteira.
+
+**Não há convite de `ADM`.** O administrador entra por **console + Firestore**, e só. Hoje há um; se
+houver outro, entra pelo mesmo caminho. Isso **preserva o [ADR-0021](../adr/0021-usuarios-da-plataforma-adm-only.md)
+D0 no que ele tem de mais forte** — *não existe caminho, dentro do app, para fabricar quem administra* —
+e **corrige o código**, que hoje oferece os três papéis no formulário e deixa a regra aceitar um convite
+de `ADM`. A lacuna que a §6.3 apontou (*"nada restringe o papel do convidado"*) fecha por decisão: o
+convite carrega **`GESTOR` e `OPERADOR`**, nunca `ADM`.
+
+**O `ADM` gere os gestores e os operadores**, e a seção Usuários deixa de ser somente-leitura — o que
+**supera o ADR-0021 D2**. Ele passa a poder:
+
+- **editar** o registro;
+- **desativar** e **reativar** o acesso — os dois, e o par importa: desativar sem reativar transformaria
+  um engano em ida ao console;
+- definir **data de expiração de acesso**, que é conceito novo no domínio: o acesso deixa de ser
+  permanente-até-alguém-lembrar e passa a ter fim declarado;
+- ver **métricas de gestão de usuários** — e é aqui que a §7.4 encosta nesta: o agregado que o evento
+  produz é o que alimenta essa tela.
+
+**O que isto abre, e que o ADR terá de responder:** desativar um acesso é escrever no `users/{uid}`, e
+hoje a regra permite ao dono editar o próprio perfil **menos** papel e vínculo — não há caminho para um
+terceiro escrever ali. Expiração e desativação precisam ser lidas **pelo servidor** para valerem, senão
+são enfeite de UI: um acesso "desativado" que o Firestore continua aceitando não está desativado.
+
+---
+
+## 8. Adendo — "Adicionar Perfil existente"
+
+**O pedido:** `ADM` e `GESTOR` podem *adicionar um perfil existente* e **trocar de perfil sem
+relogar**, só carregando as informações do perfil.
+
+Antes de desenhar, uma restrição do código que decide entre leituras muito diferentes — e é por isso que
+este adendo não propõe solução.
+
+### 8.1 A restrição
+
+**O servidor decide por `request.auth.uid`.** Toda regra do `firestore.rules` parte daí: `papel()`
+lê `users/{request.auth.uid}`, `cargoDoAutor()` faz o segundo salto pelo `funcionarioId` desse
+documento. E o cliente tem **um `currentUser` por vez** — o SDK do Firebase Auth não guarda duas sessões
+na mesma instância.
+
+Disso decorre o que qualquer desenho aqui tem de encarar: **se a troca de perfil não trocar o uid
+autenticado, o servidor continua vendo a pessoa original.** A tela mostraria um perfil e o Firestore
+aplicaria outro — e o sintoma seria a UI oferecendo seções cujas escritas voltam negadas.
+
+Isso não é impedimento; é a linha que separa três coisas que o mesmo pedido pode significar.
+
+### 8.2 As três leituras
+
+**(a) Perfis do mesmo dono.** A pessoa tem mais de um perfil e escolhe qual está ativo. O app **já faz
+isso um nível abaixo**: `EscolhaDeVinculo` guarda em nome de qual empresa alguém opera, e
+`ContextoUsuario.vinculoAtivo` revalida a escolha contra os vínculos atuais a cada leitura — *"um dado
+que não é consultado como autoridade não precisa de invalidação ativa"*. Subir isso um andar (do vínculo
+para o perfil) é o caminho mais curto, **mas exige que o servidor saiba qual perfil está ativo**, e hoje
+`users/{uid}.papel` é um valor só.
+
+**(b) Ver como outro.** O `ADM` carrega o perfil de alguém para ver o que essa pessoa vê. O servidor
+**não se engana** (continua indo pelo uid), então isto é honestamente uma **prévia de UI** — útil para
+diagnóstico (*"por que o supervisor não enxerga a viagem?"*), e que precisa dizer na tela que é prévia,
+porque nenhuma escrita vai funcionar ali.
+
+**(c) Troca rápida de conta.** Duas contas de verdade, alternando sem repetir a senha toda vez. É o que o
+**[ADR-0005](../adr/0005-autenticacao-sessao-firebase-datastore.md) já previu** em *Alternativas
+futuras*: *"multi-conta / troca rápida de usuário: o DataStore de sessão evolui para uma lista de perfis
+em cache, com `currentUser` decidindo o ativo"*. Note a segunda metade — **o `currentUser` decide**: o
+cache é conveniência, a autoridade continua sendo o Auth. Tecnicamente dá para manter sessões paralelas
+com instâncias separadas de `FirebaseApp`, e o custo disso é real (duas árvores de dependência, dois
+caches offline, e o "quem está logado" deixando de ter resposta única).
+
+### 8.3 O que muda conforme a leitura
+
+| | (a) perfis do mesmo dono | (b) ver como outro | (c) troca de conta |
+|---|---|---|---|
+| troca o uid? | não | não | **sim** |
+| o servidor acompanha? | só se o perfil ativo virar dado que a regra lê | não — e não precisa | sim, naturalmente |
+| escreve? | sim | **não** (prévia) | sim |
+| precedente no app | `EscolhaDeVinculo` | nenhum | `ADR-0005`, alternativas futuras |
+| risco principal | perfil ativo que a regra ignora | ser confundido com permissão | "quem está logado" sem resposta única |
+
+### 8.4 A pergunta
+
+**Qual delas é o fluxo?** Descrito como a pessoa o vive — quem abre, o que vê na tela, o que acontece
+quando ela toca em "adicionar", e o que ela consegue *fazer* depois de trocar (só olhar, ou também
+emitir/gravar). É essa última metade que decide se o servidor precisa entrar na conversa.
+
+Minha leitura do enunciado — *"sem relogar, só carregando informações do perfil"* — aponta para **(b)**,
+e nesse caso o desenho é o mais barato dos três e o mais fácil de errar: barato porque não toca em Auth
+nem em regra; fácil de errar porque uma prévia que não se anuncia como prévia vira, na cabeça de quem
+usa, uma promessa de permissão.
+
+---
+
+## 9. O que vem depois
+
+O processo passa a ter uma etapa a mais, decidida junto com estas respostas:
+
+**estudo → perguntas → ADR → perguntas → issues → implementação de issue**
+
+As **issues nascem do ADR**, e não do código: elas escopam e organizam as tarefas que o estudo levantou,
+mantêm a documentação do que foi feito e **é para elas que se volta** quando aparecer defeito. O que este
+estudo mediu vira, portanto, um conjunto de issues rastreáveis — e não uma fatia grande e opaca.
