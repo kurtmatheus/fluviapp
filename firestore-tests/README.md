@@ -25,7 +25,21 @@ npm test
 roda o Jest contra ele e derruba tudo ao final). Não precisa de credenciais: usa o projeto
 `demo-fluviapp` (o prefixo `demo-` faz o emulador não exigir login).
 
+**Exige Java 11+** — o emulador é um processo Java, e um JDK 8 no `PATH` faz o `firebase-tools` recusar
+antes de rodar caso nenhum, com a mensagem *"no longer supports Java versions before 11"*. Se o `java` da
+máquina for antigo, ponha o 17 na frente: `export PATH="$JAVA_HOME/bin:$PATH"`.
+
+**Roda tudo, sempre.** Havia aqui um recorte (`SUITE_COMPLETA=1` para "a suíte completa"), e ele saiu em
+2026-09-07 pelo [ADR-0032](../docs/adr/0032-o-acesso-politica-sessao-e-ciclo-de-vida.md) D3 — não há mais
+variável de ambiente, e este documento descrevia como cobertura normal justamente o que estava desligado.
+
 ## O que é coberto (matriz ADR-0010/0011)
+
+> **160 casos, e por muito tempo só 103 rodavam.** O recorte pulava `passagens`, `clientes` e `veiculos`
+> — a autorização mais nova e mais complexa do sistema, e a única sem verificação no CI. Ao ligá-lo, os
+> **57 passaram de primeira**: o recorte não escondia dívida, escondia cobertura que funcionava. É o pior
+> tipo de gate — o que passa sem olhar.
+
 
 - **Anti-escalonamento** (`users/{uid}`): cria só o próprio perfil e só como `AGENTE` (o menor
   privilégio); não altera o próprio cargo; não deleta perfil.

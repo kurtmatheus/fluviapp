@@ -172,22 +172,23 @@ beforeEach(async () => {
   });
 });
 
-/**
- * **Recorte da revitalização** (ADR-0020), gêmeo do `@Category(ForaDoEscopo)` da suíte JVM: roda o que
- * cobre a entidade viva — hoje a Empresa — e pula o resto.
+/*
+ * **O recorte da revitalização saiu daqui em 2026-09-07** ([ADR-0032](../docs/adr/0032-o-acesso-politica-sessao-e-ciclo-de-vida.md) D3).
  *
- * O critério é o mesmo: um bloco está dentro quando a regra que ele exercita é atravessada por alguma
- * parte da jornada da Empresa. Por isso `users/{uid}` fica: o login lê `users/{uid}` para resolver papel
- * e cargo, e foi justamente uma leitura dessa coleção que quebrou o acesso nesta sessão. Já `funcionarios`
- * sai — a jornada só **lê** de lá, e o que o bloco cobre é a escrita e o cargo, que são da Equipe.
+ * Havia um `foraDoEscopo = SUITE_COMPLETA ? describe : describe.skip`, gêmeo do
+ * `@Category(ForaDoEscopo)` da suíte JVM, e o `npm test` — o comando que os dois workflows do CI rodam —
+ * não definia a variável. Resultado medido: **103 casos rodavam e 57 eram pulados**, e os pulados eram os
+ * de `passagens` (posse, FSM de embarque, cota), `clientes` e `veiculos` (assinatura, PII) — a
+ * autorização mais nova e mais complexa do sistema era a que o gate não exercitava.
  *
- * Vale mais aqui do que na suíte JVM, e por uma razão específica: estas regras **nunca foram deployadas**.
- * Uma suíte que só fala do que está vivo é a que dá coragem de finalmente subir `firestore.rules`.
+ * O recorte teve razão enquanto o app era refeito seção a seção. Perdeu-a quando o andaime se esvaziou
+ * (`SECOES_REVITALIZADAS` tem 9 valores e `SecaoMenu.entries` também), e a assimetria media o quanto
+ * havia ficado para trás: na suíte JVM o recorte custava **1,7%**; aqui, **36%**.
  *
- *   npm test                    → só o escopo
- *   SUITE_COMPLETA=1 npm test   → tudo, para medir o que falta revitalizar
+ * **E ao ligar, os 160 passaram.** Nenhum vermelho: o recorte não escondia dívida — escondia cobertura
+ * que funcionava. É o pior tipo de gate, o que passa sem olhar; durante meses, mudança nas regras de
+ * passagem, cliente e veículo não foi verificada por ninguém.
  */
-const foraDoEscopo = process.env.SUITE_COMPLETA ? describe : describe.skip;
 
 // Atalhos para os bancos autenticados por persona.
 const asAgenteA = () => testEnv.authenticatedContext(AGENTE_A).firestore();
@@ -750,7 +751,7 @@ describe('portos — escrita só de plataforma, e delete físico impossível', (
  * **não corrige**. Sem isso, "uma pessoa é um documento" viraria "uma pessoa é um documento que a última
  * agência reescreveu".
  */
-foraDoEscopo('clientes — criar, assinar, e a curadoria que não é da agência', () => {
+describe('clientes — criar, assinar, e a curadoria que não é da agência', () => {
   test('agente cria pessoa que não existe, assinando a PRÓPRIA empresa → OK', async () => {
     await assertSucceeds(
       setDoc(doc(asAgenteA(), 'clientes', 'CPF:52998224725'), {
@@ -822,7 +823,7 @@ foraDoEscopo('clientes — criar, assinar, e a curadoria que não é da agência
   });
 });
 
-foraDoEscopo('clientes — leitura recortada pela assinatura (é PII)', () => {
+describe('clientes — leitura recortada pela assinatura (é PII)', () => {
   test('agente lê quem a PRÓPRIA empresa atendeu → OK', async () => {
     await assertSucceeds(getDoc(doc(asAgenteA(), 'clientes', 'CPF:52998224725')));
   });
@@ -844,7 +845,7 @@ foraDoEscopo('clientes — leitura recortada pela assinatura (é PII)', () => {
   });
 });
 
-foraDoEscopo('veiculos — mesmo regime, com a chave que não polui', () => {
+describe('veiculos — mesmo regime, com a chave que não polui', () => {
   test('agente cria veículo assinando a própria empresa → OK', async () => {
     await assertSucceeds(
       setDoc(doc(asAgenteA(), 'veiculos', 'ABC1D23'), {
@@ -873,7 +874,7 @@ foraDoEscopo('veiculos — mesmo regime, com a chave que não polui', () => {
 });
 
 // --- Passagens: emissão, posse e imutabilidade do dono ---
-foraDoEscopo('passagens — emissão sem forjar dono', () => {
+describe('passagens — emissão sem forjar dono', () => {
   test('agente cria passagem com funcionarioId = o do próprio perfil → OK', async () => {
     await assertSucceeds(setDoc(doc(asAgenteA(), 'passagens', 'p1'), { funcionarioId: F_A, valor: 5 }));
   });
@@ -893,7 +894,7 @@ foraDoEscopo('passagens — emissão sem forjar dono', () => {
 });
 
 // --- Isolamento por agência: por UI, NÃO pelo servidor (ADR-0015 §3, débito registrado) ---
-foraDoEscopo('passagens — o servidor NÃO isola por agência (lock do débito)', () => {
+describe('passagens — o servidor NÃO isola por agência (lock do débito)', () => {
   test('agente lê passagem de OUTRA agência → OK, e isso é o débito, não um bug', async () => {
     // O recorte por agência da listagem (P2.6) vive na consulta do app. Um cliente adulterado ainda
     // lê a passagem de outra agência — aceitável enquanto todas são do mesmo operador (§3). Este teste
@@ -907,7 +908,7 @@ foraDoEscopo('passagens — o servidor NÃO isola por agência (lock do débito)
   });
 });
 
-foraDoEscopo('passagens — editar/deletar por posse', () => {
+describe('passagens — editar/deletar por posse', () => {
   test('agente edita a PRÓPRIA passagem → OK', async () => {
     await assertSucceeds(setDoc(doc(asAgenteB(), 'passagens', 'alheia'), { funcionarioId: F_B, valor: 20 }));
   });
@@ -947,7 +948,7 @@ foraDoEscopo('passagens — editar/deletar por posse', () => {
  * Delete físico deixou de ser uma operação da passagem em qualquer camada: não existe no repositório, não
  * existe na porta e é negado pelo servidor. O que existe é o cancelamento, que é estado.
  */
-foraDoEscopo('passagens — delete físico não existe para ninguém', () => {
+describe('passagens — delete físico não existe para ninguém', () => {
   test('dono deleta a PRÓPRIA passagem → NEGADO', async () => {
     await assertFails(deleteDoc(doc(asAgenteB(), 'passagens', 'alheia')));
   });
@@ -962,7 +963,7 @@ foraDoEscopo('passagens — delete físico não existe para ninguém', () => {
 });
 
 /** Cancelar é **transição**, e ela obedece à mesma autorização de qualquer outra edição. */
-foraDoEscopo('passagens — cancelamento como estado (o que substituiu o delete)', () => {
+describe('passagens — cancelamento como estado (o que substituiu o delete)', () => {
   test('dono cancela a própria passagem A_EMITIR → OK', async () => {
     await assertSucceeds(updateDoc(doc(asAgenteA(), 'passagens', 'cancelavel-a'), { status: 'CANCELADA' }));
   });
@@ -1000,7 +1001,7 @@ foraDoEscopo('passagens — cancelamento como estado (o que substituiu o delete)
  * Este caso passa **de propósito**, para que a promoção dessa verificação ao servidor (se um dia houver
  * back-end próprio) seja uma decisão, e não uma descoberta.
  */
-foraDoEscopo('passagens — o servidor NÃO verifica o dinheiro (limite declarado)', () => {
+describe('passagens — o servidor NÃO verifica o dinheiro (limite declarado)', () => {
   test('emitir com lançamento de forma inexistente e valor negativo → OK, e isso é o limite', async () => {
     await assertSucceeds(
       setDoc(doc(asAgenteA(), 'passagens', 'p-dinheiro-ruim'), {
@@ -1014,7 +1015,7 @@ foraDoEscopo('passagens — o servidor NÃO verifica o dinheiro (limite declarad
 });
 
 // --- O contador por ocorrência: viagens/{id}/ocorrencias/{data} (ADR-0024 D6) ---
-foraDoEscopo('ocorrencias — o contador que nasce na primeira venda, monotônico e indestrutível', () => {
+describe('ocorrencias — o contador que nasce na primeira venda, monotônico e indestrutível', () => {
   test('papel conhecido incrementa (100 → 101) → OK', async () => {
     await assertSucceeds(
       updateDoc(doc(asAgenteA(), 'viagens', 'viagem-1', 'ocorrencias', '2026-08-18'), { ultimoNumero: 101 }),
@@ -1059,7 +1060,7 @@ const carimboEmbarque = (uid) => ({
   alteradoEm: '2026-07-02T09:30:00',
 });
 
-foraDoEscopo('passagens — confirmação de embarque (eixo novo, qualquer papel)', () => {
+describe('passagens — confirmação de embarque (eixo novo, qualquer papel)', () => {
   test('agente NÃO-dono confirma embarque (EMITIDA→EMBARCADA) carimbando o próprio uid → OK', async () => {
     // AGENTE_A embarca a passagem 'emitida-b' (dono = funcionário B): quem está na doca valida.
     await assertSucceeds(updateDoc(doc(asAgenteA(), 'passagens', 'emitida-b'), carimboEmbarque(AGENTE_A)));
@@ -1085,7 +1086,7 @@ foraDoEscopo('passagens — confirmação de embarque (eixo novo, qualquer papel
   });
 });
 
-foraDoEscopo('passagens — arestas legais da FSM (avança, nunca retrocede nem pula)', () => {
+describe('passagens — arestas legais da FSM (avança, nunca retrocede nem pula)', () => {
   test('dono emite a própria passagem (A_EMITIR→EMITIDA) → OK', async () => {
     await assertSucceeds(updateDoc(doc(asAgenteA(), 'passagens', 'aemitir-a'), { status: 'EMITIDA' }));
   });
