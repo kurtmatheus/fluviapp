@@ -6,10 +6,11 @@ import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.auth.FirebaseAuthInvalidUserException
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Source
-import dev.matheus.fluviapp.services.repository.firebase.documents.FuncionarioDocumento
+import dev.matheus.fluviapp.domain.operacoes.Usuario
+import dev.matheus.fluviapp.services.repository.firebase.DocumentoBruto
+import dev.matheus.fluviapp.services.repository.firebase.documents.paraMapa
+import dev.matheus.fluviapp.services.repository.firebase.documents.toPerfilAutenticado
 import dev.matheus.fluviapp.services.repository.operacoes.FuncionarioRepository
-import dev.matheus.fluviapp.services.repository.firebase.documents.UsuarioDocumento
-import dev.matheus.fluviapp.services.repository.operacoes.UsuarioRepository
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
@@ -58,37 +59,32 @@ class FirebaseAutenticacaoRepository @Inject constructor(
         // instalado) devolve "documento inexistente" — indistinguível de "esta pessoa não tem perfil".
         // Aqui a falha de leitura vira Indisponivel, e quem chama decide o que dizer.
         val documento = try {
-            firestore.collection(UsuarioRepository.COLLECTION_USERS).document(user.uid)
+            firestore.collection(COLLECTION_USERS).document(user.uid)
                 .get(Source.SERVER).await()
         } catch (e: Exception) {
             Log.e(TAG, "perfilAutenticado: users/${user.uid} ilegível: ${e.message}", e)
             return ResultadoPerfil.Indisponivel
         }
 
-        val doc = documento.toObject(UsuarioDocumento::class.java)
-            ?: return ResultadoPerfil.Ausente
+        // Map, e não `toObject` (ADR-0025): estas eram as **duas últimas leituras por reflexão** do app,
+        // e saíram em 2026-09-07 junto com o R8. Reflexão é o que o encolhedor não enxerga — ele renomeia
+        // o campo e o Firestore, que casa por nome, passa a devolver vazio sem erro nenhum. A alternativa
+        // seria um `-keep` protegendo as duas data classes; preferiu-se **não ter o que proteger**.
+        val dados = documento.data ?: return ResultadoPerfil.Ausente
+        val perfil = DocumentoBruto(documento.id, dados)
 
-        val funcionario = doc.funcionarioId.takeIf { it.isNotBlank() }?.let { id ->
+        val funcionario = perfil.texto("funcionarioId").takeIf { it.isNotBlank() }?.let { id ->
             try {
-                firestore.collection(FuncionarioRepository.COLLECTION_FUNCIONARIOS).document(id)
-                    .get(Source.SERVER).await().toObject(FuncionarioDocumento::class.java)
+                val bruto = firestore.collection(FuncionarioRepository.COLLECTION_FUNCIONARIOS)
+                    .document(id).get(Source.SERVER).await()
+                bruto.data?.let { DocumentoBruto(bruto.id, it) }
             } catch (e: Exception) {
                 Log.e(TAG, "perfilAutenticado: funcionario $id ilegível: ${e.message}", e)
                 null
             }
         }
 
-        return ResultadoPerfil.Encontrado(
-            PerfilAutenticado(
-                id = user.uid,
-                email = doc.email,
-                username = doc.username,
-                papel = doc.papel,
-                funcionarioId = doc.funcionarioId,
-                cargo = funcionario?.cargo.orEmpty(),
-                nome = funcionario?.nome.orEmpty(),
-            )
-        )
+        return ResultadoPerfil.Encontrado(perfil.toPerfilAutenticado(user.uid, funcionario))
     }
 
     /**
@@ -98,14 +94,15 @@ class FirebaseAutenticacaoRepository @Inject constructor(
      */
     override suspend fun criarPerfil(email: String, username: String, papel: String, funcionarioId: String) {
         val uid = firebaseAuth.currentUser?.uid ?: return
-        firestore.collection(UsuarioRepository.COLLECTION_USERS).document(uid)
+        firestore.collection(COLLECTION_USERS).document(uid)
             .set(
-                UsuarioDocumento(
+                Usuario(
+                    id = uid,
                     email = email,
                     username = username,
                     papel = papel,
                     funcionarioId = funcionarioId,
-                )
+                ).paraMapa()
             ).await()
     }
 
@@ -113,8 +110,16 @@ class FirebaseAutenticacaoRepository @Inject constructor(
         firebaseAuth.signOut()
     }
 
-    private companion object {
+    companion object {
         private const val TAG = "FirebaseAuthRepo"
+
+        /**
+         * A coleção do perfil de sistema. Ela morava no `UsuarioRepository`, que era metade cache do Room
+         * e metade esta constante; com o cache indo para o DataStore (ADR-0017 D4), o repositório deixou
+         * de ter conteúdo e o nome da coleção veio para o **único lugar que a lê** — a mesma forma do
+         * `FuncionarioRepository.COLLECTION_FUNCIONARIOS`.
+         */
+        const val COLLECTION_USERS = "users"
     }
 }
 

@@ -1,9 +1,9 @@
 package dev.matheus.fluviapp.extensions
 
-import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.CNPJ
-import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.CPF
-import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.PASSAPORTE
-import dev.matheus.fluviapp.domain.cadastro.constantes.Constante.Descricao.RG
+import dev.matheus.fluviapp.domain.documento.TipoDocumento.CNPJ
+import dev.matheus.fluviapp.domain.documento.TipoDocumento.CPF
+import dev.matheus.fluviapp.domain.documento.TipoDocumento.PASSAPORTE
+import dev.matheus.fluviapp.domain.documento.TipoDocumento.RG
 import org.junit.Assert.assertEquals
 import org.junit.Test
 

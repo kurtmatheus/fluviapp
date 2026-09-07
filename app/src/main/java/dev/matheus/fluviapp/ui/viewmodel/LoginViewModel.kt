@@ -22,7 +22,7 @@ import dev.matheus.fluviapp.services.repository.firebase.autenticacao.PerfilAute
 import dev.matheus.fluviapp.services.repository.firebase.autenticacao.ResultadoAutenticacao
 import dev.matheus.fluviapp.services.repository.firebase.autenticacao.ResultadoPerfil
 import dev.matheus.fluviapp.services.repository.firebase.autenticacao.toUsuario
-import dev.matheus.fluviapp.services.repository.operacoes.UsuarioRepository
+import dev.matheus.fluviapp.preferences.SessaoLocal
 import dev.matheus.fluviapp.ui.states.LoginUiState
 import dev.matheus.fluviapp.ui.viewmodel.helpers.login.LoginFormHelper
 import dev.matheus.fluviapp.ui.viewmodel.helpers.login.mapearMensagemErroAuth
@@ -37,7 +37,7 @@ import javax.inject.Inject
 @HiltViewModel
 class LoginViewModel @Inject constructor(
     private val dataStore: DataStore<Preferences>,
-    private val usuarioRepository: UsuarioRepository,
+    private val sessaoLocal: SessaoLocal,
     private val autenticacaoRepository: AutenticacaoRepository,
     private val empresaRepository: EmpresaRepository,
     private val embarcacaoRepository: EmbarcacaoRepository,
@@ -63,11 +63,9 @@ class LoginViewModel @Inject constructor(
         viewModelScope.launch { initializeHelper() }
     }
 
-    private fun initializeHelper() {
-        loginFormHelper = LoginFormHelper(
-            uiState = _uiState,
-            usuarioRepository = usuarioRepository
-        )
+    private suspend fun initializeHelper() {
+        loginFormHelper = LoginFormHelper(uiState = _uiState)
+        loginFormHelper.preencherUltimoUsuario(sessaoLocal.ultimoEmail())
     }
 
     fun preencherEmail(email: String) {
@@ -146,20 +144,26 @@ class LoginViewModel @Inject constructor(
      * Abre a sessão com os DOIS contextos (ADR-0015 §8.2): o papel vem do perfil de sistema, o cargo do
      * funcionário ligado. Ambos saem do [perfil] que a porta de autenticação leu **do servidor**.
      *
-     * O espelho Room é escrito aqui, e não consultado: antes o login procurava o autenticado num espelho
-     * que um listener pré-login populava — e esse listener é negado pela regra `allow read: if
-     * autenticado()`. O login passou a *ser a origem* do espelho em vez de depender dele, e é isso que a
+     * A projeção local é escrita aqui, e não consultada: antes o login procurava o autenticado num
+     * espelho que um listener pré-login populava — e esse listener é negado pela regra `allow read: if
+     * autenticado()`. O login passou a *ser a origem* da projeção em vez de depender dela, e é isso que a
      * [SessaoUsuario] lê depois.
+     *
+     * **Eram duas projeções e agora é uma** (2026-09-07): o `registrarLogin` gravava uma linha no Room e
+     * este bloco gravava chaves no DataStore, com o `papel` nos dois lugares. O [SessaoLocal] assumiu os
+     * campos do usuário — inclusive o `PAPEL_ATUAL`, que já era daqui — e o que sobra neste bloco é o que
+     * é **de sessão e não de usuário**: a flag de logado, o nome exibido e o cargo, que vem do
+     * funcionário e não do `Usuario`.
      *
      * O que se exibe é o **nome do funcionário**; sem funcionário (papel puro de plataforma), o
      * `username` — o `Usuario` não tem nome (§8.1).
      */
     private suspend fun logarUsuario(perfil: PerfilAutenticado, emailAutenticado: String) {
-        val usuario = usuarioRepository.registrarLogin(perfil.toUsuario(emailAutenticado))
+        val usuario = perfil.toUsuario(emailAutenticado)
+        sessaoLocal.registrarLogin(usuario)
         dataStore.edit { preferences ->
             preferences[LOGADO] = true
             preferences[USUARIO_ATUAL] = perfil.nome.ifBlank { usuario.username }
-            preferences[PAPEL_ATUAL] = usuario.papel
             preferences[CARGO_ATUAL] = perfil.cargo
         }
         _uiState.value = _uiState.value.copy(logado = true)

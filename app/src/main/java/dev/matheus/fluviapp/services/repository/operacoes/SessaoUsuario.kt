@@ -2,6 +2,7 @@ package dev.matheus.fluviapp.services.repository.operacoes
 
 import dev.matheus.fluviapp.domain.operacoes.ContextoUsuario
 import dev.matheus.fluviapp.preferences.EscolhaDeVinculo
+import dev.matheus.fluviapp.preferences.SessaoLocal
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.EmpresaRepository
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -31,22 +32,22 @@ interface SessaoUsuario {
 }
 
 /**
- * Impl sobre os repositórios locais + a escolha persistida ([EscolhaDeVinculo]).
+ * Impl sobre a projeção local ([SessaoLocal]), o Firestore e a escolha persistida ([EscolhaDeVinculo]).
  *
- * O nome `…Room` ficou do tempo em que as duas leituras vinham do espelho; hoje o funcionário vem do
- * Firestore (F6.2) e o usuário ainda é local. O que a classe faz continua sendo o mesmo: juntar as três
- * peças num contexto só.
+ * Chamava-se `SessaoUsuarioRoom`, e o próprio KDoc já dizia que o sufixo era do tempo em que as duas
+ * leituras vinham do espelho. Em 2026-09-07 o usuário passou ao DataStore e o nome deixou de ter até esse
+ * resto de verdade — o que a classe faz continua sendo o mesmo: juntar as três peças num contexto só.
  */
 @Singleton
-class SessaoUsuarioRoom @Inject constructor(
-    private val usuarioRepository: UsuarioRepository,
+class SessaoUsuarioLocal @Inject constructor(
+    private val sessaoLocal: SessaoLocal,
     private val funcionarioRepository: FuncionarioRepository,
     private val empresaRepository: EmpresaRepository,
     private val escolhaDeVinculo: EscolhaDeVinculo,
 ) : SessaoUsuario {
 
     override suspend fun atual(): ContextoUsuario? {
-        val usuario = usuarioRepository.obterUltimoUsuarioLogado() ?: return null
+        val usuario = sessaoLocal.logado() ?: return null
         val funcionario = usuario.funcionarioId
             .takeIf { it.isNotBlank() }
             ?.let { funcionarioRepository.obterPorId(it) }

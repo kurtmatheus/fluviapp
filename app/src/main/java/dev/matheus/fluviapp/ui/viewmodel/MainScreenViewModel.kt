@@ -9,6 +9,7 @@ import dev.matheus.fluviapp.domain.operacoes.Funcionario
 import dev.matheus.fluviapp.domain.operacoes.PermissoesUsuario
 import dev.matheus.fluviapp.domain.screendata.secoesDoMenu
 import dev.matheus.fluviapp.preferences.PreferencesKey
+import dev.matheus.fluviapp.preferences.SessaoLocal
 import com.google.firebase.auth.FirebaseAuth
 import dev.matheus.fluviapp.services.repository.firebase.SincronizacaoSessao
 import dev.matheus.fluviapp.telemetry.EstadoSincronizacao
@@ -67,6 +68,7 @@ class MainScreenViewModel @Inject constructor(
     private val escopoDaSessao: EscopoDaSessao,
     private val relogio: Relogio,
     private val firebaseAuth: FirebaseAuth,
+    private val sessaoLocal: SessaoLocal,
     private val sincronizacaoSessao: SincronizacaoSessao,
     private val estadoSincronizacao: EstadoSincronizacao,
 ) : ViewModel() {
@@ -155,6 +157,11 @@ class MainScreenViewModel @Inject constructor(
         // sessão do Firebase (autoridade) + limpa o cache de perfil no DataStore.
         sincronizacaoSessao.parar()
         firebaseAuth.signOut()
+        // O usuário logado sai junto, e isso é **correção**, não mudança de forma: ele morava numa linha
+        // do Room que este bloco não alcançava, então `SessaoUsuario.atual()` seguia devolvendo contexto
+        // para quem já tinha saído — só a navegação impedia que isso aparecesse. O e-mail fica, porque é
+        // conveniência do próximo login e não sessão.
+        sessaoLocal.limpar()
         dataStore.edit {
             it[PreferencesKey.LOGADO] = false
             it[PreferencesKey.USUARIO_ATUAL] = ""

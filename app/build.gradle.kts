@@ -77,7 +77,17 @@ android {
             // Só assina se houver chave. O APK de release sem assinatura não instala em lugar nenhum —
             // era o P3.1 do roadmap, e é o que separava "o build passa" de "dá para entregar a alguém".
             if (arquivoDeAssinatura.exists()) signingConfig = signingConfigs.getByName("release")
-            isMinifyEnabled = false
+
+            // **R8 ligado em 2026-09-07.** Ele esteve desligado enquanto o app tinha reflexão em dois
+            // pontos (o perfil lido/gravado por `toObject`/`.set(objeto)`) e o Gson serializando o
+            // rascunho: reflexão é o que o encolhedor não enxerga, e o defeito que ela produz é o pior
+            // tipo — campo renomeado, leitura devolvendo vazio, sem erro nenhum. As três saíram, e só
+            // então isto virou `true`.
+            //
+            // `isShrinkResources` depende de `isMinifyEnabled` e responde pelo recurso: é ele que tira do
+            // release os PNGs da marca antiga (2,04 MB dos 2,20 MB de `res/`) **sem apagá-los do disco**.
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
@@ -97,13 +107,6 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
-    // Schema do Room exportado (app/schemas/<db>/<versao>.json): é a FONTE do DDL da MIGRATION_1_2 —
-    // com o histórico de migrações colapsado (ADR-0015 §9), o `createSql` gerado aqui é o que a migração
-    // executa. Sem isto, o DDL seria transcrito à mão e divergiria das entidades sem ninguém perceber.
-    ksp {
-        arg("room.schemaLocation", "$projectDir/schemas")
-    }
-
     testOptions {
         unitTests {
             // android.util.Log e afins viram no-op nos testes JVM (em vez de lançar "not mocked").
@@ -166,11 +169,10 @@ dependencies {
     androidTestImplementation("com.google.dagger:hilt-android-testing:$hiltVersion")
     kspAndroidTest("com.google.dagger:hilt-compiler:$hiltVersion")
 
-    val roomVersion = "2.6.1"
-    implementation("androidx.room:room-runtime:$roomVersion")
-    ksp("androidx.room:room-compiler:$roomVersion")
-    implementation("androidx.room:room-ktx:$roomVersion")
-
+    // O **Room saiu** em 2026-09-07 (ADR-0017 F6), e com ele o `ksp(room-compiler)` e a exportação de
+    // schema. O que era espelho de coleção foi para o Firestore, coleção a coleção, entre a F1 e a F5;
+    // o que restava era resíduo local sem consumidor (rascunho, catálogo) e o usuário logado, que é
+    // projeção de sessão e mora aqui embaixo, no DataStore.
     implementation("androidx.datastore:datastore-preferences:1.1.1")
 
     // Geração do QR (bilhete) e leitura no embarque (ADR-0012), na MESMA biblioteca: ZXing.
@@ -183,7 +185,9 @@ dependencies {
     implementation("com.google.zxing:core:3.5.3")
     implementation("com.journeyapps:zxing-android-embedded:4.3.0")
 
-    implementation("com.google.code.gson:gson:2.11.0")
+    // O **Gson saiu junto com o Room**: ele existia para serializar o rascunho de passagem num blob JSON
+    // dentro do SQLite, e o rascunho não tinha consumidor desde a F9.2. Com ele sai também o único
+    // mecanismo de reflexão do app fora do Firestore — que é justamente o que o R8 não consegue enxergar.
 
     implementation("com.google.accompanist:accompanist-permissions:0.36.0")
 

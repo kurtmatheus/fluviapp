@@ -23,7 +23,7 @@ import dev.matheus.fluviapp.services.repository.operacoes.FuncionarioRepository
 import dev.matheus.fluviapp.services.repository.operacoes.EscopoDaSessao
 import dev.matheus.fluviapp.services.repository.operacoes.EscopoDaSessaoPadrao
 import dev.matheus.fluviapp.services.repository.operacoes.SessaoUsuario
-import dev.matheus.fluviapp.services.repository.operacoes.SessaoUsuarioRoom
+import dev.matheus.fluviapp.services.repository.operacoes.SessaoUsuarioLocal
 import dev.matheus.fluviapp.util.Relogio
 import dev.matheus.fluviapp.util.RelogioDoSistema
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.EmpresaFirestoreRepository
@@ -114,7 +114,7 @@ abstract class RepositorioModule {
     /** Quem está operando: os dois contextos resolvidos num lugar só (ADR-0015 §8.1). */
     @Binds
     @Singleton
-    abstract fun bindSessaoUsuario(impl: SessaoUsuarioRoom): SessaoUsuario
+    abstract fun bindSessaoUsuario(impl: SessaoUsuarioLocal): SessaoUsuario
 
     /** Quanto do pool compartilhado quem está operando enxerga (F8.2). */
     @Binds

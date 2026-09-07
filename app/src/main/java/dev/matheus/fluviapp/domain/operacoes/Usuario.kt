@@ -1,9 +1,5 @@
 package dev.matheus.fluviapp.domain.operacoes
 
-import androidx.room.Entity
-import androidx.room.Index
-import androidx.room.PrimaryKey
-
 /**
  * Quem **acessa o app** — contexto de SISTEMA (ADR-0015 §8.1). Responde *o que compete no aplicativo*,
  * e só isso: identidade de acesso ([email]/[username]), [papel] e o elo com a operação
@@ -12,10 +8,16 @@ import androidx.room.PrimaryKey
  * O que **não** mora aqui, e por quê: `nome` (é a pessoa, logo é do [Funcionario]), `agencia`/`lotacao`
  * (são onde a pessoa atua, logo também são do [Funcionario] — §8.1) e o `cargo` de negócio (§8.2). Este
  * documento não sabe nada sobre a operação; sabe quem entrou.
+ *
+ * ### O que saiu daqui em 2026-09-07
+ *
+ * As anotações `@Entity`/`@PrimaryKey`/`@Index` — esta era **a última classe de domínio que declarava a
+ * própria persistência** (ADR-0017 F6). E com elas foi embora o campo `ultimoUsuarioLogado`, que não era
+ * do domínio coisa nenhuma: era uma coluna booleana para dizer qual das linhas da tabela valia. Guardado
+ * o logado num slot só (`SessaoLocal`), **o último é o único**, e a pergunta que a coluna respondia deixa
+ * de existir.
  */
-@Entity(indices = [Index("id")])
 data class Usuario(
-    @PrimaryKey
     val id: String,
     val email: String,
     /**
@@ -31,7 +33,6 @@ data class Usuario(
      * existem sem registro na operação — e, por isso mesmo, não emitem passagem (§8.4).
      */
     val funcionarioId: String = "",
-    val ultimoUsuarioLogado: Boolean = false
 ) {
     /**
      * O eixo **fechado** da autorização (ADR-0015, revisão estrutural): três papéis, e a tendência é

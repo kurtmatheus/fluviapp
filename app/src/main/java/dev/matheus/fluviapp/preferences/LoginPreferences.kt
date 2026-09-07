@@ -27,6 +27,25 @@ object PreferencesKey {
     val TEMA_ESCURO = booleanPreferencesKey("tema_escuro")
 
     /**
+     * O **usuário logado**, que até 2026-09-07 era uma linha do Room marcada com
+     * `ultimoUsuarioLogado = true` (ADR-0017 D4/F6). São os campos que a [SessaoUsuario] precisa para
+     * montar o contexto — o `papel` reaproveita [PAPEL_ATUAL], que já existia e guardava o mesmo valor.
+     *
+     * Elas morrem no logout, junto com as de sessão: um cache de quem entrou não pode sobreviver a quem
+     * saiu. A tabela sobrevivia, e essa era a diferença silenciosa entre as duas projeções do login.
+     */
+    val USUARIO_ID = stringPreferencesKey("usuario_id")
+    val USUARIO_USERNAME = stringPreferencesKey("usuario_username")
+    val USUARIO_FUNCIONARIO_ID = stringPreferencesKey("usuario_funcionario_id")
+
+    /**
+     * O e-mail de quem entrou por último — **e este fica**. É o que o campo do login já vem preenchido,
+     * e a conveniência é justamente para *depois* de sair; apagá-la no logout seria apagar a única razão
+     * de ela existir.
+     */
+    val ULTIMO_EMAIL = stringPreferencesKey("ultimo_email")
+
+    /**
      * Em nome de qual empresa se está operando (F6.4) — a resposta à seleção de contexto do ADR-0016 §6.
      * **Preferência, não credencial**: ver `EscolhaDeVinculo`.
      */
