@@ -77,6 +77,23 @@ jobs:
       - name: Build debug
         run: ./gradlew :app:assembleDebug --no-daemon
 
+      # **O release, por causa do R8** (ligado em 2026-09-07).
+      #
+      # O problema que este passo resolve é de posição, não de configuração: o R8 só roda no release, e o
+      # release só era construído pelo workflow de Distribuição — que dispara **em tag**. Ou seja, um R8
+      # mal configurado apareceria depois do ponto de não-retorno, num APK já a caminho do tester.
+      #
+      # Sai **sem assinatura**, e isso basta: o que se prova aqui é que o encolhedor atravessa. Assinar é
+      # outro eixo, com outra chave e outro workflow — e o `build.gradle.kts` já trata a ausência do
+      # `keystore.properties` (o release compila, só não instala).
+      #
+      # De brinde vem o `lintVitalRelease`, que só existe no release e hoje não roda em lugar nenhum.
+      #
+      # O que ele **não** cobre continua não coberto: R8 quebra em tempo de execução, com sintoma mudo
+      # (tela vazia, campo em branco), e isso só aparece percorrendo o app — ver `docs/esteira.md`.
+      - name: Build release (R8, sem assinatura)
+        run: ./gradlew :app:assembleRelease --no-daemon
+
       - name: Guardar relatórios em caso de falha
         if: failure()
         uses: actions/upload-artifact@v4
