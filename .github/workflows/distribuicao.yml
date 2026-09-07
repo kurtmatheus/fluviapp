@@ -103,7 +103,7 @@ jobs:
 
       # Gate: não se distribui o que não passou. Repetido aqui de propósito — a tag pode apontar para um
       # commit que nunca passou pelo CI (tag em commit antigo, tag criada à mão).
-      - name: Suíte de regras (escopo)
+      - name: Suíte de regras (160 casos)
         working-directory: firestore-tests
         run: npm ci && npm test
 

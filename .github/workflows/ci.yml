@@ -1,8 +1,11 @@
 name: CI
 
-# Roda no que já está de pé: a suíte recortada ao escopo da revitalização (ADR-0020). Vermelho aqui
-# significa "quebrei algo que estava funcionando", e não "existe passado" — que é justamente o que o
-# recorte comprou.
+# A suíte de regras roda **inteira** — o recorte saiu em 2026-09-07 (ADR-0032 D3), depois de a medição
+# mostrar que ele pulava 57 de 160 casos e que os 57 passavam.
+#
+# A suíte JVM **continua recortada** ao escopo da revitalização (ADR-0020), e ali o recorte ainda paga:
+# vermelho significa "quebrei algo que estava funcionando", e não "existe passado". A assimetria é
+# deliberada — 14 casos fora de 842 (1,7%) é recorte; 57 de 160 (36%) era um gate que passava sem olhar.
 on:
   push:
     branches: [main, master]
@@ -35,7 +38,7 @@ jobs:
         working-directory: firestore-tests
         run: npm ci
 
-      - name: Suíte de regras (escopo)
+      - name: Suíte de regras (160 casos)
         working-directory: firestore-tests
         run: npm test
 
