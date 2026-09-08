@@ -122,7 +122,7 @@ class FormUsuarioViewModel @Inject constructor(
                             descricaoNome = convite.nome,
                             email = convite.email,
                             cargo = vinculo.cargo.name,
-                            vinculos = listOf(vinculo),
+                            vinculo = vinculo,
                         )
                     )
                 }

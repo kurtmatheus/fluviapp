@@ -11,20 +11,15 @@ data class SplashScreenUiState(
  * (usuário → funcionário → atuação), e isso vai à rede. [Erro] existe por consequência direta — sem ele,
  * uma falha de leitura prenderia a tela em [Carregando] para sempre, que é exatamente a "informação
  * omitida" que a decisão existe para impedir.
+ *
+ * Eram **cinco**, e o quinto era `EscolherVinculo`: sessão boa, com mais de um vínculo e nenhuma escolha
+ * em vigor. A [ADR-0032] D5 descartou o caso, e com ele o destino — a splash não faz mais uma pergunta
+ * que só existia quando a pessoa podia servir a duas empresas.
  */
 sealed class SplashScreenState {
     data object Carregando : SplashScreenState()
     data object Logado : SplashScreenState()
     data object Deslogado : SplashScreenState()
-
-    /**
-     * Sessão válida, **mas falta dizer em nome de quem se opera** (ADR-0016 §6, F6.4): a pessoa tem mais
-     * de um vínculo e nenhuma escolha em vigor.
-     *
-     * É estado próprio, e não um desvio dentro de `Logado`, porque a diferença é de destino: aqui não se
-     * entra no painel — o menu que ele montaria dependeria de uma resposta que ninguém deu.
-     */
-    data object EscolherVinculo : SplashScreenState()
 
     /** Falha ao resolver o contexto. A tela oferece tentar de novo; não se entra pela metade. */
     data object Erro : SplashScreenState()

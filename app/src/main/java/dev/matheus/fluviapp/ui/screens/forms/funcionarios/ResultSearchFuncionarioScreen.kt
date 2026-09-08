@@ -153,11 +153,9 @@ fun CardResultFuncionario(
             ) {
                 TextTitleBrownRegular(text = membro.nome)
                 TextRegularBrown(text = membro.email)
-                // Uma linha por vínculo: quem serve a duas empresas aparece com as duas, e é isto que o
-                // cadastro antigo não conseguia dizer — havia uma agência por pessoa.
-                membro.vinculos.forEach { vinculo ->
-                    TextRegularBrown(text = vinculo)
-                }
+                // O vínculo, se houver: sem ele a linha não aparece, porque não há o que dizer — é o
+                // pré-cadastro esperando o primeiro acesso (§2.1).
+                membro.vinculo?.let { TextRegularBrown(text = it) }
             }
 
             IconButton(onClick = { onEditar(membro.id) }) {
@@ -193,13 +191,13 @@ private fun ResultSearchFuncionarioScreenPreview() {
                         id = "1",
                         nome = "Ana Ribeiro",
                         email = "ana.ribeiro@fluviapp.com.br",
-                        vinculos = listOf("Navegação Norte · SUPERVISOR", "Rio Sul · AGENTE"),
+                        vinculo = "Navegação Norte · SUPERVISOR",
                     ),
                     FuncionarioResultado(
                         id = "2",
                         nome = "Bruno Costa",
                         email = "bruno.costa@fluviapp.com.br",
-                        vinculos = listOf("Navegação Norte · AGENTE"),
+                        vinculo = "Navegação Norte · AGENTE",
                     ),
                 ),
             ),

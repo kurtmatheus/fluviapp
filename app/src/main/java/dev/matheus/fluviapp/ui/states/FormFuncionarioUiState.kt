@@ -7,15 +7,16 @@ import dev.matheus.fluviapp.domain.operacoes.Vinculo
 /**
  * Estado do formulário de membro da equipe — puro (só dados + flags), no molde do ADR-0006.
  *
- * ### O que mudou de forma (F6.3)
+ * ### O que mudou de forma (F6.3, depois [ADR-0032] Q2)
  *
- * Saíram `agencia` e `lotacao`; entrou [vinculos]. O cadastro deixa de perguntar *"em que agência esta
- * pessoa está?"* e passa a perguntar *"em que empresas ela atua, e como em cada uma?"* — que é a pergunta
- * do ADR-0016 §6, e a única que sabe responder por quem trabalha em duas.
+ * Saíram `agencia` e `lotacao`; entrou o **vínculo**. O cadastro deixa de perguntar *"em que agência esta
+ * pessoa está?"* e passa a perguntar *"em que empresa ela atua, e como"* — que é a pergunta do ADR-0016
+ * §6.
  *
- * Os vínculos ficam como **lista em edição**: acrescentar e remover são gestos do formulário, e só o
- * `salvar` grava. É o mesmo princípio das outras telas do molde — o estado é o rascunho, o repositório é
- * o fato.
+ * Por um tempo essa pergunta admitia várias respostas, e o formulário tinha **lista em edição**:
+ * acrescentar, remover e um botão para cada gesto. A D5 descartou o caso de servir a duas empresas, e com
+ * ele os gestos: **os dois seletores são o vínculo**. Não sobrou lista para editar, então não sobrou
+ * rascunho a distinguir do gravado — [vinculo] deriva do que está na tela, e é o que o `salvar` grava.
  *
  * As flags [podeEscolherEmpresa] e [podeDefinirCargo] são o **recorte por quem cadastra** (ADR-0015
  * §2.1/§8.5) já resolvido pelo VM: a tela não pergunta o papel do logado, só desenha o que o estado diz.
@@ -35,13 +36,10 @@ data class FormFuncionarioUiState(
     val email: String = "",
     val isEmailError: Boolean = false,
 
-    /** Os vínculos já atribuídos — o que será gravado. */
-    val vinculos: List<Vinculo> = emptyList(),
-    val isVinculosError: Boolean = false,
-
-    /** O vínculo **em montagem**: a empresa escolhida no seletor, por rótulo. */
-    val empresaEmEdicao: String = "",
-    val cargoEmEdicao: String = Funcionario.Cargo.AGENTE.name,
+    /** A empresa do vínculo, **por rótulo** — é assim que o seletor a devolve. */
+    val empresa: String = "",
+    val isEmpresaError: Boolean = false,
+    val cargo: String = Funcionario.Cargo.AGENTE.name,
 
     val empresas: List<EmpresaOpcao> = emptyList(),
     val listaCargo: List<String> = emptyList(),
@@ -56,33 +54,23 @@ data class FormFuncionarioUiState(
 ) {
 
     /**
-     * Os vínculos **prontos para exibir**: o id vira nome de empresa aqui, e não no domínio (ADR-0019 —
-     * DTO por caso de uso). Empresa que não está na lista aparece sem nome em vez de sumir: um vínculo
-     * que existe e não se consegue nomear é informação, e escondê-lo faria a tela mentir sobre o que
-     * será gravado.
+     * **O vínculo que a tela está descrevendo**, ou `null` enquanto ela não descreve nenhum.
+     *
+     * O rótulo vira id aqui, e não no domínio (ADR-0019 — DTO por caso de uso): é a tradução inversa da
+     * que o dropdown fez. Empresa que não está na lista não vira vínculo — e é o mesmo `null` de empresa
+     * não escolhida, porque as duas situações têm o mesmo efeito: não há o que gravar.
+     *
+     * Quem recusa cargo ilegível é [Vinculo.de], a fronteira do domínio; o formulário não repete a regra.
      */
-    val vinculosNaTela: List<VinculoNaTela>
-        get() = vinculos.map { vinculo ->
-            VinculoNaTela(
-                empresaId = vinculo.empresaId,
-                empresa = empresas.firstOrNull { it.id == vinculo.empresaId }?.nome.orEmpty(),
-                cargo = vinculo.cargo.name,
-            )
-        }
-
-    /** Só dá para acrescentar quando há empresa escolhida — e o botão diz isso ficando desabilitado. */
-    val podeAdicionarVinculo: Boolean get() = empresaEmEdicao.isNotBlank()
+    val vinculo: Vinculo?
+        get() = Vinculo.de(
+            empresaId = empresas.firstOrNull { it.nome == empresa }?.id,
+            cargo = if (podeDefinirCargo) cargo else Funcionario.Cargo.AGENTE.name,
+        )
 }
 
 /** Uma empresa **como opção de escolha**: o id que se grava e o nome que se lê. */
 data class EmpresaOpcao(
     val id: String,
     val nome: String,
-)
-
-/** Um vínculo já formatado para a lista do formulário. */
-data class VinculoNaTela(
-    val empresaId: String,
-    val empresa: String,
-    val cargo: String,
 )

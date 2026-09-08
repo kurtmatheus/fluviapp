@@ -82,7 +82,7 @@ class FormUsuarioViewModelTest {
             assertEquals("Ana Ribeiro", funcionario.descricaoNome)
             // O e-mail é a chave que casa as duas frentes no primeiro acesso: gravado normalizado.
             assertEquals("ana@fluviapp.com.br", funcionario.email)
-            assertEquals(listOf(Vinculo("empresa-1", Cargo.SUPERVISOR)), funcionario.vinculos)
+            assertEquals(Vinculo("empresa-1", Cargo.SUPERVISOR), funcionario.vinculo)
 
             val convite = convites.salvos.single()
             assertEquals("ana@fluviapp.com.br", convite.email)

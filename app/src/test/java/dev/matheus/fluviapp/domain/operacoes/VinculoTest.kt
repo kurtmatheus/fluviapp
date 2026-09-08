@@ -2,9 +2,7 @@ package dev.matheus.fluviapp.domain.operacoes
 
 import dev.matheus.fluviapp.domain.operacoes.Funcionario.Cargo
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
@@ -54,77 +52,15 @@ class VinculoTest {
         assertNull(Vinculo.de("   ", "AGENTE"))
     }
 
-    // --- A lista ---
-
-    private val naAgencia = Vinculo("empresa-1", Cargo.AGENTE)
-    private val naOutra = Vinculo("empresa-2", Cargo.SUPERVISOR)
-
-    @Test
-    fun `empresaIds deriva a lista chata, sem repetir`() {
-        val vinculos = listOf(naAgencia, naOutra, Vinculo("empresa-1", Cargo.SUPERVISOR))
-
-        assertEquals(listOf("empresa-1", "empresa-2"), vinculos.empresaIds)
-    }
-
-    @Test
-    fun `naEmpresa encontra o vinculo daquela empresa`() {
-        val vinculos = listOf(naAgencia, naOutra)
-
-        assertEquals(Cargo.SUPERVISOR, vinculos.naEmpresa("empresa-2")?.cargo)
-        assertNull(vinculos.naEmpresa("empresa-9"))
-    }
-
-    /**
-     * **Quem tem um vínculo só não escolhe nada; quem tem dois escolhe.** O `null` do meio não é falta de
-     * informação — é a pergunta que a seleção de contexto vai fazer, e adivinhar por ela seria decidir em
-     * nome de quem opera.
-     */
-    @Test
-    fun `unicoOuNenhum resolve so o caso sem ambiguidade`() {
-        assertEquals(naAgencia, listOf(naAgencia).unicoOuNenhum())
-        assertNull(listOf(naAgencia, naOutra).unicoOuNenhum())
-        assertNull(emptyList<Vinculo>().unicoOuNenhum())
-    }
-
-    // --- A seleção de contexto (F6.4): a regra inteira, sem DataStore e sem tela ---
-
-    private val dois = listOf(naAgencia, naOutra)
-
-    @Test
-    fun `sem vinculo nao ha vinculo ativo — e nada a escolher`() {
-        assertNull(resolverVinculoAtivo(emptyList(), empresaEscolhida = null))
-        assertNull(resolverVinculoAtivo(emptyList(), empresaEscolhida = "empresa-1"))
-        assertFalse(precisaEscolherVinculo(emptyList(), empresaEscolhida = null))
-    }
-
-    /** Quem tem um só não escolhe — e uma escolha guardada não pode contradizer o único que existe. */
-    @Test
-    fun `com um vinculo, ele e o ativo mesmo com escolha divergente`() {
-        assertEquals(naAgencia, resolverVinculoAtivo(listOf(naAgencia), empresaEscolhida = null))
-        assertEquals(naAgencia, resolverVinculoAtivo(listOf(naAgencia), empresaEscolhida = "empresa-9"))
-        assertFalse(precisaEscolherVinculo(listOf(naAgencia), empresaEscolhida = null))
-    }
-
-    @Test
-    fun `com dois vinculos e escolha valida, vale o escolhido`() {
-        assertEquals(naOutra, resolverVinculoAtivo(dois, empresaEscolhida = "empresa-2"))
-        assertFalse(precisaEscolherVinculo(dois, empresaEscolhida = "empresa-2"))
-    }
-
-    @Test
-    fun `com dois vinculos e sem escolha, falta escolher`() {
-        assertNull(resolverVinculoAtivo(dois, empresaEscolhida = null))
-        assertTrue(precisaEscolherVinculo(dois, empresaEscolhida = null))
-    }
-
-    /**
-     * **A escolha vencida** — o pior defeito possível deste ponto, e o que a revalidação a cada leitura
-     * impede: alguém perde o vínculo com uma empresa e continua operando em nome dela porque o id ficou
-     * gravado no aparelho. A preferência simplesmente deixa de casar, e a pergunta volta.
-     */
-    @Test
-    fun `escolha de empresa em que a pessoa nao atua mais nao vale`() {
-        assertNull(resolverVinculoAtivo(dois, empresaEscolhida = "empresa-que-saiu"))
-        assertTrue(precisaEscolherVinculo(dois, empresaEscolhida = "empresa-que-saiu"))
-    }
+    // --- O que saiu, e por quê ---
+    //
+    // Nove casos moravam aqui e cobriam `empresaIds`, `naEmpresa`, `unicoOuNenhum`,
+    // `resolverVinculoAtivo` e `precisaEscolherVinculo` — as extensões sobre `List<Vinculo>`. Todas
+    // respondiam à mesma pergunta, *qual dos vínculos vale agora*, e a [ADR-0032] D5 tirou a pergunta do
+    // domínio: com uma empresa no máximo, o vínculo em vigor é o vínculo.
+    //
+    // Um deles vale registro: `escolha de empresa em que a pessoa nao atua mais nao vale` travava o pior
+    // defeito possível daquele desenho — operar em nome de uma empresa cujo vínculo já se perdeu, porque
+    // o id ficara gravado no aparelho. **Ele não deixou de ser verdade; deixou de ser possível**, e é
+    // isso que a estrutura nova garante sem precisar de teste: não há id guardado a revalidar.
 }

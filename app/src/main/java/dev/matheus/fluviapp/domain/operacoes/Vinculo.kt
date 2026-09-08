@@ -2,8 +2,8 @@ package dev.matheus.fluviapp.domain.operacoes
 
 /**
  * **Onde a pessoa trabalha, e como** (ADR-0016 §6/§6.1, ADR-0022 D4): a ligação entre um [Funcionario] e
- * uma empresa. Um funcionário tem uma lista deles — é isso que o faz servir mais de uma empresa, e ter
- * papel diferente em cada uma.
+ * uma empresa. Um funcionário tem **no máximo um** — é o que a [ADR-0032] D5 decidiu, e o que a Q2
+ * levou até a estrutura.
  *
  * ### Por que só dois campos, e não três
  *
@@ -22,6 +22,13 @@ package dev.matheus.fluviapp.domain.operacoes
  *
  * Nome de empresa, rótulo, agência. A empresa entra por **id** (ADR-0008), e quem exibe resolve — como o
  * porto faz com a localidade. O vínculo é a relação, não um resumo dela.
+ *
+ * ### O que ele deixou de carregar (ADR-0032 Q2)
+ *
+ * Um conjunto de extensões sobre `List<Vinculo>` — `empresaIds`, `naEmpresa`, `unicoOuNenhum`,
+ * `resolverVinculoAtivo` e `precisaEscolherVinculo`. Todas respondiam à mesma pergunta: *qual dos
+ * vínculos vale agora?* Com um vínculo no máximo, a pergunta não existe — o vínculo em vigor é **o
+ * vínculo**, e a escolha entre empresas era o único chamador da preferência guardada no aparelho.
  */
 data class Vinculo(
     val empresaId: String,
@@ -46,54 +53,3 @@ data class Vinculo(
         }
     }
 }
-
-/**
- * As empresas em que a pessoa atua — o `empresaIds` do §6, **calculado**.
- *
- * No documento ele é denormalização deliberada (o Firestore não consulta campo de dentro de elemento de
- * array, então "quem trabalha na empresa X" precisa do array chato ao lado). Em memória não é: aqui ele
- * se deriva na hora, e gravá-lo seria manter duas verdades para a mesma pergunta.
- */
-val List<Vinculo>.empresaIds: List<String> get() = map { it.empresaId }.distinct()
-
-/** O vínculo desta pessoa **naquela** empresa, se houver. */
-fun List<Vinculo>.naEmpresa(empresaId: String): Vinculo? = firstOrNull { it.empresaId == empresaId }
-
-/**
- * O vínculo **ativo por ausência de escolha**: quem tem um só não precisa escolher nada.
- *
- * Com mais de um, devolve `null` de propósito — a escolha é da pessoa (ADR-0016 §6, "seleção de
- * contexto"), e adivinhar por ela seria decidir em nome de quem opera. Sem nenhum, também `null`: é o
- * caso do papel puro de plataforma, que não atua em empresa nenhuma.
- */
-fun List<Vinculo>.unicoOuNenhum(): Vinculo? = singleOrNull()
-
-/**
- * **Qual vínculo está em vigor**, dada a escolha guardada (ADR-0016 §6 — F6.4). Função pura: é a regra
- * inteira da seleção de contexto, e é ela que os testes cobrem sem DataStore nem tela.
- *
- * | vínculos | escolha | resultado |
- * |---|---|---|
- * | nenhum | — | `null` — papel puro de plataforma, não atua em empresa nenhuma |
- * | um | qualquer | **o único** — quem não tem alternativa não escolhe, e escolha guardada não o contradiz |
- * | vários | válida | o escolhido |
- * | vários | ausente ou **vencida** | `null` — é a pergunta que falta fazer |
- *
- * A linha da escolha **vencida** é a que evita o pior defeito possível aqui: alguém perde o vínculo com
- * uma empresa e continua operando em nome dela porque o id ficou gravado no aparelho. A escolha é
- * revalidada contra os vínculos **a cada leitura** — ela é uma preferência, nunca uma credencial.
- */
-fun resolverVinculoAtivo(vinculos: List<Vinculo>, empresaEscolhida: String?): Vinculo? = when {
-    vinculos.isEmpty() -> null
-    vinculos.size == 1 -> vinculos.single()
-    else -> empresaEscolhida?.let { vinculos.naEmpresa(it) }
-}
-
-/**
- * Falta escolher? Só quando há **mais de uma** opção e nenhuma escolha válida em vigor.
- *
- * Note o que isto **não** é: "não tem vínculo ativo". Quem não tem vínculo nenhum também não tem vínculo
- * ativo, e mandá-lo escolher entre zero opções seria uma tela sem saída.
- */
-fun precisaEscolherVinculo(vinculos: List<Vinculo>, empresaEscolhida: String?): Boolean =
-    vinculos.size > 1 && resolverVinculoAtivo(vinculos, empresaEscolhida) == null

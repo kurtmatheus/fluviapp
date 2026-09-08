@@ -9,8 +9,8 @@ import kotlinx.coroutines.flow.StateFlow
  *
  * Desde a F6.2 a coleção vive **só no Firestore** (ADR-0017 D1), e a porta ganhou o que faltava para
  * isso: [observarTodos], a janela para o `StateFlow` que o listener alimenta. As duas consultas por
- * String de agência saíram na F6.5, com o campo que as sustentava: recortar por empresa é filtrar por
- * `empresaIds` na lista que o listener já entregou.
+ * String de agência saíram na F6.5, com o campo que as sustentava: recortar por empresa é comparar o
+ * `vinculo?.empresaId` na lista que o listener já entregou.
  */
 interface FuncionarioRepository {
     fun sincronizar()

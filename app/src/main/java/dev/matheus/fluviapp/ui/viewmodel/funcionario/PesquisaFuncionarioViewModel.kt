@@ -23,10 +23,12 @@ import javax.inject.Inject
  *
  * O recorte é aplicado ao **universo** (`todos`), e não ao filtro, para que nenhum caminho de UI o
  * contorne: a lista do supervisor contém apenas quem tem vínculo com a empresa dele. Isso não mudou de
- * intenção na F6.3, mudou de coordenada — era `agencia == "MATRIZ"`, virou `empresaIds.contains(id)`.
+ * intenção na F6.3, mudou de coordenada — era `agencia == "MATRIZ"`, virou `empresaIds.contains(id)` e,
+ * desde a [ADR-0032] Q2, é `vinculo?.empresaId == id`. **Comparação de igualdade em vez de busca em
+ * coleção**: o recorte diz a mesma coisa e deixa de admitir a pergunta "e se houver dois?".
  *
- * O que **mudou de fato** é o que aparece em cada linha: quem serve a duas empresas mostra as duas, com o
- * cargo de cada uma. O cadastro antigo não tinha como dizer isso.
+ * Cada linha mostra o vínculo — empresa e cargo —, e quem não tem nenhum aparece só com nome e e-mail:
+ * é o pré-cadastro (§2.1), e ele precisa aparecer justamente para poder ser corrigido.
  */
 @HiltViewModel
 class PesquisaFuncionarioViewModel @Inject constructor(
@@ -91,7 +93,7 @@ class PesquisaFuncionarioViewModel @Inject constructor(
         todos = if (empresaDoEscopo.isBlank()) {
             universo
         } else {
-            universo.filter { empresaDoEscopo in it.empresaIds }
+            universo.filter { empresaDoEscopo == it.vinculo?.empresaId }
         }
 
         _uiState.update {
@@ -112,13 +114,13 @@ class PesquisaFuncionarioViewModel @Inject constructor(
 
         return todos
             .filter { it.descricaoNome.startsWith(nome, ignoreCase = true) }
-            .filter { idDaEmpresa == null || idDaEmpresa in it.empresaIds }
+            .filter { idDaEmpresa == null || idDaEmpresa == it.vinculo?.empresaId }
             .map { funcionario ->
                 FuncionarioResultado(
                     id = funcionario.id,
                     nome = funcionario.descricaoNome,
                     email = funcionario.email,
-                    vinculos = funcionario.vinculos.map { vinculo ->
+                    vinculo = funcionario.vinculo?.let { vinculo ->
                         // Empresa que não resolve aparece só com o cargo: a linha não some, porque o
                         // vínculo existe — e sumir esconderia justamente o dado a corrigir.
                         listOfNotNull(empresasPorId[vinculo.empresaId], vinculo.cargo.name)

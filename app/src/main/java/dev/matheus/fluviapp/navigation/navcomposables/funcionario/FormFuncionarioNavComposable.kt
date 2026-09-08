@@ -47,8 +47,6 @@ fun NavGraphBuilder.formFuncionarioNavComposable(
             onEmailChange = viewModel::onEmailChange,
             onEmpresaChange = viewModel::onEmpresaChange,
             onCargoChange = viewModel::onCargoChange,
-            onAdicionarVinculo = viewModel::onAdicionarVinculo,
-            onRemoverVinculo = viewModel::onRemoverVinculo,
             onClickSalvar = viewModel::salvar,
             onClickVoltar = onClickVoltar,
         )

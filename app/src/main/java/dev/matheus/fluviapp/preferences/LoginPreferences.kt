@@ -52,10 +52,4 @@ object PreferencesKey {
      * de ela existir.
      */
     val ULTIMO_EMAIL = stringPreferencesKey("ultimo_email")
-
-    /**
-     * Em nome de qual empresa se está operando (F6.4) — a resposta à seleção de contexto do ADR-0016 §6.
-     * **Preferência, não credencial**: ver `EscolhaDeVinculo`.
-     */
-    val EMPRESA_ATIVA = stringPreferencesKey("empresa_ativa")
 }

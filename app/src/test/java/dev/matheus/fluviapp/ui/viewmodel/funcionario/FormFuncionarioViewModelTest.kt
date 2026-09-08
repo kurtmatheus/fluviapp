@@ -23,10 +23,15 @@ import dev.matheus.fluviapp.telemetry.registroCadastroDeTeste
 import org.junit.Test
 
 /**
- * O cadastro de membro depois que ele passou a editar **vínculos** (F6.3).
+ * O cadastro de membro depois que ele passou a editar o **vínculo** (F6.3, [ADR-0032] Q2).
  *
  * Os dois recortes do ADR-0015 §2.1/§8.5 continuam sendo o coração desta classe — o que mudou é a
  * coordenada: onde se lia "a agência dele", leia-se "a empresa em que ele é supervisor".
+ *
+ * **Três casos saíram** com a forma singular, e vale dizer quais: servir a duas empresas, adicionar duas
+ * vezes a mesma empresa, e remover um vínculo. Os três descreviam a administração de uma coleção — e a
+ * coleção era o que a D5 descartou. Não havia nada a preservar deles: um estado que não pode acontecer
+ * não precisa de teste que o discipline.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class FormFuncionarioViewModelTest {
@@ -61,7 +66,7 @@ class FormFuncionarioViewModelTest {
         val s = vm.uiState.value
         assertTrue(s.isNomeError)
         assertTrue(s.isEmailError)
-        assertTrue(s.isVinculosError)
+        assertTrue(s.isEmpresaError)
         assertTrue(fake.salvos.isEmpty())
     }
 
@@ -77,7 +82,7 @@ class FormFuncionarioViewModelTest {
         vm.salvar()
         advanceUntilIdle()
 
-        assertTrue(vm.uiState.value.isVinculosError)
+        assertTrue(vm.uiState.value.isEmpresaError)
         assertTrue(fake.salvos.isEmpty())
     }
 
@@ -92,14 +97,13 @@ class FormFuncionarioViewModelTest {
         vm.onNomeChange("Ana")
         vm.onEmailChange("ana@fluviapp.com.br")
         vm.onEmpresaChange("Navegação Norte")
-        vm.onAdicionarVinculo()
         vm.salvar()
         advanceUntilIdle()
 
         val salvo = fake.salvos.single()
         assertEquals("", salvo.id)
         assertEquals("Ana", salvo.descricaoNome)
-        assertEquals(listOf(Vinculo("empresa-1", Cargo.AGENTE)), salvo.vinculos)
+        assertEquals(Vinculo("empresa-1", Cargo.AGENTE), salvo.vinculo)
         // Nasce no menor privilégio, mesmo cadastrado pela plataforma (ADR-0015 §8.5).
         assertEquals(Cargo.AGENTE.name, salvo.cargo)
         assertEquals(1, eventos.size)
@@ -107,12 +111,39 @@ class FormFuncionarioViewModelTest {
     }
 
     /**
-     * O `cargo` do documento é o **último legado**, e continua sendo escrito derivado do primeiro
-     * vínculo — não para o app, que lê o cargo do vínculo ativo, mas para a regra de *passagem* no
-     * servidor (`cargoDoAutor`), que a F9 reescreve.
+     * **Escolher a empresa é atribuir o vínculo**: não há gesto de acrescentar entre uma coisa e a outra.
+     * É o que o `salvar` grava sem que nada precise ser confirmado antes.
      */
     @Test
-    fun `o cargo legado espelha o primeiro vinculo`() = runTest(mainRule.dispatcher) {
+    fun `escolher a empresa ja e o vinculo — sem gesto intermediario`() = runTest(mainRule.dispatcher) {
+        val vm = vm(FakeFuncionarioRepository())
+        advanceUntilIdle()
+
+        vm.onEmpresaChange("Rio Sul")
+        vm.onCargoChange(Cargo.SUPERVISOR.name)
+
+        assertEquals(Vinculo("empresa-2", Cargo.SUPERVISOR), vm.uiState.value.vinculo)
+    }
+
+    /** Trocar a empresa **reatribui**: o vínculo é um, e o último escolhido é o que vale. */
+    @Test
+    fun `trocar a empresa reatribui em vez de acumular`() = runTest(mainRule.dispatcher) {
+        val vm = vm(FakeFuncionarioRepository())
+        advanceUntilIdle()
+
+        vm.onEmpresaChange("Navegação Norte")
+        vm.onEmpresaChange("Rio Sul")
+
+        assertEquals(Vinculo("empresa-2", Cargo.AGENTE), vm.uiState.value.vinculo)
+    }
+
+    /**
+     * O `cargo` do documento é o **último legado**, e continua sendo escrito derivado do vínculo — não
+     * para o app, que lê o cargo do vínculo em vigor, mas para a regra de *passagem* no servidor
+     * (`cargoDoAutor`), que a F9 reescreve.
+     */
+    @Test
+    fun `o cargo legado espelha o vinculo`() = runTest(mainRule.dispatcher) {
         val fake = FakeFuncionarioRepository()
         val vm = vm(fake)
         advanceUntilIdle()
@@ -121,88 +152,33 @@ class FormFuncionarioViewModelTest {
         vm.onEmailChange("ana@fluviapp.com.br")
         vm.onEmpresaChange("Rio Sul")
         vm.onCargoChange(Cargo.SUPERVISOR.name)
-        vm.onAdicionarVinculo()
         vm.salvar()
         advanceUntilIdle()
 
         assertEquals(Cargo.SUPERVISOR.name, fake.salvos.single().cargo)
     }
 
-    @Test
-    fun `a pessoa pode servir a duas empresas, com cargos diferentes`() = runTest(mainRule.dispatcher) {
-        val fake = FakeFuncionarioRepository()
-        val vm = vm(fake)
-        advanceUntilIdle()
-
-        vm.onNomeChange("Ana")
-        vm.onEmailChange("ana@fluviapp.com.br")
-        vm.onEmpresaChange("Navegação Norte")
-        vm.onCargoChange(Cargo.SUPERVISOR.name)
-        vm.onAdicionarVinculo()
-        vm.onEmpresaChange("Rio Sul")
-        vm.onCargoChange(Cargo.AGENTE.name)
-        vm.onAdicionarVinculo()
-        vm.salvar()
-        advanceUntilIdle()
-
-        assertEquals(
-            listOf(Vinculo("empresa-1", Cargo.SUPERVISOR), Vinculo("empresa-2", Cargo.AGENTE)),
-            fake.salvos.single().vinculos,
-        )
-    }
-
-    /**
-     * Dois vínculos na mesma empresa não significam nada — o segundo só poderia contradizer o cargo do
-     * primeiro. Reatribuir é o gesto que a pessoa tem em mente ao escolher de novo.
-     */
-    @Test
-    fun `adicionar de novo a mesma empresa substitui o cargo, nao duplica`() = runTest(mainRule.dispatcher) {
-        val fake = FakeFuncionarioRepository()
-        val vm = vm(fake)
-        advanceUntilIdle()
-
-        vm.onEmpresaChange("Navegação Norte")
-        vm.onCargoChange(Cargo.AGENTE.name)
-        vm.onAdicionarVinculo()
-        vm.onCargoChange(Cargo.SUPERVISOR.name)
-        vm.onAdicionarVinculo()
-
-        assertEquals(listOf(Vinculo("empresa-1", Cargo.SUPERVISOR)), vm.uiState.value.vinculos)
-    }
-
-    @Test
-    fun `remover tira o vinculo daquela empresa`() = runTest(mainRule.dispatcher) {
-        val vm = vm(FakeFuncionarioRepository())
-        advanceUntilIdle()
-
-        vm.onEmpresaChange("Navegação Norte")
-        vm.onAdicionarVinculo()
-        vm.onEmpresaChange("Rio Sul")
-        vm.onAdicionarVinculo()
-        vm.onRemoverVinculo("empresa-1")
-
-        assertEquals(listOf(Vinculo("empresa-2", Cargo.AGENTE)), vm.uiState.value.vinculos)
-    }
-
     // --- Edição ---
 
     @Test
-    fun `editar carrega os vinculos e preserva o id do persistido`() = runTest(mainRule.dispatcher) {
+    fun `editar carrega o vinculo e preserva o id do persistido`() = runTest(mainRule.dispatcher) {
         val fake = FakeFuncionarioRepository().apply {
             funcionarios = listOf(
                 Funcionario(
                     id = "a1",
                     descricaoNome = "Ana",
                     email = "ana@x.com",
-                    vinculos = listOf(Vinculo("empresa-1", Cargo.SUPERVISOR)),
+                    vinculo = Vinculo("empresa-1", Cargo.SUPERVISOR),
                 )
             )
         }
         val vm = vm(fake, estado = SavedStateHandle(mapOf("idFuncionario" to "a1")))
         advanceUntilIdle()
 
+        // A empresa volta **por rótulo**, que é a forma que o seletor entende.
         assertEquals("Ana", vm.uiState.value.nome)
-        assertEquals(listOf("Navegação Norte · SUPERVISOR"), vm.uiState.value.vinculosNaTela.map { "${it.empresa} · ${it.cargo}" })
+        assertEquals("Navegação Norte", vm.uiState.value.empresa)
+        assertEquals(Cargo.SUPERVISOR.name, vm.uiState.value.cargo)
 
         vm.onNomeChange("Ana Maria")
         vm.salvar()
@@ -212,7 +188,7 @@ class FormFuncionarioViewModelTest {
         assertEquals("a1", salvo.id)
         assertEquals("Ana Maria", salvo.descricaoNome)
         // O vínculo carregado volta como estava: editar o nome não é reatribuir ninguém.
-        assertEquals(listOf(Vinculo("empresa-1", Cargo.SUPERVISOR)), salvo.vinculos)
+        assertEquals(Vinculo("empresa-1", Cargo.SUPERVISOR), salvo.vinculo)
     }
 
     // --- Os dois recortes (ADR-0015 §2.1/§8.5) ---
@@ -239,7 +215,7 @@ class FormFuncionarioViewModelTest {
             assertFalse(s.podeEscolherEmpresa)
             assertEquals(listOf("Rio Sul"), s.empresas.map { it.nome })
             // Uma lista de um item é uma pergunta sem alternativa: já vem escolhida.
-            assertEquals("Rio Sul", s.empresaEmEdicao)
+            assertEquals("Rio Sul", s.empresa)
         }
 
     /**
@@ -257,12 +233,11 @@ class FormFuncionarioViewModelTest {
         vm.onNomeChange("Carla")
         vm.onEmailChange("carla@fluviapp.com.br")
         vm.onCargoChange(Cargo.SUPERVISOR.name)
-        vm.onAdicionarVinculo()
         vm.salvar()
         advanceUntilIdle()
 
         assertTrue(vm.uiState.value.podeDefinirCargo)
-        assertEquals(listOf(Vinculo("empresa-2", Cargo.SUPERVISOR)), fake.salvos.single().vinculos)
+        assertEquals(Vinculo("empresa-2", Cargo.SUPERVISOR), fake.salvos.single().vinculo)
     }
 
     /** O supervisor não escapa do recorte trocando a empresa por outro caminho. */
@@ -274,7 +249,7 @@ class FormFuncionarioViewModelTest {
 
         vm.onEmpresaChange("Navegação Norte")
 
-        assertEquals("Rio Sul", vm.uiState.value.empresaEmEdicao)
+        assertEquals("Rio Sul", vm.uiState.value.empresa)
     }
 
     @Test

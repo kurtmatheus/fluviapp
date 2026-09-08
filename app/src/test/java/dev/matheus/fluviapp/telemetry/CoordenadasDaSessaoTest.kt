@@ -30,7 +30,7 @@ class CoordenadasDaSessaoTest {
         descricaoNome = "Ana Ribeiro",
         email = "ana@empresa.com",
         cargo = Funcionario.Cargo.AGENTE.name,
-        vinculos = listOf(Vinculo("empresa-1", Funcionario.Cargo.AGENTE)),
+        vinculo = Vinculo("empresa-1", Funcionario.Cargo.AGENTE),
     )
 
     private val contexto = ContextoUsuario(usuario = ana, funcionario = funcionaria)

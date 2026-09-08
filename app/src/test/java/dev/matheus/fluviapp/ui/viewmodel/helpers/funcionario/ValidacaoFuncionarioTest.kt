@@ -1,7 +1,7 @@
 package dev.matheus.fluviapp.ui.viewmodel.helpers.funcionario
 
 import dev.matheus.fluviapp.domain.operacoes.Funcionario.Cargo
-import dev.matheus.fluviapp.domain.operacoes.Vinculo
+import dev.matheus.fluviapp.ui.states.EmpresaOpcao
 import dev.matheus.fluviapp.ui.states.FormFuncionarioUiState
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -12,7 +12,9 @@ class ValidacaoFuncionarioTest {
     private fun estadoValido() = FormFuncionarioUiState(
         nome = "Ana",
         email = "ana@fluviapp.com.br",
-        vinculos = listOf(Vinculo("empresa-1", Cargo.AGENTE)),
+        empresas = listOf(EmpresaOpcao("empresa-1", "Navegação Norte")),
+        empresa = "Navegação Norte",
+        cargo = Cargo.AGENTE.name,
     )
 
     @Test
@@ -21,7 +23,7 @@ class ValidacaoFuncionarioTest {
 
         assertTrue(erros.nome)
         assertTrue(erros.email)
-        assertTrue(erros.vinculos)
+        assertTrue(erros.empresa)
         assertFalse(erros.valido)
     }
 
@@ -35,13 +37,23 @@ class ValidacaoFuncionarioTest {
      * qual empresa está contratando, e uma pessoa sem vínculo não enxerga seção nenhuma nem emite nada.
      */
     @Test
-    fun `nome e e-mail sem vinculo ainda e invalido`() {
-        val erros = validarFuncionario(estadoValido().copy(vinculos = emptyList()))
+    fun `nome e e-mail sem empresa ainda e invalido`() {
+        val erros = validarFuncionario(estadoValido().copy(empresa = ""))
 
         assertFalse(erros.valido)
-        assertTrue(erros.vinculos)
+        assertTrue(erros.empresa)
         assertFalse(erros.nome)
         assertFalse(erros.email)
+    }
+
+    /**
+     * **Rótulo que não casa com opção nenhuma é o mesmo que campo vazio.** Sem isto, um estado com
+     * `empresa` preenchida e fora da lista passaria pela validação e chegaria ao `salvar` como vínculo
+     * nulo — a falha apareceria adiante, sem apontar campo.
+     */
+    @Test
+    fun `empresa fora da lista de opcoes e invalida`() {
+        assertTrue(validarFuncionario(estadoValido().copy(empresa = "Empresa Fantasma")).empresa)
     }
 
     // --- E-mail: é a CHAVE do primeiro acesso (ADR-0015 §2.1), então tem forma, não só presença ---

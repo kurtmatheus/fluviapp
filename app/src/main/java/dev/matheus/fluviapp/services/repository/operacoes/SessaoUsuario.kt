@@ -2,12 +2,9 @@ package dev.matheus.fluviapp.services.repository.operacoes
 
 import dev.matheus.fluviapp.domain.operacoes.ContextoUsuario
 import dev.matheus.fluviapp.domain.operacoes.Usuario
-import dev.matheus.fluviapp.preferences.EscolhaDeVinculo
 import dev.matheus.fluviapp.preferences.SessaoLocal
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.EmpresaRepository
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
@@ -19,8 +16,8 @@ import javax.inject.Singleton
  * por papel/cargo/empresa é testável com um fake, e o caminho `usuário → funcionarioId → funcionário`
  * existe em **um** lugar em vez de repetido em cada tela.
  *
- * Desde a F6.4 ela responde uma terceira coisa: **em nome de quem** a pessoa opera, quando há mais de um
- * vínculo (ADR-0016 §6).
+ * A F6.4 tinha acrescentado uma terceira pergunta — *em nome de qual empresa se opera* —, e a [ADR-0032]
+ * D5 a retirou: com uma empresa no máximo, o vínculo responde sozinho. `escolherEmpresa` saiu com ela.
  */
 interface SessaoUsuario {
     /**
@@ -44,16 +41,7 @@ interface SessaoUsuario {
     suspend fun atual(): ContextoUsuario? = observar().first()
 
     /**
-     * Guarda a empresa escolhida — a resposta à seleção de contexto.
-     *
-     * A porta **não valida** a escolha: quem decide se ela vale é o domínio, a cada leitura
-     * (`ContextoUsuario.vinculoAtivo`). É o que faz um vínculo perdido invalidar a escolha sozinho, sem
-     * depender de alguém lembrar de limpá-la.
-     */
-    suspend fun escolherEmpresa(empresaId: String)
-
-    /**
-     * **Encerra a sessão local**: esquece quem entrou e a escolha de contexto, e nada além disso.
+     * **Encerra a sessão local**: esquece quem entrou, e nada além disso.
      *
      * Existe para o logout parar de conhecer *onde* a sessão mora. Antes ele limpava duas coisas por dois
      * caminhos — `sessaoLocal.limpar()` e um `dataStore.edit` cru —, e um ViewModel que sabe quais chaves
@@ -65,63 +53,46 @@ interface SessaoUsuario {
 }
 
 /**
- * Impl sobre a projeção local ([SessaoLocal]), o Firestore e a escolha persistida ([EscolhaDeVinculo]).
+ * Impl sobre a projeção local ([SessaoLocal]) e o Firestore.
  *
  * Chamava-se `SessaoUsuarioRoom`, e o próprio KDoc já dizia que o sufixo era do tempo em que as duas
  * leituras vinham do espelho. Em 2026-09-07 o usuário passou ao DataStore e o nome deixou de ter até esse
- * resto de verdade — o que a classe faz continua sendo o mesmo: juntar as três peças num contexto só.
+ * resto de verdade — o que a classe faz continua sendo o mesmo: juntar as peças num contexto só.
+ *
+ * Eram **três** peças até a [ADR-0032] D5; a escolha de empresa era a terceira, e saiu com o caso que a
+ * exigia. O `combine` de dois fluxos do mesmo DataStore (e o `distinctUntilChanged` que existia só para
+ * cortar a emissão em dobro que ele produzia) saíram junto — não por arrumação, mas porque sobrou um
+ * fluxo, e um fluxo não se combina com nada.
  */
 @Singleton
 class SessaoUsuarioLocal @Inject constructor(
     private val sessaoLocal: SessaoLocal,
     private val funcionarioRepository: FuncionarioRepository,
     private val empresaRepository: EmpresaRepository,
-    private val escolhaDeVinculo: EscolhaDeVinculo,
 ) : SessaoUsuario {
 
     /**
-     * As duas metades locais (quem entrou · o que escolheu) combinadas, e o contexto remontado a cada
-     * mudança.
-     *
-     * O `distinctUntilChanged` não é otimização de estilo: as duas vêm do **mesmo** DataStore, então uma
-     * gravação faria os dois fluxos emitirem e o `combine` produzir o par duas vezes. Cortar a repetição
-     * aqui é o que impede a montagem de rodar em dobro.
+     * Quem entrou, e o contexto remontado a cada mudança.
      *
      * Remontar é barato: as duas leituras abaixo vão à **coleção em memória** (`ColecaoFirestore` guarda o
      * snapshot num `StateFlow`), não à rede.
      */
     override fun observar(): Flow<ContextoUsuario?> =
-        combine(
-            sessaoLocal.observarLogado(),
-            escolhaDeVinculo.observarEmpresaEscolhida(),
-        ) { usuario, empresaEscolhida -> usuario to empresaEscolhida }
-            .distinctUntilChanged()
-            .map { (usuario, empresaEscolhida) ->
-                usuario?.let { montar(it, empresaEscolhida) }
-            }
+        sessaoLocal.observarLogado().map { usuario -> usuario?.let { montar(it) } }
 
-    private suspend fun montar(usuario: Usuario, empresaEscolhida: String?): ContextoUsuario {
+    private suspend fun montar(usuario: Usuario): ContextoUsuario {
         val funcionario = usuario.funcionarioId
             .takeIf { it.isNotBlank() }
             ?.let { funcionarioRepository.obterPorId(it) }
 
-        val contexto = ContextoUsuario(
-            usuario = usuario,
-            funcionario = funcionario,
-            empresaAtivaId = empresaEscolhida,
-        )
+        val contexto = ContextoUsuario(usuario = usuario, funcionario = funcionario)
 
-        // O nome da empresa é resolvido **aqui**, e só quando há vínculo em vigor: é o bilhete que
-        // precisa dele (gente lê nome, não id), e uma leitura a mais por sessão é mais barata do que
-        // cada tela que imprime algo repetir a consulta.
+        // O nome da empresa é resolvido **aqui**, e só quando há vínculo: é o bilhete que precisa dele
+        // (gente lê nome, não id), e uma leitura a mais por sessão é mais barata do que cada tela que
+        // imprime algo repetir a consulta.
         val empresaAtiva = contexto.vinculoAtivo?.let { empresaRepository.obterPorId(it.empresaId) }
         return contexto.copy(empresaAtivaNome = empresaAtiva?.nome.orEmpty())
     }
 
-    override suspend fun escolherEmpresa(empresaId: String) = escolhaDeVinculo.guardar(empresaId)
-
-    override suspend fun encerrar() {
-        sessaoLocal.limpar()
-        escolhaDeVinculo.limpar()
-    }
+    override suspend fun encerrar() = sessaoLocal.limpar()
 }

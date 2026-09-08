@@ -21,7 +21,6 @@ import dev.matheus.fluviapp.ui.components.forms.areas.funcionario.ContentFuncion
 import dev.matheus.fluviapp.ui.components.forms.buttons.CommonIconButton
 import dev.matheus.fluviapp.ui.screens.forms.CommonScreenNoBottom
 import dev.matheus.fluviapp.domain.operacoes.Funcionario
-import dev.matheus.fluviapp.domain.operacoes.Vinculo
 import dev.matheus.fluviapp.ui.states.EmpresaOpcao
 import dev.matheus.fluviapp.ui.states.FormFuncionarioUiState
 
@@ -32,8 +31,6 @@ fun FormFuncionarioScreen(
     onEmailChange: (String) -> Unit = {},
     onEmpresaChange: (String) -> Unit = {},
     onCargoChange: (String) -> Unit = {},
-    onAdicionarVinculo: () -> Unit = {},
-    onRemoverVinculo: (String) -> Unit = {},
     onClickSalvar: () -> Unit = {},
     onClickVoltar: () -> Unit = {},
 ) {
@@ -62,8 +59,6 @@ fun FormFuncionarioScreen(
                     onEmailChange = onEmailChange,
                     onEmpresaChange = onEmpresaChange,
                     onCargoChange = onCargoChange,
-                    onAdicionarVinculo = onAdicionarVinculo,
-                    onRemoverVinculo = onRemoverVinculo,
                 )
             }
             Column(
@@ -96,8 +91,8 @@ private fun FormFuncionarioScreenPreview() {
             nome = "Agente Modelo",
             email = "agente.modelo@fluviapp.com.br",
             empresas = listOf(EmpresaOpcao("e1", "Navegação Norte")),
-            empresaEmEdicao = "Navegação Norte",
-            vinculos = listOf(Vinculo("e1", Funcionario.Cargo.AGENTE)),
+            empresa = "Navegação Norte",
+            cargo = Funcionario.Cargo.AGENTE.name,
         ),
     )
 }

@@ -47,7 +47,7 @@ class ContextoUsuarioTest {
     @Test
     fun `sem vinculo ativo, nao ha cargo nem agencia`() {
         val semVinculo = supervisor.copy(
-            funcionario = supervisor.funcionario?.copy(vinculos = emptyList()),
+            funcionario = supervisor.funcionario?.copy(vinculo = null),
         )
 
         assertNull(semVinculo.cargo)

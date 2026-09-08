@@ -26,18 +26,19 @@ import dev.matheus.fluviapp.telemetry.RegistroCadastro
 import javax.inject.Inject
 
 /**
- * Cadastro/edição de membro da equipe no molde do ADR-0006, agora **editando vínculos** (ADR-0016 §6).
+ * Cadastro/edição de membro da equipe no molde do ADR-0006, agora **editando o vínculo** (ADR-0016 §6,
+ * [ADR-0032] Q2).
  *
  * O form continua tendo **dois recortes** (ADR-0015 §2.1/§8.5), com a coordenada trocada: a plataforma
  * escolhe empresa e cargo; o supervisor cadastra na **empresa dele**, sem tocar em cargo. O que mudou é
  * que "a dele" deixou de ser uma String de agência e passou a ser o `empresaId` do vínculo ativo.
  *
- * ### A ponte que este VM ainda carrega
+ * ### O que a forma singular tirou daqui
  *
- * `Funcionario.agencia` continua sendo gravada — derivada do **nome da empresa do primeiro vínculo** —
- * porque a Passagem imprime esse campo no bilhete e ainda não foi revitalizada (F9). Sem a ponte, todo
- * membro novo emitiria bilhete com a agência em branco: uma regressão visível, causada por uma fatia que
- * não era da emissão. Ela sai na F6.5, junto com o campo.
+ * Três gestos: `onAdicionarVinculo`, `onRemoverVinculo` e a substituição-em-vez-de-duplicata que o
+ * primeiro precisava fazer quando a empresa já estava na lista. Nenhum deles tinha assunto próprio — os
+ * três administravam uma coleção que agora não existe. **Escolher a empresa é atribuir o vínculo**, e o
+ * `salvar` lê `estado.vinculo`.
  */
 @HiltViewModel
 class FormFuncionarioViewModel @Inject constructor(
@@ -98,11 +99,20 @@ class FormFuncionarioViewModel @Inject constructor(
         _uiState.update {
             it.copy(
                 empresas = disponiveis,
-                empresaEmEdicao = if (it.podeEscolherEmpresa) it.empresaEmEdicao else disponiveis.firstOrNull()?.nome.orEmpty(),
+                empresa = if (it.podeEscolherEmpresa) it.empresa else disponiveis.firstOrNull()?.nome.orEmpty(),
             )
         }
     }
 
+    /**
+     * O gravado vira o que a tela mostra — e a empresa volta **por rótulo**, porque é a forma que o
+     * seletor entende.
+     *
+     * Empresa que não está entre as opções deixa o campo em branco, e aí a validação recusa o `salvar`
+     * apontando-a. É o fail-closed correto: seria pior gravar por cima de um vínculo que esta tela não
+     * conseguiu nem exibir. Acontecer, não acontece — o supervisor só alcança quem é da empresa dele (o
+     * recorte da lista, §2.2), e a plataforma recebe todas.
+     */
     private suspend fun carregar() {
         funcionarioRepository.obterPorId(idFuncionario)?.let { funcionario ->
             _uiState.update {
@@ -110,10 +120,11 @@ class FormFuncionarioViewModel @Inject constructor(
                     titulo = R.string.subtitle_editar_agente,
                     nome = funcionario.descricaoNome,
                     email = funcionario.email,
-                    // Os vínculos gravados prevalecem sobre qualquer recorte: o supervisor só alcança
-                    // quem é da empresa dele (o recorte da lista, §2.2), então preservar o que está
-                    // gravado não abre porta — evita reescrever o vínculo alheio de quem serve a duas.
-                    vinculos = funcionario.vinculos,
+                    empresa = it.empresas
+                        .firstOrNull { opcao -> opcao.id == funcionario.vinculo?.empresaId }
+                        ?.nome
+                        .orEmpty(),
+                    cargo = funcionario.vinculo?.cargo?.name ?: Funcionario.Cargo.AGENTE.name,
                 )
             }
         }
@@ -122,36 +133,14 @@ class FormFuncionarioViewModel @Inject constructor(
     fun onNomeChange(v: String) = _uiState.update { it.copy(nome = v, isNomeError = false) }
     fun onEmailChange(v: String) = _uiState.update { it.copy(email = v, isEmailError = false) }
 
-    /** A empresa do vínculo **em montagem** — só muda para quem pode escolher. */
+    /** A empresa do vínculo — só muda para quem pode escolher. */
     fun onEmpresaChange(v: String) = _uiState.update {
-        if (it.podeEscolherEmpresa) it.copy(empresaEmEdicao = v) else it
+        if (it.podeEscolherEmpresa) it.copy(empresa = v, isEmpresaError = false) else it
     }
 
     /** Só tem efeito para quem pode definir cargo — a tela nem desenha o seletor para os demais. */
     fun onCargoChange(v: String) = _uiState.update {
-        if (it.podeDefinirCargo) it.copy(cargoEmEdicao = v) else it
-    }
-
-    /**
-     * Acrescenta o vínculo em montagem à lista.
-     *
-     * **Substitui em vez de duplicar** quando a empresa já está na lista: dois vínculos na mesma empresa
-     * não significam nada — o segundo só poderia contradizer o cargo do primeiro. Trocar o cargo passa a
-     * ser reatribuir, que é o gesto que a pessoa tem em mente.
-     */
-    fun onAdicionarVinculo() = _uiState.update { estado ->
-        val empresa = estado.empresas.firstOrNull { it.nome == estado.empresaEmEdicao } ?: return@update estado
-        val cargo = if (estado.podeDefinirCargo) estado.cargoEmEdicao else Funcionario.Cargo.AGENTE.name
-        val novo = Vinculo.de(empresa.id, cargo) ?: return@update estado
-
-        estado.copy(
-            vinculos = estado.vinculos.filterNot { it.empresaId == novo.empresaId } + novo,
-            isVinculosError = false,
-        )
-    }
-
-    fun onRemoverVinculo(empresaId: String) = _uiState.update {
-        it.copy(vinculos = it.vinculos.filterNot { vinculo -> vinculo.empresaId == empresaId })
+        if (it.podeDefinirCargo) it.copy(cargo = v) else it
     }
 
     /**
@@ -178,7 +167,7 @@ class FormFuncionarioViewModel @Inject constructor(
                 it.copy(
                     isNomeError = erros.nome,
                     isEmailError = erros.email,
-                    isVinculosError = erros.vinculos,
+                    isEmpresaError = erros.empresa,
                 )
             }
             return
@@ -193,10 +182,10 @@ class FormFuncionarioViewModel @Inject constructor(
                 val funcionario = (base ?: Funcionario(id = "", descricaoNome = "")).copy(
                     descricaoNome = estado.nome,
                     email = estado.email.trim(),
-                    vinculos = estado.vinculos,
-                    // O cargo legado acompanha o primeiro vínculo: quem ainda o lê é a regra de
-                    // *passagem* no servidor (`cargoDoAutor`), que a F9 reescreve.
-                    cargo = estado.vinculos.firstOrNull()?.cargo?.name ?: Funcionario.Cargo.AGENTE.name,
+                    vinculo = estado.vinculo,
+                    // O cargo legado acompanha o vínculo: quem ainda o lê é a regra de *passagem* no
+                    // servidor (`cargoDoAutor`), que a F9 reescreve.
+                    cargo = estado.vinculo?.cargo?.name ?: Funcionario.Cargo.AGENTE.name,
                 )
                 funcionarioRepository.salvar(funcionario)
                 _sucesso.send(Unit)

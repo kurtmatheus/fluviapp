@@ -27,21 +27,21 @@ data class DocumentoBruto(
     fun booleano(chave: String, padrao: Boolean = false): Boolean = dados[chave] as? Boolean ?: padrao
 
     /**
-     * Lista de mapas — a forma que o Firestore devolve um `array` de objetos (os `vinculos` do
-     * funcionário, ADR-0016 §6).
+     * Mapa — a forma que o Firestore devolve um objeto aninhado (o `vinculo` do funcionário, ADR-0016
+     * §6, [ADR-0032] Q2).
      *
-     * Elemento que não é mapa é **descartado**, não coagido: um item estranho no meio do array é dado
-     * corrompido, e transformá-lo em mapa vazio criaria um vínculo sem empresa e sem cargo — que a
-     * fronteira do domínio recusaria de novo, mais adiante e com menos contexto. Ausente ou tipo errado
-     * → lista vazia, como os demais acessores.
+     * Substituiu `listaDeMapas`, que existia porque o vínculo era um `array` e perdeu o único chamador
+     * quando ele deixou de ser. E a troca não é só de forma: **campo dentro de mapa o Firestore
+     * consulta** (`vinculo.empresaId`), campo dentro de elemento de array não — é o que dispensou o
+     * derivado `empresaIds` ao lado.
+     *
+     * Chave de tipo estranho é **descartada**, não coagida; ausente ou tipo errado → mapa vazio, como os
+     * demais acessores. Quem recusa vínculo incompleto é a fronteira do domínio ([Vinculo.de]), não este
+     * acessor: aqui só se lê a forma.
      */
-    fun listaDeMapas(chave: String): List<Map<String, Any?>> {
-        val bruto = dados[chave] as? List<*> ?: return emptyList()
-        return bruto.mapNotNull { item ->
-            (item as? Map<*, *>)?.entries?.mapNotNull { (k, v) ->
-                (k as? String)?.let { it to v }
-            }?.toMap()
-        }
+    fun mapa(chave: String): Map<String, Any?> {
+        val bruto = dados[chave] as? Map<*, *> ?: return emptyMap()
+        return bruto.entries.mapNotNull { (k, v) -> (k as? String)?.let { it to v } }.toMap()
     }
 
 }

@@ -44,12 +44,10 @@ class PesquisaFuncionarioViewModelTest {
         PesquisaFuncionarioViewModel(repo, empresasFake(), sessao)
 
     private val amostra = listOf(
-        Funcionario("1", "Ana", "Navegação Norte", vinculos = listOf(Vinculo("empresa-1", Cargo.SUPERVISOR))),
-        Funcionario("2", "Bruno", "Rio Sul", vinculos = listOf(Vinculo("empresa-2", Cargo.AGENTE))),
-        Funcionario(
-            "3", "Carla", "Navegação Norte",
-            vinculos = listOf(Vinculo("empresa-1", Cargo.AGENTE), Vinculo("empresa-2", Cargo.AGENTE)),
-        ),
+        Funcionario("1", "Ana", vinculo = Vinculo("empresa-1", Cargo.SUPERVISOR)),
+        Funcionario("2", "Bruno", vinculo = Vinculo("empresa-2", Cargo.AGENTE)),
+        // Sem vínculo: é o pré-cadastro (§2.1), e ele aparece na lista para poder ser completado.
+        Funcionario("3", "Carla"),
     )
 
     @Test
@@ -61,20 +59,17 @@ class PesquisaFuncionarioViewModelTest {
         assertEquals(2, vm.uiState.value.empresas.size)
     }
 
-    /** A linha diz onde a pessoa atua e como — e quem atua em duas mostra as duas. */
+    /** A linha diz onde a pessoa atua e como — e quem não tem vínculo aparece sem essa linha. */
     @Test
-    fun `cada vinculo vira uma linha, com empresa e cargo`() = runTest(mainRule.dispatcher) {
+    fun `o vinculo vira linha com empresa e cargo, e a ausencia vira nada`() = runTest(mainRule.dispatcher) {
         val vm = vm(FakeFuncionarioRepository().apply { funcionarios = amostra })
         advanceUntilIdle()
 
         assertEquals(
-            listOf("Navegação Norte · SUPERVISOR"),
-            vm.uiState.value.resultados.first { it.id == "1" }.vinculos,
+            "Navegação Norte · SUPERVISOR",
+            vm.uiState.value.resultados.first { it.id == "1" }.vinculo,
         )
-        assertEquals(
-            listOf("Navegação Norte · AGENTE", "Rio Sul · AGENTE"),
-            vm.uiState.value.resultados.first { it.id == "3" }.vinculos,
-        )
+        assertNull(vm.uiState.value.resultados.first { it.id == "3" }.vinculo)
     }
 
     @Test
@@ -87,14 +82,15 @@ class PesquisaFuncionarioViewModelTest {
         assertEquals(listOf("Ana"), vm.uiState.value.resultados.map { it.nome })
     }
 
+    /** Filtrar por empresa deixa de fora quem não tem vínculo — não há empresa em que ela conte. */
     @Test
-    fun `filtra por empresa, incluindo quem serve a duas`() = runTest(mainRule.dispatcher) {
+    fun `filtra por empresa`() = runTest(mainRule.dispatcher) {
         val vm = vm(FakeFuncionarioRepository().apply { funcionarios = amostra })
         advanceUntilIdle()
 
         vm.onEmpresaChange("Rio Sul")
 
-        assertEquals(setOf("Bruno", "Carla"), vm.uiState.value.resultados.map { it.nome }.toSet())
+        assertEquals(listOf("Bruno"), vm.uiState.value.resultados.map { it.nome })
     }
 
     @Test
@@ -123,7 +119,8 @@ class PesquisaFuncionarioViewModelTest {
 
         val s = vm.uiState.value
         assertFalse(s.podeFiltrarPorEmpresa)
-        assertEquals(setOf("Ana", "Carla"), s.resultados.map { it.nome }.toSet())
+        // Nem Bruno (outra empresa) nem Carla (sem vínculo): a lista é a equipe dele, e só.
+        assertEquals(listOf("Ana"), s.resultados.map { it.nome })
         // Sem filtro de empresa, também não se oferece a lista das outras.
         assertTrue(s.empresas.isEmpty())
     }
@@ -139,7 +136,7 @@ class PesquisaFuncionarioViewModelTest {
         vm.onEmpresaChange("Rio Sul")
 
         // O recorte é do universo, não do filtro: o evento é ignorado e a lista continua sendo a dele.
-        assertEquals(setOf("Ana", "Carla"), vm.uiState.value.resultados.map { it.nome }.toSet())
+        assertEquals(listOf("Ana"), vm.uiState.value.resultados.map { it.nome })
     }
 
     /** **Quem gere a equipe, gere por inteiro** (F6.7): o supervisor também remove — na empresa dele. */

@@ -13,14 +13,17 @@ import dev.matheus.fluviapp.domain.IObjetoSimplificado
  * ### Fora do Room (F6.2)
  *
  * Esta é a **quinta entidade a perder o espelho** (ADR-0017 D1) e a última do caminho vivo a tê-lo: a
- * coleção passa a existir só no Firestore, com o `StateFlow` do listener como fonte reativa. E a saída do
- * Room não é só arrumação — é o que **destrava a forma nova**: [vinculos] é uma lista, e lista em tabela
- * exigiria `TypeConverter` e migração para um formato que muda de novo na fatia seguinte.
+ * coleção passa a existir só no Firestore, com o `StateFlow` do listener como fonte reativa.
  *
- * ### Os vínculos, e o que sobrou
+ * ### O vínculo, e o que sobrou
  *
- * [vinculos] é a forma do ADR-0016 §6, e desde a F6.3 é **a fonte**: a pessoa serve uma ou mais empresas,
- * com cargo em cada uma.
+ * [vinculo] é a forma do ADR-0016 §6 e desde a F6.3 é **a fonte**: onde a pessoa atua, e com que cargo.
+ *
+ * Era uma **lista** até a [ADR-0032] D5, que descartou o caso de servir a duas empresas. A Q2 levou a
+ * decisão até a estrutura: lista de no máximo um elemento admite o que o domínio não reconhece, e
+ * estrutura assim é convite a estado inválido — cada leitor tinha de decidir por conta própria o que
+ * fazer com o segundo elemento. Agora não há segundo. É o mesmo princípio que o ADR-0031 aplicou à
+ * cilindrada: **quando o fato tem uma forma, a estrutura segue a forma.**
  *
  * A troca seguiu a ordem que o ADR-0008 usou para relacionar por id — **acrescenta, migra os leitores,
  * remove** — e chegou ao fim aqui: `lotacao` saiu na F6.3 (ninguém a lia fora do cadastro), `agencia` saiu
@@ -39,9 +42,9 @@ data class Funcionario(
      * exigiria um campo derivado novo, que a F9 (Passagem) descartaria em seguida — então ele fica, e
      * sai lá.
      *
-     * No aplicativo ninguém mais o lê: o cargo em vigor é o do **vínculo ativo**
-     * ([ContextoUsuario.cargo]), porque a mesma pessoa pode ser supervisora numa empresa e agente em
-     * outra. Aqui ele é escrito derivado do primeiro vínculo.
+     * No aplicativo ninguém mais o lê: o cargo em vigor é o do **vínculo** ([ContextoUsuario.cargo]).
+     * Aqui ele é escrito derivado dele — e desde a [ADR-0032] Q2 a derivação não tem mais nada de
+     * arbitrário, porque não há "primeiro" vínculo a escolher.
      */
     val cargo: String = Cargo.AGENTE.name,
     /**
@@ -50,18 +53,15 @@ data class Funcionario(
      * permanente é o id ([Usuario.funcionarioId], §8.3) — o e-mail é chave de **descoberta**, uma vez só.
      */
     val email: String = "",
-    /** Onde a pessoa atua e como, um por empresa (ADR-0016 §6). Ver [Vinculo]. */
-    val vinculos: List<Vinculo> = emptyList(),
-) : IObjetoSimplificado {
-
     /**
-     * As empresas em que atua — **derivado**, nunca campo desta classe.
+     * Onde a pessoa atua e como (ADR-0016 §6, [ADR-0032] D5). Ver [Vinculo].
      *
-     * No documento ele existe como array chato, e é denormalização deliberada: o Firestore não consulta
-     * campo de dentro de elemento de array, então *"quem trabalha na empresa X"* não sai de [vinculos].
-     * Em memória não há essa limitação, e manter as duas verdades é que seria o erro.
+     * `null` é estado **legítimo**, e há dois casos: o pré-cadastro do §2.1 (a pessoa existe, o vínculo
+     * vem depois) e o vínculo ilegível descartado na fronteira. Nos dois, a pessoa não enxerga seção
+     * alguma — a política trata ausência como caso normal (ADR-0015 §8.2), fail-closed.
      */
-    val empresaIds: List<String> get() = vinculos.empresaIds
+    val vinculo: Vinculo? = null,
+) : IObjetoSimplificado {
 
     /**
      * O eixo **aberto** da autorização (ADR-0015, revisão estrutural): hoje supervisor e agente, amanhã

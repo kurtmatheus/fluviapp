@@ -15,7 +15,6 @@ sealed class FluviAppGraphDestinations(val route: String) {
     data object RecuperarSenha : FluviAppGraphDestinations("recuperarSenha")
 
     /** Em nome de qual empresa se opera (ADR-0016 §6, F6.4) — só para quem tem mais de um vínculo. */
-    data object SelecaoVinculo : FluviAppGraphDestinations("selecaoVinculo")
     data object MainScreenGraph : FluviAppGraphDestinations("mainScreenGraph")
     data object PesquisarPassagemGraph : FluviAppGraphDestinations("pesquisarPassagemGraph")
 }

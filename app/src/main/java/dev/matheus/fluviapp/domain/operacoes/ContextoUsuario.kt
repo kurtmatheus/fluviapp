@@ -13,14 +13,6 @@ data class ContextoUsuario(
     val usuario: Usuario,
     val funcionario: Funcionario?,
     /**
-     * A empresa **escolhida** por quem opera (F6.4), lida de onde ela foi guardada. `null` = ainda não
-     * escolheu — e continua sendo `null` para quem não tem o que escolher.
-     *
-     * É preferência, não credencial: quem decide se ela vale é [vinculoAtivo], revalidando-a contra os
-     * vínculos atuais a cada leitura.
-     */
-    val empresaAtivaId: String? = null,
-    /**
      * O **nome** da empresa do vínculo em vigor, resolvido por quem monta o contexto.
      *
      * Ele existe porque há um lugar em que o id não serve: o **bilhete**, que é lido por gente. Resolver
@@ -32,29 +24,24 @@ data class ContextoUsuario(
     val papel: String get() = usuario.papel
 
     /**
-     * **O vínculo em vigor** (ADR-0016 §6): em nome de qual empresa esta pessoa está operando agora.
+     * **O vínculo em vigor** (ADR-0016 §6): em nome de qual empresa esta pessoa está operando.
      *
-     * Um vínculo só, é ele. Vários, é o escolhido — e `null` enquanto a escolha não existir ou não valer
-     * mais, porque adivinhar seria decidir em nome de quem opera, e o efeito apareceria no recorte das
-     * listas e na agência do bilhete.
+     * Desde a [ADR-0032] Q2 é o vínculo do funcionário, e nada mais: era `resolverVinculoAtivo(vinculos,
+     * empresaAtivaId)`, uma função inteira para escolher entre vínculos, e a D5 tirou dela o assunto —
+     * com uma empresa no máximo, não há entre o quê escolher. O nome guarda a palavra "ativo" porque é
+     * ela que distingue *o vínculo em vigor* do cargo legado gravado no documento.
+     *
+     * `null` para papel puro de plataforma, e aí não há recorte por empresa a aplicar.
      */
-    val vinculoAtivo: Vinculo? get() = resolverVinculoAtivo(vinculos, empresaAtivaId)
-
-    /** Os vínculos desta pessoa; vazio para papel puro de plataforma. */
-    val vinculos: List<Vinculo> get() = funcionario?.vinculos.orEmpty()
-
-    /**
-     * A pergunta que a entrada precisa fazer: **mais de uma opção e nenhuma escolha em vigor**. Quem tem
-     * zero ou uma nunca cai aqui.
-     */
-    val precisaEscolherVinculo: Boolean get() = precisaEscolherVinculo(vinculos, empresaAtivaId)
+    val vinculoAtivo: Vinculo? get() = funcionario?.vinculo
 
     /**
      * O cargo em vigor — o **do vínculo ativo** desde a F6.5, e não mais um campo do funcionário.
      *
-     * A diferença aparece em quem serve a duas empresas: a mesma pessoa é supervisora numa e agente na
-     * outra, e o que ela pode fazer depende de em nome de quem está operando. `null` quando não há
-     * vínculo em vigor — e a política trata ausência como caso normal (§8.2), fail-closed.
+     * A diferença continua valendo depois da [ADR-0032] Q2: o campo `Funcionario.cargo` é legado com um
+     * leitor só (a regra de *passagem* no servidor), e quem responde *o que esta pessoa pode fazer* é o
+     * cargo do vínculo. `null` quando não há vínculo — e a política trata ausência como caso normal
+     * (§8.2), fail-closed.
      */
     val cargo: String? get() = vinculoAtivo?.cargo?.name
 

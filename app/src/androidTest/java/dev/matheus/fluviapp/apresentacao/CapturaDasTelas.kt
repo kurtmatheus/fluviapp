@@ -46,7 +46,6 @@ import dev.matheus.fluviapp.ui.screens.LoginScreen
 import dev.matheus.fluviapp.ui.screens.MainScreen
 import dev.matheus.fluviapp.ui.screens.PrimeiroAcessoScreen
 import dev.matheus.fluviapp.ui.screens.RecuperarSenhaScreen
-import dev.matheus.fluviapp.ui.screens.SelecaoVinculoScreen
 import dev.matheus.fluviapp.ui.screens.SplashScreen
 import dev.matheus.fluviapp.ui.screens.forms.embarcacao.FormEmbarcacaoScreen
 import dev.matheus.fluviapp.ui.screens.forms.embarcacao.ResultSearchEmbarcacaoScreen
@@ -90,10 +89,8 @@ import dev.matheus.fluviapp.ui.states.PortoResultado
 import dev.matheus.fluviapp.ui.states.PrimeiroAcessoUiState
 import dev.matheus.fluviapp.ui.states.RecuperarSenhaUiState
 import dev.matheus.fluviapp.ui.states.RotaOpcao
-import dev.matheus.fluviapp.ui.states.SelecaoVinculoUiState
 import dev.matheus.fluviapp.ui.states.UsuarioResultado
 import dev.matheus.fluviapp.ui.states.ViagemDisponivelCard
-import dev.matheus.fluviapp.ui.states.VinculoOpcao
 import dev.matheus.fluviapp.ui.states.passagem.BilheteEmEdicao
 import dev.matheus.fluviapp.ui.states.passagem.CabecalhoDaViagem
 import dev.matheus.fluviapp.ui.states.passagem.ClienteEmEdicao
@@ -164,21 +161,6 @@ class CapturaDasTelas {
     @Test
     fun entrada_recuperar_senha() = captura("entrada-recuperar-senha") {
         RecuperarSenhaScreen(state = RecuperarSenhaUiState(email = "ana.ribeiro@fluviapp.com.br"))
-    }
-
-    /** O slot pede exatamente isto: uma conta vinculada a **mais de uma** empresa. */
-    @Test
-    fun entrada_selecao_vinculo() = captura("entrada-selecao-vinculo") {
-        SelecaoVinculoScreen(
-            uiState = SelecaoVinculoUiState(
-                nome = "Ana Ribeiro",
-                carregando = false,
-                opcoes = listOf(
-                    VinculoOpcao("e1", "Navegação Norte", "SUPERVISOR"),
-                    VinculoOpcao("e2", "Rio Sul", "AGENTE"),
-                ),
-            ),
-        )
     }
 
     // ============================================================ 02 · Painel
@@ -383,13 +365,13 @@ class CapturaDasTelas {
                         id = "1",
                         nome = "Ana Ribeiro",
                         email = "ana.ribeiro@fluviapp.com.br",
-                        vinculos = listOf("Navegação Norte · SUPERVISOR", "Rio Sul · AGENTE"),
+                        vinculo = "Navegação Norte · SUPERVISOR",
                     ),
                     FuncionarioResultado(
                         id = "2",
                         nome = "Bruno Costa",
                         email = "bruno.costa@fluviapp.com.br",
-                        vinculos = listOf("Navegação Norte · AGENTE"),
+                        vinculo = "Navegação Norte · AGENTE",
                     ),
                 ),
             ),

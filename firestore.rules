@@ -224,51 +224,62 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // --- Equipe: o registro de negócio — ADR-0015 §2.1/§8.5, reescrito na F6.3 sobre VÍNCULOS ---
+    // --- Equipe: o registro de negócio — ADR-0015 §2.1/§8.5, reescrito na F6.3 sobre o VÍNCULO ---
     //
     // A autoridade deixou de ser a String de agência e passou a ser o **vínculo** `{empresaId, cargo}`
     // (ADR-0016 §6). Dois escritores, com alcances diferentes: a **plataforma** em qualquer empresa, e o
     // **supervisor** só na dele. Três invariantes, os mesmos de antes com a coordenada nova:
-    //  1. NINGUÉM muda os próprios vínculos — nem um ADM no funcionário dele mesmo. É o anti-escalonamento
+    //  1. NINGUÉM muda o próprio vínculo — nem um ADM no funcionário dele mesmo. É o anti-escalonamento
     //     do eixo de negócio, já que cargo == SUPERVISOR concede editar-qualquer-passagem;
     //  2. o supervisor **gere a equipe dele por inteiro** (F6.7): cadastra, promove e remove — dentro da
     //     empresa dele. Promover concede poder numa empresa só, e isso é decisão de negócio dela;
     //  3. o supervisor não move ninguém para fora nem traz de fora: os vínculos de origem E de destino
-    //     têm de ser só os dele, senão o isolamento por empresa (§3) seria contornável por edição.
+    //     têm de ser o dele, senão o isolamento por empresa (§3) seria contornável por edição.
     //
-    // **Como isso é verificável numa regra**: a linguagem não itera array, mas compara elementos inteiros.
-    // Como o vínculo tem forma fechada (`{empresaId, cargo}`), `hasOnly([{...}])` diz exatamente
-    // *"todo vínculo desta pessoa é este"* — e é isso que fecha o cerco sem precisar de campo derivado
-    // extra só para a regra.
-    function vinculosDoAutor() {
+    // **Como isso é verificável numa regra**: o vínculo é um **mapa** (`{empresaId, cargo}`) desde a
+    // ADR-0032 Q2, e mapa a linguagem lê por caminho de campo — `data.vinculo.empresaId`. Era um array de
+    // mapas, e ali a única leitura possível era comparar elementos inteiros (`hasAny([{...}])`), com um
+    // `empresaIds` derivado ao lado para o que isso não alcançava. **Os dois rodeios saíram**: o derivado
+    // não é mais gravado, e a regra pergunta o campo direto.
+    //
+    // `vinculoDoAutor` e `vinculoDe` devolvem `{}` quando não há vínculo — inclusive quando o campo está
+    // gravado como `null`, que é o pré-cadastro. É o fail-closed explícito da casa: sem vínculo não se
+    // concede nada, e a avaliação não estoura por acidente.
+    function vinculoDe(dados) {
+      return dados.get('vinculo', {}) is map ? dados.get('vinculo', {}) : {};
+    }
+    function vinculoDoAutor() {
       return funcionarioIdDoAutor() != ''
           && exists(/databases/$(database)/documents/funcionarios/$(funcionarioIdDoAutor()))
-        ? get(/databases/$(database)/documents/funcionarios/$(funcionarioIdDoAutor())).data.get('vinculos', [])
-        : [];
+        ? vinculoDe(get(/databases/$(database)/documents/funcionarios/$(funcionarioIdDoAutor())).data)
+        : {};
     }
     function ehSupervisor() {
       return cargoDoAutor() == 'SUPERVISOR';
     }
-    // Supervisiono esta empresa? (procura o par exato no MEU documento)
+    // Supervisiono esta empresa? (o MEU vínculo é nela, e como supervisor)
     function souSupervisorDe(empresaId) {
-      return vinculosDoAutor().hasAny([{'empresaId': empresaId, 'cargo': 'SUPERVISOR'}]);
+      return empresaId != ''
+          && vinculoDoAutor().get('empresaId', '') == empresaId
+          && vinculoDoAutor().get('cargo', '') == 'SUPERVISOR';
     }
-    // O alvo é **exclusivamente da minha empresa**: um vínculo só, e numa empresa que eu supervisiono.
+    // O alvo é **da minha empresa**: o vínculo dele é numa empresa que eu supervisiono.
     //
     // O cargo dele pode ser AGENTE **ou SUPERVISOR** desde a F6.7: promover concede poder dentro de uma
-    // empresa só, e isso é decisão de negócio dela. O que continua impossível é o supervisor mexer nos
-    // PRÓPRIOS vínculos (`naoMexeNosPropriosVinculos`) e alcançar quem serve a duas empresas — porque
-    // metade dos vínculos dessa pessoa não é dele.
-    function soDaMinhaEmpresa(vinculos) {
-      return vinculos.size() == 1
-          && souSupervisorDe(vinculos[0].empresaId)
-          && vinculos[0].cargo in ['AGENTE', 'SUPERVISOR'];
+    // empresa só, e isso é decisão de negócio dela. O que continua impossível é o supervisor mexer no
+    // PRÓPRIO vínculo (`naoMexeNoProprioVinculo`).
+    //
+    // O `size() == 1` que abria esta função saiu com o array: ele dizia *"esta pessoa não serve a outra
+    // empresa além da minha"*, e um mapa não tem como dizer o contrário.
+    function daMinhaEmpresa(vinculo) {
+      return souSupervisorDe(vinculo.get('empresaId', ''))
+          && vinculo.get('cargo', '') in ['AGENTE', 'SUPERVISOR'];
     }
-    function vinculosInalterados() {
-      return request.resource.data.get('vinculos', []) == resource.data.get('vinculos', []);
+    function vinculoInalterado() {
+      return request.resource.data.get('vinculo', null) == resource.data.get('vinculo', null);
     }
-    function naoMexeNosPropriosVinculos(id) {
-      return !(funcionarioIdDoAutor() == id && !vinculosInalterados());
+    function naoMexeNoProprioVinculo(id) {
+      return !(funcionarioIdDoAutor() == id && !vinculoInalterado());
     }
 
     match /funcionarios/{id} {
@@ -276,15 +287,15 @@ service cloud.firestore {
 
       allow create: if autenticado()
                     && (ehPapelPlataforma()
-                        || (ehSupervisor() && soDaMinhaEmpresa(request.resource.data.get('vinculos', []))));
+                        || (ehSupervisor() && daMinhaEmpresa(vinculoDe(request.resource.data))));
 
       allow update: if autenticado()
                     && (ehPapelPlataforma()
                         || (ehSupervisor()
-                            // Origem e destino: quem já era só da minha empresa continua sendo.
-                            && soDaMinhaEmpresa(resource.data.get('vinculos', []))
-                            && soDaMinhaEmpresa(request.resource.data.get('vinculos', []))))
-                    && naoMexeNosPropriosVinculos(id);
+                            // Origem e destino: quem já era da minha empresa continua sendo.
+                            && daMinhaEmpresa(vinculoDe(resource.data))
+                            && daMinhaEmpresa(vinculoDe(request.resource.data))))
+                    && naoMexeNoProprioVinculo(id);
 
       // **Remover também é de quem gere** (F6.7): quem cuida da equipe cuida dela por inteiro. Duas
       // barreiras ficam: só alcança quem é exclusivamente da empresa dele, e **ninguém se apaga** — um
@@ -292,7 +303,7 @@ service cloud.firestore {
       allow delete: if autenticado()
                     && funcionarioIdDoAutor() != id
                     && (ehPapelPlataforma()
-                        || (ehSupervisor() && soDaMinhaEmpresa(resource.data.get('vinculos', []))));
+                        || (ehSupervisor() && daMinhaEmpresa(vinculoDe(resource.data))));
     }
 
     // --- Catálogos / master data: leitura p/ todo autenticado (venda lê), escrita só papel de plataforma ---
@@ -445,11 +456,16 @@ service cloud.firestore {
     // NÃO é `if autenticado()` como nos cadastros: é recortada pela assinatura, e é essa mesma condição que
     // o índice composto (`firestore.indexes.json`) atende. *"Assim a agência não pega o listaNome de todo
     // mundo."*
-    // As empresas em que o autor atua — o campo derivado que a Equipe já grava ao lado dos vínculos.
+    // A empresa em que o autor atua, **como lista** — porque é assim que as três condições abaixo a usam
+    // (`hasAny`, `hasOnly`, `concat` são operações de conjunto).
+    //
+    // Lia o campo derivado `empresaIds`, que a Equipe gravava ao lado do array de vínculos; desde a
+    // ADR-0032 Q2 o vínculo é um só e o derivado não existe — a lista se monta aqui, com um elemento ou
+    // nenhum, e é o `[]` de quem não tem vínculo que mantém o fail-closed: `hasOnly([])` só passa para
+    // quem não escreve agência nenhuma.
     function empresasDoAutor() {
-      return funcionarioIdDoAutor() != ''
-          && exists(/databases/$(database)/documents/funcionarios/$(funcionarioIdDoAutor()))
-        ? get(/databases/$(database)/documents/funcionarios/$(funcionarioIdDoAutor())).data.get('empresaIds', [])
+      return vinculoDoAutor().get('empresaId', '') != ''
+        ? [vinculoDoAutor().get('empresaId', '')]
         : [];
     }
     // A assinatura, provada sem iterar: (a) só `agenciaIds` muda, (b) o conjunto novo **contém** o antigo —

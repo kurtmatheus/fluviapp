@@ -53,45 +53,22 @@ class DestinoDaSplashTest {
         )
     }
 
-    // --- A seleção de contexto (F6.4) ---
+    // --- Contexto resolvido: entra ---
+    //
+    // Três casos saíram daqui com a [ADR-0032] D5 — os da **seleção de contexto** (F6.4): dois vínculos
+    // sem escolha, com escolha válida, e com escolha vencida. Eles não foram removidos por passarem a
+    // incomodar: o destino que os três verificavam deixou de existir junto com o caso de servir a duas
+    // empresas, e teste de destino inexistente não prova nada.
 
     /**
-     * Saber *quem* a pessoa é não basta quando ela é duas coisas em empresas diferentes: entrar assim
-     * montaria o painel a partir de uma resposta que ninguém deu.
+     * **Sem vínculo também se entra**: é o papel puro de plataforma, e o painel dele vem do papel. Barrar
+     * aqui seria transformar a ausência de vínculo — que é estado válido — em porta fechada.
      */
     @Test
-    fun `dois vinculos sem escolha param na selecao de contexto — nao entram`() {
-        val semEscolha = requireNotNull(FakeSessaoUsuario.comDoisVinculos().contexto)
+    fun `contexto sem vinculo entra igual`() {
+        val plataforma = requireNotNull(FakeSessaoUsuario.plataforma().contexto)
 
-        assertEquals(
-            SplashScreenState.EscolherVinculo,
-            destinoDaSplash(temSessao = true, contexto = semEscolha),
-        )
-    }
-
-    @Test
-    fun `dois vinculos com escolha valida entram direto`() {
-        val escolhido = requireNotNull(
-            FakeSessaoUsuario.comDoisVinculos(escolhida = "empresa-2").contexto
-        )
-
-        assertEquals(
-            SplashScreenState.Logado,
-            destinoDaSplash(temSessao = true, contexto = escolhido),
-        )
-    }
-
-    /** A escolha que não casa mais com vínculo nenhum volta a ser pergunta, não vira entrada silenciosa. */
-    @Test
-    fun `escolha vencida devolve a pergunta`() {
-        val vencida = requireNotNull(
-            FakeSessaoUsuario.comDoisVinculos(escolhida = "empresa-que-saiu").contexto
-        )
-
-        assertEquals(
-            SplashScreenState.EscolherVinculo,
-            destinoDaSplash(temSessao = true, contexto = vencida),
-        )
+        assertEquals(SplashScreenState.Logado, destinoDaSplash(temSessao = true, contexto = plataforma))
     }
 
     @Test

@@ -93,14 +93,16 @@ beforeEach(async () => {
     await setDoc(doc(db, 'users', ADM), { username: 'adm', email: 'adm@x.com', papel: 'ADM', funcionarioId: F_ADM });
     await setDoc(doc(db, 'users', GESTOR), { username: 'g', email: 'g@x.com', papel: 'GESTOR' });
     await setDoc(doc(db, 'users', AGENTE_OUTRA), { username: 'o', email: 'o@x.com', papel: 'OPERADOR', funcionarioId: F_OUTRA_AGENCIA });
-    // Contexto NEGÓCIO: funcionarios/{id}. A autoridade é o VÍNCULO desde a F6.3 (ADR-0016 §6);
-    // `agencia` e `cargo` seguem gravados como legado derivado, e nenhuma regra os consulta mais.
-    await setDoc(doc(db, 'funcionarios', F_A), { nome: 'Agente A', agencia: 'MATRIZ', cargo: 'AGENTE', vinculos: [AGENTE_NA_MATRIZ], empresaIds: [E_MATRIZ] });
-    await setDoc(doc(db, 'funcionarios', F_B), { nome: 'Agente B', agencia: 'MATRIZ', cargo: 'AGENTE', email: 'b@x.com', vinculos: [AGENTE_NA_MATRIZ], empresaIds: [E_MATRIZ] });
-    await setDoc(doc(db, 'funcionarios', F_SUPERVISOR), { nome: 'Supervisor', agencia: 'MATRIZ', cargo: 'SUPERVISOR', vinculos: [SUPERVISOR_NA_MATRIZ], empresaIds: [E_MATRIZ] });
-    await setDoc(doc(db, 'funcionarios', F_ADM), { nome: 'Adm', agencia: 'MATRIZ', cargo: 'AGENTE', vinculos: [AGENTE_NA_MATRIZ], empresaIds: [E_MATRIZ] });
-    await setDoc(doc(db, 'funcionarios', F_OUTRA_AGENCIA), { nome: 'De Outra', agencia: 'MARE', cargo: 'AGENTE', vinculos: [AGENTE_NA_MARE], empresaIds: [E_MARE] });
-    await setDoc(doc(db, 'funcionarios', F_NOVO), { nome: 'Novo', agencia: 'MATRIZ', cargo: 'AGENTE', email: EMAIL_F_NOVO, vinculos: [AGENTE_NA_MATRIZ], empresaIds: [E_MATRIZ] });
+    // Contexto NEGÓCIO: funcionarios/{id}. A autoridade é o VÍNCULO desde a F6.3 (ADR-0016 §6), e desde a
+    // ADR-0032 Q2 ele é um **mapa** em vez de array (sem o `empresaIds` derivado ao lado). `agencia` é
+    // legado que nenhuma regra consulta; `cargo` ainda é lido — mas só do AUTOR (`cargoDoAutor`), nunca do
+    // alvo, e a F9 é quem o retira.
+    await setDoc(doc(db, 'funcionarios', F_A), { nome: 'Agente A', agencia: 'MATRIZ', cargo: 'AGENTE', vinculo: AGENTE_NA_MATRIZ });
+    await setDoc(doc(db, 'funcionarios', F_B), { nome: 'Agente B', agencia: 'MATRIZ', cargo: 'AGENTE', email: 'b@x.com', vinculo: AGENTE_NA_MATRIZ });
+    await setDoc(doc(db, 'funcionarios', F_SUPERVISOR), { nome: 'Supervisor', agencia: 'MATRIZ', cargo: 'SUPERVISOR', vinculo: SUPERVISOR_NA_MATRIZ });
+    await setDoc(doc(db, 'funcionarios', F_ADM), { nome: 'Adm', agencia: 'MATRIZ', cargo: 'AGENTE', vinculo: AGENTE_NA_MATRIZ });
+    await setDoc(doc(db, 'funcionarios', F_OUTRA_AGENCIA), { nome: 'De Outra', agencia: 'MARE', cargo: 'AGENTE', vinculo: AGENTE_NA_MARE });
+    await setDoc(doc(db, 'funcionarios', F_NOVO), { nome: 'Novo', agencia: 'MATRIZ', cargo: 'AGENTE', email: EMAIL_F_NOVO, vinculo: AGENTE_NA_MATRIZ });
     // Catálogo de exemplo (para os testes de leitura).
     await setDoc(doc(db, 'embarcacoes', 'embarcacao-1'), { nome: 'Embarcação 1' });
     await setDoc(doc(db, 'localidades', 'loc-1'), {
@@ -499,10 +501,11 @@ describe('perfil no primeiro acesso — o papel vem do convite, não do cliente'
 // --- funcionarios/{id}: a Equipe (ADR-0015 §8.5, reescrita sobre VÍNCULOS na F6.3) ---
 //
 // Entrou no escopo na F6.2 (definição de pronto, ADR-0022 D6) e **mudou de coordenada na F6.3**: onde a
-// regra lia a String `agencia` do autor, agora ela procura o par `{empresaId, cargo}` dentro do array de
-// vínculos. Os três invariantes são os mesmos; o que muda é como cada um é dito.
+// regra lia a String `agencia` do autor, ela passou a procurar o par `{empresaId, cargo}`. Os três
+// invariantes são os mesmos; o que muda é como cada um é dito — e desde a ADR-0032 Q2 são ditos por
+// **caminho de campo** (`data.vinculo.empresaId`), porque o vínculo é um mapa e não um array de mapas.
 describe('funcionarios — escrita por vínculo, e o supervisor que não fabrica par', () => {
-  const novoAgenteNaMatriz = { nome: 'X', vinculos: [AGENTE_NA_MATRIZ], empresaIds: [E_MATRIZ] };
+  const novoAgenteNaMatriz = { nome: 'X', vinculo: AGENTE_NA_MATRIZ };
 
   test('operador LÊ funcionário (a UI resolve nome e vínculos por aqui) → OK', async () => {
     await assertSucceeds(getDoc(doc(asAgenteA(), 'funcionarios', F_B)));
@@ -518,7 +521,7 @@ describe('funcionarios — escrita por vínculo, e o supervisor que não fabrica
 
   test('SUPERVISOR cria agente em OUTRA empresa → NEGADO', async () => {
     await assertFails(setDoc(doc(asSupervisor(), 'funcionarios', 'novo'), {
-      nome: 'X', vinculos: [AGENTE_NA_MARE], empresaIds: [E_MARE],
+      nome: 'X', vinculo: AGENTE_NA_MARE,
     }));
   });
 
@@ -529,13 +532,13 @@ describe('funcionarios — escrita por vínculo, e o supervisor que não fabrica
    */
   test('SUPERVISOR cria alguém já como SUPERVISOR na PRÓPRIA empresa → OK', async () => {
     await assertSucceeds(setDoc(doc(asSupervisor(), 'funcionarios', 'novo'), {
-      nome: 'X', vinculos: [SUPERVISOR_NA_MATRIZ], empresaIds: [E_MATRIZ],
+      nome: 'X', vinculo: SUPERVISOR_NA_MATRIZ,
     }));
   });
 
   test('SUPERVISOR promove membro da própria empresa → OK', async () => {
     await assertSucceeds(updateDoc(doc(asSupervisor(), 'funcionarios', F_A), {
-      vinculos: [SUPERVISOR_NA_MATRIZ], empresaIds: [E_MATRIZ],
+      vinculo: SUPERVISOR_NA_MATRIZ,
     }));
   });
 
@@ -557,13 +560,33 @@ describe('funcionarios — escrita por vínculo, e o supervisor que não fabrica
   });
 
   /**
-   * O caso que só existe com vínculos: alguém que serve a **duas** empresas não é gerível por um
-   * supervisor, porque metade dos vínculos dessa pessoa não é dele. `hasOnly` diz isso numa linha.
+   * O caso que existia com o array — *alguém com vínculo na minha empresa E em outra* — **não existe
+   * mais** (ADR-0032 D5/Q2): o campo é um mapa, e um mapa não guarda duas empresas. A garantia que o
+   * `size() == 1` dava passou a ser da forma do dado, não da regra.
+   *
+   * No lugar, o que a forma nova precisa provar: **array antigo não vira vínculo**. Um documento escrito
+   * na forma anterior é, para a regra, um funcionário sem vínculo — então o supervisor não o cria, porque
+   * não é da empresa dele. É a mesma leitura que o app faz na fronteira.
    */
-  test('SUPERVISOR cria alguém com vínculo na dele E em outra → NEGADO', async () => {
+  test('SUPERVISOR cria funcionário com o ARRAY antigo em vez do mapa → NEGADO', async () => {
     await assertFails(setDoc(doc(asSupervisor(), 'funcionarios', 'novo'), {
-      nome: 'X', vinculos: [AGENTE_NA_MATRIZ, AGENTE_NA_MARE], empresaIds: [E_MATRIZ, E_MARE],
+      nome: 'X', vinculos: [AGENTE_NA_MATRIZ],
     }));
+  });
+
+  /** Sem vínculo não há empresa que autorize: o pré-cadastro é gesto da plataforma, não do supervisor. */
+  test('SUPERVISOR cria funcionário SEM vínculo → NEGADO', async () => {
+    await assertFails(setDoc(doc(asSupervisor(), 'funcionarios', 'novo'), { nome: 'X' }));
+  });
+
+  /** E `null` explícito é o que o app grava para "sem vínculo" — a regra o lê igual, sem estourar. */
+  test('SUPERVISOR cria funcionário com vínculo nulo → NEGADO', async () => {
+    await assertFails(setDoc(doc(asSupervisor(), 'funcionarios', 'novo'), { nome: 'X', vinculo: null }));
+  });
+
+  /** A plataforma **pode** pré-cadastrar sem vínculo (ADR-0015 §2.1): o vínculo vem no cadastro seguinte. */
+  test('plataforma cria funcionário SEM vínculo (pré-cadastro) → OK', async () => {
+    await assertSucceeds(setDoc(doc(asAdm(), 'funcionarios', 'novo'), { nome: 'X', vinculo: null }));
   });
 
   test('SUPERVISOR edita membro da própria empresa (nome) → OK', async () => {
@@ -576,20 +599,20 @@ describe('funcionarios — escrita por vínculo, e o supervisor que não fabrica
 
   test('SUPERVISOR transfere membro para outra empresa → NEGADO (não exporta gente)', async () => {
     await assertFails(updateDoc(doc(asSupervisor(), 'funcionarios', F_A), {
-      vinculos: [AGENTE_NA_MARE], empresaIds: [E_MARE],
+      vinculo: AGENTE_NA_MARE,
     }));
   });
 
   test('SUPERVISOR traz membro de outra empresa para a dele → NEGADO (nem importa)', async () => {
     await assertFails(updateDoc(doc(asSupervisor(), 'funcionarios', F_OUTRA_AGENCIA), {
-      vinculos: [AGENTE_NA_MATRIZ], empresaIds: [E_MATRIZ],
+      vinculo: AGENTE_NA_MATRIZ,
     }));
   });
 
-  /** O que NÃO mudou na F6.7: ninguém mexe nos próprios vínculos — nem quem gere a equipe. */
-  test('SUPERVISOR se promove (mexe nos próprios vínculos) → NEGADO', async () => {
+  /** O que NÃO mudou na F6.7: ninguém mexe no próprio vínculo — nem quem gere a equipe. */
+  test('SUPERVISOR se promove (mexe no próprio vínculo) → NEGADO', async () => {
     await assertFails(updateDoc(doc(asSupervisor(), 'funcionarios', F_SUPERVISOR), {
-      vinculos: [AGENTE_NA_MARE], empresaIds: [E_MARE],
+      vinculo: AGENTE_NA_MARE,
     }));
   });
 
@@ -599,23 +622,23 @@ describe('funcionarios — escrita por vínculo, e o supervisor que não fabrica
 
   test('plataforma cria funcionário em qualquer empresa → OK', async () => {
     await assertSucceeds(setDoc(doc(asAdm(), 'funcionarios', 'novo'), {
-      nome: 'X', vinculos: [AGENTE_NA_MARE], empresaIds: [E_MARE],
+      nome: 'X', vinculo: AGENTE_NA_MARE,
     }));
   });
 
   test('plataforma promove OUTRO funcionário a SUPERVISOR → OK', async () => {
     await assertSucceeds(updateDoc(doc(asAdm(), 'funcionarios', F_A), {
-      vinculos: [SUPERVISOR_NA_MATRIZ], empresaIds: [E_MATRIZ],
+      vinculo: SUPERVISOR_NA_MATRIZ,
     }));
   });
 
-  test('plataforma altera os PRÓPRIOS vínculos → NEGADO (anti-escalonamento do eixo de negócio)', async () => {
+  test('plataforma altera o PRÓPRIO vínculo → NEGADO (anti-escalonamento do eixo de negócio)', async () => {
     await assertFails(updateDoc(doc(asAdm(), 'funcionarios', F_ADM), {
-      vinculos: [SUPERVISOR_NA_MATRIZ], empresaIds: [E_MATRIZ],
+      vinculo: SUPERVISOR_NA_MATRIZ,
     }));
   });
 
-  test('plataforma edita o próprio funcionário sem tocar nos vínculos → OK', async () => {
+  test('plataforma edita o próprio funcionário sem tocar no vínculo → OK', async () => {
     await assertSucceeds(updateDoc(doc(asAdm(), 'funcionarios', F_ADM), { nome: 'Adm Silva' }));
   });
 });

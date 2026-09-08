@@ -20,13 +20,13 @@ data class PesquisaFuncionarioUiState(
 /**
  * Projeção de um membro para a lista (ADR-0019 — DTO por caso de uso, e este caso é exibir).
  *
- * [vinculos] chega **pronto para ler** — "Empresa X · SUPERVISOR" —, e é aqui que o `empresaId` do
- * documento vira nome. Quem serve a duas empresas aparece com as duas linhas: é a informação que o
- * cadastro antigo não conseguia mostrar, porque só havia uma agência por pessoa.
+ * [vinculo] chega **pronto para ler** — "Empresa X · SUPERVISOR" —, e é aqui que o `empresaId` do
+ * documento vira nome. `null` quando não há vínculo: é o pré-cadastro (§2.1), e a linha simplesmente não
+ * aparece.
  */
 data class FuncionarioResultado(
     val id: String,
     val nome: String,
     val email: String,
-    val vinculos: List<String>,
+    val vinculo: String?,
 )

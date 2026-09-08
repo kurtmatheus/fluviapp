@@ -6,13 +6,14 @@ import dev.matheus.fluviapp.domain.operacoes.Vinculo
 import dev.matheus.fluviapp.services.repository.firebase.DocumentoBruto
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
  * A fronteira de dados da Equipe depois que ela saiu do Room (F6.2, ADR-0019 D2).
  *
- * O que estes casos protegem é a convivência entre a forma nova e a velha: **vínculos entram sem que os
+ * O que estes casos protegem é a convivência entre a forma nova e a velha: **o vínculo entra sem que os
  * campos legados saiam**, porque quem os lê (a Passagem) ainda não foi revitalizado. Um mapeamento que
  * "limpasse" o legado agora quebraria a emissão sem ninguém pedir.
  */
@@ -23,10 +24,7 @@ class FuncionarioDocumentoTest {
         descricaoNome = "Ana Ribeiro",
         cargo = Cargo.SUPERVISOR.name,
         email = "ana@fluviapp.com.br",
-        vinculos = listOf(
-            Vinculo("empresa-1", Cargo.SUPERVISOR),
-            Vinculo("empresa-2", Cargo.AGENTE),
-        ),
+        vinculo = Vinculo("empresa-1", Cargo.SUPERVISOR),
     )
 
     private fun documento(id: String = "func-1", dados: Map<String, Any?>) = DocumentoBruto(id, dados)
@@ -43,13 +41,34 @@ class FuncionarioDocumentoTest {
         assertEquals("outro", documento(id = "outro", dados = ana.paraMapa()).toFuncionario().id)
     }
 
-    /** Documento antigo, sem `vinculos`: continua sendo uma pessoa, com a lista vazia. */
+    /** Documento sem `vinculo`: continua sendo uma pessoa — é o pré-cadastro do §2.1. */
     @Test
-    fun `documento sem vinculos vira funcionario sem vinculo`() {
+    fun `documento sem vinculo vira funcionario sem vinculo`() {
         val lido = documento(dados = mapOf("nome" to "Bruno", "agencia" to "MATRIZ")).toFuncionario()
 
         assertEquals("Bruno", lido.descricaoNome)
-        assertTrue(lido.vinculos.isEmpty())
+        assertNull(lido.vinculo)
+    }
+
+    /**
+     * **O array antigo não é lido como vínculo.** O campo mudou de nome e de forma na mesma escrita
+     * (`vinculos: []` → `vinculo: {}`), então um documento da forma anterior atravessa como pessoa sem
+     * vínculo em vez de meio-lido.
+     *
+     * É a régua da casa (portfólio, sem produção): **regenera-se pelo seed, não se faz backfill** — e o
+     * que o caso trava é que a leitura da forma velha não invente um vínculo nem estoure.
+     */
+    @Test
+    fun `array antigo nao vira vinculo`() {
+        val lido = documento(
+            dados = mapOf(
+                "nome" to "Ana",
+                "vinculos" to listOf(mapOf("empresaId" to "empresa-1", "cargo" to "SUPERVISOR")),
+            )
+        ).toFuncionario()
+
+        assertEquals("Ana", lido.descricaoNome)
+        assertNull(lido.vinculo)
     }
 
     /**
@@ -60,19 +79,19 @@ class FuncionarioDocumentoTest {
      */
     @Test
     fun `vinculo com cargo desconhecido e descartado sem levar a pessoa junto`() {
-        val lido = documento(
+        val comCargoIlegivel = documento(
             dados = mapOf(
                 "nome" to "Ana",
-                "vinculos" to listOf(
-                    mapOf("empresaId" to "empresa-1", "cargo" to "CHEFAO"),
-                    mapOf("empresaId" to "empresa-2", "cargo" to "AGENTE"),
-                    mapOf("empresaId" to "", "cargo" to "AGENTE"),
-                ),
+                "vinculo" to mapOf("empresaId" to "empresa-1", "cargo" to "CHEFAO"),
             )
         ).toFuncionario()
+        val semEmpresa = documento(
+            dados = mapOf("nome" to "Ana", "vinculo" to mapOf("empresaId" to "", "cargo" to "AGENTE"))
+        ).toFuncionario()
 
-        assertEquals("Ana", lido.descricaoNome)
-        assertEquals(listOf(Vinculo("empresa-2", Cargo.AGENTE)), lido.vinculos)
+        assertEquals("Ana", comCargoIlegivel.descricaoNome)
+        assertNull(comCargoIlegivel.vinculo)
+        assertNull(semEmpresa.vinculo)
     }
 
     /** Cargo ausente vira AGENTE — o menor privilégio, não "sem cargo" (quem tem registro está na operação). */
@@ -114,27 +133,30 @@ class FuncionarioDocumentoTest {
         val mapa = ana.paraMapa()
 
         assertFalse(mapa.containsKey("id"))
-        assertEquals(
-            listOf(
-                mapOf("empresaId" to "empresa-1", "cargo" to "SUPERVISOR"),
-                mapOf("empresaId" to "empresa-2", "cargo" to "AGENTE"),
-            ),
-            mapa["vinculos"],
-        )
+        assertEquals(mapOf("empresaId" to "empresa-1", "cargo" to "SUPERVISOR"), mapa["vinculo"])
         // A atuação NÃO é gravada: ela é derivada do cargo (§6.1), e um campo ao lado poderia contradizê-lo.
-        val primeiro = (mapa["vinculos"] as List<*>).first() as Map<*, *>
-        assertFalse(primeiro.containsKey("atuacao"))
+        assertFalse((mapa["vinculo"] as Map<*, *>).containsKey("atuacao"))
     }
 
     /**
-     * `empresaIds` é **denormalização deliberada** — existe porque o Firestore não consulta campo de
-     * dentro de elemento de array. O teste fixa o que impede o derivado de divergir: ele sai dos
-     * vínculos, na mesma escrita, e não de um parâmetro que alguém possa preencher errado.
+     * **O derivado não existe mais.** `empresaIds` era denormalização deliberada — o Firestore não
+     * consulta campo de dentro de elemento de array —, e com o vínculo em mapa `vinculo.empresaId` é
+     * caminho de campo comum. O caso trava a ausência: um derivado que voltasse a ser gravado voltaria a
+     * poder divergir da origem.
      */
     @Test
-    fun `paraMapa deriva empresaIds dos vinculos`() {
-        assertEquals(listOf("empresa-1", "empresa-2"), ana.paraMapa()["empresaIds"])
-        assertEquals(emptyList<String>(), ana.copy(vinculos = emptyList()).paraMapa()["empresaIds"])
+    fun `paraMapa nao grava derivado de empresa`() {
+        assertFalse(ana.paraMapa().containsKey("empresaIds"))
+        assertFalse(ana.paraMapa().containsKey("empresaId"))
+    }
+
+    /** Sem vínculo, a chave vai a `null` **explícito** — é o que permite tirar o vínculo de quem tinha. */
+    @Test
+    fun `paraMapa sem vinculo grava a chave nula, e nao a omite`() {
+        val mapa = ana.copy(vinculo = null).paraMapa()
+
+        assertTrue(mapa.containsKey("vinculo"))
+        assertNull(mapa["vinculo"])
     }
 
     @Test
