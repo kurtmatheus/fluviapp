@@ -628,8 +628,16 @@ class EmissaoViewModelTest {
 
     // --- Tolerância a falha ---
 
+    /**
+     * **Sem sessão a falha é de permissão, e não de vínculo** — o caso inverteu de sinal em 2026-09-07
+     * ([ADR-0032] D1).
+     *
+     * A distinção importa para quem lê a mensagem: aqui a pessoa **não tem o direito**; no caso abaixo ela
+     * tem, e falta dizer *por qual agência*. Antes os dois caíam no segundo, e a tela mandava escolher um
+     * vínculo que não resolveria nada.
+     */
     @Test
-    fun `sem vinculo, a emissao falha e o atendimento fica intacto`() = runTest {
+    fun `sem sessao, a emissao falha por permissao e o atendimento fica intacto`() = runTest {
         val passagens = FakePassagemRepository()
         val viewModel = vm(passagens, sessao = FakeSessaoUsuario())
         val eventos = mutableListOf<EventoDeEmissao>()
@@ -637,12 +645,31 @@ class EmissaoViewModelTest {
 
         ateOPagamentoEmRede(viewModel)
 
-        // Falha já no passo do cliente, porque é lá que o vínculo passou a ser exigido.
-        assertEquals(EventoDeEmissao.Falhou(MotivoDeFalha.SEM_VINCULO), eventos.single())
+        assertEquals(EventoDeEmissao.Falhou(MotivoDeFalha.SEM_PERMISSAO), eventos.single())
         assertTrue(passagens.emitidas.isEmpty())
         val pessoas = (viewModel.uiState.value.participante as ParticipanteEmEdicao.DePassageiro).pessoas
         assertEquals("Ana Ribeiro", pessoas.single().nome)
         assertTrue(!viewModel.uiState.value.emitindo)
+        coleta.cancel()
+    }
+
+    /**
+     * **O outro lado da distinção**: papel de plataforma tem permissão de emitir pela política, e mesmo
+     * assim não emite — porque não tem vínculo, e *quem emite é da operação* (ADR-0015 §8.4).
+     *
+     * O par com o caso acima é o que prova que o motivo novo não engoliu o antigo.
+     */
+    @Test
+    fun `com permissao mas sem vinculo, a emissao falha por vinculo`() = runTest {
+        val passagens = FakePassagemRepository()
+        val viewModel = vm(passagens, sessao = FakeSessaoUsuario.plataforma())
+        val eventos = mutableListOf<EventoDeEmissao>()
+        val coleta = launch { viewModel.eventos.collect { eventos += it } }
+
+        ateOPagamentoEmRede(viewModel)
+
+        assertEquals(EventoDeEmissao.Falhou(MotivoDeFalha.SEM_VINCULO), eventos.single())
+        assertTrue(passagens.emitidas.isEmpty())
         coleta.cancel()
     }
 

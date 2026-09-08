@@ -24,6 +24,11 @@ data class FormFuncionarioUiState(
     val titulo: Int = R.string.subtitle_cadastrar_novo_agente,
 
     val nome: String = "",
+    /**
+     * Se quem esta operando pode **gravar** este cadastro (ADR-0032 D1). Nasce `false`: fail-closed, como
+     * o resto da politica — sem sessao resolvida, nao se grava.
+     */
+    val podeCadastrar: Boolean = false,
     val isNomeError: Boolean = false,
 
     /** Chave que liga o pré-cadastro à conta do Auth no primeiro acesso (ADR-0015 §2.1). */

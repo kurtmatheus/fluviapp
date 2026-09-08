@@ -3,6 +3,7 @@ package dev.matheus.fluviapp.ui.viewmodel.passagem
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dev.matheus.fluviapp.domain.operacoes.PermissoesUsuario
 import dev.matheus.fluviapp.domain.passagem.CategoriaPassagem
 import dev.matheus.fluviapp.domain.passagem.ClasseVeiculo
 import dev.matheus.fluviapp.domain.passagem.NaturezaVeiculo
@@ -397,7 +398,19 @@ class EmissaoViewModel @Inject constructor(
      */
     private suspend fun registrarERastrear(passo: PassoDaEmissao.DadosDoCliente) {
         val estado = _uiState.value
-        val agenciaId = sessaoUsuario.atual()?.vinculoAtivo?.empresaId
+        val contexto = sessaoUsuario.atual()
+
+        // **A política antes do gesto**, também aqui ([ADR-0032] D1) — e é o ponto que a fatia quase
+        // esqueceu: gravar no pool **é escrita**, e acontece no passo do cliente ([ADR-0029] D4), muito
+        // antes do `emitir()`. Um guarda só no fim deixaria a pessoa preencher o atendimento inteiro para
+        // ser recusada no último toque. As duas perguntas ficam na mesma ordem nos dois pontos: primeiro
+        // *pode?*, depois *por qual agência?*.
+        if (!PermissoesUsuario.podeCriarPassagem(contexto?.papel)) {
+            _eventos.send(EventoDeEmissao.Falhou(MotivoDeFalha.SEM_PERMISSAO))
+            return
+        }
+
+        val agenciaId = contexto?.vinculoAtivo?.empresaId
         if (agenciaId.isNullOrBlank()) {
             _eventos.send(EventoDeEmissao.Falhou(MotivoDeFalha.SEM_VINCULO))
             return
@@ -447,6 +460,16 @@ class EmissaoViewModel @Inject constructor(
             // vínculo só opera por ele; quem tem vários opera pelo escolhido. Sem vínculo não há emissão —
             // quem emite é da operação (§8.4), e um bilhete sem agência seria um bilhete sem dono.
             val contexto = sessaoUsuario.atual()
+
+            // **A política antes do gesto** ([ADR-0032] D1). Até 2026-09-07 a emissão não perguntava nada
+            // à política: quem barrava era só o servidor, e o cliente descobria pelo `permission denied`.
+            // A pergunta vem antes da do vínculo porque é mais fundamental — sem papel conhecido não há
+            // emissão possível, com ou sem agência.
+            if (!PermissoesUsuario.podeCriarPassagem(contexto?.papel)) {
+                concluir(EventoDeEmissao.Falhou(MotivoDeFalha.SEM_PERMISSAO))
+                return@launch
+            }
+
             val agenciaId = contexto?.vinculoAtivo?.empresaId
             if (contexto == null || agenciaId.isNullOrBlank()) {
                 concluir(EventoDeEmissao.Falhou(MotivoDeFalha.SEM_VINCULO))
@@ -630,6 +653,15 @@ sealed interface EventoDeEmissao {
  * porque três delas são **rede**, que é o estado normal de uma bilheteria de beira de rio.
  */
 enum class MotivoDeFalha {
+    /**
+     * **Quem está operando não pode emitir** ([ADR-0032] D1) — sessão ausente ou papel desconhecido.
+     *
+     * Distinto de [SEM_VINCULO], e a diferença importa para quem lê a mensagem: aqui a pessoa **não tem
+     * o direito**; lá ela tem, e falta dizer *por qual agência*. Antes os dois casos caíam no segundo, e
+     * a tela sugeria escolher um vínculo que não resolveria nada.
+     */
+    SEM_PERMISSAO,
+
     /** A sessão não tem vínculo: quem emite é da operação (ADR-0015 §8.4). */
     SEM_VINCULO,
 

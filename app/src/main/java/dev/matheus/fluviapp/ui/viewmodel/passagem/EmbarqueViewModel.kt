@@ -3,6 +3,7 @@ package dev.matheus.fluviapp.ui.viewmodel.passagem
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dev.matheus.fluviapp.domain.operacoes.PermissoesUsuario
 import dev.matheus.fluviapp.domain.passagem.ResultadoEmbarque
 import dev.matheus.fluviapp.services.repository.operacoes.SessaoUsuario
 import dev.matheus.fluviapp.services.repository.passagem.PassagemRepository
@@ -85,11 +86,17 @@ class EmbarqueViewModel @Inject constructor(
             // `request.auth.uid` (ADR-0012), e é o que torna forjar autoria impossível. O nome de quem
             // validou **deixou de ser gravado ao lado**: no domínio nada é congelado (ADR-0023 D8), e o
             // nome se resolve por referência na leitura. Era mais uma cópia que podia discordar da origem.
+            // **A política antes do gesto** ([ADR-0032] D1). Até 2026-09-07 este ponto só perguntava se
+            // havia sessão, e a ausência dela virava `NaoEncontrada` — o desfecho de *QR estranho ao
+            // sistema*. Quem estivesse na doca leria "bilhete inválido" para um bilhete válido.
+            //
+            // A regra do servidor recusaria de qualquer jeito (`papelConhecido()`); o que o cliente
+            // acrescenta é falhar **antes** e dizer o motivo **certo**.
             val contexto = sessaoUsuario.atual()
-            val resultado = if (contexto == null) {
-                ResultadoEmbarque.NaoEncontrada
-            } else {
-                passagemRepository.confirmarEmbarque(passagem.id, contexto.usuario.id)
+            val resultado = when {
+                contexto == null -> ResultadoEmbarque.SemPermissao
+                !PermissoesUsuario.podeConfirmarEmbarque(contexto.papel) -> ResultadoEmbarque.SemPermissao
+                else -> passagemRepository.confirmarEmbarque(passagem.id, contexto.usuario.id)
             }
             _uiState.update {
                 it.copy(processando = false, passagem = null, conferencia = null, resultado = resultado)

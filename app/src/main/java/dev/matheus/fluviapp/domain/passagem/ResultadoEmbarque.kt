@@ -22,4 +22,17 @@ sealed interface ResultadoEmbarque {
 
     /** Nenhum documento com esse id no Firestore (QR inválido/estranho ao sistema). */
     data object NaoEncontrada : ResultadoEmbarque
+
+    /**
+     * **Quem escaneou não pode validar** ([ADR-0032] D1) — sessão ausente ou papel que a política não
+     * reconhece.
+     *
+     * Nasce em 2026-09-07 com o freio do cliente, e corrige uma resposta que **mentia sobre a causa**:
+     * sem sessão, o embarque devolvia [NaoEncontrada], que é o desfecho de *QR estranho ao sistema*.
+     * Quem estivesse na doca leria "bilhete inválido" para um bilhete perfeitamente válido.
+     *
+     * O servidor recusaria de qualquer forma (`papelConhecido()` na regra), e o que o cliente acrescenta
+     * é o que a regra não faz: **falhar antes** e **falhar dizendo o motivo certo**.
+     */
+    data object SemPermissao : ResultadoEmbarque
 }

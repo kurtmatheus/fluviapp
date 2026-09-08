@@ -74,6 +74,9 @@ class FormFuncionarioViewModel @Inject constructor(
         val podeDefinirCargo = PermissoesUsuario.podeDefinirCargo(contexto?.papel, contexto?.vinculoAtivo)
         _uiState.update {
             it.copy(
+                // Quem pode **gravar** — a pergunta que o `salvar()` faz (ADR-0032 D1), e que este form
+                // nao fazia: a politica so decidia quais campos apareciam.
+                podeCadastrar = PermissoesUsuario.podeCadastrarMembro(contexto?.papel, contexto?.vinculoAtivo),
                 podeEscolherEmpresa = podeEscolherEmpresa,
                 podeDefinirCargo = podeDefinirCargo,
                 listaCargo = if (podeDefinirCargo) Funcionario.Cargo.entries.map(Funcionario.Cargo::name) else emptyList(),
@@ -150,8 +153,24 @@ class FormFuncionarioViewModel @Inject constructor(
         it.copy(vinculos = it.vinculos.filterNot { vinculo -> vinculo.empresaId == empresaId })
     }
 
+    /**
+     * **A política antes do gesto** ([ADR-0032] D1).
+     *
+     * Até 2026-09-07 este método não perguntava nada: a política era consultada em [aplicarRecorte] para
+     * decidir **quais campos aparecem**, e nunca para decidir **se pode gravar**. Quem chegasse à tela por
+     * um caminho que o menu não oferece gravava, e só o servidor recusava.
+     *
+     * O guarda fica **antes da validação** de propósito: não faz sentido apontar campo errado a quem não
+     * pode salvar de jeito nenhum.
+     *
+     * **O que este guarda não faz** é impedir a *chegada* — isso é a guarda de navegação, que hoje não
+     * existe e é a issue irmã desta fatia. Aqui, sem permissão, o gesto simplesmente não acontece; o
+     * servidor recusaria de qualquer forma, e a diferença é que agora a recusa não depende dele.
+     */
     fun salvar() {
         val estado = _uiState.value
+        if (!estado.podeCadastrar) return
+
         val erros = validarFuncionario(estado)
         if (!erros.valido) {
             _uiState.update {

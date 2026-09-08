@@ -198,6 +198,9 @@ private fun ResultadoView(
         is ResultadoEmbarque.JaEmbarcada -> stringResource(R.string.msg_embarque_ja_utilizado)
         ResultadoEmbarque.NaoEmitida -> stringResource(R.string.msg_embarque_nao_emitida)
         ResultadoEmbarque.NaoEncontrada -> stringResource(R.string.msg_embarque_nao_encontrada)
+        // O caso que o compilador cobrou ao nascer (ADR-0032 D1): antes, sessão ausente caía em
+        // `NaoEncontrada` e a doca lia "bilhete não encontrado" para um bilhete válido.
+        ResultadoEmbarque.SemPermissao -> stringResource(R.string.msg_embarque_sem_permissao)
     }
 
     Column(

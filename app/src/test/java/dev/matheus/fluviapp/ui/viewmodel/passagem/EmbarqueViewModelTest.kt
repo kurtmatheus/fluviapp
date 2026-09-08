@@ -313,7 +313,13 @@ class EmbarqueViewModelTest {
         assertEquals(ResultadoEmbarque.NaoEmitida, viewModel.uiState.value.resultado)
     }
 
-    /** Sem sessão não há uid a carimbar — e carimbo é auditoria, então não se inventa autor. */
+    /**
+     * Sem sessão não há uid a carimbar — e carimbo é auditoria, então não se inventa autor.
+     *
+     * **O caso inverteu de sinal em 2026-09-07** ([ADR-0032] D1), e a inversão é a correção: antes o
+     * desfecho era `NaoEncontrada`, que é o de *QR estranho ao sistema* — quem estivesse na doca leria
+     * "bilhete não encontrado" para um bilhete perfeitamente válido. Agora diz o motivo certo.
+     */
     @Test
     fun `sem contexto de usuario, o embarque nao acontece`() = runTest {
         val repo = FakePassagemRepository().apply { passagens = listOf(passagem()) }
@@ -324,7 +330,28 @@ class EmbarqueViewModelTest {
         viewModel.confirmarEmbarque()
         advanceUntilIdle()
 
-        assertEquals(ResultadoEmbarque.NaoEncontrada, viewModel.uiState.value.resultado)
+        assertEquals(ResultadoEmbarque.SemPermissao, viewModel.uiState.value.resultado)
+        assertEquals(StatusPassagem.EMITIDA, repo.passagens.single().metadados.status)
+    }
+
+    /**
+     * **A política antes do gesto** ([ADR-0032] D1): papel que a política não reconhece não valida, mesmo
+     * havendo sessão e bilhete válido.
+     *
+     * O servidor recusaria igual (`papelConhecido()` na regra de `passagens`), e é justamente por isso que
+     * o caso importa: ele prova que a recusa **não depende mais do servidor** para acontecer.
+     */
+    @Test
+    fun `papel desconhecido nao valida embarque, mesmo com bilhete valido`() = runTest {
+        val repo = FakePassagemRepository().apply { passagens = listOf(passagem()) }
+        val viewModel = vm(repo, sessao = FakeSessaoUsuario.plataforma(papel = "VISITANTE"))
+
+        viewModel.aoLerQr("pas-1")
+        advanceUntilIdle()
+        viewModel.confirmarEmbarque()
+        advanceUntilIdle()
+
+        assertEquals(ResultadoEmbarque.SemPermissao, viewModel.uiState.value.resultado)
         assertEquals(StatusPassagem.EMITIDA, repo.passagens.single().metadados.status)
     }
 

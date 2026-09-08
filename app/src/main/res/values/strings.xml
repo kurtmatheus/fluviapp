@@ -70,6 +70,7 @@
     <string name="msg_embarque_ja_utilizado">Bilhete já utilizado</string>
     <string name="msg_embarque_nao_emitida">Bilhete não emitido — não pode embarcar</string>
     <string name="msg_embarque_nao_encontrada">Bilhete não encontrado</string>
+    <string name="msg_embarque_sem_permissao">Sua sessão não permite validar embarque</string>
     <string name="label_veiculo">Veículo</string>
     <string name="label_passageiro">Passageiro</string>
     <string name="label_processando">Processando</string>
