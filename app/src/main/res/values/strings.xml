@@ -94,6 +94,13 @@
     <string name="msg_confirmar_desativar_acesso">Desativar o acesso desta pessoa? Ela continua na lista, e pode ser reativada.</string>
     <string name="msg_confirmar_reativar_acesso">Reativar o acesso desta pessoa?</string>
     <string name="label_acesso_expira_em">Acesso expira em</string>
+    <!-- O elo com o funcionário (ADR-0032 D5/Q1): o segundo perfil de quem administra. -->
+    <string name="label_opera_como">Opera como %1$s</string>
+    <string name="label_opera_como_funcionario">Operar como</string>
+    <string name="btn_desligar">Desligar</string>
+    <string name="description_ligar_funcionario">Ligar a um funcionário</string>
+    <string name="msg_confirmar_desligar_funcionario">Desligar o funcionário deste perfil? A pessoa deixa de operar por uma empresa e passa a só administrar a plataforma. As passagens já emitidas não mudam.</string>
+    <string name="msg_sem_funcionario_livre">Todo funcionário já tem perfil — cadastre um novo na Equipe para ligar aqui.</string>
     <string name="label_acesso_ate">Acesso até %1$s</string>
     <string name="description_prazo_de_acesso">Definir prazo de acesso</string>
     <!-- Troca de perfil (ADR-0032 D5): o rótulo diz para onde a opção leva, não onde se está. -->

@@ -320,6 +320,32 @@ describe('acesso — o ADM desativa, e o desativado deixa de escrever', () => {
     await assertSucceeds(updateDoc(doc(asAdm(), 'users', GESTOR), { funcionarioId: F_NOVO }));
   });
 
+  /**
+   * **Desligar é o par de ligar**, pelo mesmo argumento que deu à D6 o par desativar/reativar: sem ele, um
+   * engano viraria ida ao console. Não corrompe passagem nenhuma — a posse está congelada no documento.
+   */
+  test('ADM desliga o funcionário de um perfil → OK', async () => {
+    await desativar(GESTOR, { funcionarioId: F_NOVO });
+    await assertSucceeds(updateDoc(doc(asAdm(), 'users', GESTOR), { funcionarioId: '' }));
+  });
+
+  /**
+   * **O elo do `OPERADOR` não se liga à mão** (D5/Q1), e a regra recusa porque **UI não é fronteira**: o
+   * formulário já não oferece o gesto, e isso protege o gesto, não o dado.
+   *
+   * A razão é a posse: o elo dele vem do primeiro acesso, que exige funcionário de **mesmo e-mail** — é o
+   * que impede alguém de escolher de quem são as passagens que possui (§8.4). Ligar à mão passaria por
+   * fora disso e moveria a posse das passagens que ele emitir dali em diante.
+   */
+  test('ADM liga funcionário no perfil de um OPERADOR → NEGADO', async () => {
+    await assertFails(updateDoc(doc(asAdm(), 'users', AGENTE_A), { funcionarioId: F_NOVO }));
+  });
+
+  /** E o resto da gestão de acesso continua valendo para o `OPERADOR`: o recorte é só do elo. */
+  test('ADM desativa um OPERADOR → OK (o recorte é do elo, não do acesso)', async () => {
+    await assertSucceeds(updateDoc(doc(asAdm(), 'users', AGENTE_A), { ativo: false }));
+  });
+
   test('GESTOR desativa alguém → NEGADO (acesso é do ADM, ADR-0021 D1)', async () => {
     await assertFails(updateDoc(doc(asGestor(), 'users', AGENTE_A), { ativo: false }));
   });

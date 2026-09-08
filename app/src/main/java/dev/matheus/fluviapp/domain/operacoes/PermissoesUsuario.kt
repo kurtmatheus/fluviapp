@@ -60,6 +60,28 @@ object PermissoesUsuario {
     fun podeGerirAcesso(papel: String?): Boolean = Papel.de(papel) == ADM
 
     /**
+     * **Em que perfis o elo com o funcionário se liga à mão** ([ADR-0032] D5/Q1): nos de **plataforma**, e
+     * só neles.
+     *
+     * Pergunta sobre o **alvo**, e não sobre quem faz — quem faz é o `ADM` ([podeGerirAcesso]). São duas
+     * perguntas porque o gesto tem duas pontas, e confundi-las daria ao `ADM` o poder de mexer no elo de
+     * qualquer um.
+     *
+     * ### Por que o `OPERADOR` fica fora
+     *
+     * Porque o elo dele **já tem caminho, e o caminho verifica**: no primeiro acesso a regra exige que o
+     * `funcionarioId` aponte para um funcionário **com o mesmo e-mail** do autenticado
+     * (`vinculoConfereComOEmail`), e é isso que impede alguém de escolher de quem são as passagens que
+     * possui (ADR-0015 §8.4). Ligar à mão passaria por fora dessa verificação e **moveria a posse** das
+     * passagens que ele emitir dali em diante.
+     *
+     * Para papel de plataforma a verificação não se aplica — o `ADM` não tem funcionário com o e-mail dele
+     * —, e é exatamente por isso que o `funcionarioId` entrou na lista fechada de chaves da §Q1: para dar
+     * o **segundo perfil** (D5) a quem já existe.
+     */
+    fun aceitaEloManual(papelDoPerfil: String?): Boolean = ehPapelPlataforma(papelDoPerfil)
+
+    /**
      * **Não há convite de `ADM`** ([ADR-0032] D6).
      *
      * O administrador entra por **console + Firestore**, e só. Isso preserva o [ADR-0021] D0 no que ele

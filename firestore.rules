@@ -222,7 +222,23 @@ service cloud.firestore {
         return request.resource.data.diff(resource.data).affectedKeys()
                  .hasOnly(['ativo', 'expiraEm', 'funcionarioId'])
             && request.resource.data.get('ativo', true) is bool
-            && request.resource.data.get('expiraEm', 0) is int;
+            && request.resource.data.get('expiraEm', 0) is int
+            && eloSoEmPerfilDePlataforma();
+      }
+      // **O elo se liga à mão só em perfil de PLATAFORMA** (ADR-0032 D5/Q1) — espelha o `aceitaEloManual`
+      // da política, e está aqui porque **UI não é fronteira** (D1): sem esta linha, o recorte existiria
+      // apenas na tela.
+      //
+      // A razão é a posse. O elo do `OPERADOR` já tem caminho, e o caminho **verifica**: no primeiro acesso
+      // a regra exige funcionário de mesmo e-mail (`vinculoConfereComOEmail`), e é isso que impede alguém
+      // de escolher de quem são as passagens que possui (ADR-0015 §8.4). Ligar à mão passaria por fora
+      // dessa verificação e moveria a posse das passagens que ele emitir dali em diante.
+      //
+      // Não é anti-escalonamento — o `ADM` já edita qualquer passagem (`podeEditarQualquerPassagem`). É
+      // manter o **dono** do que se emite verificável por um caminho só.
+      function eloSoEmPerfilDePlataforma() {
+        return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['funcionarioId'])
+            || resource.data.get('papel', '') in ['ADM', 'GESTOR'];
       }
       // **O dono não mexe no próprio acesso**, e esta linha é a que faz a D6 valer: sem ela, quem fosse
       // desativado se religaria escrevendo `ativo: true` no próprio documento — o ramo do dono não

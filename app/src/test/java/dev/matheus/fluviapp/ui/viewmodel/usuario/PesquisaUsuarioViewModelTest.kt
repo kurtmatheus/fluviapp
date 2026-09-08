@@ -1,12 +1,14 @@
 package dev.matheus.fluviapp.ui.viewmodel.usuario
 
 import dev.matheus.fluviapp.domain.operacoes.Convite
+import dev.matheus.fluviapp.domain.operacoes.Funcionario
 import dev.matheus.fluviapp.domain.operacoes.Funcionario.Cargo
 import dev.matheus.fluviapp.domain.operacoes.Usuario
 import dev.matheus.fluviapp.domain.operacoes.Usuario.Papel
 import dev.matheus.fluviapp.domain.viagem.Empresa
 import dev.matheus.fluviapp.fakes.FakeConviteRepository
 import dev.matheus.fluviapp.fakes.FakeEmpresaRepository
+import dev.matheus.fluviapp.fakes.FakeFuncionarioRepository
 import dev.matheus.fluviapp.fakes.FakeRelogio
 import dev.matheus.fluviapp.fakes.FakeSessaoUsuario
 import dev.matheus.fluviapp.fakes.FakeUsuarioRepository
@@ -48,10 +50,12 @@ class PesquisaUsuarioViewModelTest {
     private fun vm(
         usuarios: FakeUsuarioRepository,
         convites: FakeConviteRepository = FakeConviteRepository(),
+        funcionarios: FakeFuncionarioRepository = FakeFuncionarioRepository(),
         sessao: SessaoUsuario = FakeSessaoUsuario.plataforma(),
     ) = PesquisaUsuarioViewModel(
         convites,
         usuarios,
+        funcionarios,
         FakeEmpresaRepository().apply { empresas = listOf(empresa("empresa-1", "Navegação Norte")) },
         sessao,
         registroCadastroDeTeste(),
@@ -64,14 +68,21 @@ class PesquisaUsuarioViewModelTest {
         papel: Papel = Papel.OPERADOR,
         ativo: Boolean = true,
         expiraEm: Long? = null,
+        funcionarioId: String = "",
     ) = Usuario(
         id = id,
         email = email,
         username = email.substringBefore('@'),
         papel = papel.name,
+        funcionarioId = funcionarioId,
         ativo = ativo,
         expiraEm = expiraEm,
     )
+
+    private fun funcionario(id: String, nome: String) = Funcionario(id = id, descricaoNome = nome)
+
+    private fun funcionarios(vararg deles: Funcionario) =
+        FakeFuncionarioRepository().apply { this.funcionarios = deles.toList() }
 
     private fun convite(email: String, nome: String, usado: Boolean = true) = Convite(
         email = email,
@@ -254,6 +265,121 @@ class PesquisaUsuarioViewModelTest {
 
         assertFalse(repo.acessosDefinidos.single().second)
         assertEquals("Desativado", vm.uiState.value.resultados.single().situacao)
+    }
+
+    // --- O elo com o funcionário ([ADR-0032] D5/Q1) ---
+
+    /**
+     * **É este gesto que dá o segundo perfil da D5 a quem já existe** — antes dele, ligar um perfil de
+     * empresa a quem já entrou era ato de console.
+     */
+    @Test
+    fun `ligar funcionario grava o elo e a linha passa a nomea-lo`() = runTest(mainRule.dispatcher) {
+        val repo = repo(usuario("uid-adm", "adm@x.com", papel = Papel.ADM))
+        val vm = vm(repo, funcionarios = funcionarios(funcionario("f-ana", "Ana Ribeiro")))
+        advanceUntilIdle()
+
+        vm.onLigarFuncionario("uid-adm", "Ana Ribeiro")
+        advanceUntilIdle()
+
+        assertEquals("uid-adm" to "f-ana", repo.elosDefinidos.single())
+        assertEquals("Ana Ribeiro", vm.uiState.value.resultados.single().funcionario)
+    }
+
+    /** Desligar existe pelo mesmo argumento do par desativar/reativar: senão o engano vira ida ao console. */
+    @Test
+    fun `desligar tira o elo`() = runTest(mainRule.dispatcher) {
+        val repo = repo(usuario("uid-adm", "adm@x.com", papel = Papel.ADM, funcionarioId = "f-ana"))
+        val vm = vm(repo, funcionarios = funcionarios(funcionario("f-ana", "Ana Ribeiro")))
+        advanceUntilIdle()
+
+        assertEquals("Ana Ribeiro", vm.uiState.value.resultados.single().funcionario)
+
+        vm.onDesligarFuncionario("uid-adm")
+        advanceUntilIdle()
+
+        assertEquals("uid-adm" to "", repo.elosDefinidos.single())
+        assertEquals("", vm.uiState.value.resultados.single().funcionario)
+    }
+
+    /**
+     * **O 1-1 do §8.3, guardado pelo app** porque a regra não consulta coleção: o funcionário que já
+     * responde por um perfil não é oferecido a outro.
+     */
+    @Test
+    fun `so os funcionarios sem perfil sao oferecidos`() = runTest(mainRule.dispatcher) {
+        val repo = repo(
+            usuario("uid-adm", "adm@x.com", papel = Papel.ADM),
+            usuario("uid-ana", "ana@x.com", funcionarioId = "f-ana"),
+        )
+        val vm = vm(
+            repo,
+            funcionarios = funcionarios(
+                funcionario("f-ana", "Ana Ribeiro"),
+                funcionario("f-bruno", "Bruno Costa"),
+            ),
+        )
+        advanceUntilIdle()
+
+        assertEquals(listOf("Bruno Costa"), vm.uiState.value.funcionariosDisponiveis.map { it.nome })
+    }
+
+    /** Nome que não casa com opção nenhuma **não vira escrita** — o mesmo fail-closed do vínculo do membro. */
+    @Test
+    fun `nome fora da lista nao grava elo`() = runTest(mainRule.dispatcher) {
+        val repo = repo(usuario("uid-adm", "adm@x.com", papel = Papel.ADM))
+        val vm = vm(repo, funcionarios = funcionarios(funcionario("f-ana", "Ana Ribeiro")))
+        advanceUntilIdle()
+
+        vm.onLigarFuncionario("uid-adm", "Quem Não Existe")
+        advanceUntilIdle()
+
+        assertTrue(repo.elosDefinidos.isEmpty())
+    }
+
+    /**
+     * **O gesto não existe para o `OPERADOR`**, e a lista diz isso na própria linha: o elo dele vem do
+     * primeiro acesso, verificado por e-mail, e ligá-lo à mão moveria a posse das passagens (§8.4).
+     */
+    @Test
+    fun `a linha do operador nao aceita elo manual`() = runTest(mainRule.dispatcher) {
+        val vm = vm(
+            repo(
+                usuario("uid-adm", "adm@x.com", papel = Papel.ADM),
+                usuario("uid-ana", "ana@x.com", papel = Papel.OPERADOR),
+            )
+        )
+        advanceUntilIdle()
+
+        val porId = vm.uiState.value.resultados.associateBy { it.id }
+        assertTrue(porId.getValue("uid-adm").aceitaElo)
+        assertFalse(porId.getValue("uid-ana").aceitaElo)
+    }
+
+    /** Elo apontando para funcionário inexistente mostra o **id**: vazio se leria como "não tem elo". */
+    @Test
+    fun `elo quebrado aparece como id, e nao como ausencia`() = runTest(mainRule.dispatcher) {
+        val vm = vm(repo(usuario("uid-adm", "adm@x.com", papel = Papel.ADM, funcionarioId = "f-sumiu")))
+        advanceUntilIdle()
+
+        assertEquals("f-sumiu", vm.uiState.value.resultados.single().funcionario)
+    }
+
+    /** Gerir acesso é `ADM`-only, e o elo entra na mesma guarda. */
+    @Test
+    fun `gestor nao liga funcionario a ninguem`() = runTest(mainRule.dispatcher) {
+        val repo = repo(usuario("uid-outro", "outro@x.com", papel = Papel.ADM))
+        val vm = vm(
+            repo,
+            funcionarios = funcionarios(funcionario("f-ana", "Ana Ribeiro")),
+            sessao = FakeSessaoUsuario.plataforma(Papel.GESTOR.name),
+        )
+        advanceUntilIdle()
+
+        vm.onLigarFuncionario("uid-outro", "Ana Ribeiro")
+        advanceUntilIdle()
+
+        assertTrue(repo.elosDefinidos.isEmpty())
     }
 
     // --- A política antes do gesto (D1) ---

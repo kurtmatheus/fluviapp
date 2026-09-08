@@ -56,11 +56,31 @@ interface UsuarioRepository {
      */
     suspend fun definirAcesso(id: String, ativo: Boolean, expiraEm: Long?)
 
+    /**
+     * **Liga (ou desliga) o elo com o funcionário** — a terceira chave da lista fechada da §Q1, e é ela que
+     * dá o **segundo perfil** da D5 a um `ADM`/`GESTOR` que já existe.
+     *
+     * `funcionarioId` vazio **desliga**, e o gesto existe pelo mesmo argumento que deu à D6 o par
+     * desativar/reativar: ligar sem desligar transformaria um engano em ida ao console.
+     *
+     * ### Por que é um método, e não um terceiro parâmetro de [definirAcesso]
+     *
+     * Porque o servidor compara o `diff`: uma escrita que carrega as três chaves reescreve as duas que o
+     * gesto não mudou, a partir de uma cópia local que pode estar atrasada. É o mesmo motivo que fez a
+     * gestão de acesso usar `update` em vez de `set` — **escreve-se o que o gesto muda**, e nada além.
+     *
+     * Desligar **não corrompe passagem nenhuma**: a posse está congelada no documento
+     * (`MetadadosPassagem.funcionarioId`), não no perfil. O que se perde é o perfil de empresa daquela
+     * pessoa, que é justamente o que o gesto diz fazer.
+     */
+    suspend fun ligarFuncionario(id: String, funcionarioId: String)
+
     companion object {
         const val COLLECTION_USERS = "users"
 
         const val CAMPO_ATIVO = "ativo"
         const val CAMPO_EXPIRA_EM = "expiraEm"
+        const val CAMPO_FUNCIONARIO_ID = "funcionarioId"
     }
 }
 
@@ -124,6 +144,18 @@ class UsuarioFirestoreRepository @Inject constructor(
             // de acesso que "vai chegar depois" é pior do que gestão de acesso que falhou — quem desativou
             // precisa saber que não desativou.
             Log.e(TAG, "definirAcesso($id): ${e.message}", e)
+            throw e
+        }
+    }
+
+    /** Uma chave só, pela mesma razão do [definirAcesso]: escreve-se o que o gesto muda. */
+    override suspend fun ligarFuncionario(id: String, funcionarioId: String) {
+        try {
+            firestore.collection(UsuarioRepository.COLLECTION_USERS).document(id)
+                .update(mapOf(UsuarioRepository.CAMPO_FUNCIONARIO_ID to funcionarioId))
+                .await()
+        } catch (e: Exception) {
+            Log.e(TAG, "ligarFuncionario($id, $funcionarioId): ${e.message}", e)
             throw e
         }
     }

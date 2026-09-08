@@ -9,8 +9,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AddLink
 import androidx.compose.material.icons.filled.EventBusy
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.LinkOff
 import androidx.compose.material.icons.filled.LockOpen
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -32,12 +34,14 @@ import dev.matheus.fluviapp.R
 import dev.matheus.fluviapp.ui.components.contents.CommonTopRow
 import dev.matheus.fluviapp.ui.components.dialogs.CommonInformativeDialog
 import dev.matheus.fluviapp.ui.components.forms.divider.FormDashedDivider
+import dev.matheus.fluviapp.ui.components.forms.dropdowns.DropDownFormField
 import dev.matheus.fluviapp.ui.components.forms.fields.FormFieldCalendario
 import dev.matheus.fluviapp.ui.components.forms.fields.FormTextFieldBrownNoIcon
 import dev.matheus.fluviapp.ui.components.texts.TextRegularBrown
 import dev.matheus.fluviapp.ui.components.texts.TextSubTitleBrownItalic
 import dev.matheus.fluviapp.ui.components.texts.TextTitleBrownRegular
 import dev.matheus.fluviapp.ui.screens.forms.CommonScreenNoBottom
+import dev.matheus.fluviapp.ui.states.FuncionarioOpcao
 import dev.matheus.fluviapp.ui.states.PesquisaUsuarioUiState
 import dev.matheus.fluviapp.ui.states.UsuarioResultado
 import dev.matheus.fluviapp.ui.theme.FluviAppTheme
@@ -52,13 +56,22 @@ import dev.matheus.fluviapp.ui.theme.FluviAppTheme
  * **O papel continua sem botão**, e agora por escrito: ele está fora da lista fechada de chaves que a
  * regra abre, inclusive para o `ADM`. Trocar papel segue sendo ato de console.
  *
- * ### Dois gestos por linha, e nenhum para quem não entrou
+ * ### Três gestos por linha, e nenhum para quem não entrou
  *
  * Desativar/reativar tem **confirmação** — mesmo molde dos deletes lógicos das outras seções, e pela mesma
  * razão: é gesto que atinge outra pessoa. O prazo abre o seletor de data direto, porque escolher uma data
  * já é a confirmação, e um diálogo antes do seletor seria cerimônia sobre cerimônia.
  *
- * Quem só foi convidado não tem nenhum dos dois: não há acesso a governar antes do primeiro acesso.
+ * O **elo com o funcionário** ([ADR-0032] D5/Q1) é o terceiro, e tem duas formas — nunca três: sem elo,
+ * escolher; com elo, desligar (com confirmação, porque tira o perfil de empresa da pessoa). Trocar de
+ * funcionário é desligar e ligar, de propósito: num passo só, a troca esconderia que alguém deixou de
+ * operar por uma empresa e passou a operar por outra.
+ *
+ * Ele só aparece onde o elo se liga à mão — papel de plataforma (`aceitaEloManual`). Para o `OPERADOR` não
+ * é botão escondido: é gesto que não existe, porque o elo dele vem do primeiro acesso, verificado por
+ * e-mail.
+ *
+ * Quem só foi convidado não tem nenhum dos três: não há acesso a governar antes do primeiro acesso.
  */
 @Composable
 fun ResultSearchUsuarioScreen(
@@ -67,6 +80,9 @@ fun ResultSearchUsuarioScreen(
     onClickVoltar: () -> Unit = {},
     onAlternarAcesso: (String, Boolean) -> Unit = { _, _ -> },
     onDefinirPrazo: (String, String) -> Unit = { _, _ -> },
+    /** O elo com o funcionário ([ADR-0032] D5/Q1) — o **segundo perfil** de quem administra. */
+    onLigarFuncionario: (String, String) -> Unit = { _, _ -> },
+    onDesligarFuncionario: (String) -> Unit = {},
 ) {
     CommonScreenNoBottom(
         titleTopAppBar = R.string.title_top_usuarios,
@@ -78,6 +94,10 @@ fun ResultSearchUsuarioScreen(
     ) { modifier, titulo ->
         // Quem está marcado para ter o acesso alternado (estado local de UI); != null abre a confirmação.
         var paraAlternar by remember { mutableStateOf<UsuarioResultado?>(null) }
+
+        // Quem está marcado para ter o elo desligado — confirmação própria, porque desligar tira o perfil
+        // de empresa da pessoa, e isso é gesto que atinge quem não está olhando.
+        var paraDesligar by remember { mutableStateOf<UsuarioResultado?>(null) }
 
         Column {
             CommonTopRow(modifier = modifier, titulo = titulo)
@@ -105,8 +125,11 @@ fun ResultSearchUsuarioScreen(
                         modifier = modifier,
                         usuario = usuario,
                         podeGerir = uiState.podeGerir,
+                        funcionariosDisponiveis = uiState.funcionariosDisponiveis,
                         onAlternarAcesso = { paraAlternar = it },
                         onDefinirPrazo = onDefinirPrazo,
+                        onLigarFuncionario = onLigarFuncionario,
+                        onDesligarFuncionario = { paraDesligar = it },
                     )
                 }
             }
@@ -129,6 +152,20 @@ fun ResultSearchUsuarioScreen(
                 onDismiss = { paraAlternar = null },
             )
         }
+
+        paraDesligar?.let { usuario ->
+            CommonInformativeDialog(
+                modifier = Modifier,
+                textMensagem = R.string.msg_confirmar_desligar_funcionario,
+                textConfirm = R.string.btn_desligar,
+                textDismiss = R.string.btn_cancelar,
+                onConfirm = {
+                    onDesligarFuncionario(usuario.id)
+                    paraDesligar = null
+                },
+                onDismiss = { paraDesligar = null },
+            )
+        }
     }
 }
 
@@ -137,12 +174,18 @@ fun CardResultUsuario(
     modifier: Modifier,
     usuario: UsuarioResultado,
     podeGerir: Boolean = false,
+    funcionariosDisponiveis: List<FuncionarioOpcao> = emptyList(),
     onAlternarAcesso: (UsuarioResultado) -> Unit = {},
     onDefinirPrazo: (String, String) -> Unit = { _, _ -> },
+    onLigarFuncionario: (String, String) -> Unit = { _, _ -> },
+    onDesligarFuncionario: (UsuarioResultado) -> Unit = {},
 ) {
     // O seletor de data abre num campo, e o campo só existe enquanto está aberto: uma linha de lista com
     // campo de data permanente seria um formulário disfarçado de lista.
     var escolhendoPrazo by remember { mutableStateOf(false) }
+
+    // O mesmo para o elo: o seletor de funcionário aparece ao pedir, e some ao escolher.
+    var escolhendoFuncionario by remember { mutableStateOf(false) }
 
     Column {
         Row(
@@ -170,10 +213,44 @@ fun CardResultUsuario(
                 if (usuario.prazo.isNotBlank()) {
                     TextRegularBrown(text = stringResource(R.string.label_acesso_ate, usuario.prazo))
                 }
+                // O elo, quando há: é o **segundo perfil** desta pessoa, e é ele que faz um `ADM` operar
+                // numa empresa ([ADR-0032] D5).
+                if (usuario.funcionario.isNotBlank()) {
+                    TextRegularBrown(
+                        text = stringResource(R.string.label_opera_como, usuario.funcionario),
+                    )
+                }
             }
 
             // Ativo · Desativado · Expirado · Convidado — a situação vem de onde ela mora (D6/Q1).
             TextSubTitleBrownItalic(text = usuario.situacao)
+
+            // O elo é gesto de **duas formas, nunca três**: sem elo, escolher; com elo, desligar. Trocar
+            // de funcionário é desligar e ligar — e é assim de propósito, porque trocar num passo esconde
+            // que a pessoa deixou de operar por uma empresa e passou a operar por outra.
+            if (podeGerir && usuario.temAcesso && usuario.aceitaElo) {
+                IconButton(
+                    onClick = {
+                        if (usuario.funcionario.isBlank()) escolhendoFuncionario = true
+                        else onDesligarFuncionario(usuario)
+                    },
+                ) {
+                    Icon(
+                        imageVector = if (usuario.funcionario.isBlank()) {
+                            Icons.Default.AddLink
+                        } else {
+                            Icons.Default.LinkOff
+                        },
+                        contentDescription = stringResource(
+                            if (usuario.funcionario.isBlank()) {
+                                R.string.description_ligar_funcionario
+                            } else {
+                                R.string.btn_desligar
+                            }
+                        ),
+                    )
+                }
+            }
 
             if (podeGerir && usuario.temAcesso) {
                 IconButton(onClick = { escolhendoPrazo = true }) {
@@ -209,6 +286,30 @@ fun CardResultUsuario(
                 textoErro = R.string.error_camp_obrig,
             )
         }
+
+        if (escolhendoFuncionario) {
+            // Lista vazia **diz** que está vazia: todo funcionário já tem perfil, e a saída é cadastrar
+            // outro na Equipe — não é um seletor quebrado.
+            if (funcionariosDisponiveis.isEmpty()) {
+                TextRegularBrown(
+                    modifier = modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                    text = stringResource(R.string.msg_sem_funcionario_livre),
+                )
+            } else {
+                DropDownFormField(
+                    modifier = modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 4.dp),
+                    listaItens = funcionariosDisponiveis.map { it.nome },
+                    label = R.string.label_opera_como_funcionario,
+                    value = "",
+                    onValueChange = { nome ->
+                        onLigarFuncionario(usuario.id, nome)
+                        escolhendoFuncionario = false
+                    },
+                )
+            }
+        }
         HorizontalDivider(modifier = Modifier)
     }
 }
@@ -220,7 +321,9 @@ private fun ResultSearchUsuarioScreenPreview() {
         ResultSearchUsuarioScreen(
             uiState = PesquisaUsuarioUiState(
                 podeGerir = true,
+                funcionariosDisponiveis = listOf(FuncionarioOpcao("f-livre", "Diego Alves")),
                 resultados = listOf(
+                    // O `ADM` **com** o segundo perfil: é o elo que o faz operar numa empresa (D5).
                     UsuarioResultado(
                         id = "uid-adm",
                         email = "adm@fluviapp.com.br",
@@ -230,6 +333,20 @@ private fun ResultSearchUsuarioScreenPreview() {
                         situacao = "Ativo",
                         ativo = true,
                         temAcesso = true,
+                        funcionario = "Kurt Matheus",
+                        aceitaElo = true,
+                    ),
+                    // E o `GESTOR` sem elo: a linha onde o gesto de ligar aparece.
+                    UsuarioResultado(
+                        id = "uid-gestor",
+                        email = "gestor@fluviapp.com.br",
+                        nome = "Marina Alves",
+                        papel = "GESTOR",
+                        vinculo = "",
+                        situacao = "Ativo",
+                        ativo = true,
+                        temAcesso = true,
+                        aceitaElo = true,
                     ),
                     UsuarioResultado(
                         id = "uid-ana",

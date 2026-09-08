@@ -25,6 +25,9 @@ class FakeUsuarioRepository : UsuarioRepository {
 
     val acessosDefinidos = mutableListOf<Triple<String, Boolean, Long?>>()
 
+    /** O elo escrito, como par `(uid, funcionarioId)` — vazio no segundo termo é *desligou*. */
+    val elosDefinidos = mutableListOf<Pair<String, String>>()
+
     /** Quando `true`, a escrita estoura — é como se testa que a falha não passa em silêncio. */
     var falharAoDefinir = false
 
@@ -54,5 +57,13 @@ class FakeUsuarioRepository : UsuarioRepository {
         usuarios = usuarios.map {
             if (it.id == id) it.copy(ativo = ativo, expiraEm = expiraEm) else it
         }
+    }
+
+    /** **Aplica** o elo, como a impl: quem liga recarrega a lista em seguida e tem de ver o elo novo. */
+    override suspend fun ligarFuncionario(id: String, funcionarioId: String) {
+        if (falharAoDefinir) throw IllegalStateException("falha de rede simulada")
+
+        elosDefinidos += id to funcionarioId
+        usuarios = usuarios.map { if (it.id == id) it.copy(funcionarioId = funcionarioId) else it }
     }
 }

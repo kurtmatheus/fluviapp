@@ -13,7 +13,21 @@ data class PesquisaUsuarioUiState(
      * fail-closed, como o resto da política; sem sessão resolvida, a lista é só leitura.
      */
     val podeGerir: Boolean = false,
+    /**
+     * Os funcionários que ainda **não têm perfil** — as opções do elo ([ADR-0032] D5/Q1).
+     *
+     * A lista é a mesma para todas as linhas porque o seletor só abre para quem **não** tem elo; quem tem
+     * desliga antes de ligar outro. O recorte é do domínio (`funcionariosElegiveis`), que guarda o 1-1 do
+     * ADR-0015 §8.3 — dois perfis no mesmo funcionário seriam duas pessoas donas das mesmas passagens.
+     */
+    val funcionariosDisponiveis: List<FuncionarioOpcao> = emptyList(),
     val isProcessing: Boolean = false,
+)
+
+/** Um funcionário **como opção de escolha**: o id que se grava e o nome que se lê. */
+data class FuncionarioOpcao(
+    val id: String,
+    val nome: String,
 )
 
 /**
@@ -51,4 +65,19 @@ data class UsuarioResultado(
     val ativo: Boolean = false,
     /** `false` para quem só foi convidado: não há acesso a governar antes do primeiro acesso. */
     val temAcesso: Boolean = false,
+    /**
+     * O nome do funcionário ligado a este perfil, ou vazio quando não há elo ([ADR-0032] D5/Q1).
+     *
+     * É o **segundo perfil** da pessoa, visto do lado de quem administra: com ele, um `ADM` opera numa
+     * empresa; sem ele, só administra a plataforma.
+     */
+    val funcionario: String = "",
+    /**
+     * Se o elo se liga à mão **neste** perfil — papel de plataforma, e só (`aceitaEloManual`).
+     *
+     * O `OPERADOR` fica fora porque o elo dele já tem caminho, e o caminho **verifica**: o primeiro acesso
+     * exige funcionário de mesmo e-mail. Ligar à mão passaria por fora disso e moveria a posse das
+     * passagens seguintes (ADR-0015 §8.4).
+     */
+    val aceitaElo: Boolean = false,
 )

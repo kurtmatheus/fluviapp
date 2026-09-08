@@ -61,6 +61,8 @@ fun NavGraphBuilder.resultSearchUsuarioNavComposable(
             onClickVoltar = onClickVoltar,
             onAlternarAcesso = viewModel::onAlternarAcesso,
             onDefinirPrazo = viewModel::onDefinirPrazo,
+            onLigarFuncionario = viewModel::onLigarFuncionario,
+            onDesligarFuncionario = viewModel::onDesligarFuncionario,
         )
     }
 }
