@@ -1,6 +1,7 @@
 package dev.matheus.fluviapp.util
 
 import java.time.LocalDateTime
+import java.time.ZoneId
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -16,6 +17,16 @@ import javax.inject.Singleton
  */
 interface Relogio {
     fun agora(): LocalDateTime
+
+    /**
+     * O mesmo instante em **millis de época** — a forma que o `expiraEm` do acesso usa ([ADR-0032] Q1,
+     * porque é o que uma regra do Firestore sabe comparar).
+     *
+     * Definida em termos de [agora] de propósito: um fake que congela o relógio congela as duas leituras
+     * juntas. Se fossem dois caminhos independentes, a diferença entre eles apareceria como um teste que
+     * passa e um comportamento que não.
+     */
+    fun millis(): Long = agora().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
 }
 
 @Singleton

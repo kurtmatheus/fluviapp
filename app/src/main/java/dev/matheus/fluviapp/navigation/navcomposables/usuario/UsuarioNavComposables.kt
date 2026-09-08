@@ -59,6 +59,8 @@ fun NavGraphBuilder.resultSearchUsuarioNavComposable(
             uiState = uiState,
             onEmailChange = viewModel::onEmailChange,
             onClickVoltar = onClickVoltar,
+            onAlternarAcesso = viewModel::onAlternarAcesso,
+            onDefinirPrazo = viewModel::onDefinirPrazo,
         )
     }
 }

@@ -18,6 +18,8 @@ import dev.matheus.fluviapp.services.repository.pool.VeiculoFirestoreRepository
 import dev.matheus.fluviapp.services.repository.pool.VeiculoRepository
 import dev.matheus.fluviapp.services.repository.operacoes.ConviteFirestoreRepository
 import dev.matheus.fluviapp.services.repository.operacoes.ConviteRepository
+import dev.matheus.fluviapp.services.repository.operacoes.UsuarioFirestoreRepository
+import dev.matheus.fluviapp.services.repository.operacoes.UsuarioRepository
 import dev.matheus.fluviapp.services.repository.operacoes.FuncionarioFirestoreRepository
 import dev.matheus.fluviapp.services.repository.operacoes.FuncionarioRepository
 import dev.matheus.fluviapp.services.repository.operacoes.EscopoDaSessao
@@ -101,6 +103,14 @@ abstract class RepositorioModule {
     @Binds
     @Singleton
     abstract fun bindConviteRepository(impl: ConviteFirestoreRepository): ConviteRepository
+
+    /**
+     * Quem **já entrou**, e em que estado ([ADR-0032] D6). É a outra metade da pergunta que o convite
+     * responde: ele diz quem pode entrar, este diz o que acontece depois.
+     */
+    @Binds
+    @Singleton
+    abstract fun bindUsuarioRepository(impl: UsuarioFirestoreRepository): UsuarioRepository
 
     /**
      * Preenchimento pelo IBGE — **porta de fora**, e a única do app. Fica ao lado dos repositórios porque

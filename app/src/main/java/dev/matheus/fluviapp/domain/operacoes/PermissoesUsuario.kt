@@ -49,6 +49,17 @@ object PermissoesUsuario {
     fun ehPapelDeOperacao(papel: String?): Boolean = Papel.de(papel) == Papel.OPERADOR
 
     /**
+     * **Gerir o acesso de quem já entrou** — desativar, reativar, definir prazo ([ADR-0032] D6).
+     *
+     * `ADM`-only, pelo mesmo argumento que deu a ele a seção Usuários (ADR-0021 D1): papel concede tudo, e
+     * erro aqui é sistêmico. O `GESTOR` administra o negócio da plataforma, não o acesso a ela.
+     *
+     * A mesma condição está na regra do servidor, no `update` de `users/{uid}` — esta existe para o gesto
+     * **falhar antes e falhar explicando** (D1), não para ser a fronteira.
+     */
+    fun podeGerirAcesso(papel: String?): Boolean = Papel.de(papel) == ADM
+
+    /**
      * **Não há convite de `ADM`** ([ADR-0032] D6).
      *
      * O administrador entra por **console + Firestore**, e só. Isso preserva o [ADR-0021] D0 no que ele

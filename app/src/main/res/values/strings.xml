@@ -79,6 +79,14 @@
     <string name="label_menu_viagens">Viagens</string>
     <string name="label_menu_equipe">Equipe</string>
     <string name="label_tema_escuro">Tema escuro</string>
+    <!-- Gestão de acesso (ADR-0032 D6): o par desativar/reativar, e o prazo. -->
+    <string name="btn_desativar">Desativar</string>
+    <string name="btn_reativar">Reativar</string>
+    <string name="msg_confirmar_desativar_acesso">Desativar o acesso desta pessoa? Ela continua na lista, e pode ser reativada.</string>
+    <string name="msg_confirmar_reativar_acesso">Reativar o acesso desta pessoa?</string>
+    <string name="label_acesso_expira_em">Acesso expira em</string>
+    <string name="label_acesso_ate">Acesso até %1$s</string>
+    <string name="description_prazo_de_acesso">Definir prazo de acesso</string>
     <!-- Troca de perfil (ADR-0032 D5): o rótulo diz para onde a opção leva, não onde se está. -->
     <string name="btn_operar_como">Operar como %1$s</string>
     <string name="btn_administrar_plataforma">Administrar a plataforma</string>
