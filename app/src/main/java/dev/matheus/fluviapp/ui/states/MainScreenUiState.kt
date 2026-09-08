@@ -1,5 +1,6 @@
 package dev.matheus.fluviapp.ui.states
 
+import dev.matheus.fluviapp.domain.operacoes.Perfil
 import dev.matheus.fluviapp.domain.screendata.SecaoMenu
 
 data class MainScreenUiState(
@@ -15,6 +16,22 @@ data class MainScreenUiState(
      * próxima tela.
      */
     val podeEmbarcar: Boolean = false,
+
+    /**
+     * Se a opção de **trocar de perfil** aparece no menu ([ADR-0032] D5) — quem tem papel de plataforma e
+     * vínculo com uma empresa. Entra decidido, pelo mesmo motivo de [podeEmbarcar].
+     */
+    val podeTrocarPerfil: Boolean = false,
+
+    /**
+     * Qual perfil está ativo, para o menu dizer **para onde a troca leva** — e não onde se está: "operar
+     * como <empresa>" sob o perfil de plataforma, "administrar a plataforma" sob o de empresa. Um rótulo
+     * que anunciasse o estado atual faria a opção parecer um indicador, e ela é um gesto.
+     */
+    val perfilAtivo: Perfil = Perfil.PLATAFORMA,
+
+    /** O nome da empresa do vínculo — o que entra no rótulo da troca. Vazio quando não há vínculo. */
+    val empresaDoVinculo: String = "",
 
     /**
      * **O Início, decidido pelo domínio** (F8.4). O `listaViagens` que existia aqui antes da

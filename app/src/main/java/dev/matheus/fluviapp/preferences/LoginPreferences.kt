@@ -52,4 +52,13 @@ object PreferencesKey {
      * de ela existir.
      */
     val ULTIMO_EMAIL = stringPreferencesKey("ultimo_email")
+
+    /**
+     * Qual perfil está ativo (ADR-0032 D5) — plataforma ou empresa. **Preferência, não credencial**: ver
+     * `PerfilAtivo`.
+     *
+     * Morre no logout, junto com as de sessão: o perfil é de quem estava operando, não do aparelho.
+     * Deixá-lo para trás faria a próxima pessoa herdar a lente da anterior.
+     */
+    val PERFIL_ATIVO = stringPreferencesKey("perfil_ativo")
 }

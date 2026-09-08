@@ -105,6 +105,7 @@ fun NavGraphBuilder.mainScreenNavComposable(
                     onNavegaParaLogin()
                 }
             },
+            onClickTrocarPerfil = viewModel::trocarPerfil,
             isDarkTheme = escuro,
             onToggleTheme = { themeViewModel.alternarTema(escuro) },
             onClickViagemDisponivel = onNavegaParaEmissao,

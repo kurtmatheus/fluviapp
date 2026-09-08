@@ -58,6 +58,8 @@ fun MainScreen(
      */
     onClickInicio: () -> Unit = {},
     onClickDeslogar: () -> Unit = {},
+    /** A troca de perfil ([ADR-0032] D5) — opção do menu de quem tem os dois. */
+    onClickTrocarPerfil: () -> Unit = {},
     isDarkTheme: Boolean = false,
     onToggleTheme: () -> Unit = {},
     /** Tocar numa saída do Início abre a **emissão** naquela ocorrência (F9.5). */
@@ -91,6 +93,12 @@ fun MainScreen(
                 onNavegar = { acao -> onAcaoMenu(acao); fechar() },
                 onToggleTheme = onToggleTheme,
                 onDeslogar = onClickDeslogar,
+                podeTrocarPerfil = state.podeTrocarPerfil,
+                perfilAtivo = state.perfilAtivo,
+                empresaDoVinculo = state.empresaDoVinculo,
+                // Fecha o menu junto: o painel de trás vai trocar inteiro, e vê-lo trocar por baixo de um
+                // menu aberto seria mostrar o menu antigo sobre o painel novo.
+                onTrocarPerfil = { onClickTrocarPerfil(); fechar() },
             )
         },
         content = { modifier, _ ->
@@ -100,11 +108,26 @@ fun MainScreen(
                 if (state.sincronizacaoComErro) BannerSincronizacaoOffline()
 
                 when (estado) {
+                    // **A troca de perfil se anuncia como carregamento**, e nada além disso (ADR-0032 Q3):
+                    // indicador circular padrão e uma linha de texto. Sem tela nova, sem cerimônia —
+                    // celebrar a troca sugeriria uma separação que o servidor não faz.
+                    //
+                    // Este era um estado **sem produtor**: a tela o desenhava e nada o ligava. A troca é o
+                    // gesto que faltava.
                     is MainScreenState.LOADING -> Box(modifier = Modifier.fillMaxSize()) {
-                        CircularProgressIndicator(
+                        Column(
                             modifier = Modifier.align(Alignment.Center),
-                            color = MaterialTheme.colorScheme.primary,
-                        )
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                            Spacer(modifier = Modifier.padding(top = 12.dp))
+                            Text(
+                                text = stringResource(R.string.msg_carregando_perfil),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                textAlign = TextAlign.Center,
+                            )
+                        }
                     }
 
                     // O Início voltou na F8.4, e **quem decide o que ele mostra é o domínio**: a tela
@@ -176,5 +199,20 @@ private fun MainScreenOfflinePreview() {
             mainScreenState = MainScreenState.HOME,
         ),
         acoesPorSecao = acoesPorSecao(SECOES_REVITALIZADAS.toList()),
+    )
+}
+
+/** A troca de perfil (ADR-0032 Q3): indicador circular padrão e uma linha de texto. */
+@Preview(name = "Trocando de perfil", showBackground = true)
+@Composable
+private fun MainScreenTrocandoPerfilPreview() {
+    MainScreen(
+        MainScreenUiState(
+            userName = "Odair",
+            secoesVisiveis = SECOES_REVITALIZADAS.toList(),
+            podeTrocarPerfil = true,
+            empresaDoVinculo = "Navegação Norte",
+            mainScreenState = MainScreenState.LOADING,
+        ),
     )
 }

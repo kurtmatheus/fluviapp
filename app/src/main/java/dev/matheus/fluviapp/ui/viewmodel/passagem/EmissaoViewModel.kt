@@ -341,7 +341,7 @@ class EmissaoViewModel @Inject constructor(
      */
     private suspend fun abrirConferencia() {
         val estado = _uiState.value
-        val agencia = sessaoUsuario.atual()?.empresaAtivaNome.orEmpty()
+        val agencia = sessaoUsuario.atual()?.agencia.orEmpty()
 
         _uiState.update {
             it.copy(

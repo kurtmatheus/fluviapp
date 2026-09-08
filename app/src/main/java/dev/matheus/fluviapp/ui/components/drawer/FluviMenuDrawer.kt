@@ -17,6 +17,7 @@ import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LightMode
+import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalDrawerSheet
@@ -35,6 +36,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import dev.matheus.fluviapp.R
+import dev.matheus.fluviapp.domain.operacoes.Perfil
 import dev.matheus.fluviapp.domain.screendata.AcaoMenu
 import dev.matheus.fluviapp.domain.screendata.SecaoMenu
 import dev.matheus.fluviapp.ui.components.texts.TextTitleBrownItalic
@@ -59,6 +61,12 @@ fun FluviMenuDrawer(
     onToggleTheme: () -> Unit,
     onDeslogar: () -> Unit,
     modifier: Modifier = Modifier,
+    /** Quem tem dois perfis troca por aqui ([ADR-0032] D5); para os demais a opção não existe. */
+    podeTrocarPerfil: Boolean = false,
+    /** `PLATAFORMA` ativo → a opção leva à empresa; `EMPRESA` ativo → leva à plataforma. */
+    perfilAtivo: Perfil = Perfil.PLATAFORMA,
+    empresaDoVinculo: String = "",
+    onTrocarPerfil: () -> Unit = {},
 ) {
     var expandida by remember { mutableStateOf<SecaoMenu?>(null) }
 
@@ -139,6 +147,27 @@ fun FluviMenuDrawer(
         }
 
         HorizontalDivider()
+
+        // **A troca de perfil** ([ADR-0032] D5), no rodapé e ao lado do tema: as duas são preferências de
+        // como se olha o app, não seções dele. O rótulo diz **para onde vai**, e é por isso que ele nomeia
+        // a empresa enquanto o perfil ativo é o da plataforma.
+        if (podeTrocarPerfil) {
+            NavigationDrawerItem(
+                modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
+                icon = { Icon(imageVector = Icons.Default.SwapHoriz, contentDescription = null) },
+                label = {
+                    Text(
+                        text = if (perfilAtivo == Perfil.PLATAFORMA) {
+                            stringResource(R.string.btn_operar_como, empresaDoVinculo)
+                        } else {
+                            stringResource(R.string.btn_administrar_plataforma)
+                        },
+                    )
+                },
+                selected = false,
+                onClick = onTrocarPerfil,
+            )
+        }
 
         NavigationDrawerItem(
             modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),

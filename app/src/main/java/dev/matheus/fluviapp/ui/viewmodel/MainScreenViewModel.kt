@@ -2,6 +2,7 @@ package dev.matheus.fluviapp.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dev.matheus.fluviapp.domain.operacoes.Perfil
 import dev.matheus.fluviapp.domain.operacoes.PermissoesUsuario
 import dev.matheus.fluviapp.domain.screendata.secoesDoMenu
 import dev.matheus.fluviapp.services.repository.firebase.SincronizacaoSessao
@@ -22,6 +23,7 @@ import dev.matheus.fluviapp.ui.states.MainScreenState
 import dev.matheus.fluviapp.ui.states.MainScreenUiState
 import dev.matheus.fluviapp.util.Relogio
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -71,6 +73,18 @@ class MainScreenViewModel @Inject constructor(
     val uiState: StateFlow<MainScreenUiState>
         get() = _uiState.asStateFlow()
 
+    /**
+     * O Início é assinado a partir de um **escopo lido uma vez**, então trocar de perfil pede reiniciar a
+     * assinatura: o guardado aqui é o que se cancela ([trocarPerfil]).
+     *
+     * O menu não precisa disso — ele coleta o contexto, e o contexto reemite sozinho. A diferença é de
+     * regime, não de cuidado: o escopo é uma foto (`escopoDaSessao.atual()`), e foto não reage.
+     *
+     * **Declarado antes do `init`** de propósito: inicializador de propriedade e bloco `init` rodam na
+     * ordem em que aparecem, e daqui de baixo o `= null` apagaria o job que o `init` acabou de criar.
+     */
+    private var assinaturaDoInicio: Job? = null
+
     init {
         obterUsuario()
         observarSincronizacao()
@@ -90,7 +104,8 @@ class MainScreenViewModel @Inject constructor(
      * existe no Firestore, e um índice denormalizado seria uma segunda verdade sobre a concessão.
      */
     private fun carregarInicio() {
-        viewModelScope.launch {
+        assinaturaDoInicio?.cancel()
+        assinaturaDoInicio = viewModelScope.launch {
             fluxoDoInicio(
                 escopo = escopoDaSessao.atual(),
                 viagemRepository = viagemRepository,
@@ -150,6 +165,15 @@ class MainScreenViewModel @Inject constructor(
                         // O embarque é gesto, não seção: não passa pelo andaime porque não tem seção
                         // para revitalizar — a tela e a escrita já existem e estão testadas.
                         podeEmbarcar = PermissoesUsuario.temEntradaDeEmbarque(papel, cargo, atuacao),
+                        // A troca de perfil ([ADR-0032] D5). O painel inteiro acima já saiu daqui trocado,
+                        // porque `cargo` e `atuacao` vêm do vínculo **em vigor** — a lente mora no
+                        // contexto, e este ViewModel não a conhece.
+                        podeTrocarPerfil = contexto?.podeTrocarPerfil == true,
+                        perfilAtivo = contexto?.perfilAtivo ?: Perfil.PLATAFORMA,
+                        empresaDoVinculo = contexto?.empresaDoVinculo.orEmpty(),
+                        // Volta do "carregando" da troca: quem sabe que o contexto novo chegou é quem o
+                        // recebe.
+                        mainScreenState = MainScreenState.HOME,
                     )
                 }
             }
@@ -158,6 +182,32 @@ class MainScreenViewModel @Inject constructor(
 
     fun irParaHome() {
         _uiState.update { it.copy(mainScreenState = MainScreenState.HOME) }
+    }
+
+    /**
+     * **Trocar de perfil** ([ADR-0032] D5) — a opção do menu de quem tem os dois.
+     *
+     * Três coisas, nesta ordem, e cada uma por um motivo:
+     *
+     *  1. **o guarda**, porque a política se pergunta antes do gesto (D1) e não só antes do menu. Sem ele,
+     *     o gesto existiria para quem a opção nem oferece;
+     *  2. **o `LOADING`**, que é a resposta da Q3: *"Carregando sessão e informações do perfil."* com
+     *     indicador circular, e nada além. Celebrar a troca sugeriria uma separação que o servidor não faz.
+     *     O estado já existia na tela e **não tinha quem o produzisse** — a troca é o produtor que faltava;
+     *  3. **a assinatura do Início reiniciada**, porque o escopo do pool é lido uma vez. O menu se corrige
+     *     sozinho (o contexto é fluxo); o Início não, e um painel de empresa com as saídas da lente
+     *     anterior seria pior do que um painel vazio.
+     */
+    fun trocarPerfil() {
+        val estado = _uiState.value
+        if (!estado.podeTrocarPerfil) return
+
+        val destino = if (estado.perfilAtivo == Perfil.EMPRESA) Perfil.PLATAFORMA else Perfil.EMPRESA
+        _uiState.update { it.copy(mainScreenState = MainScreenState.LOADING) }
+        viewModelScope.launch {
+            sessaoUsuario.trocarPerfil(destino)
+            carregarInicio()
+        }
     }
 
     /**

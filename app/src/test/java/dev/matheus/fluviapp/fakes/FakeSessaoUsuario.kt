@@ -2,6 +2,7 @@ package dev.matheus.fluviapp.fakes
 
 import dev.matheus.fluviapp.domain.operacoes.ContextoUsuario
 import dev.matheus.fluviapp.domain.operacoes.Funcionario
+import dev.matheus.fluviapp.domain.operacoes.Perfil
 import dev.matheus.fluviapp.domain.operacoes.Usuario
 import dev.matheus.fluviapp.domain.operacoes.Vinculo
 import dev.matheus.fluviapp.services.repository.operacoes.SessaoUsuario
@@ -24,6 +25,14 @@ class FakeSessaoUsuario(var contexto: ContextoUsuario? = null) : SessaoUsuario {
      * implementações no fake seria a chance de elas discordarem.
      */
     override fun observar(): Flow<ContextoUsuario?> = flowOf(contexto)
+
+    /**
+     * A troca de perfil ([ADR-0032] D5) aplicada **ao contexto**, como o DataStore real faria: quem decide
+     * se a escolha vale continua sendo o domínio, na leitura seguinte.
+     */
+    override suspend fun trocarPerfil(perfil: Perfil) {
+        contexto = contexto?.copy(perfilEscolhido = perfil)
+    }
 
     override suspend fun encerrar() {
         contexto = null

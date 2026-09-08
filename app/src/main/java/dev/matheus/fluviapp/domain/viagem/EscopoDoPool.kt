@@ -45,10 +45,15 @@ sealed interface EscopoDoPool {
  * O escopo de quem está olhando. Atuação ausente **não** vira pool inteiro: é o mesmo cuidado do
  * `EscopoEmpresa` — "não filtra nada" e "não tem nada" pareceriam iguais e abririam a listagem para quem
  * não deveria ver.
+ *
+ * **A atuação em vigor vem primeiro**, e é a mesma ordem de `PermissoesUsuario.secoesVisiveis` pela mesma
+ * razão ([ADR-0032] D5): o `ADM` que ativou o perfil de empresa tem atuação, e o Início dele passa a ser o
+ * daquela empresa — saídas concedidas, e não o painel da plataforma. Sem vínculo em vigor, a atuação é
+ * nula e o papel decide, que é o caso de sempre.
  */
 fun escopoDoPool(papel: String?, atuacao: AtuacaoDaEmpresa?): EscopoDoPool = when {
-    PermissoesUsuario.ehPapelPlataforma(papel) -> EscopoDoPool.Todo
     atuacao != null -> EscopoDoPool.Concedido(atuacao)
+    PermissoesUsuario.ehPapelPlataforma(papel) -> EscopoDoPool.Todo
     else -> EscopoDoPool.Nenhum
 }
 

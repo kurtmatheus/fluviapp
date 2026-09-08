@@ -2,6 +2,7 @@ package dev.matheus.fluviapp.domain.operacoes
 
 import dev.matheus.fluviapp.fakes.FakeSessaoUsuario
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -61,9 +62,52 @@ class ContextoUsuarioTest {
      */
     @Test
     fun `a agencia e o nome da empresa em vigor`() {
-        val comEmpresa = supervisor.copy(empresaAtivaNome = "Navegação Norte")
+        val comEmpresa = supervisor.copy(empresaDoVinculo = "Navegação Norte")
 
         assertEquals("Navegação Norte", comEmpresa.agencia)
+    }
+
+    // --- A lente dos dois perfis ([ADR-0032] D5) ---
+
+    /** O `ADM` que também é funcionário: dois perfis no mesmo uid, e a troca é do menu dele. */
+    private val admComEmpresa = plataforma.copy(
+        funcionario = supervisor.funcionario,
+        empresaDoVinculo = "Navegação Norte",
+    )
+
+    /**
+     * **A lente aparece num ponto só**: o vínculo existe e não está em vigor. É daí que atuação, cargo e
+     * agência somem juntos — e é por isso que a troca não precisou tocar em cada um deles.
+     */
+    @Test
+    fun `sob o perfil de plataforma, o vinculo existe e nao esta em vigor`() {
+        assertEquals(Perfil.PLATAFORMA, admComEmpresa.perfilAtivo)
+        assertNull(admComEmpresa.vinculoAtivo)
+        assertNull(admComEmpresa.atuacao)
+        assertNull(admComEmpresa.cargo)
+        // O nome da empresa **fica**: é o que o menu usa para dizer "operar como Navegação Norte".
+        assertEquals("Navegação Norte", admComEmpresa.empresaDoVinculo)
+        // A agência do bilhete, não: ninguém emite em nome de uma agência pela qual não está olhando.
+        assertEquals("", admComEmpresa.agencia)
+    }
+
+    @Test
+    fun `sob o perfil de empresa, o mesmo contexto vira operacao`() {
+        val naEmpresa = admComEmpresa.copy(perfilEscolhido = Perfil.EMPRESA)
+
+        assertEquals(Perfil.EMPRESA, naEmpresa.perfilAtivo)
+        assertEquals(Atuacao.AGENCIAMENTO, naEmpresa.atuacao)
+        assertEquals(Funcionario.Cargo.SUPERVISOR.name, naEmpresa.cargo)
+        assertEquals("Navegação Norte", naEmpresa.agencia)
+        // E o papel **não muda**: a troca é lente, não redução de poder.
+        assertEquals(Usuario.Papel.ADM.name, naEmpresa.papel)
+    }
+
+    @Test
+    fun `a opcao de trocar so existe para quem tem os dois perfis`() {
+        assertTrue(admComEmpresa.podeTrocarPerfil)
+        assertFalse(plataforma.podeTrocarPerfil)
+        assertFalse(supervisor.podeTrocarPerfil)
     }
 
     @Test

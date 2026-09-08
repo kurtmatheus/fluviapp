@@ -69,7 +69,7 @@ class BilheteViewModel @Inject constructor(
             }
 
             val referencias = runCatching { coletorDeReferencias.completas(passagem) }.getOrNull()
-            val agencia = sessaoUsuario.atual()?.empresaAtivaNome.orEmpty()
+            val agencia = sessaoUsuario.atual()?.agencia.orEmpty()
 
             _uiState.update {
                 it.copy(

@@ -1,10 +1,14 @@
 package dev.matheus.fluviapp.services.repository.operacoes
 
 import dev.matheus.fluviapp.domain.operacoes.ContextoUsuario
+import dev.matheus.fluviapp.domain.operacoes.Perfil
 import dev.matheus.fluviapp.domain.operacoes.Usuario
+import dev.matheus.fluviapp.preferences.PerfilAtivo
 import dev.matheus.fluviapp.preferences.SessaoLocal
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.EmpresaRepository
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
@@ -17,7 +21,8 @@ import javax.inject.Singleton
  * existe em **um** lugar em vez de repetido em cada tela.
  *
  * A F6.4 tinha acrescentado uma terceira pergunta — *em nome de qual empresa se opera* —, e a [ADR-0032]
- * D5 a retirou: com uma empresa no máximo, o vínculo responde sozinho. `escolherEmpresa` saiu com ela.
+ * D5 a retirou: com uma empresa no máximo, o vínculo responde sozinho. No lugar dela entrou a que a D5
+ * criou: **por qual dos dois perfis a pessoa está olhando o app** ([trocarPerfil]).
  */
 interface SessaoUsuario {
     /**
@@ -41,7 +46,16 @@ interface SessaoUsuario {
     suspend fun atual(): ContextoUsuario? = observar().first()
 
     /**
-     * **Encerra a sessão local**: esquece quem entrou, e nada além disso.
+     * Guarda o perfil ativo — a resposta à troca no menu ([ADR-0032] D5).
+     *
+     * A porta **não valida** a troca: quem decide se ela vale é o domínio, a cada leitura
+     * (`ContextoUsuario.perfilAtivo`). É o que faz um vínculo perdido devolver a pessoa ao perfil de
+     * plataforma sozinho, sem depender de alguém lembrar de limpar a preferência.
+     */
+    suspend fun trocarPerfil(perfil: Perfil)
+
+    /**
+     * **Encerra a sessão local**: esquece quem entrou e por qual perfil olhava, e nada além disso.
      *
      * Existe para o logout parar de conhecer *onde* a sessão mora. Antes ele limpava duas coisas por dois
      * caminhos — `sessaoLocal.limpar()` e um `dataStore.edit` cru —, e um ViewModel que sabe quais chaves
@@ -53,46 +67,68 @@ interface SessaoUsuario {
 }
 
 /**
- * Impl sobre a projeção local ([SessaoLocal]) e o Firestore.
+ * Impl sobre a projeção local ([SessaoLocal]), o Firestore e o perfil ativo ([PerfilAtivo]).
  *
  * Chamava-se `SessaoUsuarioRoom`, e o próprio KDoc já dizia que o sufixo era do tempo em que as duas
  * leituras vinham do espelho. Em 2026-09-07 o usuário passou ao DataStore e o nome deixou de ter até esse
- * resto de verdade — o que a classe faz continua sendo o mesmo: juntar as peças num contexto só.
+ * resto de verdade — o que a classe faz continua sendo o mesmo: juntar as três peças num contexto só.
  *
- * Eram **três** peças até a [ADR-0032] D5; a escolha de empresa era a terceira, e saiu com o caso que a
- * exigia. O `combine` de dois fluxos do mesmo DataStore (e o `distinctUntilChanged` que existia só para
- * cortar a emissão em dobro que ele produzia) saíram junto — não por arrumação, mas porque sobrou um
- * fluxo, e um fluxo não se combina com nada.
+ * A terceira peça era a escolha **entre empresas** e passou a ser o **perfil ativo** ([ADR-0032] D5):
+ * mesma mecânica, outro eixo.
  */
 @Singleton
 class SessaoUsuarioLocal @Inject constructor(
     private val sessaoLocal: SessaoLocal,
     private val funcionarioRepository: FuncionarioRepository,
     private val empresaRepository: EmpresaRepository,
+    private val perfilAtivo: PerfilAtivo,
 ) : SessaoUsuario {
 
     /**
-     * Quem entrou, e o contexto remontado a cada mudança.
+     * As duas metades locais (quem entrou · por qual perfil olha) combinadas, e o contexto remontado a
+     * cada mudança.
+     *
+     * O `distinctUntilChanged` não é otimização de estilo: as duas vêm do **mesmo** DataStore, então uma
+     * gravação faria os dois fluxos emitirem e o `combine` produzir o par duas vezes. Cortar a repetição
+     * aqui é o que impede a montagem de rodar em dobro.
      *
      * Remontar é barato: as duas leituras abaixo vão à **coleção em memória** (`ColecaoFirestore` guarda o
      * snapshot num `StateFlow`), não à rede.
      */
     override fun observar(): Flow<ContextoUsuario?> =
-        sessaoLocal.observarLogado().map { usuario -> usuario?.let { montar(it) } }
+        combine(
+            sessaoLocal.observarLogado(),
+            perfilAtivo.observarPerfil(),
+        ) { usuario, perfil -> usuario to perfil }
+            .distinctUntilChanged()
+            .map { (usuario, perfil) -> usuario?.let { montar(it, perfil) } }
 
-    private suspend fun montar(usuario: Usuario): ContextoUsuario {
+    private suspend fun montar(usuario: Usuario, perfilEscolhido: Perfil?): ContextoUsuario {
         val funcionario = usuario.funcionarioId
             .takeIf { it.isNotBlank() }
             ?.let { funcionarioRepository.obterPorId(it) }
 
-        val contexto = ContextoUsuario(usuario = usuario, funcionario = funcionario)
+        val contexto = ContextoUsuario(
+            usuario = usuario,
+            funcionario = funcionario,
+            perfilEscolhido = perfilEscolhido,
+        )
 
         // O nome da empresa é resolvido **aqui**, e só quando há vínculo: é o bilhete que precisa dele
         // (gente lê nome, não id), e uma leitura a mais por sessão é mais barata do que cada tela que
         // imprime algo repetir a consulta.
-        val empresaAtiva = contexto.vinculoAtivo?.let { empresaRepository.obterPorId(it.empresaId) }
-        return contexto.copy(empresaAtivaNome = empresaAtiva?.nome.orEmpty())
+        //
+        // A leitura acompanha o **vínculo**, e não a lente ([ADR-0032] D5): o menu de quem está sob o
+        // perfil de plataforma precisa nomear a empresa para oferecer a troca. Quem imprime bilhete lê
+        // `contexto.agencia`, que aplica a lente.
+        val empresa = funcionario?.vinculo?.let { empresaRepository.obterPorId(it.empresaId) }
+        return contexto.copy(empresaDoVinculo = empresa?.nome.orEmpty())
     }
 
-    override suspend fun encerrar() = sessaoLocal.limpar()
+    override suspend fun trocarPerfil(perfil: Perfil) = perfilAtivo.guardar(perfil)
+
+    override suspend fun encerrar() {
+        sessaoLocal.limpar()
+        perfilAtivo.limpar()
+    }
 }

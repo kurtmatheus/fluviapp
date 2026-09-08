@@ -4,6 +4,7 @@ import dev.matheus.fluviapp.domain.operacoes.Funcionario.Cargo
 import dev.matheus.fluviapp.domain.operacoes.Usuario.Papel
 import dev.matheus.fluviapp.domain.screendata.SecaoMenu
 import dev.matheus.fluviapp.domain.screendata.secoesDa
+import dev.matheus.fluviapp.domain.screendata.secoesDoPainel
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -158,27 +159,26 @@ class PermissoesUsuarioTest {
      * só a permissão decide.
      *
      * A plataforma não anda mais por ele (F9.6). A diferença entre os dois é a natureza da atuação nula: no
-     * operador ela é um dado que ainda não chegou; no `ADM` é o estado definitivo — ele não tem vínculo, e
-     * nunca terá. Tratar as duas como a mesma coisa dava à plataforma o enum inteiro.
+     * operador ela é um dado que ainda não chegou; no `ADM` sem vínculo é o estado definitivo. Tratar as
+     * duas como a mesma coisa dava à plataforma o enum inteiro.
      */
     @Test
     fun `sem atuacao, quem opera ve o de antes — e a plataforma ve o painel`() {
-        assertEquals(
-            PermissoesUsuario.secoesVisiveis(adm, atuacao = Atuacao.AGENCIAMENTO),
-            PermissoesUsuario.secoesVisiveis(adm, atuacao = null),
-        )
+        assertEquals(secoesDoPainel(), PermissoesUsuario.secoesVisiveis(adm, atuacao = null).toSet())
         assertEquals(
             listOf(SecaoMenu.ROTA, SecaoMenu.VIAGEM, SecaoMenu.PASSAGEM),
             PermissoesUsuario.secoesVisiveis(operador, agente, atuacao = null),
         )
     }
 
+    /**
+     * O painel da plataforma, e a ordem do enum: desde o ADR-0020 D10 ela começa pela `EMPRESA` — é a
+     * parte, e dela dependem as outras (embarcação tem dono, funcionário tem vínculo).
+     */
     @Test
-    fun `com atuacao, o papel de plataforma ve o painel — nao a operacao`() {
-        val visiveis = PermissoesUsuario.secoesVisiveis(adm, atuacao = Atuacao.AGENCIAMENTO)
+    fun `o papel de plataforma sem vinculo ve o painel — nao a operacao`() {
+        val visiveis = PermissoesUsuario.secoesVisiveis(adm, atuacao = null)
 
-        // A ordem é a do enum, e desde o ADR-0020 D10 ela começa pela EMPRESA: é a parte, e dela
-        // dependem as outras — embarcacao tem dono, funcionário tem vínculo.
         assertEquals(
             listOf(
                 SecaoMenu.EMPRESA,
@@ -201,6 +201,32 @@ class PermissoesUsuarioTest {
         // ADM administra a plataforma; emitir passagem exige vínculo de funcionário (ADR-0016 §2).
         assertFalse(SecaoMenu.PASSAGEM in visiveis)
         assertFalse(SecaoMenu.EQUIPE in visiveis)
+    }
+
+    /**
+     * **A troca de perfil, medida no menu** ([ADR-0032] D5) — e é o caso que inverteu a ordem desta
+     * função.
+     *
+     * Até 2026-09-08 este mesmo `ADM` com atuação continuava vendo o painel da plataforma: o galho do
+     * papel vinha primeiro, e a lente não tinha por onde agir. Agora a atuação em vigor manda, e o
+     * resultado é o painel da **empresa** — sem `USUARIOS`, sem `EMPRESA`, com `PASSAGEM`.
+     *
+     * O que **não** muda é o poder: `podeCriarPassagem(adm)` continua verdadeiro, e quem barra a emissão
+     * no servidor é a ausência de funcionário, não o papel (ADR-0015 §8.4). Com o perfil de empresa o
+     * `ADM` tem funcionário — e emite como ele.
+     */
+    @Test
+    fun `com o perfil de empresa, o ADM ve o painel da empresa — e emite`() {
+        val visiveis = PermissoesUsuario.secoesVisiveis(adm, supervisor, Atuacao.AGENCIAMENTO)
+
+        assertEquals(
+            listOf(SecaoMenu.ROTA, SecaoMenu.VIAGEM, SecaoMenu.PASSAGEM, SecaoMenu.EQUIPE),
+            visiveis,
+        )
+        assertFalse(SecaoMenu.USUARIOS in visiveis)
+        assertFalse(SecaoMenu.EMPRESA in visiveis)
+        assertTrue(PermissoesUsuario.podeCriarPassagem(adm))
+        assertTrue(PermissoesUsuario.temEntradaDeEmbarque(adm, supervisor, Atuacao.AGENCIAMENTO))
     }
 
     @Test

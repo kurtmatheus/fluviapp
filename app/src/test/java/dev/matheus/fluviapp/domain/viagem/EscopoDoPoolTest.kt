@@ -43,9 +43,25 @@ class EscopoDoPoolTest {
     // --- Derivação do escopo ---
 
     @Test
-    fun `papel de plataforma ve o pool inteiro`() {
+    fun `papel de plataforma sem atuacao ve o pool inteiro`() {
         assertEquals(EscopoDoPool.Todo, escopoDoPool("ADM", null))
-        assertEquals(EscopoDoPool.Todo, escopoDoPool("GESTOR", atuacao))
+        assertEquals(EscopoDoPool.Todo, escopoDoPool("GESTOR", null))
+    }
+
+    /**
+     * **Com atuação em vigor, o papel de plataforma vê o que a empresa concede** ([ADR-0032] D5).
+     *
+     * Até 2026-09-08 este caso devolvia `Todo`: o galho do papel vinha primeiro, e um `GESTOR` com atuação
+     * era um estado que não existia. Com o perfil de empresa ele existe, e o Início dele tem de ser o
+     * daquela empresa — saídas concedidas, e não o painel de quem administra.
+     *
+     * A atuação só chega aqui quando há **vínculo em vigor**, então o perfil de plataforma continua
+     * caindo no caso acima: a lente é aplicada antes, no `ContextoUsuario`.
+     */
+    @Test
+    fun `com atuacao em vigor, o papel de plataforma ve o concedido`() {
+        assertEquals(EscopoDoPool.Concedido(atuacao), escopoDoPool("GESTOR", atuacao))
+        assertEquals(EscopoDoPool.Concedido(atuacao), escopoDoPool("ADM", atuacao))
     }
 
     @Test

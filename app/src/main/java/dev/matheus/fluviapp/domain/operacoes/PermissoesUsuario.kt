@@ -48,6 +48,18 @@ object PermissoesUsuario {
      */
     fun ehPapelDeOperacao(papel: String?): Boolean = Papel.de(papel) == Papel.OPERADOR
 
+    /**
+     * **Trocar de perfil** ([ADR-0032] D5) — a opção existe para quem tem **os dois**: papel de plataforma
+     * e vínculo com uma empresa.
+     *
+     * As duas condições respondem a coisas diferentes, e as duas são necessárias. O papel é a *decisão*:
+     * a troca é lente, não redução de poder, e prometer a um `OPERADOR` uma separação que o servidor não
+     * faz seria mentir sobre segurança (ver [Perfil]). O vínculo é o *fato*: sem ele não há segundo perfil
+     * para onde ir, e uma opção de menu que não muda nada é pior do que nenhuma.
+     */
+    fun podeTrocarPerfil(papel: String?, vinculo: Vinculo?): Boolean =
+        ehPapelPlataforma(papel) && vinculo != null
+
     // --- Eixo seção (menu) ---
 
     /**
@@ -88,15 +100,23 @@ object PermissoesUsuario {
      * **permissão** decide *quais delas ela pode abrir* ([podeAcessar]). Família sem permissão não
      * aparece; permissão sem família também não.
      *
-     * [atuacao] nula é o caminho de compatibilidade para **quem opera**: sem vínculo carregado, cai-se no
-     * comportamento anterior — todas as seções, filtradas pela permissão.
+     * **A atuação em vigor manda; sem ela, manda o papel** — e essa ordem é a decisão desta função.
      *
-     * **O papel de plataforma vem antes dele** (F9.6), e a ordem destes dois galhos é a correção de um
-     * desvio que o andaime da revitalização escondia: `ADM` e `GESTOR` **não têm vínculo** — atuação nula é
-     * o estado normal deles, não a ausência de um dado a carregar —, então o galho da compatibilidade os
-     * capturava e devolvia o enum inteiro, passando por cima do painel que [secoesDoPainel] define. Enquanto
-     * toda seção fora do painel também estava fora do andaime, ninguém via; a Passagem acendendo tornou
-     * visível. O painel da plataforma é a família dela **sempre**, com vínculo ou sem.
+     * Ela responde por três casos com dois galhos e um resto:
+     *
+     *  - **há atuação em vigor** → a família é a dela. Vale para quem opera e, desde a [ADR-0032] D5,
+     *    também para o `ADM`/`GESTOR` que ativou o **perfil de empresa**: é *isto* que faz da troca de
+     *    perfil uma lente. Sem esta linha vindo primeiro, o galho do papel capturaria os dois papéis de
+     *    plataforma e a troca não mudaria menu nenhum;
+     *  - **sem atuação, com papel de plataforma** → o painel do papel ([secoesDoPainel]). `ADM`/`GESTOR`
+     *    sem vínculo não têm atuação, e isso é o estado normal deles;
+     *  - **sem atuação e sem papel de plataforma** → todas as seções, filtradas pela permissão. É a
+     *    compatibilidade de quem opera sem vínculo carregado.
+     *
+     * A ordem antiga era papel-primeiro, e ela nasceu de uma correção (F9.6): o galho da compatibilidade
+     * capturava `ADM`/`GESTOR` e devolvia o enum inteiro, passando por cima do painel. A inversão de agora
+     * **preserva aquela correção** — atuação nula continua caindo no papel antes da compatibilidade — e
+     * acrescenta o caso que a lente precisa.
      */
     fun secoesVisiveis(
         papel: String?,
@@ -104,9 +124,9 @@ object PermissoesUsuario {
         atuacao: Atuacao? = null,
     ): List<SecaoMenu> {
         val familia = when {
+            atuacao != null -> secoesDa(atuacao)
             ehPapelPlataforma(papel) -> secoesDoPainel()
-            atuacao == null -> SecaoMenu.entries.toSet()
-            else -> secoesDa(atuacao)
+            else -> SecaoMenu.entries.toSet()
         }
         return SecaoMenu.entries.filter { it in familia && podeAcessar(it, papel, cargo) }
     }

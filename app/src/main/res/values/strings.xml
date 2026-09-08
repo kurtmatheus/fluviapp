@@ -79,6 +79,10 @@
     <string name="label_menu_viagens">Viagens</string>
     <string name="label_menu_equipe">Equipe</string>
     <string name="label_tema_escuro">Tema escuro</string>
+    <!-- Troca de perfil (ADR-0032 D5): o rótulo diz para onde a opção leva, não onde se está. -->
+    <string name="btn_operar_como">Operar como %1$s</string>
+    <string name="btn_administrar_plataforma">Administrar a plataforma</string>
+    <string name="msg_carregando_perfil">Carregando sessão e informações do perfil.</string>
     <string name="label_menu_empresa">Empresas</string>
     <string name="label_menu_flotilha">Flotilha</string>
     <string name="label_menu_localidades">Localidades</string>
