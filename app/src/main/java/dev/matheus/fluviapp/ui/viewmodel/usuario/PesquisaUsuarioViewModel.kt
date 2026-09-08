@@ -86,6 +86,9 @@ class PesquisaUsuarioViewModel @Inject constructor(
     private var funcionarios: List<Funcionario> = emptyList()
     private var empresasPorId: Map<String, String> = emptyMap()
 
+    /** O uid de quem está olhando — é o que faz a lista não oferecer o que a regra nega na própria linha. */
+    private var meuUid: String = ""
+
     private val _uiState = MutableStateFlow(PesquisaUsuarioUiState())
     val uiState: StateFlow<PesquisaUsuarioUiState> = _uiState.asStateFlow()
 
@@ -94,8 +97,10 @@ class PesquisaUsuarioViewModel @Inject constructor(
             // **A política antes do gesto** ([ADR-0032] D1): quem não pode gerir vê a lista e nada mais.
             // A seção já é `ADM`-only no menu, e é justamente por isso que a pergunta se repete aqui — a
             // ausência do botão não é fronteira.
+            val contexto = sessaoUsuario.atual()
+            meuUid = contexto?.usuario?.id.orEmpty()
             _uiState.update {
-                it.copy(podeGerir = PermissoesUsuario.podeGerirAcesso(sessaoUsuario.atual()?.papel))
+                it.copy(podeGerir = PermissoesUsuario.podeGerirAcesso(contexto?.papel))
             }
             empresasPorId = empresaRepository.obterTodas().associate { it.id to it.nome }
             recarregar()
@@ -233,6 +238,7 @@ class PesquisaUsuarioViewModel @Inject constructor(
             funcionarios.firstOrNull { it.id == elo }?.descricaoNome ?: elo
         }.orEmpty(),
         aceitaElo = PermissoesUsuario.aceitaEloManual(usuario.papel),
+        ehVoce = usuario.id == meuUid,
     )
 
     /** Quem só foi convidado: sem uid, sem situação de acesso — o primeiro acesso ainda não aconteceu. */

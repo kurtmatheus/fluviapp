@@ -97,6 +97,7 @@
     <!-- O elo com o funcionário (ADR-0032 D5/Q1): o segundo perfil de quem administra. -->
     <string name="label_opera_como">Opera como %1$s</string>
     <string name="label_opera_como_funcionario">Operar como</string>
+    <string name="label_voce">%1$s (você)</string>
     <string name="btn_desligar">Desligar</string>
     <string name="description_ligar_funcionario">Ligar a um funcionário</string>
     <string name="msg_confirmar_desligar_funcionario">Desligar o funcionário deste perfil? A pessoa deixa de operar por uma empresa e passa a só administrar a plataforma. As passagens já emitidas não mudam.</string>

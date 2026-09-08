@@ -247,6 +247,23 @@ service cloud.firestore {
         return request.resource.data.get('ativo', true) == resource.data.get('ativo', true)
             && request.resource.data.get('expiraEm', 0) == resource.data.get('expiraEm', 0);
       }
+      // **Ninguém desativa a si mesmo, nem se dá prazo** — mesma régua do supervisor que não se remove: um
+      // `ADM` que se desligasse deixaria a plataforma sem quem administrasse o acesso, e a correção seria
+      // ida ao console, que é o que a D6 existe para evitar.
+      //
+      // **A restrição é das chaves de acesso, e não da escrita inteira** (corrigido em 2026-09-08). Ela
+      // valia para o ramo todo (`request.auth.uid != uid`) e barrava justamente o caso central da D5 —
+      // *ligar um perfil de empresa a um `ADM` que já existe*. Com um administrador só, *"outro `ADM`
+      // faz"* não é saída: o único caminho voltava a ser o console, que é o que a decisão existe para
+      // tirar do meio. O percurso no aparelho falhou exatamente aqui, e a suíte não pegou porque o caso
+      // que existia ligava o funcionário no perfil de **outro** uid.
+      //
+      // A assimetria tem razão: ligar-se a um funcionário **não tranca ninguém** e não concede nada que o
+      // papel já não desse (o `ADM` edita qualquer passagem por `ehPapelPlataforma`). Desativar-se, sim.
+      function mexeNoProprioAcesso(uid) {
+        return request.auth.uid == uid
+            && request.resource.data.diff(resource.data).affectedKeys().hasAny(['ativo', 'expiraEm']);
+      }
       allow update: if autenticado()
                     && request.resource.data.papel == resource.data.papel
                     && ((request.auth.uid == uid
@@ -257,10 +274,7 @@ service cloud.firestore {
                          && acessoInalterado()
                          && request.resource.data.get('funcionarioId', '')
                               == resource.data.get('funcionarioId', ''))
-                        // **Ninguém desativa a si mesmo** — mesma régua do supervisor que não se remove:
-                        // um `ADM` que se desligasse deixaria a plataforma sem quem administrasse o
-                        // acesso, e a correção seria ida ao console, que é o que a D6 existe para evitar.
-                        || (ehAdm() && request.auth.uid != uid && soGestaoDeAcesso()));
+                        || (ehAdm() && !mexeNoProprioAcesso(uid) && soGestaoDeAcesso()));
       allow delete: if false;
     }
 

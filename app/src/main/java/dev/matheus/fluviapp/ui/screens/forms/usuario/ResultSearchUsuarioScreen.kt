@@ -200,7 +200,14 @@ fun CardResultUsuario(
                 horizontalAlignment = Alignment.Start,
                 verticalArrangement = Arrangement.spacedBy(2.dp),
             ) {
-                TextTitleBrownRegular(text = usuario.nome)
+                // O "(você)" não é enfeite: é o que explica por que esta linha tem menos gestos.
+                TextTitleBrownRegular(
+                    text = if (usuario.ehVoce) {
+                        stringResource(R.string.label_voce, usuario.nome)
+                    } else {
+                        usuario.nome
+                    },
+                )
                 TextRegularBrown(text = usuario.email)
                 // O papel é o que ele pode no app; o vínculo, o que ele faz na operação. Só operador
                 // tem o segundo — e é essa ausência que diz que a plataforma não atua em empresa nenhuma.
@@ -252,7 +259,11 @@ fun CardResultUsuario(
                 }
             }
 
-            if (podeGerir && usuario.temAcesso) {
+            // **Na própria linha, prazo e desativar não aparecem** ([ADR-0032] D1): a regra nega — ninguém
+            // desativa a si mesmo nem se dá prazo —, e oferecer o botão só produziria um *permission
+            // denied* que quem tocou não teria como explicar. O elo continua, e é a mesma assimetria que a
+            // regra faz por chave: ligar-se a um funcionário não tranca ninguém.
+            if (podeGerir && usuario.temAcesso && !usuario.ehVoce) {
                 IconButton(onClick = { escolhendoPrazo = true }) {
                     Icon(
                         imageVector = Icons.Default.EventBusy,

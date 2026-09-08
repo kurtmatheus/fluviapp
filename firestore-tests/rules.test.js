@@ -358,6 +358,38 @@ describe('acesso — o ADM desativa, e o desativado deixa de escrever', () => {
     await assertFails(updateDoc(doc(asAdm(), 'users', ADM), { ativo: false }));
   });
 
+  /** A outra chave de acesso, pelo mesmo motivo: prazo para si mesmo é desativação com data marcada. */
+  test('ADM define prazo para SI MESMO → NEGADO', async () => {
+    await assertFails(updateDoc(doc(asAdm(), 'users', ADM), { expiraEm: AMANHA }));
+  });
+
+  /**
+   * **Mas o elo, sim** — e este é o caso central da D5, que a suíte não cobria: *ligar um perfil de
+   * empresa a um `ADM` que já existe*.
+   *
+   * O caso anterior ligava o funcionário no perfil de **outro** uid, e passava; o percurso no aparelho
+   * falhou porque a restrição de *não mexer no próprio acesso* valia para a escrita inteira. Com um
+   * administrador só, *"outro `ADM` faz"* não é saída — o único caminho voltava a ser o console.
+   *
+   * A assimetria tem razão: ligar-se a um funcionário não tranca ninguém, e não concede nada que o papel
+   * já não desse. Desativar-se, sim.
+   */
+  test('ADM liga o funcionário no PRÓPRIO perfil → OK', async () => {
+    await assertSucceeds(updateDoc(doc(asAdm(), 'users', ADM), { funcionarioId: F_NOVO }));
+  });
+
+  test('ADM desliga o PRÓPRIO funcionário → OK', async () => {
+    await assertSucceeds(updateDoc(doc(asAdm(), 'users', ADM), { funcionarioId: '' }));
+  });
+
+  /**
+   * **A prova de que a divisão é por chave, e não por gesto**: as duas coisas na mesma escrita são negadas
+   * pela metade que não se permite. Sem isto, ligar o elo seria uma carona para se desativar.
+   */
+  test('ADM liga o próprio elo E se desativa na mesma escrita → NEGADO', async () => {
+    await assertFails(updateDoc(doc(asAdm(), 'users', ADM), { funcionarioId: F_NOVO, ativo: false }));
+  });
+
   /**
    * **A brecha que faria a desativação ser decorativa**: o ramo do dono não pergunta o papel — é ele que
    * permite editar o próprio username —, então sem barrar as chaves de acesso ali, o desativado se

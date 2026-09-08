@@ -365,6 +365,31 @@ class PesquisaUsuarioViewModelTest {
         assertEquals("f-sumiu", vm.uiState.value.resultados.single().funcionario)
     }
 
+    /**
+     * **A própria linha não oferece prazo nem desativar** ([ADR-0032] D1) — a regra nega, e um botão que
+     * produz *permission denied* é pior do que botão nenhum. **O elo continua**, e é a mesma assimetria que
+     * a regra faz por chave: ligar-se a um funcionário não tranca ninguém.
+     *
+     * É o defeito que o percurso no aparelho encontrou, do lado da tela.
+     */
+    @Test
+    fun `a linha de quem olha se distingue das outras`() = runTest(mainRule.dispatcher) {
+        val vm = vm(
+            repo(
+                usuario("u-adm", "adm@x.com", papel = Papel.ADM),
+                usuario("uid-ana", "ana@x.com"),
+            ),
+            sessao = FakeSessaoUsuario.plataforma(),
+        )
+        advanceUntilIdle()
+
+        val porId = vm.uiState.value.resultados.associateBy { it.id }
+        assertTrue(porId.getValue("u-adm").ehVoce)
+        assertFalse(porId.getValue("uid-ana").ehVoce)
+        // E o elo continua sendo oferecido na própria linha: é como se ganha o segundo perfil (D5).
+        assertTrue(porId.getValue("u-adm").aceitaElo)
+    }
+
     /** Gerir acesso é `ADM`-only, e o elo entra na mesma guarda. */
     @Test
     fun `gestor nao liga funcionario a ninguem`() = runTest(mainRule.dispatcher) {

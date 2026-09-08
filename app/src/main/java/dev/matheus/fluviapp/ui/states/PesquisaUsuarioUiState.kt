@@ -80,4 +80,15 @@ data class UsuarioResultado(
      * passagens seguintes (ADR-0015 §8.4).
      */
     val aceitaElo: Boolean = false,
+    /**
+     * Se esta linha é a de **quem está olhando**.
+     *
+     * Existe para a tela não oferecer o que o servidor nega ([ADR-0032] D1): **ninguém desativa a si mesmo
+     * nem se dá prazo** — um `ADM` que se desligasse deixaria a plataforma sem quem administrasse o acesso.
+     *
+     * O **elo continua oferecido** na própria linha, e é a assimetria que a D5 precisa: ligar-se a um
+     * funcionário não tranca ninguém, e é assim que quem administra ganha o segundo perfil sem ir ao
+     * console. A regra faz a mesma distinção, por chave.
+     */
+    val ehVoce: Boolean = false,
 )
