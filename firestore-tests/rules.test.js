@@ -266,6 +266,179 @@ describe('users/{uid} — anti-escalonamento', () => {
   });
 });
 
+// --- O acesso tem estado: ativo, expiraEm, e a regra que os lê (ADR-0032 D6/Q1) ---
+//
+// Duas metades, e a segunda é a que dá sentido à primeira: **quem escreve o estado** (o ADM, por lista
+// fechada de chaves) e **o que o estado impede** (escrever, em qualquer coleção). Um acesso "desativado"
+// que o Firestore continua aceitando não está desativado — está escondido na UI, que é precisamente o que
+// a D1 decidiu não bastar.
+describe('acesso — o ADM desativa, e o desativado deixa de escrever', () => {
+  const ONTEM = Date.now() - 24 * 60 * 60 * 1000;
+  const AMANHA = Date.now() + 24 * 60 * 60 * 1000;
+
+  /**
+   * A passagem mínima que a regra de emissão aceita — o dono é o **funcionário** do autor (§8.4).
+   *
+   * A emissão é o gesto usado para medir o que o estado impede porque é o mais completo do app: ela
+   * atravessa papel **e** posse, que são justamente os dois caminhos que a desativação corta.
+   */
+  const passagemDe = (fid) => ({ funcionarioId: fid, valor: 5 });
+
+  /** Desliga o acesso de AGENTE_A por fora das regras — é o estado que os casos abaixo medem. */
+  const desativar = (uid, campos) => testEnv.withSecurityRulesDisabled(async (ctx) => {
+    await updateDoc(doc(ctx.firestore(), 'users', uid), campos);
+  });
+
+  // --- Quem escreve o estado ---
+
+  test('ADM desativa outro acesso → OK', async () => {
+    await assertSucceeds(updateDoc(doc(asAdm(), 'users', AGENTE_A), { ativo: false }));
+  });
+
+  test('ADM reativa → OK (o par importa: desativar sem reativar vira ida ao console)', async () => {
+    await desativar(AGENTE_A, { ativo: false });
+    await assertSucceeds(updateDoc(doc(asAdm(), 'users', AGENTE_A), { ativo: true }));
+  });
+
+  test('ADM define data de expiração → OK', async () => {
+    await assertSucceeds(updateDoc(doc(asAdm(), 'users', AGENTE_A), { expiraEm: AMANHA }));
+  });
+
+  /** O papel fica fora da lista fechada **inclusive para o ADM**: não há convite de ADM, nem promoção. */
+  test('ADM tenta mudar o PAPEL de alguém → NEGADO', async () => {
+    await assertFails(updateDoc(doc(asAdm(), 'users', AGENTE_A), { papel: 'ADM' }));
+    await assertFails(updateDoc(doc(asAdm(), 'users', AGENTE_A), { papel: 'GESTOR' }));
+  });
+
+  /** A lista é fechada: o que não é gestão de acesso não entra por este ramo. */
+  test('ADM tenta editar o username de alguém → NEGADO', async () => {
+    await assertFails(updateDoc(doc(asAdm(), 'users', AGENTE_A), { username: 'renomeado' }));
+  });
+
+  /** O `funcionarioId` está na lista: é como um perfil de empresa se liga a quem já existe (D5). */
+  test('ADM liga um funcionário a um perfil que já existe → OK', async () => {
+    await assertSucceeds(updateDoc(doc(asAdm(), 'users', GESTOR), { funcionarioId: F_NOVO }));
+  });
+
+  test('GESTOR desativa alguém → NEGADO (acesso é do ADM, ADR-0021 D1)', async () => {
+    await assertFails(updateDoc(doc(asGestor(), 'users', AGENTE_A), { ativo: false }));
+  });
+
+  /**
+   * **Ninguém desativa a si mesmo** — mesma régua do supervisor que não se remove. Um `ADM` que se
+   * desligasse deixaria a plataforma sem quem administrasse o acesso, e a correção seria ida ao console.
+   */
+  test('ADM desativa a SI MESMO → NEGADO', async () => {
+    await assertFails(updateDoc(doc(asAdm(), 'users', ADM), { ativo: false }));
+  });
+
+  /**
+   * **A brecha que faria a desativação ser decorativa**: o ramo do dono não pergunta o papel — é ele que
+   * permite editar o próprio username —, então sem barrar as chaves de acesso ali, o desativado se
+   * religaria escrevendo no próprio documento.
+   */
+  test('o próprio dono tenta se religar → NEGADO', async () => {
+    await desativar(AGENTE_A, { ativo: false });
+    await assertFails(updateDoc(doc(asAgenteA(), 'users', AGENTE_A), { ativo: true }));
+  });
+
+  test('o próprio dono tenta apagar o prazo que o ADM definiu → NEGADO', async () => {
+    await desativar(AGENTE_A, { expiraEm: AMANHA });
+    await assertFails(updateDoc(doc(asAgenteA(), 'users', AGENTE_A), { expiraEm: 0 }));
+  });
+
+  /** Tipo errado é recusado na **escrita**: interpretado na leitura, ele cairia no padrão, que é liberado. */
+  test('ADM grava ativo como texto ou expiraEm textual → NEGADO', async () => {
+    await assertFails(updateDoc(doc(asAdm(), 'users', AGENTE_A), { ativo: 'sim' }));
+    await assertFails(updateDoc(doc(asAdm(), 'users', AGENTE_A), { expiraEm: '2026-12-31' }));
+  });
+
+  // --- O que o estado impede ---
+
+  test('desativado emite passagem → NEGADO', async () => {
+    await desativar(AGENTE_A, { ativo: false });
+    await assertFails(setDoc(doc(asAgenteA(), 'passagens', 'nova'), passagemDe(F_A)));
+  });
+
+  /**
+   * **Nem o próprio username**, e é a linha mais literal da decisão: um acesso desativado que o Firestore
+   * continua aceitando não está desativado. O ramo do dono não pergunta o papel — é o que permite editar o
+   * próprio perfil —, então a vigência precisa ser exigida ali também.
+   */
+  test('desativado edita o próprio username → NEGADO', async () => {
+    await desativar(AGENTE_A, { ativo: false });
+    await assertFails(updateDoc(doc(asAgenteA(), 'users', AGENTE_A), { username: 'x' }));
+  });
+
+  /** E o dono **ativo** continua editando o que sempre pôde: a gestão de acesso não estreitou o ramo dele. */
+  test('dono ativo edita o próprio username → OK', async () => {
+    await assertSucceeds(updateDoc(doc(asAgenteA(), 'users', AGENTE_A), { username: 'ainda.posso' }));
+  });
+
+  /** O desativado deixa de ser **autor**, e é isso que fecha o caminho que não passa pelo papel. */
+  test('desativado lê cliente pela assinatura da agência → NEGADO', async () => {
+    await desativar(AGENTE_A, { ativo: false });
+    await assertFails(getDoc(doc(asAgenteA(), 'clientes', 'CPF:52998224725')));
+  });
+
+  test('SUPERVISOR desativado deixa de cadastrar a equipe dele → NEGADO', async () => {
+    await desativar(SUPERVISOR, { ativo: false });
+    await assertFails(setDoc(doc(asSupervisor(), 'funcionarios', 'novo'), {
+      nome: 'X', vinculo: AGENTE_NA_MATRIZ,
+    }));
+  });
+
+  /** ADM desativado é ADM nenhum: o papel vem do documento, e o documento diz que o acesso não vale. */
+  test('ADM desativado deixa de administrar → NEGADO', async () => {
+    await desativar(ADM, { ativo: false });
+    await assertFails(setDoc(doc(asAdm(), 'convites', 'outro@x.com'), { papel: 'GESTOR', nome: 'X' }));
+  });
+
+  // --- A expiração ---
+
+  test('prazo vencido impede a próxima operação → NEGADO', async () => {
+    await desativar(AGENTE_A, { expiraEm: ONTEM });
+    await assertFails(setDoc(doc(asAgenteA(), 'passagens', 'nova'), passagemDe(F_A)));
+  });
+
+  test('prazo no futuro não impede nada → OK', async () => {
+    await desativar(AGENTE_A, { expiraEm: AMANHA });
+    await assertSucceeds(setDoc(doc(asAgenteA(), 'passagens', 'nova'), passagemDe(F_A)));
+  });
+
+  /**
+   * **Sem prazo continua sendo o caso normal**, e os três jeitos de dizê-lo têm de valer: campo ausente
+   * (documento anterior à decisão), zero (o que o app grava) e `null` (o que um cliente distraído
+   * gravaria). O `null` é o que mais importa: num `<` ele derrubaria a avaliação, e a regra negaria TODA
+   * operação de quem tem acesso válido — sem que o app tivesse como dizer por quê.
+   */
+  test('sem prazo, de todas as formas, não impede nada → OK', async () => {
+    await assertSucceeds(setDoc(doc(asAgenteA(), 'passagens', 'p1'), passagemDe(F_A)));
+
+    await desativar(AGENTE_A, { expiraEm: 0 });
+    await assertSucceeds(setDoc(doc(asAgenteA(), 'passagens', 'p2'), passagemDe(F_A)));
+
+    await desativar(AGENTE_A, { expiraEm: null });
+    await assertSucceeds(setDoc(doc(asAgenteA(), 'passagens', 'p3'), passagemDe(F_A)));
+  });
+
+  /** Ativo com prazo vencido é **expirado**, e ativo sem prazo é ativo: os dois campos são independentes. */
+  test('desativado com prazo no futuro continua impedido → NEGADO', async () => {
+    await desativar(AGENTE_A, { ativo: false, expiraEm: AMANHA });
+    await assertFails(setDoc(doc(asAgenteA(), 'passagens', 'nova'), passagemDe(F_A)));
+  });
+
+  /**
+   * **Ler continua possível**, e é deliberado: `users/{uid}` é legível por todo autenticado, e é assim que
+   * o app descobre a própria situação para explicá-la a quem entrou. Negar a leitura faria o desativado
+   * receber *permission denied* sem nunca saber por quê.
+   */
+  test('desativado lê o próprio perfil → OK (é como o app sabe explicar)', async () => {
+    await desativar(AGENTE_A, { ativo: false });
+    await assertSucceeds(getDoc(doc(asAgenteA(), 'users', AGENTE_A)));
+  });
+});
+
 // --- rotas/{id}: o pool compartilhado (ADR-0016 §7.1, F7) ---
 //
 // Três verbos, três autoridades — e o caso mais interessante é o do meio: **editar não existe**.

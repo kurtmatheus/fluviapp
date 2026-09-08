@@ -84,17 +84,78 @@ class PerfilDocumentosTest {
      * criaria duas fontes para a mesma identidade.
      */
     @Test
-    fun `o mapa gravado tem os quatro campos, e o id nao e um deles`() {
-        val mapa = Usuario(
-            id = "uid-1",
-            email = "a@x.com",
-            username = "ana",
-            papel = "OPERADOR",
-            funcionarioId = "f-1",
-        ).paraMapa()
+    fun `o mapa gravado tem os campos do perfil, e o id nao e um deles`() {
+        val mapa = usuario().paraMapa()
 
-        assertEquals(setOf("email", "username", "papel", "funcionarioId"), mapa.keys)
+        assertEquals(
+            setOf("email", "username", "papel", "funcionarioId", "ativo", "expiraEm"),
+            mapa.keys,
+        )
         assertEquals("a@x.com", mapa["email"])
         assertEquals("f-1", mapa["funcionarioId"])
+    }
+
+    // --- O estado do acesso ([ADR-0032] D6/Q1) ---
+
+    private fun usuario() = Usuario(
+        id = "uid-1",
+        email = "a@x.com",
+        username = "ana",
+        papel = "OPERADOR",
+        funcionarioId = "f-1",
+    )
+
+    /** O acesso nasce ligado e sem prazo — é o caso normal, e é o que o primeiro acesso grava. */
+    @Test
+    fun `o acesso nasce ligado e sem prazo`() {
+        val mapa = usuario().paraMapa()
+
+        assertEquals(true, mapa["ativo"])
+        assertEquals(0L, mapa["expiraEm"])
+    }
+
+    /**
+     * **`null` do domínio vira zero na fronteira**, e nunca campo nulo. A razão é do servidor: a regra
+     * compara `expiraEm` com `request.time`, e um `null` no meio da comparação derruba a avaliação — o que
+     * negaria toda operação de quem tem acesso válido.
+     */
+    @Test
+    fun `sem prazo grava zero, e zero volta a ser sem prazo`() {
+        val gravado = usuario().copy(expiraEm = null).paraMapa()
+
+        assertEquals(0L, gravado["expiraEm"])
+        assertNull(documento(*gravado.toList().toTypedArray()).toUsuario().expiraEm)
+    }
+
+    @Test
+    fun `o prazo atravessa nos dois sentidos`() {
+        val prazo = 1_800_000_000_000L
+        val gravado = usuario().copy(expiraEm = prazo).paraMapa()
+
+        assertEquals(prazo, gravado["expiraEm"])
+        assertEquals(prazo, documento(*gravado.toList().toTypedArray()).toUsuario().expiraEm)
+    }
+
+    /**
+     * **Ausente é ligado**: documento gravado antes desta decisão é registro **em uso**, e assumir `false`
+     * trancaria todo mundo que já entrava. É a mesma leitura do `ativo` dos cadastros (delete lógico).
+     */
+    @Test
+    fun `documento anterior a decisao continua ativo`() {
+        val lido = documento("email" to "a@x.com", "papel" to "OPERADOR").toUsuario()
+
+        assertTrue(lido.ativo)
+        assertNull(lido.expiraEm)
+    }
+
+    @Test
+    fun `o desativado atravessa como desativado`() {
+        assertEquals(false, documento("ativo" to false).toUsuario().ativo)
+    }
+
+    /** O `id` vem do documento, e não de um campo: é o `uid` do Auth. */
+    @Test
+    fun `toUsuario tira o id do documento`() {
+        assertEquals("uid-1", documento("papel" to "ADM").toUsuario().id)
     }
 }

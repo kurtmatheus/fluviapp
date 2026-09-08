@@ -20,7 +20,17 @@ data class UsuarioDocumento(
     /** Papel de sistema (`ADM`/`GESTOR`/`OPERADOR`). Antes se chamava `cargo`, que agora é do negócio. */
     val papel: String = "",
     /** Elo 1-1 com `funcionarios/{id}` (ADR-0015 §8.3). Vazio em papel puro de plataforma. */
-    val funcionarioId: String = ""
+    val funcionarioId: String = "",
+    /** Acesso ligado (ADR-0032 D6). Ausente = **ligado**: documento anterior à decisão é registro em uso. */
+    val ativo: Boolean = true,
+    /**
+     * Quando o acesso deixa de valer, em millis de época; **`0` = sem prazo** (ADR-0032 Q1).
+     *
+     * Nunca `null`, e a razão é do servidor: a regra compara o valor com `request.time`, e um `null` no
+     * meio da comparação derruba a avaliação inteira — o que, dependendo do lado em que a regra falha,
+     * trancaria quem tem acesso ou liberaria quem não tem. Zero é comparável e diz a mesma coisa.
+     */
+    val expiraEm: Long = 0L,
 )
 
 /**
@@ -59,4 +69,32 @@ fun Usuario.paraMapa(): Map<String, Any?> = mapOf(
     "username" to username,
     "papel" to papel,
     "funcionarioId" to funcionarioId,
+    "ativo" to ativo,
+    // `null` do domínio ("sem prazo") vira **zero** na fronteira, e não campo ausente nem nulo: é o que a
+    // regra do servidor sabe comparar (ADR-0032 Q1).
+    "expiraEm" to (expiraEm ?: 0L),
+)
+
+/**
+ * `DocumentoBruto` → [Usuario]: o caminho que a **gestão de acesso** usa (ADR-0032 D6), e não o login.
+ *
+ * A distinção não é detalhe: o login lê o perfil de **quem entrou** e o traduz em `PerfilAutenticado`,
+ * juntando o segundo salto (`funcionarios/{id}`); aqui se lê o registro de **outra pessoa**, para
+ * administrá-lo — sem cargo, sem nome, sem salto nenhum.
+ *
+ * `ativo` ausente é **ligado** (documento anterior à decisão é registro em uso) e `expiraEm` zero volta a
+ * ser `null`, que é como o domínio diz "sem prazo".
+ *
+ * **Antecipação declarada**: quem a consome é a seção Usuários deixando de ser somente-leitura, que é a
+ * fatia seguinte. Ela nasce nesta porque a convenção de leitura dos dois campos é decisão desta — e uma
+ * convenção sem teste é uma convenção que a próxima fatia reinventa.
+ */
+fun DocumentoBruto.toUsuario(): Usuario = Usuario(
+    id = id,
+    email = texto("email"),
+    username = texto("username"),
+    papel = texto("papel"),
+    funcionarioId = texto("funcionarioId"),
+    ativo = booleano("ativo", padrao = true),
+    expiraEm = instante("expiraEm").takeIf { it > 0L },
 )

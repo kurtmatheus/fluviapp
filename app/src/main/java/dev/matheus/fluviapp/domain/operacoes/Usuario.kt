@@ -33,6 +33,28 @@ data class Usuario(
      * existem sem registro na operação — e, por isso mesmo, não emitem passagem (§8.4).
      */
     val funcionarioId: String = "",
+    /**
+     * **Se o acesso está ligado** ([ADR-0032] D6). Nasce `true`, e é o `ADM` quem desliga e religa.
+     *
+     * Mora aqui, e não numa coleção à parte, por um argumento de custo (Q1): a regra do servidor já faz
+     * `get(users/{uid})` em **toda** autorização, para ler o papel — então este campo viaja num documento
+     * que ela tem em mãos, e a verificação sai de graça. Guardá-lo fora cobraria um salto a mais em toda
+     * operação autorizada do app, para sempre.
+     */
+    val ativo: Boolean = true,
+    /**
+     * **Quando o acesso deixa de valer**, em millis de época; `null` = sem prazo (ADR-0032 D6/Q1).
+     *
+     * É instante, e não data, porque quem o lê é uma regra do Firestore: ela compara `request.time`, e não
+     * sabe formatar uma data. A tela escolhe um dia e a fronteira o converte — a decisão de *qual* instante
+     * daquele dia é de quem monta o formulário, não deste campo.
+     *
+     * **Expirar impede a próxima operação; não derruba a sessão em curso** (Q1). É o que a regra dá
+     * naturalmente, e a propriedade vale nomear: quem está no meio de um atendimento termina o
+     * atendimento. Derrubar a sessão no relógio seria interromper uma emissão pela metade para provar
+     * pontualidade.
+     */
+    val expiraEm: Long? = null,
 ) {
     /**
      * O eixo **fechado** da autorização (ADR-0015, revisão estrutural): três papéis, e a tendência é

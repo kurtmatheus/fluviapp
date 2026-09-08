@@ -19,9 +19,43 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
     }
 
-    // Eixo SISTEMA.
+    // --- O acesso tem estado (ADR-0032 D6/Q1) ---
+    //
+    // `ativo` e `expiraEm` moram no PRÓPRIO `users/{uid}`, e o argumento é de custo: `papel()` já faz
+    // `get(users/{uid})` em toda autorização, então os dois campos viajam num documento que a regra tem em
+    // mãos — a verificação sai **de graça**. Guardá-los fora cobraria um salto a mais em toda operação
+    // autorizada do app, para sempre.
+    //
+    // **Onde a verificação entra é a decisão que importa.** Ela não fica espalhada por coleção: entra em
+    // `papel()` e em `funcionarioIdDoAutor()`, que são os dois lugares de onde toda concessão sai. Quem
+    // está desativado ou expirado deixa de ter papel e deixa de ser autor — e aí `papelConhecido()`,
+    // `ehPapelPlataforma()`, `ehAdm()`, `cargoDoAutor()`, a posse da passagem e a assinatura do cliente
+    // negam sozinhos, sem que nenhuma delas saiba que existe desativação.
+    //
+    // **Expirar impede a próxima operação; não derruba a sessão em curso.** É o que sai naturalmente de
+    // comparar `request.time` no momento da escrita — quem está no meio de um atendimento termina o
+    // atendimento.
+    // O limite entra **por parâmetro**, e não relido de dentro: `acessoVigente()` é chamada de dois
+    // lugares que se compõem em cadeia (papel → cargo → vínculo do autor), e a linguagem não memoriza
+    // resultado de função — só o `get()` do documento. Cada releitura aqui vira multiplicação lá, e a
+    // avaliação estoura no teto de 1000 expressões. Foi o que aconteceu: a suíte acusou na Equipe, que é
+    // onde a cadeia é mais longa.
+    //
+    // Tipo estranho (ou `null`) **não expira nada** em vez de derrubar a avaliação: um `null` no meio da
+    // comparação negaria TODA operação de quem tem acesso válido, e o app não teria como dizer por quê.
+    // Zero = sem prazo, que é o padrão de quem nunca teve um. Tipo errado é recusado na escrita (ver o
+    // `soGestaoDeAcesso`), e não interpretado aqui.
+    function naoExpirou(limite) {
+      return !(limite is int) || limite == 0 || request.time.toMillis() < limite;
+    }
+    function acessoVigente() {
+      return perfil().get('ativo', true) == true && naoExpirou(perfil().get('expiraEm', 0));
+    }
+
+    // Eixo SISTEMA. **Acesso não vigente não tem papel** — é daqui que desativar e expirar valem no
+    // servidor, e não só na tela (a régua da D1: UI não é fronteira).
     function papel() {
-      return perfil().get('papel', '');
+      return acessoVigente() ? perfil().get('papel', '') : '';
     }
 
     function papelConhecido() {
@@ -59,8 +93,11 @@ service cloud.firestore {
     }
 
     // Elo 1-1 com a operação (ADR-0015 §8.3). Vazio = papel puro de plataforma, que é estado VÁLIDO.
+    // **Acesso não vigente também não é autor** (ADR-0032 D6): sem isto, quem foi desativado continuaria
+    // sendo dono das próprias passagens para efeito de escrita, e continuaria lendo `clientes` pela
+    // assinatura da agência — dois caminhos que não passam pelo papel.
     function funcionarioIdDoAutor() {
-      return perfil().get('funcionarioId', '');
+      return acessoVigente() ? perfil().get('funcionarioId', '') : '';
     }
 
     // Eixo NEGÓCIO: o 2º salto. Fail-closed EXPLÍCITO — sem elo ou com elo apontando para documento
@@ -167,12 +204,47 @@ service cloud.firestore {
                     && request.resource.data.papel == papelDoConvite()
                     && (request.resource.data.papel != 'OPERADOR'
                         || vinculoConfereComOEmail(request.resource.data.get('funcionarioId', '')));
-      // Edita o próprio perfil, mas NUNCA o papel nem o vínculo (ambos são operação de console/gestão).
+      // **Dois escritores** (ADR-0032 D6/Q1), e o `papel` fica fora dos dois.
+      //
+      //  1. **o dono**, que edita o próprio perfil e nunca o papel nem o vínculo — é o anti-escalonamento
+      //     da P2.2a′, intacto;
+      //  2. **o `ADM`**, restrito a uma **lista fechada de chaves**: `ativo` e `expiraEm` (a gestão de
+      //     acesso da D6) e `funcionarioId` (ligar um perfil de empresa a quem já existe — D5).
+      //
+      // **O `papel` fica fora inclusive para o `ADM`**, e isso é o que mantém o anti-escalonamento
+      // coerente com a D6: não há convite de `ADM`, logo também não há promoção a `ADM`. Trocar o papel de
+      // alguém continua sendo ato de console.
+      //
+      // Os tipos são exigidos porque a regra de acesso os compara: um `ativo: "sim"` ou um `expiraEm`
+      // textual fariam `acessoVigente()` cair no padrão — que é *liberado*. Aqui, tipo errado tem de ser
+      // recusado na escrita, e não interpretado na leitura.
+      function soGestaoDeAcesso() {
+        return request.resource.data.diff(resource.data).affectedKeys()
+                 .hasOnly(['ativo', 'expiraEm', 'funcionarioId'])
+            && request.resource.data.get('ativo', true) is bool
+            && request.resource.data.get('expiraEm', 0) is int;
+      }
+      // **O dono não mexe no próprio acesso**, e esta linha é a que faz a D6 valer: sem ela, quem fosse
+      // desativado se religaria escrevendo `ativo: true` no próprio documento — o ramo do dono não
+      // pergunta o papel, então nem estar desativado o impediria. A desativação seria decorativa.
+      function acessoInalterado() {
+        return request.resource.data.get('ativo', true) == resource.data.get('ativo', true)
+            && request.resource.data.get('expiraEm', 0) == resource.data.get('expiraEm', 0);
+      }
       allow update: if autenticado()
-                    && request.auth.uid == uid
                     && request.resource.data.papel == resource.data.papel
-                    && request.resource.data.get('funcionarioId', '')
-                         == resource.data.get('funcionarioId', '');
+                    && ((request.auth.uid == uid
+                         // **Acesso não vigente não escreve nada** — nem o próprio username. É a linha
+                         // mais literal da D6: um acesso desativado que o Firestore continua aceitando não
+                         // está desativado. O dono ativo continua editando o que sempre pôde.
+                         && acessoVigente()
+                         && acessoInalterado()
+                         && request.resource.data.get('funcionarioId', '')
+                              == resource.data.get('funcionarioId', ''))
+                        // **Ninguém desativa a si mesmo** — mesma régua do supervisor que não se remove:
+                        // um `ADM` que se desligasse deixaria a plataforma sem quem administrasse o
+                        // acesso, e a correção seria ida ao console, que é o que a D6 existe para evitar.
+                        || (ehAdm() && request.auth.uid != uid && soGestaoDeAcesso()));
       allow delete: if false;
     }
 
@@ -279,13 +351,7 @@ service cloud.firestore {
     function ehSupervisor() {
       return cargoDoAutor() == 'SUPERVISOR';
     }
-    // Supervisiono esta empresa? (o MEU vínculo é nela, e como supervisor)
-    function souSupervisorDe(empresaId) {
-      return empresaId != ''
-          && vinculoDoAutor().get('empresaId', '') == empresaId
-          && vinculoDoAutor().get('cargo', '') == 'SUPERVISOR';
-    }
-    // O alvo é **da minha empresa**: o vínculo dele é numa empresa que eu supervisiono.
+    // O alvo é **da minha empresa**: o vínculo dele é na empresa do meu vínculo.
     //
     // O cargo dele pode ser AGENTE **ou SUPERVISOR** desde a F6.7: promover concede poder dentro de uma
     // empresa só, e isso é decisão de negócio dela. O que continua impossível é o supervisor mexer no
@@ -293,8 +359,14 @@ service cloud.firestore {
     //
     // O `size() == 1` que abria esta função saiu com o array: ele dizia *"esta pessoa não serve a outra
     // empresa além da minha"*, e um mapa não tem como dizer o contrário.
+    //
+    // **Não repergunta o cargo do autor.** Havia um `souSupervisorDe()` no meio que o fazia, e os três
+    // chamadores desta função já dizem `ehSupervisor() && daMinhaEmpresa(...)` — a pergunta era feita duas
+    // vezes por escrita, e cada repetição multiplicava a cadeia até o teto de 1000 expressões da
+    // linguagem (a suíte acusou quando o acesso passou a ter estado).
     function daMinhaEmpresa(vinculo) {
-      return souSupervisorDe(vinculo.get('empresaId', ''))
+      return vinculo.get('empresaId', '') != ''
+          && vinculo.get('empresaId', '') == vinculoDoAutor().get('empresaId', '')
           && vinculo.get('cargo', '') in ['AGENTE', 'SUPERVISOR'];
     }
     function vinculoInalterado() {

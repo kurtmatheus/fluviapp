@@ -20,6 +20,16 @@ data class DocumentoBruto(
     fun decimal(chave: String): Double = (dados[chave] as? Number)?.toDouble() ?: 0.0
 
     /**
+     * Instante em millis de época — `Long`, e não [inteiro], porque millis não cabem em `Int`: 2026 já
+     * passa dos 1,7 trilhão, e `toInt()` devolveria um número truncado sem avisar.
+     *
+     * `0` é o padrão de ausência, e quem chama declara o que ele significa. No `expiraEm` do acesso
+     * (ADR-0032 Q1) zero quer dizer **sem prazo** — e é por isso que o campo nunca é gravado como `null`:
+     * a regra do servidor compara números, e um `null` no meio de uma comparação derruba a avaliação.
+     */
+    fun instante(chave: String): Long = (dados[chave] as? Number)?.toLong() ?: 0L
+
+    /**
      * Booleano com **padrão explícito**, e não `false` fixo: ausente pode significar coisas opostas
      * conforme o campo. No `ativo` do delete lógico, documento antigo sem o campo é um registro **em uso**
      * — assumir `false` esconderia dado bom. Quem chama declara o que a ausência quer dizer.
