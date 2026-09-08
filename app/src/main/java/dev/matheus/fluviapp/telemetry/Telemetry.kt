@@ -19,6 +19,26 @@ interface Telemetry {
     /** Breadcrumb — trilha que acompanha um eventual fatal. */
     fun rastro(mensagem: String)
 
+    /*
+     * ### Quando um `Log` solto ainda basta ([ADR-0032] D4)
+     *
+     * A varredura de 2026-09-07 encontrou 26 `Log.e`/`Log.w` em produção fora da telemetria, e converteu
+     * **doze**. Os que ficaram, ficaram por critério, e o critério é este: **`naoFatal` é para o que a
+     * pessoa pediu e não aconteceu sem ninguém saber.**
+     *
+     * Não vira não-fatal:
+     *
+     * - **leitura que degrada e tem resposta tipada** — `ConviteRepository.obterPorEmail`,
+     *   `obterPorIdDoServidor`, os `PoolFirestore`, o IBGE. Falhar offline é o estado normal de um app
+     *   offline-first; registrá-lo encheria o Crashlytics do que se projetou para acontecer;
+     * - **desfecho de negócio** — *"autenticou e não é da casa"* (`LoginViewModel`) não é erro: é a
+     *   resposta, e ela aparece na tela de quem perguntou;
+     * - **guarda de invariante** — a transição ilegal da FSM (`Log.w` em `PassagemFirestoreRepository`) é
+     *   a regra funcionando. Se virasse não-fatal, o alarme tocaria toda vez que o sistema **acertasse**.
+     *
+     * Um alarme que toca no caso normal deixa de ser alarme; é ruído com nome de sinal.
+     */
+
     /** Erro não-fatal: registrado sem derrubar o app (Crashlytics quando disponível). */
     fun naoFatal(erro: Throwable, chaves: Map<String, String> = emptyMap())
 

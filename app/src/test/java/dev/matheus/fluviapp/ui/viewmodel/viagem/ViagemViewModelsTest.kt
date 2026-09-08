@@ -24,6 +24,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
+import dev.matheus.fluviapp.telemetry.registroCadastroDeTeste
 import org.junit.Test
 import java.time.DayOfWeek
 
@@ -104,7 +105,7 @@ class ViagemViewModelsTest {
         embarcacoes: FakeEmbarcacaoRepository = embarcacoes(),
         escopo: FakeEscopoDaSessao = concedido(),
         sessao: FakeSessaoUsuario = FakeSessaoUsuario.supervisor(),
-    ) = FormViagemViewModel(viagens, rotas, embarcacoes, portos(), locais(), escopo, sessao)
+    ) = FormViagemViewModel(viagens, rotas, embarcacoes, portos(), locais(), escopo, sessao, registroCadastroDeTeste())
 
     private fun buscaVm(
         viagens: FakeViagemRepository,

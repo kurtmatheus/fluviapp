@@ -138,7 +138,9 @@ class ColecaoFirestore<T>(
         try {
             firestore.collection(codec.colecao).document(id).delete().await()
         } catch (e: Exception) {
-            Log.e(TAG, "deletar(${codec.colecao}/$id): ${e.message}", e)
+            // O único ponto do CRUD comum que não registrava ([ADR-0032] D4): `salvar` já tinha os dois
+            // desfechos e o `deletar` ficara com um `Log.e` solto — a operação que some sem deixar rastro.
+            registroCadastro.falhou(codec.entidade, e)
         }
     }
 

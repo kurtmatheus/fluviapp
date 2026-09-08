@@ -23,6 +23,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
+import dev.matheus.fluviapp.telemetry.registroCadastroDeTeste
 import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -457,6 +458,7 @@ class FormEmpresaViewModelTest {
         FakeEmbarcacaoRepository().apply { embarcacoes = frota },
         FakePortoRepository().apply { this.portos = portos },
         FakeLocalidadeRepository().apply { this.localidades = localidades },
+        registroCadastroDeTeste(),
         if (idEmpresa == null) SavedStateHandle() else SavedStateHandle(mapOf("idEmpresa" to idEmpresa)),
     )
 

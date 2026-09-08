@@ -16,6 +16,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
+import dev.matheus.fluviapp.telemetry.registroCadastroDeTeste
 import org.junit.Test
 
 /**
@@ -41,6 +42,7 @@ class FormUsuarioViewModelTest {
         convites,
         funcionarios,
         FakeEmpresaRepository().apply { empresas = listOf(empresa("empresa-1", "Navegação Norte")) },
+        registroCadastroDeTeste(),
     )
 
     @Test

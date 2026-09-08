@@ -20,6 +20,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
+import dev.matheus.fluviapp.telemetry.registroCadastroDeTeste
 import org.junit.Test
 
 /**
@@ -53,7 +54,7 @@ class RotaViewModelsTest {
         portos: FakePortoRepository = portos(),
         escopo: FakeEscopoDaSessao = FakeEscopoDaSessao.plataforma(),
         sessao: FakeSessaoUsuario = FakeSessaoUsuario.supervisor(),
-    ) = FormRotaViewModel(rotas, portos, locais(), escopo, sessao)
+    ) = FormRotaViewModel(rotas, portos, locais(), escopo, sessao, registroCadastroDeTeste())
 
     private fun buscaVm(
         rotas: FakeRotaRepository,

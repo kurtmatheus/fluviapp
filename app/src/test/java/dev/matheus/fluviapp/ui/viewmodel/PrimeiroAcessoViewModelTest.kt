@@ -20,6 +20,8 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
+import dev.matheus.fluviapp.telemetry.RegistroAcesso
+import dev.matheus.fluviapp.telemetry.FakeTelemetry
 import org.junit.Test
 
 /**
@@ -50,6 +52,7 @@ class PrimeiroAcessoViewModelTest {
         auth,
         FakeFuncionarioRepository().apply { this.funcionarios = funcionarios },
         convites,
+        RegistroAcesso(FakeTelemetry()),
         SavedStateHandle(mapOf(ARG_EMAIL_PRIMEIRO_ACESSO to emailRota)),
     )
 

@@ -13,6 +13,7 @@ import dev.matheus.fluviapp.navigation.destinations.ARG_EMAIL_PRIMEIRO_ACESSO
 import dev.matheus.fluviapp.services.repository.firebase.autenticacao.AutenticacaoRepository
 import dev.matheus.fluviapp.services.repository.firebase.autenticacao.ResultadoAutenticacao
 import dev.matheus.fluviapp.services.repository.operacoes.FuncionarioRepository
+import dev.matheus.fluviapp.telemetry.RegistroAcesso
 import dev.matheus.fluviapp.ui.states.PrimeiroAcessoUiState
 import dev.matheus.fluviapp.ui.viewmodel.helpers.login.mapearMensagemErroAuth
 import dev.matheus.fluviapp.ui.viewmodel.helpers.login.validarPrimeiroAcesso
@@ -42,6 +43,7 @@ class PrimeiroAcessoViewModel @Inject constructor(
     private val autenticacaoRepository: AutenticacaoRepository,
     private val funcionarioRepository: FuncionarioRepository,
     private val conviteRepository: ConviteRepository,
+    private val registroAcesso: RegistroAcesso,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
@@ -102,7 +104,9 @@ class PrimeiroAcessoViewModel @Inject constructor(
             when (val resultado = autenticacaoRepository.alterarSenha(_uiState.value.senha)) {
                 is ResultadoAutenticacao.Sucesso -> nascerPerfil(papel, funcionario)
                 is ResultadoAutenticacao.Falha -> {
-                    Log.e(TAG, "alterarSenha falhou: ${resultado.motivo}")
+                    // Quem esbarra aqui **nao entra** (ADR-0032 D4), e o rastro ficava no aparelho de
+                    // quem nao conseguiu entrar — o lugar mais inutil possivel para guarda-lo.
+                    registroAcesso.falhou(RegistroAcesso.ETAPA_SENHA, resultado.motivo.name)
                     _uiState.update {
                         it.copy(processando = false, mensagemErro = mapearMensagemErroAuth(resultado.motivo))
                     }
@@ -136,7 +140,9 @@ class PrimeiroAcessoViewModel @Inject constructor(
             autenticacaoRepository.sair()
             _uiState.update { it.copy(processando = false, concluido = true) }
         } catch (e: Exception) {
-            Log.e(TAG, "criarPerfil falhou: ${e.message}", e)
+            // O pior dos dois desfechos: a senha ja trocou e o perfil nao nasceu — a pessoa fica pela
+            // metade, e ate agora isso acontecia em silencio.
+            registroAcesso.falhou(RegistroAcesso.ETAPA_PERFIL, e)
             _uiState.update { it.copy(processando = false, mensagemErro = R.string.error_falha_auth) }
         }
     }

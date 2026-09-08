@@ -155,7 +155,9 @@ class PassagemFirestoreRepository @Inject constructor(
             registroEmbarque.confirmado(passagem.numero)
             ResultadoEmbarque.Confirmada(embarcada) as ResultadoEmbarque
         }.getOrElse { erro ->
-            Log.e(TAG, "confirmarEmbarque($id): ${erro.message}", erro)
+            // A escrita falhou, e isso **não** é recusa ([ADR-0032] D4): o bilhete valia e o embarque não
+            // aconteceu. Quem está na fila não tem como distinguir os dois desfechos — o registro tem.
+            registroEmbarque.falhou(erro)
             ResultadoEmbarque.NaoEncontrada
         }
     }

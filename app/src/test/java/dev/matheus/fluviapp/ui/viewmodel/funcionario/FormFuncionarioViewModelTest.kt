@@ -19,6 +19,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
+import dev.matheus.fluviapp.telemetry.registroCadastroDeTeste
 import org.junit.Test
 
 /**
@@ -45,7 +46,7 @@ class FormFuncionarioViewModelTest {
         repo: FakeFuncionarioRepository,
         sessao: SessaoUsuario = FakeSessaoUsuario.plataforma(),
         estado: SavedStateHandle = SavedStateHandle(),
-    ) = FormFuncionarioViewModel(repo, empresasFake(), sessao, estado)
+    ) = FormFuncionarioViewModel(repo, empresasFake(), sessao, registroCadastroDeTeste(), estado)
 
     // --- Cadastro ---
 

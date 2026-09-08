@@ -1,6 +1,5 @@
 package dev.matheus.fluviapp.ui.viewmodel.empresa
 
-import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -25,6 +24,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import dev.matheus.fluviapp.telemetry.RegistroCadastro
 import javax.inject.Inject
 
 /**
@@ -45,6 +45,7 @@ class FormEmpresaViewModel @Inject constructor(
     private val embarcacaoRepository: EmbarcacaoRepository,
     private val portoRepository: PortoRepository,
     private val localidadeRepository: LocalidadeRepository,
+    private val registroCadastro: RegistroCadastro,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
@@ -215,13 +216,12 @@ class FormEmpresaViewModel @Inject constructor(
                 )
                 _sucesso.send(Unit)
             } catch (e: Exception) {
-                Log.e(TAG, "salvar: ${e.message}", e)
+                // **A falha deixa de ser silenciosa** ([ADR-0032] D4): antes daqui saía só um `Log.e`, que
+                // mora no aparelho de quem viu o erro — o lugar onde ninguém vai procurar. O
+                // `falhou` registra evento e não-fatal, e loga igual, por dentro da telemetria.
+                registroCadastro.falhou("empresa", e)
                 _uiState.update { it.copy(isProcessing = false) }
             }
         }
-    }
-
-    private companion object {
-        const val TAG = "formEmpresaViewModel"
     }
 }

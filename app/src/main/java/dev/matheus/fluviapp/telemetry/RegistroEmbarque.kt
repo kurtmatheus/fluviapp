@@ -43,9 +43,23 @@ class RegistroEmbarque @Inject constructor(
         telemetry.evento(EVENTO_RECUSADO, mapOf(PARAM_MOTIVO to motivo))
     }
 
+    /**
+     * **A escrita falhou** — distinto de [recusado], e a distinção é a que importa na doca.
+     *
+     * Recusar é o sistema funcionando: o bilhete não valia. Falhar é o sistema não funcionando: o bilhete
+     * valia e o embarque **não aconteceu**, e quem está na fila não tem como saber a diferença. Por isso
+     * este é o único dos três que vira não-fatal.
+     */
+    fun falhou(erro: Throwable) {
+        telemetry.evento(EVENTO_FALHA, mapOf(PARAM_MOTIVO to (erro.message ?: DESCONHECIDO)))
+        telemetry.naoFatal(erro)
+    }
+
     companion object {
         const val EVENTO_CONFIRMADO = "embarque_confirmado"
         const val EVENTO_RECUSADO = "embarque_recusado"
+        const val EVENTO_FALHA = "embarque_falha"
+        const val DESCONHECIDO = "desconhecido"
 
         const val PARAM_NUMERO = "numero"
         const val PARAM_MOTIVO = "motivo"

@@ -17,6 +17,9 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
+import dev.matheus.fluviapp.telemetry.FakeTelemetry
+import dev.matheus.fluviapp.telemetry.RegistroCadastro
+import dev.matheus.fluviapp.telemetry.registroCadastroDeTeste
 import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -32,6 +35,7 @@ class FormLocalidadeViewModelTest {
     ) = FormLocalidadeViewModel(
         repositorio,
         ibge,
+        registroCadastroDeTeste(),
         if (idLocalidade == null) SavedStateHandle() else SavedStateHandle(mapOf("idLocalidade" to idLocalidade)),
     )
 
@@ -246,5 +250,38 @@ class FormLocalidadeViewModelTest {
         assertTrue(eventos.isEmpty())
         assertFalse(vm.uiState.value.isProcessing)
         job.cancel()
+    }
+
+    /**
+     * **A falha deixa de ser silenciosa** ([ADR-0032] D4).
+     *
+     * Até 2026-09-07, o `catch` do `salvar()` fazia um `Log.e` e mais nada — o rastro ficava no aparelho
+     * de quem viu o erro, que é o lugar onde ninguém vai procurar. Uma falha ao gravar cadastro era
+     * **invisível no Crashlytics**, e o operador só via um formulário que não fechava.
+     *
+     * O caso vale pelos dois lados: o evento (que **conta** quantas falhas houve, por entidade) e o
+     * não-fatal (que **mostra** qual foi). Os oito formulários passaram a fazer isto, e este é o que o
+     * prova — os outros sete usam o mesmo `RegistroCadastro.falhou`.
+     */
+    @Test
+    fun `falha ao salvar registra evento e nao-fatal`() = runTest(mainRule.dispatcher) {
+        val telemetry = FakeTelemetry()
+        val fake = FakeLocalidadeRepository().apply { falharAoSalvar = true }
+        val vm = FormLocalidadeViewModel(
+            fake,
+            FakeConsultaMunicipioIbge(),
+            RegistroCadastro(telemetry),
+            SavedStateHandle(),
+        )
+
+        vm.onCodigoIbgeChange("1501402")
+        vm.onMunicipioChange("Belém")
+        vm.onUfChange("PA")
+        vm.salvar()
+        advanceUntilIdle()
+
+        assertEquals(listOf(RegistroCadastro.EVENTO_FALHA), telemetry.nomesDeEventos())
+        assertEquals("localidade", telemetry.eventos.single().params[RegistroCadastro.PARAM_ENTIDADE])
+        assertEquals(1, telemetry.naoFatais.size)
     }
 }

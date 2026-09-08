@@ -1,6 +1,5 @@
 package dev.matheus.fluviapp.ui.viewmodel.usuario
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -21,6 +20,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import dev.matheus.fluviapp.telemetry.RegistroCadastro
 import javax.inject.Inject
 
 /**
@@ -43,6 +43,7 @@ class FormUsuarioViewModel @Inject constructor(
     private val conviteRepository: ConviteRepository,
     private val funcionarioRepository: FuncionarioRepository,
     private val empresaRepository: EmpresaRepository,
+    private val registroCadastro: RegistroCadastro,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(FormUsuarioUiState())
@@ -128,13 +129,12 @@ class FormUsuarioViewModel @Inject constructor(
                 conviteRepository.salvar(convite)
                 _sucesso.send(Unit)
             } catch (e: Exception) {
-                Log.e(TAG, "salvar: ${e.message}", e)
+                // **A falha deixa de ser silenciosa** ([ADR-0032] D4): antes daqui saía só um `Log.e`, que
+                // mora no aparelho de quem viu o erro — o lugar onde ninguém vai procurar. O
+                // `falhou` registra evento e não-fatal, e loga igual, por dentro da telemetria.
+                registroCadastro.falhou("usuario", e)
                 _uiState.update { it.copy(isProcessing = false) }
             }
         }
-    }
-
-    private companion object {
-        const val TAG = "formUsuarioViewModel"
     }
 }

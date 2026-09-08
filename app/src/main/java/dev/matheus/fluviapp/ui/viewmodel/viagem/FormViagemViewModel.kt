@@ -1,6 +1,5 @@
 package dev.matheus.fluviapp.ui.viewmodel.viagem
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -34,6 +33,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import dev.matheus.fluviapp.telemetry.RegistroCadastro
 import javax.inject.Inject
 
 /**
@@ -57,6 +57,7 @@ class FormViagemViewModel @Inject constructor(
     private val localidadeRepository: LocalidadeRepository,
     private val escopoDaSessao: EscopoDaSessao,
     private val sessaoUsuario: SessaoUsuario,
+    private val registroCadastro: RegistroCadastro,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(
@@ -172,14 +173,13 @@ class FormViagemViewModel @Inject constructor(
                 )
                 _sucesso.send(Unit)
             } catch (e: Exception) {
-                Log.e(TAG, "salvar: ${e.message}", e)
+                // **A falha deixa de ser silenciosa** ([ADR-0032] D4): antes daqui saía só um `Log.e`, que
+                // mora no aparelho de quem viu o erro — o lugar onde ninguém vai procurar. O
+                // `falhou` registra evento e não-fatal, e loga igual, por dentro da telemetria.
+                registroCadastro.falhou("viagem", e)
                 _uiState.update { it.copy(isProcessing = false) }
             }
         }
-    }
-
-    private companion object {
-        const val TAG = "formViagemViewModel"
     }
 }
 

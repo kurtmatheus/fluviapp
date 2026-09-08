@@ -17,6 +17,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
+import dev.matheus.fluviapp.telemetry.registroCadastroDeTeste
 import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -32,7 +33,7 @@ class FormEmbarcacaoViewModelTest {
     @Test
     fun `salvar invalido marca erros e nao persiste`() = runTest(mainRule.dispatcher) {
         val embarcacaoFake = FakeEmbarcacaoRepository()
-        val vm = FormEmbarcacaoViewModel(embarcacaoFake, empresaFake(), SavedStateHandle())
+        val vm = FormEmbarcacaoViewModel(embarcacaoFake, empresaFake(), registroCadastroDeTeste(), SavedStateHandle())
 
         vm.salvar()
         advanceUntilIdle()
@@ -47,7 +48,7 @@ class FormEmbarcacaoViewModelTest {
     @Test
     fun `salvar valido persiste com capacidades parseadas e emite sucesso`() = runTest(mainRule.dispatcher) {
         val embarcacaoFake = FakeEmbarcacaoRepository()
-        val vm = FormEmbarcacaoViewModel(embarcacaoFake, empresaFake(), SavedStateHandle())
+        val vm = FormEmbarcacaoViewModel(embarcacaoFake, empresaFake(), registroCadastroDeTeste(), SavedStateHandle())
         val eventos = mutableListOf<Unit>()
         val job = launch { vm.sucesso.toList(eventos) }
 
@@ -74,7 +75,7 @@ class FormEmbarcacaoViewModelTest {
     /** A tela devolve rótulo; o domínio recebe tipo. Rótulo que não existe não vira tipo nenhum. */
     @Test
     fun `o tipo entra pelo rotulo e rotulo desconhecido nao seleciona nada`() = runTest(mainRule.dispatcher) {
-        val vm = FormEmbarcacaoViewModel(FakeEmbarcacaoRepository(), empresaFake(), SavedStateHandle())
+        val vm = FormEmbarcacaoViewModel(FakeEmbarcacaoRepository(), empresaFake(), registroCadastroDeTeste(), SavedStateHandle())
 
         vm.onTipoChange("Lancha")
         assertEquals(TipoEmbarcacao.LANCHA, vm.uiState.value.tipo)
@@ -90,7 +91,7 @@ class FormEmbarcacaoViewModelTest {
     @Test
     fun `trocar para um tipo sem veiculo apaga a capacidade de veiculo`() = runTest(mainRule.dispatcher) {
         val embarcacaoFake = FakeEmbarcacaoRepository()
-        val vm = FormEmbarcacaoViewModel(embarcacaoFake, empresaFake(), SavedStateHandle())
+        val vm = FormEmbarcacaoViewModel(embarcacaoFake, empresaFake(), registroCadastroDeTeste(), SavedStateHandle())
 
         vm.onNomeChange("LANCHA VELOZ")
         vm.onEmpresaChange("ACME")
@@ -110,7 +111,7 @@ class FormEmbarcacaoViewModelTest {
     /** Trocar entre dois tipos que levam veículo preserva o que já foi digitado. */
     @Test
     fun `trocar entre tipos que levam veiculo preserva a capacidade`() = runTest(mainRule.dispatcher) {
-        val vm = FormEmbarcacaoViewModel(FakeEmbarcacaoRepository(), empresaFake(), SavedStateHandle())
+        val vm = FormEmbarcacaoViewModel(FakeEmbarcacaoRepository(), empresaFake(), registroCadastroDeTeste(), SavedStateHandle())
 
         vm.onTipoChange("Ferry Boat")
         vm.onCapacidadeVeiculoChange("12")
@@ -122,7 +123,7 @@ class FormEmbarcacaoViewModelTest {
     @Test
     fun `empresa sem match na lista salva com empresaId vazio (dormente, nao quebra)`() = runTest(mainRule.dispatcher) {
         val embarcacaoFake = FakeEmbarcacaoRepository()
-        val vm = FormEmbarcacaoViewModel(embarcacaoFake, empresaFake(), SavedStateHandle())
+        val vm = FormEmbarcacaoViewModel(embarcacaoFake, empresaFake(), registroCadastroDeTeste(), SavedStateHandle())
 
         vm.onNomeChange("FLUVI I")
         vm.onTipoChange("Ferry Boat")
@@ -137,7 +138,7 @@ class FormEmbarcacaoViewModelTest {
     @Test
     fun `falha ao salvar nao emite sucesso e libera processamento`() = runTest(mainRule.dispatcher) {
         val embarcacaoFake = FakeEmbarcacaoRepository().apply { falharAoSalvar = true }
-        val vm = FormEmbarcacaoViewModel(embarcacaoFake, empresaFake(), SavedStateHandle())
+        val vm = FormEmbarcacaoViewModel(embarcacaoFake, empresaFake(), registroCadastroDeTeste(), SavedStateHandle())
         val eventos = mutableListOf<Unit>()
         val job = launch { vm.sucesso.toList(eventos) }
 
@@ -158,7 +159,7 @@ class FormEmbarcacaoViewModelTest {
             // vínculo por id
             embarcacoes = listOf(Embarcacao("n1", "FLUVI I", TipoEmbarcacao.FERRY_BOAT, 10, 20, 30, 5, "e1"))
         }
-        val vm = FormEmbarcacaoViewModel(embarcacaoFake, empresaFake(), SavedStateHandle(mapOf("idEmbarcacao" to "n1")))
+        val vm = FormEmbarcacaoViewModel(embarcacaoFake, empresaFake(), registroCadastroDeTeste(), SavedStateHandle(mapOf("idEmbarcacao" to "n1")))
         advanceUntilIdle()
 
         val s = vm.uiState.value
@@ -175,7 +176,7 @@ class FormEmbarcacaoViewModelTest {
         val embarcacaoFake = FakeEmbarcacaoRepository().apply {
             embarcacoes = listOf(Embarcacao("n2", "LANCHA VELOZ", TipoEmbarcacao.LANCHA, 0, 0, 0, 0, "e1"))
         }
-        val vm = FormEmbarcacaoViewModel(embarcacaoFake, empresaFake(), SavedStateHandle(mapOf("idEmbarcacao" to "n2")))
+        val vm = FormEmbarcacaoViewModel(embarcacaoFake, empresaFake(), registroCadastroDeTeste(), SavedStateHandle(mapOf("idEmbarcacao" to "n2")))
         advanceUntilIdle()
 
         assertEquals(TipoEmbarcacao.LANCHA, vm.uiState.value.tipo)
