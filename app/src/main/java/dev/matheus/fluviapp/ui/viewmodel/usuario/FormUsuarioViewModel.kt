@@ -85,6 +85,10 @@ class FormUsuarioViewModel @Inject constructor(
         val erros = validarUsuario(estado)
         // `papel == null` é redundante com `erros.papel` — está aqui para o smart-cast: é o compilador
         // que impede um convite sem papel de chegar ao domínio.
+        //
+        // E `erros.papel` diz mais do que "está em branco" desde a [ADR-0032] D6: ele reprova o `ADM`,
+        // porque **não há convite de ADM**. O guarda do gesto é esse — a política respondendo na
+        // validação, e não uma comparação escrita aqui (D1).
         val papel = estado.papel
         if (!erros.valido || papel == null) {
             _uiState.update {

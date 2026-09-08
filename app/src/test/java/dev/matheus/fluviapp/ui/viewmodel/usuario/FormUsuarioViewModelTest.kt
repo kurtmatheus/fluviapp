@@ -109,6 +109,31 @@ class FormUsuarioViewModelTest {
         assertEquals(Papel.GESTOR, convites.salvos.single().papel)
     }
 
+    /**
+     * **Não há convite de ADM** ([ADR-0032] D6): a tela não o oferece, e o gesto o recusa.
+     *
+     * O segundo assert é o que importa mais, porque não depende da lista de opções: o papel chega por
+     * `onPapelChange`, como chegaria por qualquer caminho fora do formulário, e nada é gravado. A regra do
+     * servidor recusa a mesma coisa — UI não é fronteira.
+     */
+    @Test
+    fun `convite de ADM nao e oferecido nem gravado`() = runTest(mainRule.dispatcher) {
+        val convites = FakeConviteRepository()
+        val vm = vm(convites)
+        advanceUntilIdle()
+
+        assertEquals(listOf(Papel.GESTOR.name, Papel.OPERADOR.name), vm.uiState.value.papeis)
+
+        vm.onNomeChange("Outro Adm")
+        vm.onEmailChange("adm2@fluviapp.com.br")
+        vm.onPapelChange(Papel.ADM.name)
+        vm.salvar()
+        advanceUntilIdle()
+
+        assertTrue(vm.uiState.value.isPapelError)
+        assertTrue(convites.salvos.isEmpty())
+    }
+
     @Test
     fun `operador exige empresa e cargo`() = runTest(mainRule.dispatcher) {
         val convites = FakeConviteRepository()

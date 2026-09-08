@@ -437,9 +437,41 @@ describe('convites — só o ADM escreve, e o papel do perfil tem de bater com e
     await assertSucceeds(setDoc(doc(asAdm(), 'convites', 'outro@x.com'), { papel: 'GESTOR', nome: 'X' }));
   });
 
-  /** GESTOR administra o negócio da plataforma, não o acesso a ela (ADR-0021 D1). */
+  /**
+   * GESTOR administra o negócio da plataforma, não o acesso a ela (ADR-0021 D1).
+   *
+   * O papel do payload é `OPERADOR` de propósito: com `ADM` o caso passaria a ser negado por **duas**
+   * razões desde a ADR-0032 D6, e um teste que pode passar pelo motivo errado não prova o que diz.
+   */
   test('GESTOR cria convite → NEGADO', async () => {
-    await assertFails(setDoc(doc(asGestor(), 'convites', 'outro@x.com'), { papel: 'ADM', nome: 'X' }));
+    await assertFails(setDoc(doc(asGestor(), 'convites', 'outro@x.com'), { papel: 'OPERADOR', nome: 'X' }));
+  });
+
+  /**
+   * **Não há convite de ADM** (ADR-0032 D6) — e é a porta de escalonamento que a F6.6 abriu por acidente
+   * de cronologia: com o papel vindo do convite, um `ADM` podia gravar `papel: "ADM"` e o primeiro acesso
+   * usaria isso para criar `users/{uid}`. Um `ADM` fabricando outro pelo app, sem ninguém ter decidido.
+   *
+   * Quem administra entra por console + Firestore, e só.
+   */
+  test('ADM cria convite de ADM → NEGADO', async () => {
+    await assertFails(setDoc(doc(asAdm(), 'convites', 'outro@x.com'), { papel: 'ADM', nome: 'X' }));
+  });
+
+  /** Papel ilegível também não: convite é o que concede papel (fail-closed, ADR-0010). */
+  test('ADM cria convite com papel desconhecido → NEGADO', async () => {
+    await assertFails(setDoc(doc(asAdm(), 'convites', 'outro@x.com'), { papel: 'GERENTE', nome: 'X' }));
+    await assertFails(setDoc(doc(asAdm(), 'convites', 'outro@x.com'), { nome: 'X' }));
+  });
+
+  /** A mesma porta pela lateral: promover a `ADM` editando um convite que já existe. */
+  test('ADM promove convite existente a ADM → NEGADO', async () => {
+    await assertFails(updateDoc(doc(asAdm(), 'convites', EMAIL_CONVIDADO), { papel: 'ADM' }));
+  });
+
+  /** E editar continua possível dentro do que se pode convidar — senão corrigir um papel seria impossível. */
+  test('ADM corrige o convite para GESTOR → OK', async () => {
+    await assertSucceeds(updateDoc(doc(asAdm(), 'convites', EMAIL_CONVIDADO), { papel: 'GESTOR' }));
   });
 
   test('SUPERVISOR cria convite → NEGADO', async () => {
@@ -469,8 +501,12 @@ describe('perfil no primeiro acesso — o papel vem do convite, não do cliente'
   const EMAIL_CONVIDADO_ADM = 'convidado-adm@x.com';
 
   /**
-   * O caso que a F6.6 destrava: `ADM`/`GESTOR` passam a poder nascer pelo app — **desde que exista um
-   * convite**, que só o ADM escreve. Antes disso, só pelo console.
+   * O caso que a F6.6 destrava: o perfil de plataforma passa a poder nascer pelo app — **desde que exista
+   * um convite**. Antes disso, só pelo console.
+   *
+   * O convite deste caso é de `ADM`, e desde a ADR-0032 D6 **nenhum app o cria**: ele está aqui porque o
+   * seed o escreve com as regras desligadas, que é o console. O caso continua provando o que provava — o
+   * papel do perfil vem do convite, e não do cliente —, e a diferença é de onde o convite pode vir.
    */
   test('perfil de plataforma COM convite → OK, e sem exigir funcionário', async () => {
     const db = testEnv.authenticatedContext('uid-adm-novo', { email: EMAIL_CONVIDADO_ADM }).firestore();

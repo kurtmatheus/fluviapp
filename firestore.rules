@@ -142,7 +142,13 @@ service cloud.firestore {
       // Provisionamento = **primeiro acesso** (ADR-0015 §2.1), e só ele: o autocadastro saiu em P2.2c.
       // Três exigências, e a terceira é a que fecha o buraco que P2.2a′ tinha deixado aberto:
       //  1. só o próprio dono (uid do doc == uid autenticado);
-      //  2. sempre no menor privilégio — nunca nasce ADM/GESTOR pelo cliente (esses vêm do console);
+      //  2. o papel é **o do convite**, e o convite não carrega ADM (ADR-0032 D6): então nasce `GESTOR` ou
+      //     `OPERADOR`, e **ADM não nasce pelo cliente** — esse vem do console (ADR-0021 D0).
+      //
+      //     Este comentário dizia *"sempre no menor privilégio — nunca nasce ADM/GESTOR pelo cliente"*, e
+      //     desde a F6.6 (2026-08-08) isso era falso para os dois: com o papel vindo do convite, `GESTOR`
+      //     nascia pelo cliente e `ADM` também. Metade virou verdade de novo pela regra acima; a outra
+      //     metade era descrição vencida de uma decisão que a execução tinha superado;
       //  3. o vínculo declarado tem de apontar para um funcionário **com o mesmo e-mail** do autenticado.
       //     Sem isso, escrever o próprio funcionarioId seria escolher de quem são as passagens que ele
       //     "possui" (§8.4) — é o e-mail, gravado pela gestão no pré-cadastro, que autoriza o elo.
@@ -204,21 +210,37 @@ service cloud.firestore {
     // O id **é o e-mail**, e isso é o que torna a regra possível: o convidado lê o próprio convite com um
     // `get` direto, **antes** de existir `users/{uid}` — não há papel a consultar nesse instante, então a
     // única autoridade disponível é o e-mail do token.
+    // **Não há convite de ADM** (ADR-0032 D6). O administrador entra por console + Firestore, e só —
+    // hoje há um; se houver outro, entra pelo mesmo caminho. É o que preserva o ADR-0021 D0 no que ele tem
+    // de mais forte: *não existe caminho, dentro do app, para fabricar quem administra*.
+    //
+    // A regra recusa porque **UI não é fronteira** (mesma régua da D1): o formulário já não oferece o
+    // papel, e isso protege o gesto, não o dado. Sem esta linha, um `create` fora da tela ainda gravaria
+    // `papel: "ADM"`, e o primeiro acesso o usaria para criar `users/{uid}` — que é exatamente o caminho
+    // de escalonamento que a F6.6 abriu sem que ninguém decidisse.
+    function papelConvidavel(dados) {
+      return dados.get('papel', '') in ['GESTOR', 'OPERADOR'];
+    }
+
     match /convites/{email} {
       // O próprio convidado lê o dele; a plataforma lê todos (é ela quem administra o acesso).
       allow get: if autenticado() && (request.auth.token.email == email || ehAdm());
       allow list: if autenticado() && ehAdm();
 
-      allow create: if autenticado() && ehAdm();
+      allow create: if autenticado() && ehAdm() && papelConvidavel(request.resource.data);
 
       // Duas escritas possíveis, e a segunda é estreita de propósito: o convidado só marca o convite
       // como **usado**, e nada mais. A ordem das cláusulas importa — a do dono vem primeiro porque ela
       // não depende de `users/{uid}`, que nesse momento ainda não existe.
+      //
+      // O papel convidável vale na edição também: promover a `ADM` editando o convite seria a mesma porta
+      // pela lateral. O ramo do convidado não precisa da condição — ele só toca em `usado` —, mas também
+      // não é prejudicado por ela: um convite legível ali já tem papel convidável.
       allow update: if autenticado()
                     && ((request.auth.token.email == email
                          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['usado'])
                          && request.resource.data.usado == true)
-                        || ehAdm());
+                        || (ehAdm() && papelConvidavel(request.resource.data)));
 
       // O convite **vira registro**: usado ou não, ele responde "por que esta pessoa tem este papel?".
       allow delete: if false;

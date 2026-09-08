@@ -89,6 +89,30 @@ class PermissoesUsuarioTest {
         assertFalse(PermissoesUsuario.ehPapelPlataforma("DESCONHECIDO"))
     }
 
+    // --- Não há convite de ADM ([ADR-0032] D6) ---
+
+    /**
+     * O que a F6.6 abriu sem que ninguém decidisse: com o papel vindo do convite, um `ADM` passou a poder
+     * fabricar outro pelo app. A lista de papéis convidáveis é o conserto, e ela é da **política** porque a
+     * mesma pergunta é feita em três lugares — a tela, a validação e a regra do servidor.
+     */
+    @Test
+    fun `o convite carrega GESTOR e OPERADOR, e nunca ADM`() {
+        assertEquals(listOf(Papel.GESTOR, Papel.OPERADOR), PermissoesUsuario.papeisConvidaveis())
+
+        assertTrue(PermissoesUsuario.podeConvidar(gestor))
+        assertTrue(PermissoesUsuario.podeConvidar(operador))
+        assertFalse(PermissoesUsuario.podeConvidar(adm))
+    }
+
+    /** Papel ilegível não se convida: convite é o que concede papel (fail-closed). */
+    @Test
+    fun `papel desconhecido ou ausente nao se convida`() {
+        assertFalse(PermissoesUsuario.podeConvidar(null))
+        assertFalse(PermissoesUsuario.podeConvidar(""))
+        assertFalse(PermissoesUsuario.podeConvidar("GERENTE"))
+    }
+
     // --- Eixo seção (menu): puramente de sistema ---
 
     /**

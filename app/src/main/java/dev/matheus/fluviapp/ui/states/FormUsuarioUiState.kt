@@ -33,7 +33,15 @@ data class FormUsuarioUiState(
     val isCargoError: Boolean = false,
 
     val empresas: List<EmpresaOpcao> = emptyList(),
-    val papeis: List<String> = Usuario.Papel.entries.map { it.name },
+    /**
+     * Os papéis que o convite oferece — **`GESTOR` e `OPERADOR`** ([ADR-0032] D6).
+     *
+     * Era `Usuario.Papel.entries`, os três sem filtro, e é assim que um `ADM` podia fabricar outro pelo
+     * app: o papel do convite é o que a regra do servidor aceita em `users/{uid}` no primeiro acesso. A
+     * lista vem da política ([PermissoesUsuario.papeisConvidaveis]) porque *quem pode ser convidado* é
+     * pergunta de autorização, não de tela — e a mesma pergunta é feita na validação e no servidor.
+     */
+    val papeis: List<String> = PermissoesUsuario.papeisConvidaveis().map { it.name },
     val cargos: List<String> = Funcionario.Cargo.entries.map { it.name },
 
     val isProcessing: Boolean = false,

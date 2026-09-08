@@ -14,6 +14,12 @@ import dev.matheus.fluviapp.ui.states.FormUsuarioUiState
  *
  * O e-mail tem forma verificada porque é a **chave**: é o id do convite e é o que o primeiro acesso
  * procura. E-mail torto aqui vira uma pessoa que nunca encontra o próprio papel.
+ *
+ * ### O papel não é só "presente": é **convidável** ([ADR-0032] D6)
+ *
+ * `ADM` reprova como se estivesse em branco. A tela nem o oferece, então o caso só acontece por caminho
+ * que não é o formulário — e é justamente para esse que a validação existe: ela não confia na lista de
+ * opções, do mesmo jeito que a regra do servidor não confia na validação.
  */
 private val PADRAO_EMAIL = Regex("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$")
 
@@ -34,7 +40,7 @@ fun validarUsuario(state: FormUsuarioUiState): ErrosUsuario {
     return ErrosUsuario(
         nome = state.nome.isBlank(),
         email = !PADRAO_EMAIL.matches(state.email.trim()),
-        papel = state.papel == null,
+        papel = !PermissoesUsuario.podeConvidar(state.papel?.name),
         empresa = ehOperador && state.empresa.isBlank(),
         cargo = ehOperador && state.cargo.isBlank(),
     )

@@ -49,6 +49,26 @@ object PermissoesUsuario {
     fun ehPapelDeOperacao(papel: String?): Boolean = Papel.de(papel) == Papel.OPERADOR
 
     /**
+     * **Não há convite de `ADM`** ([ADR-0032] D6).
+     *
+     * O administrador entra por **console + Firestore**, e só. Isso preserva o [ADR-0021] D0 no que ele
+     * tem de mais forte — *não existe caminho, dentro do app, para fabricar quem administra* — e corrige
+     * o que a F6.6 abriu sem que ninguém decidisse: ao fazer o papel vir do convite (2026-08-08), ela
+     * deixou o formulário oferecer `Usuario.Papel.entries` inteiro, e um `ADM` passou a poder fabricar
+     * outro pelo app.
+     *
+     * Papel desconhecido também não se convida (fail-closed): convite é o que concede papel, e um papel
+     * ilegível concederia acesso que ninguém sabe qual é.
+     *
+     * **Isto não é a fronteira** — a regra de `convites/{email}` recusa a mesma coisa no servidor, pela
+     * mesma régua da D1: UI não é fronteira.
+     */
+    fun podeConvidar(papel: String?): Boolean = Papel.de(papel).let { it != null && it != ADM }
+
+    /** Os papéis que o formulário de convite oferece — a lista que [podeConvidar] descreve. */
+    fun papeisConvidaveis(): List<Papel> = Papel.entries.filter { podeConvidar(it.name) }
+
+    /**
      * **Trocar de perfil** ([ADR-0032] D5) — a opção existe para quem tem **os dois**: papel de plataforma
      * e vínculo com uma empresa.
      *
