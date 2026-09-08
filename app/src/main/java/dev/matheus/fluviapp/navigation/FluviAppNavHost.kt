@@ -62,6 +62,11 @@ import dev.matheus.fluviapp.navigation.navcomposables.passagem.pesquisaPassagemN
 fun FluviAppNavHost(
     navController: NavHostController,
 ) {
+    // **A guarda de navegacao** (ADR-0032 D1): assina a pilha e devolve quem chegar a um destino que a
+    // politica nao concede. Fica FORA do NavHost de proposito — ela vale para a pilha inteira, e nao
+    // para um destino.
+    GuardaDeNavegacao(navController)
+
     NavHost(
         navController = navController,
         startDestination = FluviAppGraphDestinations.SplashScreen.route
