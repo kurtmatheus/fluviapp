@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.matheus.fluviapp.domain.operacoes.Convite
 import dev.matheus.fluviapp.domain.operacoes.Funcionario
+import dev.matheus.fluviapp.domain.operacoes.PermissoesUsuario
 import dev.matheus.fluviapp.domain.operacoes.Usuario
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.EmpresaRepository
 import dev.matheus.fluviapp.services.repository.operacoes.ConviteRepository
@@ -70,7 +71,7 @@ class FormUsuarioViewModel @Inject constructor(
         it.copy(
             papel = papel,
             isPapelError = false,
-            empresa = if (papel == Usuario.Papel.OPERADOR) it.empresa else "",
+            empresa = if (PermissoesUsuario.ehPapelDeOperacao(papel?.name)) it.empresa else "",
             isEmpresaError = false,
         )
     }
@@ -102,12 +103,15 @@ class FormUsuarioViewModel @Inject constructor(
             try {
                 val email = estado.email.trim().lowercase()
                 val empresaId = estado.empresas.firstOrNull { it.nome == estado.empresa }?.id.orEmpty()
+                // Quem entra na operacao leva empresa e cargo; quem administra a plataforma, nao — e quem
+                // responde isso e a politica (ADR-0032 D1), nao uma comparacao escrita aqui.
+                val ehDeOperacao = PermissoesUsuario.ehPapelDeOperacao(papel.name)
                 val convite = Convite(
                     email = email,
                     nome = estado.nome.trim(),
                     papel = papel,
-                    empresaId = if (papel == Usuario.Papel.OPERADOR) empresaId else "",
-                    cargo = if (papel == Usuario.Papel.OPERADOR) Funcionario.Cargo.de(estado.cargo) else null,
+                    empresaId = if (ehDeOperacao) empresaId else "",
+                    cargo = if (ehDeOperacao) Funcionario.Cargo.de(estado.cargo) else null,
                 )
 
                 convite.vinculo?.let { vinculo ->

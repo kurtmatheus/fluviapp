@@ -34,6 +34,20 @@ object PermissoesUsuario {
 
     private fun ehPapelPlataforma(papel: Papel?): Boolean = papel == ADM || papel == GESTOR
 
+    /**
+     * O par da anterior: **o papel que entra na operação** — o que tem vínculo, cargo e emite passagem.
+     *
+     * Nasce em 2026-09-07 ([ADR-0032] D1) para acabar com três cópias da mesma pergunta, que viviam na
+     * camada de cima como `papel == Usuario.Papel.OPERADOR`: no `FormUsuarioUiState` (decidindo se a tela
+     * mostra empresa e cargo), na `ValidacaoUsuario` (decidindo se os exige) e no `FormUsuarioViewModel`
+     * (decidindo se os grava). Três lugares respondendo por conta própria uma pergunta da política.
+     *
+     * **Não é o inverso de [ehPapelPlataforma]**, e é por isso que ela existe em vez de um `!`: papel
+     * **ausente** não é de plataforma nem de operação. Negar a primeira faria a tela pedir empresa e cargo
+     * a quem ainda não escolheu papel nenhum.
+     */
+    fun ehPapelDeOperacao(papel: String?): Boolean = Papel.de(papel) == Papel.OPERADOR
+
     // --- Eixo seção (menu) ---
 
     /**

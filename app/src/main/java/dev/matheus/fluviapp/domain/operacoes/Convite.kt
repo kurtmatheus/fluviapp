@@ -41,8 +41,16 @@ data class Convite(
     val usado: Boolean = false,
 ) {
 
-    /** Papel de plataforma não leva vínculo: `ADM`/`GESTOR` não atuam em empresa nenhuma (§8.1). */
-    val ehDePlataforma: Boolean get() = papel == Usuario.Papel.ADM || papel == Usuario.Papel.GESTOR
+    /**
+     * Papel de plataforma não leva vínculo: `ADM`/`GESTOR` não atuam em empresa nenhuma (§8.1).
+     *
+     * **Pergunta à política** ([ADR-0032] D1). Até 2026-09-07 esta linha era
+     * `papel == ADM || papel == GESTOR` — a mesma regra que `ehPapelPlataforma` já dizia, reescrita aqui.
+     * Não estava errada; o custo era o de sempre com regra duplicada: no dia em que a política mudasse —
+     * um terceiro papel de plataforma, por exemplo —, **este ponto não acompanharia**, e o sintoma
+     * apareceria longe da causa (um convite de plataforma exigindo empresa e cargo).
+     */
+    val ehDePlataforma: Boolean get() = PermissoesUsuario.ehPapelPlataforma(papel.name)
 
     /**
      * O vínculo que este convite cria na operação — `null` para papel de plataforma, e também quando

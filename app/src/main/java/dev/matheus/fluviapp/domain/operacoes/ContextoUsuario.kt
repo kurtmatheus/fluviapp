@@ -62,15 +62,20 @@ data class ContextoUsuario(
      * **Em que atuação esta pessoa trabalha** (ADR-0016 §2, ADR-0020 F4) — o que decide qual família de
      * seções o painel oferece.
      *
-     * Vem do cargo, que já a declara (`Funcionario.Cargo.atuacao`): enquanto o vínculo
-     * `(empresa, atuação)` não existir como dado, o cargo é a fonte exata, porque o conjunto de cargos de
-     * cada atuação é disjunto.
+     * **Pergunta à política** ([ADR-0032] D1), e não deriva por conta própria. Até 2026-09-07 esta linha
+     * era `Funcionario.Cargo.de(cargo)?.atuacao`, o mesmo cálculo que `atuacaoEmVigor` faz — que existia
+     * exatamente para isto e **não tinha um único chamador**, com o KDoc dizendo que deveria substituir
+     * esta derivação. A substituição documentada só não tinha acontecido.
+     *
+     * A troca também apaga uma volta inútil: `cargo` já é `vinculoAtivo?.cargo?.name`, então a expressão
+     * antiga convertia o enum em texto e o texto de volta em enum. Uma ida e volta pelo `String` só pode
+     * perder informação — nunca ganhar.
      *
      * `null` para papel puro de plataforma — e isso **não é ausência de informação**, é a informação:
      * `ADM`/`GESTOR` não atuam num segmento, administram a plataforma inteira. Quem lê isto é
      * `PermissoesUsuario.secoesVisiveis`, que trata os dois casos.
      */
-    val atuacao: Atuacao? get() = Funcionario.Cargo.de(cargo)?.atuacao
+    val atuacao: Atuacao? get() = PermissoesUsuario.atuacaoEmVigor(vinculoAtivo)
 
     /**
      * A **agência de quem opera**, como ela aparece para gente: o nome da empresa do vínculo ativo.

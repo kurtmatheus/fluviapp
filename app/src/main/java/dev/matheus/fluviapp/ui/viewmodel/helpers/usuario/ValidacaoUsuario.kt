@@ -1,5 +1,6 @@
 package dev.matheus.fluviapp.ui.viewmodel.helpers.usuario
 
+import dev.matheus.fluviapp.domain.operacoes.PermissoesUsuario
 import dev.matheus.fluviapp.domain.operacoes.Usuario
 import dev.matheus.fluviapp.ui.states.FormUsuarioUiState
 
@@ -27,7 +28,8 @@ data class ErrosUsuario(
 }
 
 fun validarUsuario(state: FormUsuarioUiState): ErrosUsuario {
-    val ehOperador = state.papel == Usuario.Papel.OPERADOR
+    // A politica responde o que "entrar na operacao" significa (ADR-0032 D1).
+    val ehOperador = PermissoesUsuario.ehPapelDeOperacao(state.papel?.name)
 
     return ErrosUsuario(
         nome = state.nome.isBlank(),

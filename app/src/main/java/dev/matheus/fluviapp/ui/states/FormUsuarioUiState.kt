@@ -2,6 +2,7 @@ package dev.matheus.fluviapp.ui.states
 
 import dev.matheus.fluviapp.R
 import dev.matheus.fluviapp.domain.operacoes.Funcionario
+import dev.matheus.fluviapp.domain.operacoes.PermissoesUsuario
 import dev.matheus.fluviapp.domain.operacoes.Usuario
 
 /**
@@ -38,6 +39,11 @@ data class FormUsuarioUiState(
     val isProcessing: Boolean = false,
 ) {
 
-    /** A segunda metade da tela: só quem entra na operação tem empresa e cargo. */
-    val perguntaVinculo: Boolean get() = papel == Usuario.Papel.OPERADOR
+    /**
+     * A segunda metade da tela: só quem entra na operação tem empresa e cargo.
+     *
+     * **Pergunta à política** ([ADR-0032] D1) em vez de comparar o papel aqui — era uma de três cópias da
+     * mesma pergunta, e a política é quem sabe o que "entrar na operação" significa.
+     */
+    val perguntaVinculo: Boolean get() = PermissoesUsuario.ehPapelDeOperacao(papel?.name)
 }
