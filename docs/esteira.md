@@ -201,8 +201,11 @@ continua em **34** — subi-lo muda comportamento no Android 15, e isso é decis
 
 ## O que continua manual, e não é pendência de build
 
-**Cada tester precisa de dois passos no console**, porque o autocadastro saiu na P2.2c e o seed foi
-removido:
+**Só o `ADM` precisa dos dois passos no console.** Para `GESTOR` e `OPERADOR`, quem convida é o app —
+seção **Usuários → Novo usuário** (F6.6): o `ADM` grava um convite em `convites/{email}`, a pessoa entra
+com o próprio primeiro acesso e cria a senha dela. O `users/{uid}` nasce com o papel **do convite**.
+
+Os dois passos, então, valem para **o administrador**:
 
 1. **Authentication** → criar a conta (e-mail e senha);
 2. **Firestore → `users`** → criar documento cujo **ID é o uid da conta**, com `papel` e `funcionarioId`.
@@ -210,11 +213,15 @@ removido:
 O `uid` é **por projeto**: um documento trazido de outro projeto Firebase não casa, e o sintoma é o app
 autenticar e dizer que a pessoa não está cadastrada. Foi exatamente o que travou o acesso em 2026-08-03.
 
-**E continua manual por decisão** (ADR-0021 D0): a administração da plataforma vive **fora do aplicativo**.
-Não é lacuna a tapar — é o mesmo princípio que tirou o autocadastro (P2.2c), impede qualquer cliente de
-criar ou promover um `ADM` (anti-escalonamento) e removeu o seed. Não existe caminho, dentro do app, para
-fabricar quem administra.
+**E o `ADM` continua manual por decisão** (ADR-0021 D0, preservado pela
+[ADR-0032](adr/0032-o-acesso-politica-sessao-e-ciclo-de-vida.md) D6): quem administra a plataforma nasce
+**fora do aplicativo**. Não é lacuna a tapar — é o mesmo princípio que tirou o autocadastro (P2.2c) e
+removeu o seed, e ele passou a estar escrito na regra: o convite **recusa** `papel: "ADM"`, no formulário
+e no servidor. Não há convite de `ADM`, logo também não há promoção a `ADM`.
 
-O que pode deixar de ser manual um dia é o **convite ao operador**, que é problema diferente: para ele o
-primeiro acesso já deduz o vínculo pelo `Funcionario` de mesmo e-mail. O administrador continua nascendo
-no console.
+*Este trecho mandava fazer os dois passos para todo tester, e ficou vencido de 2026-08-08 (a F6.6, que fez
+o papel vir do convite) até 2026-09-08.*
+
+**O que o app passou a fazer, e economiza console:** desativar e reativar o acesso de alguém, e definir
+data de expiração (ADR-0032 D6) — na mesma seção Usuários. Um tester que sai de um ciclo de testes se
+desativa pelo app; o acesso dele para de valer **no servidor**, e não só na tela.

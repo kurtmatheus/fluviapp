@@ -26,12 +26,30 @@ Isso não é conveniência disfarçada de decisão; é a leitura correta do que 
 Somadas, essas quatro decisões dizem a mesma coisa: **não existe caminho, dentro do app, para fabricar
 quem administra.** O ADR-0021 apenas para de tratar isso como buraco a tapar.
 
-O resto deste documento (D1–D4) permanece **válido como direção**: quando a seção existir, é assim que
-ela nasce. Nada dele foi implementado.
+> ### ⚠️ Revisitado em 2026-09-08 — o [ADR-0032](0032-o-acesso-politica-sessao-e-ciclo-de-vida.md) D6
+>
+> **O `ADM` continua entrando por console, e por princípio. O `GESTOR` e o `OPERADOR`, não: eles entram
+> por convite.**
+>
+> A frase acima — *não existe caminho, dentro do app, para fabricar quem administra* — deixou de ser
+> verdade **quatro dias depois de ser escrita**, e por caminho que nenhum ADR revisou: a F6.6 (2026-08-08)
+> fez o papel do perfil vir do **convite**, e o formulário oferecia os três papéis. Um `ADM` podia
+> fabricar outro pelo app, com caso de emulador provando que dava.
+>
+> A D6 fechou essa porta em vez de aceitá-la (o convite recusa `papel: "ADM"`, no formulário **e** na
+> regra), então o **princípio do D0 volta a valer no que ele tem de mais forte** — e a metade sobre
+> `GESTOR`/`OPERADOR` não volta: convidá-los pelo app é o que a F6.6 entregou e a D6 manteve.
+>
+> **E o D2 caiu**: a seção Usuários não é mais somente-leitura. O `ADM` desativa, reativa e define prazo
+> de acesso — o que a regra passou a admitir por lista fechada de chaves (§Q1), com o `papel` fora dela
+> para todo mundo. *Não há convite de `ADM`; também não há promoção a `ADM`.*
 
-**Quando revisitar:** quando houver mais de um administrador, ou quando convidar operadores deixar de
-caber no console — aí o custo muda de lado. O caso do operador é diferente do caso do administrador (o
-primeiro acesso já o deduz pelo funcionário de mesmo e-mail), e pode ser resolvido sozinho.
+O resto deste documento (D1, D3 e D4) permanece **válido como direção**: quando a seção crescer, é assim
+que ela cresce. O D1 (`ADM`-only) está implementado desde a F6.6; o D2 foi superado pela D6.
+
+**Quando revisitar:** já foi — pela esteira, exatamente como previsto abaixo. *"Quando convidar operadores
+deixar de caber no console"* aconteceu na F6.6, e *"quando houver mais de um administrador"* segue sendo o
+caso que não muda: o segundo `ADM` entra pelo mesmo console que o primeiro.
 
 ---
 
@@ -69,7 +87,21 @@ de ser sinônimo de "pode tudo".
 *Opção descartada:* estender `ehPapelPlataforma()` à seção. Custa a distinção que o analista pediu, e
 tornaria impossível ter administração que o gestor não veja.
 
-### D2 — Somente leitura, nesta rodada
+### D2 — Somente leitura, nesta rodada · ⚠️ **SUPERADO** pelo [ADR-0032](0032-o-acesso-politica-sessao-e-ciclo-de-vida.md) D6
+
+> **Duas das três escritas passaram a existir, e a terceira segue não existindo** — e as razões abaixo são
+> o que explica qual foi qual:
+>
+> - **desligar** aconteceu, e exatamente como o terceiro parágrafo pedia: não é `delete`, é o campo `ativo`
+>   em `users/{uid}` (§Q1), com **reativar** ao lado. O par é a decisão: desativar sem reativar
+>   transformaria um engano em ida ao console;
+> - **convidar** aconteceu antes, na F6.6, e por onde este texto não previa: o convite não cria conta no
+>   Auth — a pessoa a cria no primeiro acesso, e o convite só diz com que papel ela entra. O
+>   *"papel puro de plataforma nunca tem `Funcionario`"* deixou de barrar porque o papel passou a vir do
+>   convite em vez do funcionário;
+> - **promover/rebaixar** continua não existindo, e agora por escrito: o `papel` fica fora da lista
+>   fechada de chaves que a regra abre ao `ADM`. A pergunta *"um `ADM` pode rebaixar outro?"* segue sem
+>   precisar de resposta.
 
 A seção lista **todos** os usuários — não só os de plataforma —, com papel e uid visíveis. Não cadastra,
 não promove, não desliga.

@@ -11,14 +11,26 @@ Os dois contextos já estão separados desde o ADR-0015 §8.1, e cada um tem doc
 | | `users/{uid}` — **Usuario** | `funcionarios/{id}` — **Funcionario** |
 |---|---|---|
 | Responde | *quem acessa o app, e o que compete nele* | *quem é a pessoa na operação* |
-| Carrega | `email`, `username`, `papel`, `funcionarioId` | `nome`, `email`, `vinculos[{empresaId, cargo}]`, `empresaIds` |
+| Carrega | `email`, `username`, `papel`, `funcionarioId`, `ativo`, `expiraEm` | `nome`, `email`, `vinculo{empresaId, cargo}` |
 | Eixo | **sistema**: `ADM` / `GESTOR` / `OPERADOR` (fechado) | **negócio**: `SUPERVISOR` / `AGENTE` por vínculo (aberto) |
-| Quem escreve hoje | **só o próprio dono**, no primeiro acesso, e sempre como `OPERADOR` | plataforma em qualquer empresa; supervisor só na dele, e só como `AGENTE` |
-| Quem cria `ADM`/`GESTOR` | **ninguém pelo app** — console (ADR-0021 D0) | — |
+| Quem escreve | **o próprio dono** (no primeiro acesso, com o papel do convite) e o **`ADM`**, restrito a `ativo`/`expiraEm`/`funcionarioId` | plataforma em qualquer empresa; supervisor só na dele |
+| Quem cria `ADM` | **ninguém pelo app** — console, por princípio (ADR-0021 D0, preservado pela ADR-0032 D6) | — |
+| Quem cria `GESTOR`/`OPERADOR` | **o `ADM`, por convite** (F6.6) — o papel de `users/{uid}` vem de `convites/{email}` | — |
+
+> **Duas linhas desta tabela estavam vencidas, e ficaram vencidas por um mês.** Ela dizia *"ninguém pelo
+> app — console"* para `ADM` **e** `GESTOR`, e *"sempre como `OPERADOR`"* na linha de cima. As duas
+> deixaram de ser verdade na **F6.6 (2026-08-08)**, quando o papel passou a vir do convite — e a data é a
+> mesma em que este estudo nasceu, o que explica a defasagem sem culpar ninguém: o texto foi escrito na
+> véspera da mudança que ele mesmo propôs.
+>
+> A [ADR-0032](../adr/0032-o-acesso-politica-sessao-e-ciclo-de-vida.md) D6 fechou a metade que ninguém
+> tinha decidido — **não há convite de `ADM`** — e a linha do `GESTOR` passou a ser o que a execução já
+> fazia. A D6/Q1 acrescentou `ativo` e `expiraEm`, e a Q2 trocou o array de vínculos por **um**.
 
 A regra do servidor é explícita sobre a parte que interessa: `users/{uid}` só nasce pelo próprio dono,
-com `papel == 'OPERADOR'`, e o elo `funcionarioId` só é aceito se apontar para um funcionário **com o
-mesmo e-mail** do autenticado. Papel e vínculo são **imutáveis** pelo cliente depois disso.
+com o papel **do convite** (e sem convite, só `OPERADOR`), e o elo `funcionarioId` só é aceito se apontar
+para um funcionário **com o mesmo e-mail** do autenticado. O **`papel` é imutável** pelo cliente depois
+disso — inclusive para o `ADM`, que governa o estado do acesso e não o papel de ninguém.
 
 ## 2. O problema: uma seção só para dois contextos
 

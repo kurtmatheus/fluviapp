@@ -66,6 +66,20 @@ Três pontos que custaram caro e não podem regredir:
 **O ADM não pode criar, promover nem remover ninguém pelo app.** Não é lacuna: é a proteção mais sensível
 do sistema, e qualquer seção de usuários precisa conversar com ela em vez de contorná-la.
 
+> **Duas destas linhas mudaram depois** — e a frase acima, que era o argumento do estudo, é hoje verdade
+> só na metade do meio:
+>
+> - **criar** deixou de ser *"sempre `OPERADOR`"* na **F6.6** (2026-08-08): o papel vem do **convite**, e
+>   `GESTOR` passou a nascer pelo app. A [ADR-0032](../adr/0032-o-acesso-politica-sessao-e-ciclo-de-vida.md)
+>   D6 fechou a metade que ninguém tinha decidido — **não há convite de `ADM`**;
+> - **editar** ganhou um segundo ramo (D6/§Q1): o `ADM` escreve `ativo`, `expiraEm` e `funcionarioId`,
+>   restrito a essa lista fechada. E o dono passou a **não poder** mexer no próprio acesso, senão quem
+>   fosse desativado se religaria;
+> - **promover continua impossível**, inclusive para o `ADM`: o `papel` está fora da lista. A proteção mais
+>   sensível do sistema é essa, e é a que não se moveu.
+>
+> A seção Usuários, portanto, **não** contornou a regra: ela esperou a regra mudar.
+
 ## 3. O que a seção exige do que existe
 
 ### 3.1 `ADM` e `GESTOR` nunca se separaram
