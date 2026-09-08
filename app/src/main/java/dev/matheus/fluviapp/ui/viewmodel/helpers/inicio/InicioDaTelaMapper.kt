@@ -22,6 +22,12 @@ import java.time.format.DateTimeFormatter
  * A tradução é uma camada e não um atalho: o domínio decide *de quem é o painel* e *quais ocorrências
  * existem*; aqui só se escreve o que se lê. É por isso que `DaPlataforma` e `SemConcessao` atravessam sem
  * dado nenhum — não há o que formatar quando a resposta é "este painel não é este".
+ *
+ * **`DaPlataforma` atravessa sem métrica de acesso, e isso é decisão de dependência** ([ADR-0032] D6): este
+ * `InicioDoPainel` mora no domínio da **viagem**, e acesso não é assunto dele. Quem compõe as duas metades
+ * é o `fluxoDoInicio`, que ramifica por escopo antes de ler — e o painel da plataforma não passa mais por
+ * aqui. Este ramo fica porque o `when` sobre o tipo selado tem de ser exaustivo, e porque `inicioDoPainel`
+ * continua respondendo a pergunta dele com honestidade: *o painel não é o de uma empresa*.
  */
 fun InicioDoPainel.paraTela(
     rotasPorId: Map<String, Rota>,
@@ -29,7 +35,7 @@ fun InicioDoPainel.paraTela(
     embarcacoes: Map<String, String>,
     hoje: LocalDate,
 ): InicioDaTela = when (this) {
-    InicioDoPainel.DaPlataforma -> InicioDaTela.DaPlataforma
+    InicioDoPainel.DaPlataforma -> InicioDaTela.DaPlataforma()
     InicioDoPainel.SemConcessao -> InicioDaTela.SemConcessao
     is InicioDoPainel.DaEmpresa -> InicioDaTela.DaEmpresa(
         disponiveis.map { ocorrencia ->

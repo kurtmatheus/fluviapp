@@ -13,6 +13,7 @@ import dev.matheus.fluviapp.services.repository.firebase.documents.toConvite
 import dev.matheus.fluviapp.telemetry.RegistroCadastro
 import dev.matheus.fluviapp.telemetry.RegistroSincronizacao
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -24,6 +25,17 @@ import javax.inject.Singleton
 interface ConviteRepository {
     suspend fun salvar(convite: Convite)
     suspend fun obterTodos(): List<Convite>
+
+    /**
+     * Os convites como **estado observável** — o par do `observarTodos` dos perfis, e pela mesma razão: as
+     * métricas de acesso vivem no Início do painel, e *convite pendente* é a diferença entre as duas
+     * coleções. Uma delas assinada e a outra fotografada faria o número parar de cair quando alguém entra.
+     *
+     * **A leitura ampla desta coleção é do `ADM`** (`allow list: if ehAdm()`), e isso não é detalhe de
+     * tela: um `GESTOR` que ligasse este listener receberia *permission denied* — e a falha viraria
+     * não-fatal no Crashlytics, um alarme tocando no caso normal. Quem chama pergunta antes.
+     */
+    fun observarTodos(): StateFlow<List<Convite>>
 
     /**
      * Busca **no servidor**, por e-mail — e é a única leitura desta porta que roda **antes** do perfil
@@ -73,6 +85,8 @@ class ConviteFirestoreRepository @Inject constructor(
     override suspend fun salvar(convite: Convite) {
         colecao.salvar(convite)
     }
+
+    override fun observarTodos(): StateFlow<List<Convite>> = colecao.observarTodos()
 
     override suspend fun obterTodos(): List<Convite> = colecao.obterTodos()
 

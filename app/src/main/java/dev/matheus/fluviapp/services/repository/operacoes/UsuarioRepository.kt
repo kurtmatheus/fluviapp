@@ -13,6 +13,7 @@ import dev.matheus.fluviapp.services.repository.firebase.documents.toUsuario
 import dev.matheus.fluviapp.telemetry.RegistroCadastro
 import dev.matheus.fluviapp.telemetry.RegistroSincronizacao
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -36,6 +37,15 @@ interface UsuarioRepository {
 
     /** Todos os perfis — é a lista da seção Usuários. Leitura é de todo autenticado; a escrita, do `ADM`. */
     suspend fun obterTodos(): List<Usuario>
+
+    /**
+     * Os perfis como **estado observável** — a janela para o `StateFlow` que o listener alimenta.
+     *
+     * Existe porque as métricas de acesso moram no Início do painel, que é tela de vida longa: alguém entra
+     * pelo primeiro acesso e o número de convites pendentes tem de cair sem que ninguém peça recarga. É a
+     * lição de 2026-08-17 aplicada de novo — *o Início é assinatura, não leitura*.
+     */
+    fun observarTodos(): StateFlow<List<Usuario>>
 
     /**
      * Liga e desliga o acesso, e define (ou tira) o prazo — as duas chaves que a regra abre ao `ADM`.
@@ -83,6 +93,8 @@ class UsuarioFirestoreRepository @Inject constructor(
     )
 
     override fun sincronizar() = colecao.sincronizar()
+
+    override fun observarTodos(): StateFlow<List<Usuario>> = colecao.observarTodos()
 
     override suspend fun obterTodos(): List<Usuario> = colecao.obterTodos()
 

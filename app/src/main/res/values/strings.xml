@@ -79,6 +79,15 @@
     <string name="label_menu_viagens">Viagens</string>
     <string name="label_menu_equipe">Equipe</string>
     <string name="label_tema_escuro">Tema escuro</string>
+    <!-- Métricas de acesso no Início do painel da plataforma (ADR-0032 D6). -->
+    <string name="subtitle_acesso_da_plataforma">Acesso ao aplicativo</string>
+    <string name="label_acessos_no_app">pessoas com acesso</string>
+    <string name="label_acessos_ativos">%1$d ativos</string>
+    <string name="label_acessos_desativados">%1$d desativados</string>
+    <string name="label_acessos_expirados">%1$d com prazo vencido</string>
+    <string name="label_convites_pendentes">%1$d convidados que ainda não entraram</string>
+    <string name="label_acessos_a_vencer">%1$d vencem nos próximos 7 dias</string>
+    <string name="msg_acesso_sem_pendencia">Nada pendente — nenhum acesso desativado, vencido ou a vencer.</string>
     <!-- Gestão de acesso (ADR-0032 D6): o par desativar/reativar, e o prazo. -->
     <string name="btn_desativar">Desativar</string>
     <string name="btn_reativar">Reativar</string>

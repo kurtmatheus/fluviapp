@@ -47,7 +47,7 @@ class InicioDaTelaMapperTest {
     @Test
     fun `plataforma e sem-concessao atravessam sem cards`() {
         assertEquals(
-            InicioDaTela.DaPlataforma,
+            InicioDaTela.DaPlataforma(),
             InicioDoPainel.DaPlataforma.paraTela(rotasPorId, portosPorId, embarcacoes, hoje = terca),
         )
         assertEquals(

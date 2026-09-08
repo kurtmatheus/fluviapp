@@ -64,6 +64,8 @@ fun MainScreen(
     onToggleTheme: () -> Unit = {},
     /** Tocar numa saída do Início abre a **emissão** naquela ocorrência (F9.5). */
     onClickViagemDisponivel: (String) -> Unit = {},
+    /** Tocar no card de acesso abre a seção Usuários, onde os gestos daqueles números moram (D6). */
+    onClickAcesso: () -> Unit = {},
     /** O FAB central da barra inferior: ler o QR de um bilhete e conferir o embarque (ADR-0012). */
     onClickEmbarque: () -> Unit = {},
     // REVITALIZAÇÃO: o pull-to-refresh volta com a F10, se voltar — com o Início assinando a fonte
@@ -139,6 +141,7 @@ fun MainScreen(
                         modifier = modifier,
                         inicio = state.inicio,
                         onClickViagem = onClickViagemDisponivel,
+                        onClickAcesso = onClickAcesso,
                     )
                 }
             }

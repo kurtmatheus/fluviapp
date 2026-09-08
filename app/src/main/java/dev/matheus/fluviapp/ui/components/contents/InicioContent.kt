@@ -18,6 +18,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import dev.matheus.fluviapp.R
+import dev.matheus.fluviapp.domain.operacoes.MetricasDeAcesso
+import dev.matheus.fluviapp.ui.components.cards.CardDeAcesso
 import dev.matheus.fluviapp.ui.components.cards.ViagemDisponivelHomeCard
 import dev.matheus.fluviapp.ui.states.InicioDaTela
 import dev.matheus.fluviapp.ui.states.ViagemDisponivelCard
@@ -35,7 +37,8 @@ import dev.matheus.fluviapp.ui.theme.FluviAppTheme
  *
  * - **carregando** — o escopo ainda não chegou. Sem este estado, o painel piscaria "não há saídas" antes
  *   de saber se há;
- * - **plataforma** — ela monta o universo e não vende; o sumário dela é a F10;
+ * - **plataforma** — o **estado do acesso** de quem entra no app ([ADR-0032] D6). Sem métrica (quem olha
+ *   não é `ADM`), volta a ser o recado de antes;
  * - **empresa** — "Viagens Disponíveis", a lista de saídas da semana. Vazia aqui quer dizer *não há saída*;
  * - **sem concessão** — falta provisionar. Recado oposto ao anterior: um manda esperar, o outro manda
  *   procurar a plataforma.
@@ -45,6 +48,8 @@ fun InicioContent(
     modifier: Modifier,
     inicio: InicioDaTela,
     onClickViagem: (String) -> Unit = {},
+    /** Tocar num número leva à seção Usuários, que é onde o gesto correspondente mora. */
+    onClickAcesso: () -> Unit = {},
 ) {
     when (inicio) {
         InicioDaTela.Carregando -> Box(modifier = modifier.fillMaxSize()) {
@@ -54,7 +59,17 @@ fun InicioContent(
             )
         }
 
-        InicioDaTela.DaPlataforma -> RecadoCentral(modifier, R.string.msg_painel_plataforma)
+        is InicioDaTela.DaPlataforma -> {
+            val acesso = inicio.acesso
+            if (acesso == null) {
+                RecadoCentral(modifier, R.string.msg_painel_plataforma)
+            } else {
+                Column {
+                    CommonTopRow(modifier, R.string.subtitle_acesso_da_plataforma)
+                    CardDeAcesso(modifier = modifier, acesso = acesso, onClick = onClickAcesso)
+                }
+            }
+        }
 
         InicioDaTela.SemConcessao -> RecadoCentral(modifier, R.string.msg_viagem_sem_concessao)
 
@@ -150,8 +165,23 @@ private fun InicioSemConcessaoPreview() {
     FluviAppTheme { InicioContent(Modifier, InicioDaTela.SemConcessao) }
 }
 
+/** O painel do `ADM`: o estado do acesso, que é o que a plataforma administra (ADR-0032 D6). */
 @Preview(showBackground = true)
 @Composable
-private fun InicioDaPlataformaPreview() {
-    FluviAppTheme { InicioContent(Modifier, InicioDaTela.DaPlataforma) }
+private fun InicioDaPlataformaComAcessoPreview() {
+    FluviAppTheme {
+        InicioContent(
+            Modifier,
+            InicioDaTela.DaPlataforma(
+                MetricasDeAcesso(ativos = 9, desativados = 1, expirados = 1, convitesPendentes = 2, aVencer = 1),
+            ),
+        )
+    }
+}
+
+/** E o do `GESTOR`, que administra o negócio da plataforma e não o acesso a ela (ADR-0021 D1). */
+@Preview(showBackground = true)
+@Composable
+private fun InicioDaPlataformaSemAcessoPreview() {
+    FluviAppTheme { InicioContent(Modifier, InicioDaTela.DaPlataforma()) }
 }

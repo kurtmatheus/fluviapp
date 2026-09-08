@@ -192,6 +192,26 @@ lotação de uma balsa para descartá-la no cliente e não trazer nada.
 
 ## 4. As perguntas que ficam para o analista
 
+> **Respondidas em 2026-09-08**, na mesma sessão: *"as métricas de acesso no Início do painel da
+> plataforma"*.
+>
+> - **Q1** → as **de acesso**, e só elas. As de operação (emissões por agência) ficam para quando alguém
+>   pedir, e o `contar()` da Q4 fica com elas;
+> - **Q2** → `ADM`-only, pelo mesmo argumento do ADR-0021 D1 e da decisão de 2026-08-04 (*"nenhum gestor
+>   pode ver usuários"*). O `GESTOR` continua com o recado de antes, e o recorte corta a **leitura**, não a
+>   exibição: `allow list` de `convites` é `ehAdm()`, então ligar o listener para ele produziria
+>   *permission denied* e um não-fatal — alarme tocando no caso normal;
+> - **Q3** → o **Início do painel da plataforma**, a opção (b);
+> - **Q4** → depois, com as perguntas de operação.
+>
+> **O que a implementação acrescentou.** Ramificar o fluxo por escopo **antes** de ler achou um desperdício
+> que estava à vista: `Todo` e `Nenhum` ligavam cinco listeners, esperavam cinco snapshots e descartavam
+> tudo — o domínio não olha viagem nenhuma para responder *"o painel é da plataforma"* ou *"falta
+> provisionar"*. Cada painel passou a ler as coleções dele, e a plataforma lê `users` + `convites`.
+>
+> E uma escolha de forma que o card carrega: **zero não vira linha**. Um card com quatro zeros ensina a não
+> olhar o card; quando não há pendência, o rodapé diz isso em uma frase.
+
 **Q1 — Quais perguntas a tela responde?** A §3.2 diz o que é barato. As três primeiras linhas (acesso,
 convites pendentes, prazos a vencer) custam **zero leitura nova** e são as únicas que falam de *gestão de
 usuários*, que é o título da issue. As emissões por agência custam uma porta nova e falam de *operação*.

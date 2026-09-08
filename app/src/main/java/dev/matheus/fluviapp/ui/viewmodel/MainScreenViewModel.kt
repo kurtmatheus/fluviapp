@@ -10,6 +10,7 @@ import dev.matheus.fluviapp.telemetry.EstadoSincronizacao
 // REVITALIZAÇÃO: voltam com as seções Passagem / Equipe.
 // import dev.matheus.fluviapp.services.repository.operacoes.FuncionarioRepository
 // import dev.matheus.fluviapp.services.repository.firebase.PassagemFirestoreRepository
+import dev.matheus.fluviapp.ui.viewmodel.helpers.inicio.FontesDoAcesso
 import dev.matheus.fluviapp.ui.viewmodel.helpers.inicio.fluxoDoInicio
 import dev.matheus.fluviapp.services.repository.cadastro.localidade.LocalidadeRepository
 import dev.matheus.fluviapp.services.repository.cadastro.porto.PortoRepository
@@ -18,7 +19,9 @@ import dev.matheus.fluviapp.services.repository.cadastro.viagem.EmbarcacaoReposi
 import dev.matheus.fluviapp.services.repository.cadastro.viagem.ViagemRepository
 import dev.matheus.fluviapp.services.repository.firebase.autenticacao.AutenticacaoRepository
 import dev.matheus.fluviapp.services.repository.operacoes.EscopoDaSessao
+import dev.matheus.fluviapp.services.repository.operacoes.ConviteRepository
 import dev.matheus.fluviapp.services.repository.operacoes.SessaoUsuario
+import dev.matheus.fluviapp.services.repository.operacoes.UsuarioRepository
 import dev.matheus.fluviapp.ui.states.MainScreenState
 import dev.matheus.fluviapp.ui.states.MainScreenUiState
 import dev.matheus.fluviapp.util.Relogio
@@ -49,7 +52,12 @@ import javax.inject.Inject
  *
  * E ela não é mais uma lista só para todo mundo: **quem decide o que a tela mostra é o domínio**
  * (`inicioDoPainel`), pelo mesmo `EscopoDoPool` que recorta busca e cadastro. A plataforma não vê saídas
- * porque não vende; o sumário do painel dela continua sendo a **F10**.
+ * porque não vende.
+ *
+ * **E o painel dela deixou de ser um recado** ([ADR-0032] D6, decisão do analista em 2026-09-08): o Início
+ * do `ADM` mostra o **estado do acesso** — quantas pessoas entram no app, e quantas estão pendentes de um
+ * gesto dele. O sumário da *operação* segue sendo a F10; este não é ele, é o assunto próprio da
+ * plataforma, e por isso cabe antes.
  */
 @HiltViewModel
 class MainScreenViewModel @Inject constructor(
@@ -62,6 +70,13 @@ class MainScreenViewModel @Inject constructor(
     private val portoRepository: PortoRepository,
     private val localidadeRepository: LocalidadeRepository,
     private val escopoDaSessao: EscopoDaSessao,
+    /**
+     * As duas coleções do **Início da plataforma** ([ADR-0032] D6). Elas entram no ViewModel do painel, e
+     * não no da seção Usuários, porque é aqui que a tela que as mostra vive — a seção usa a primeira para
+     * outra pergunta (*quem são*, em vez de *quantos*).
+     */
+    private val usuarioRepository: UsuarioRepository,
+    private val conviteRepository: ConviteRepository,
     private val relogio: Relogio,
     private val autenticacaoRepository: AutenticacaoRepository,
     private val sessaoUsuario: SessaoUsuario,
@@ -97,17 +112,28 @@ class MainScreenViewModel @Inject constructor(
      * Até 2026-08-17 este método fazia cinco leituras e copiava o resultado para o estado. A tela ficava com
      * o snapshot do instante em que nasceu: uma viagem inativada pelo painel continuava no card até o app ser
      * reaberto, porque este ViewModel vive enquanto a home está na pilha de navegação. O que mudou é só o
-     * regime — a montagem foi para [fluxoDoInicio], que assina os `StateFlow` das cinco coleções.
+     * regime — a montagem foi para [fluxoDoInicio], que assina os `StateFlow` das coleções.
      *
      * As leituras seguem sendo de coleções pequenas com junção em memória — mesma escolha do "Porto X —
      * Belém/PA", e a única possível num pool sem `empresaId`. A alternativa (uma consulta por linha) não
      * existe no Firestore, e um índice denormalizado seria uma segunda verdade sobre a concessão.
+     *
+     * **Cada painel lê as coleções dele** ([ADR-0032] D6): o fluxo ramifica por escopo **antes** de ler, e
+     * a plataforma assina `users` + `convites` em vez das cinco da operação — que ela lia e descartava.
      */
     private fun carregarInicio() {
         assinaturaDoInicio?.cancel()
         assinaturaDoInicio = viewModelScope.launch {
+            // **A política decide antes da leitura** ([ADR-0032] D1/D6), e aqui isso não é só disciplina:
+            // `allow list` de `convites` é `ehAdm()`, então ligar o listener para um `GESTOR` produziria
+            // *permission denied* e um não-fatal — alarme tocando no caso normal. Sem `ADM`, sem fonte.
+            val contexto = sessaoUsuario.atual()
+            val acesso = FontesDoAcesso(usuarioRepository, conviteRepository)
+                .takeIf { PermissoesUsuario.podeGerirAcesso(contexto?.papel) }
+
             fluxoDoInicio(
                 escopo = escopoDaSessao.atual(),
+                acesso = acesso,
                 viagemRepository = viagemRepository,
                 rotaRepository = rotaRepository,
                 portoRepository = portoRepository,

@@ -49,7 +49,7 @@ class PainelRevitalizadoTest {
     private val secoesDoAdm = secoesDoMenu(Papel.ADM.name)
 
     private fun montarPainel(
-        inicio: InicioDaTela = InicioDaTela.DaPlataforma,
+        inicio: InicioDaTela = InicioDaTela.DaPlataforma(),
         podeEmbarcar: Boolean = false,
         onClickEmbarque: () -> Unit = {},
     ) {
@@ -108,7 +108,7 @@ class PainelRevitalizadoTest {
      */
     @Test
     fun painel_daPlataforma_convidaAAbrirOMenu() {
-        montarPainel(InicioDaTela.DaPlataforma)
+        montarPainel(InicioDaTela.DaPlataforma())
 
         composeTestRule.onNodeWithText(texto(R.string.msg_painel_plataforma)).assertIsDisplayed()
         composeTestRule.onNodeWithText(texto(R.string.subtitle_viagens_disponiveis)).assertDoesNotExist()

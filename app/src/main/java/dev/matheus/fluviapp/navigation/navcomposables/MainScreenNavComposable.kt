@@ -109,6 +109,8 @@ fun NavGraphBuilder.mainScreenNavComposable(
             isDarkTheme = escuro,
             onToggleTheme = { themeViewModel.alternarTema(escuro) },
             onClickViagemDisponivel = onNavegaParaEmissao,
+            // O card de acesso leva à seção Usuários, que é onde os gestos dos números moram (D6).
+            onClickAcesso = onNavegaParaFormularioPesquisaUsuario,
             onClickEmbarque = onNavegaParaEmbarque,
             // REVITALIZAÇÃO: nova passagem não volta — um bilhete começa pela **saída**, e a saída se
             // escolhe no Início (F9.6). O pull-to-refresh fica para a F10.

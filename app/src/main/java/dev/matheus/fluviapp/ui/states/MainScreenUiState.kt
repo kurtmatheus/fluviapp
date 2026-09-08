@@ -1,5 +1,6 @@
 package dev.matheus.fluviapp.ui.states
 
+import dev.matheus.fluviapp.domain.operacoes.MetricasDeAcesso
 import dev.matheus.fluviapp.domain.operacoes.Perfil
 import dev.matheus.fluviapp.domain.screendata.SecaoMenu
 
@@ -58,8 +59,21 @@ data class MainScreenUiState(
 sealed interface InicioDaTela {
     data object Carregando : InicioDaTela
 
-    /** A plataforma monta o universo; o sumário dela é a F10. */
-    data object DaPlataforma : InicioDaTela
+    /**
+     * O painel da plataforma — e desde a [ADR-0032] D6 ele **mostra o que a plataforma administra**: o
+     * estado do acesso de quem entra no app (decisão do analista em 2026-09-08).
+     *
+     * Era `data object`, e o recado *"a plataforma monta o universo"* era um lugar vazio esperando conteúdo
+     * desde a F8.4 — o ADR-0022 D5 dizia que o sumário dela vinha na F10, porque *sumário vem depois do que
+     * resume*. As métricas de acesso não são o sumário da operação: são o assunto **próprio** da plataforma,
+     * e por isso cabem antes.
+     *
+     * [acesso] nulo é *"quem olha não é `ADM`"* — o `GESTOR` administra o negócio da plataforma, não o
+     * acesso a ela (ADR-0021 D1), e vê o recado de antes. Nulo também é o instante inicial de quem é
+     * `ADM`: o fluxo espera o primeiro snapshot das duas coleções antes de emitir número, porque zero se lê
+     * como fato e não como *ainda não sei*.
+     */
+    data class DaPlataforma(val acesso: MetricasDeAcesso? = null) : InicioDaTela
 
     /** "Viagens Disponíveis" — a lista pode estar vazia, e vazia aqui quer dizer *não há saída*. */
     data class DaEmpresa(val disponiveis: List<ViagemDisponivelCard>) : InicioDaTela

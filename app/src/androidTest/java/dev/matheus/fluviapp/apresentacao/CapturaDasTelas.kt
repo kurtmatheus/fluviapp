@@ -28,6 +28,7 @@ import dev.matheus.fluviapp.R
 import dev.matheus.fluviapp.domain.documento.TipoDocumento
 import dev.matheus.fluviapp.domain.localidade.Uf
 import dev.matheus.fluviapp.domain.operacoes.Atuacao
+import dev.matheus.fluviapp.domain.operacoes.MetricasDeAcesso
 import dev.matheus.fluviapp.domain.passagem.Acomodacao
 import dev.matheus.fluviapp.domain.passagem.CategoriaPassagem
 import dev.matheus.fluviapp.domain.passagem.ClasseVeiculo
@@ -170,9 +171,28 @@ class CapturaDasTelas {
         MainScreen(painel(InicioDaTela.DaEmpresa(saidasDaSemana)))
     }
 
+    /**
+     * O Início do `ADM`: o **estado do acesso**, que é o que a plataforma administra ([ADR-0032] D6).
+     *
+     * A captura mostra o card com pendência de propósito — é a forma que ele tem quando alguém espera um
+     * gesto, e é a única que diz para que ele serve.
+     */
     @Test
     fun painel_inicio_plataforma() = captura("painel-inicio-plataforma") {
-        MainScreen(painel(InicioDaTela.DaPlataforma, nome = "Kurt"))
+        MainScreen(
+            painel(
+                InicioDaTela.DaPlataforma(
+                    MetricasDeAcesso(
+                        ativos = 9,
+                        desativados = 1,
+                        expirados = 1,
+                        convitesPendentes = 2,
+                        aVencer = 1,
+                    ),
+                ),
+                nome = "Kurt",
+            ),
+        )
     }
 
     @Test
@@ -378,24 +398,50 @@ class CapturaDasTelas {
         )
     }
 
+    /** A seção com as quatro situações e os gestos do `ADM` ([ADR-0032] D6). */
     @Test
     fun pessoas_usuarios() = captura("pessoas-usuarios") {
         ResultSearchUsuarioScreen(
             uiState = PesquisaUsuarioUiState(
+                podeGerir = true,
                 resultados = listOf(
-                    UsuarioResultado("adm@fluviapp.com.br", "Kurt", "ADM", "", "Ativo"),
                     UsuarioResultado(
+                        id = "uid-adm",
+                        email = "adm@fluviapp.com.br",
+                        nome = "Kurt",
+                        papel = "ADM",
+                        vinculo = "",
+                        situacao = "Ativo",
+                        ativo = true,
+                        temAcesso = true,
+                    ),
+                    UsuarioResultado(
+                        id = "uid-ana",
                         email = "ana.ribeiro@fluviapp.com.br",
                         nome = "Ana Ribeiro",
                         papel = "OPERADOR",
                         vinculo = "Navegação Norte · SUPERVISOR",
-                        situacao = "Ativo",
+                        situacao = "Expirado",
+                        prazo = "31/08/2026",
+                        ativo = true,
+                        temAcesso = true,
                     ),
                     UsuarioResultado(
+                        id = "uid-bruno",
                         email = "bruno.costa@fluviapp.com.br",
                         nome = "Bruno Costa",
                         papel = "OPERADOR",
                         vinculo = "Navegação Norte · AGENTE",
+                        situacao = "Desativado",
+                        ativo = false,
+                        temAcesso = true,
+                    ),
+                    UsuarioResultado(
+                        id = "",
+                        email = "carla.dias@fluviapp.com.br",
+                        nome = "Carla Dias",
+                        papel = "GESTOR",
+                        vinculo = "",
                         situacao = "Convidado",
                     ),
                 ),

@@ -39,7 +39,14 @@ class FakeViagemRepository : ViagemRepository {
         return id
     }
 
-    override suspend fun obterTodas(): List<Viagem> = viagens
+    /** Quantas vezes alguém pediu a lista — é o que mede *quem não leu* (ADR-0032 D6). */
+    var leituras = 0
+        private set
+
+    override suspend fun obterTodas(): List<Viagem> {
+        leituras++
+        return viagens
+    }
 
     override suspend fun obterPorId(id: String): Viagem? = viagens.find { it.id == id }
 

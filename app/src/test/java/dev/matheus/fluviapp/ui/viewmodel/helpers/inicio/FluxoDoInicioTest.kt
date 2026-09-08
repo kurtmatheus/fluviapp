@@ -1,17 +1,22 @@
 package dev.matheus.fluviapp.ui.viewmodel.helpers.inicio
 
 import dev.matheus.fluviapp.domain.operacoes.Atuacao
+import dev.matheus.fluviapp.domain.operacoes.Convite
+import dev.matheus.fluviapp.domain.operacoes.Funcionario
+import dev.matheus.fluviapp.domain.operacoes.Usuario
 import dev.matheus.fluviapp.domain.rota.Rota
 import dev.matheus.fluviapp.domain.viagem.AtuacaoDaEmpresa
 import dev.matheus.fluviapp.domain.viagem.Embarcacao
 import dev.matheus.fluviapp.domain.viagem.EscopoDoPool
 import dev.matheus.fluviapp.domain.viagem.TipoEmbarcacao
 import dev.matheus.fluviapp.domain.viagem.Viagem
+import dev.matheus.fluviapp.fakes.FakeConviteRepository
 import dev.matheus.fluviapp.fakes.FakeEmbarcacaoRepository
 import dev.matheus.fluviapp.fakes.FakeLocalidadeRepository
 import dev.matheus.fluviapp.fakes.FakePortoRepository
 import dev.matheus.fluviapp.fakes.FakeRelogio
 import dev.matheus.fluviapp.fakes.FakeRotaRepository
+import dev.matheus.fluviapp.fakes.FakeUsuarioRepository
 import dev.matheus.fluviapp.fakes.FakeViagemRepository
 import dev.matheus.fluviapp.ui.states.InicioDaTela
 import kotlinx.coroutines.launch
@@ -65,9 +70,18 @@ class FluxoDoInicioTest {
     private val portos = FakePortoRepository()
     private val localidades = FakeLocalidadeRepository()
     private val embarcacoes = FakeEmbarcacaoRepository()
+    private val usuarios = FakeUsuarioRepository()
+    private val convites = FakeConviteRepository()
     private val relogio = FakeRelogio(tercaDeManha)
 
-    private fun fluxo(escopo: EscopoDoPool = EscopoDoPool.Concedido(atuacao)) = fluxoDoInicio(
+    /**
+     * [comAcesso] é a política já respondida: `null` nas fontes significa *quem olha não é `ADM`*, e o
+     * fluxo então não lê `users` nem `convites` ([ADR-0032] D6).
+     */
+    private fun fluxo(
+        escopo: EscopoDoPool = EscopoDoPool.Concedido(atuacao),
+        comAcesso: Boolean = false,
+    ) = fluxoDoInicio(
         escopo = escopo,
         viagemRepository = viagens,
         rotaRepository = rotas,
@@ -75,9 +89,26 @@ class FluxoDoInicioTest {
         localidadeRepository = localidades,
         embarcacaoRepository = embarcacoes,
         relogio = relogio,
+        acesso = FontesDoAcesso(usuarios, convites).takeIf { comAcesso },
     )
 
     private fun cardsDe(tela: InicioDaTela) = (tela as InicioDaTela.DaEmpresa).disponiveis
+
+    private fun usuario(email: String, ativo: Boolean = true) = Usuario(
+        id = "uid-$email",
+        email = email,
+        username = email.substringBefore('@'),
+        papel = Usuario.Papel.OPERADOR.name,
+        ativo = ativo,
+    )
+
+    private fun convite(email: String) = Convite(
+        email = email,
+        nome = email.substringBefore('@'),
+        papel = Usuario.Papel.OPERADOR,
+        empresaId = "empresa-1",
+        cargo = Funcionario.Cargo.AGENTE,
+    )
 
     /**
      * **O defeito, em forma de teste.** Ninguém pede recarga: a viagem é inativada e a emissão seguinte já
@@ -169,21 +200,105 @@ class FluxoDoInicioTest {
     }
 
     /**
-     * A plataforma não vende, então não há saída a emitir para ela — e o fluxo diz isso **uma vez**, sem
-     * depender do que as coleções trazem.
+     * A plataforma não vende, então não há saída a emitir para ela — e o fluxo diz isso **sem ler coleção
+     * de viagem nenhuma**.
+     *
+     * O contador de leituras é o que mudou em 2026-09-08: antes, o fluxo ligava os cinco listeners, esperava os
+     * cinco primeiros snapshots e só então perguntava ao domínio — que descartava tudo. Cinco esperas para
+     * desenhar uma tela que não depende delas.
      */
     @Test
-    fun `plataforma recebe o painel dela, e nao uma lista`() = runTest(UnconfinedTestDispatcher()) {
-        rotas.rotas = listOf(rota)
-        viagens.viagens = listOf(viagem)
+    fun `plataforma recebe o painel dela, e nao le as colecoes da operacao`() =
+        runTest(UnconfinedTestDispatcher()) {
+            rotas.rotas = listOf(rota)
+            viagens.viagens = listOf(viagem)
 
+            val vistos = mutableListOf<InicioDaTela>()
+            val coleta = launch { fluxo(EscopoDoPool.Todo).collect { vistos += it } }
+            advanceUntilIdle()
+
+            assertEquals(InicioDaTela.DaPlataforma(), vistos.last())
+            assertEquals("a plataforma não precisa das viagens", 0, viagens.leituras)
+            coleta.cancel()
+        }
+
+    /** Sem concessão também não depende de leitura: a ausência já é conhecida antes de perguntar. */
+    @Test
+    fun `sem concessao responde sem ler nada`() = runTest(UnconfinedTestDispatcher()) {
         val vistos = mutableListOf<InicioDaTela>()
-        val coleta = launch { fluxo(EscopoDoPool.Todo).collect { vistos += it } }
+        val coleta = launch { fluxo(EscopoDoPool.Nenhum).collect { vistos += it } }
         advanceUntilIdle()
 
-        assertEquals(InicioDaTela.DaPlataforma, vistos.last())
+        assertEquals(InicioDaTela.SemConcessao, vistos.last())
+        assertEquals(0, viagens.leituras)
         coleta.cancel()
     }
+
+    // --- O Início do painel da plataforma: o acesso ([ADR-0032] D6) ---
+
+    /**
+     * **As métricas de acesso são o Início do `ADM`** (decisão do analista em 2026-09-08).
+     *
+     * O caso mede a ligação inteira: as duas coleções → a agregação do domínio → a face da tela. Que a
+     * contagem em si está certa é assunto do `MetricasDeAcessoTest`.
+     */
+    @Test
+    fun `plataforma com fontes de acesso recebe as metricas`() = runTest(UnconfinedTestDispatcher()) {
+        usuarios.usuarios = listOf(
+            usuario("ativo@x.com"),
+            usuario("desativado@x.com", ativo = false),
+        )
+        convites.convites = listOf(convite("nao-veio@x.com"))
+
+        val vistos = mutableListOf<InicioDaTela>()
+        val coleta = launch { fluxo(EscopoDoPool.Todo, comAcesso = true).collect { vistos += it } }
+        advanceUntilIdle()
+
+        val acesso = (vistos.last() as InicioDaTela.DaPlataforma).acesso
+        assertEquals(1, acesso?.ativos)
+        assertEquals(1, acesso?.desativados)
+        assertEquals(1, acesso?.convitesPendentes)
+        coleta.cancel()
+    }
+
+    /**
+     * **O número cai sozinho quando alguém entra** — a mesma exigência da lista de saídas, no assunto novo.
+     * Ninguém pede recarga: o perfil aparece na coleção e o convite deixa de estar pendente.
+     */
+    @Test
+    fun `convite pendente deixa de contar quando o perfil aparece`() = runTest(UnconfinedTestDispatcher()) {
+        convites.convites = listOf(convite("vai-entrar@x.com"))
+
+        val vistos = mutableListOf<InicioDaTela>()
+        val coleta = launch { fluxo(EscopoDoPool.Todo, comAcesso = true).collect { vistos += it } }
+        advanceUntilIdle()
+
+        assertEquals(1, (vistos.last() as InicioDaTela.DaPlataforma).acesso?.convitesPendentes)
+
+        usuarios.usuarios = listOf(usuario("vai-entrar@x.com"))
+        advanceUntilIdle()
+
+        assertEquals(0, (vistos.last() as InicioDaTela.DaPlataforma).acesso?.convitesPendentes)
+        coleta.cancel()
+    }
+
+    /**
+     * **Sem `ADM`, sem leitura** — e isso não é cosmética: `allow list` de `convites` é `ehAdm()`, então
+     * ligar o listener para um `GESTOR` produziria *permission denied* e um não-fatal no Crashlytics. Um
+     * alarme tocando no caso normal deixa de ser alarme.
+     */
+    @Test
+    fun `plataforma sem fontes de acesso nao le usuarios nem convites`() =
+        runTest(UnconfinedTestDispatcher()) {
+            val vistos = mutableListOf<InicioDaTela>()
+            val coleta = launch { fluxo(EscopoDoPool.Todo, comAcesso = false).collect { vistos += it } }
+            advanceUntilIdle()
+
+            assertEquals(InicioDaTela.DaPlataforma(), vistos.last())
+            assertEquals("o listener de perfis não deve subir", 0, usuarios.leituras)
+            assertEquals("nem o de convites", 0, convites.leituras)
+            coleta.cancel()
+        }
 
     /**
      * **O destaque de hoje vem do relógio, e não da ordem da lista.**
