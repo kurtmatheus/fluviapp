@@ -13,6 +13,7 @@ import dev.matheus.fluviapp.domain.viagem.OcorrenciaViagem
 import dev.matheus.fluviapp.services.repository.firebase.DocumentoBruto
 import dev.matheus.fluviapp.services.repository.firebase.documents.paraMapa
 import dev.matheus.fluviapp.services.repository.firebase.documents.toPassagem
+import dev.matheus.fluviapp.telemetry.RegistroEmbarque
 import dev.matheus.fluviapp.telemetry.RegistroEmissao
 import kotlinx.coroutines.tasks.await
 import java.time.LocalDateTime
@@ -33,6 +34,7 @@ import javax.inject.Singleton
 class PassagemFirestoreRepository @Inject constructor(
     private val firestore: FirebaseFirestore,
     private val registroEmissao: RegistroEmissao,
+    private val registroEmbarque: RegistroEmbarque,
 ) : PassagemRepository {
 
     /**
@@ -129,9 +131,13 @@ class PassagemFirestoreRepository @Inject constructor(
 
         if (atual == StatusPassagem.EMBARCADA) {
             val carimbo = passagem.metadados.embarque ?: CarimboEmbarque(porId = "", em = "")
+            registroEmbarque.recusado(MOTIVO_JA_EMBARCADA)
             return ResultadoEmbarque.JaEmbarcada(carimbo)
         }
-        if (!atual.podeTransicionarPara(StatusPassagem.EMBARCADA)) return ResultadoEmbarque.NaoEmitida
+        if (!atual.podeTransicionarPara(StatusPassagem.EMBARCADA)) {
+            registroEmbarque.recusado(atual.name)
+            return ResultadoEmbarque.NaoEmitida
+        }
 
         val agora = agoraIso()
         val carimbo = CarimboEmbarque(porId = operadorId, em = agora)
@@ -146,6 +152,7 @@ class PassagemFirestoreRepository @Inject constructor(
             ).await()
 
             val embarcada = passagem.comEmbarque(carimbo)
+            registroEmbarque.confirmado(passagem.numero)
             ResultadoEmbarque.Confirmada(embarcada) as ResultadoEmbarque
         }.getOrElse { erro ->
             Log.e(TAG, "confirmarEmbarque($id): ${erro.message}", erro)
@@ -214,5 +221,14 @@ class PassagemFirestoreRepository @Inject constructor(
         const val CAMPO_ULTIMO_NUMERO = "ultimoNumero"
         const val CAMPO_EMBARQUE = "embarque"
         const val CAMPO_ALTERADO_EM = "alteradoEm"
+
+        /**
+         * O motivo da recusa por reuso — os demais são o **nome do status** que barrou a transição, que já
+         * é vocabulário do domínio e não precisa de tradução.
+         *
+         * Este precisa, porque o status ali é `EMBARCADA`, e "recusado porque está EMBARCADA" leria como
+         * contradição no painel. O que aconteceu é reuso de bilhete, que é o antifraude funcionando.
+         */
+        const val MOTIVO_JA_EMBARCADA = "ja_embarcada"
     }
 }
